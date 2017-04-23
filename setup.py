@@ -148,6 +148,6 @@ setup(
     },
     data_files=[
         ('share/doc/dtformats', [
-            dtformatsEDGEMENTS', 'LICENSE', 'README']),
+            'ACKNOWLEDGEMENTS', 'LICENSE', 'README']),
     ],
 )
