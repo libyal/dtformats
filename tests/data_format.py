@@ -17,6 +17,8 @@ from tests import test_lib
 class ErrorBytesIO(io.BytesIO):
   """Bytes IO that errors."""
 
+  # The following methods are part of the file-like object interface.
+
   def read(self, size=None):  # pylint: disable=unused-argument
     """Reads bytes.
 
@@ -201,6 +203,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
     # Test file-like object that raises an dtfabric.MappingError
     # on map byte stream.
+    file_object = io.BytesIO(
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
+
     data_type_map = ErrorDataTypeMap(None)
 
     with self.assertRaises(errors.ParseError):

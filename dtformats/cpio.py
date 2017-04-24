@@ -53,8 +53,9 @@ class DataRange(object):
     self._range_size = range_size
     self._current_offset = 0
 
-  # Note: that the following functions do not follow the style guide
-  # because they are part of the file-like object interface.
+    # TODO: test upper bound of range_size?
+
+  # The following methods are part of the file-like object interface.
 
   def read(self, size=None):
     """Reads a byte string from the file-like object at the current offset.
@@ -72,16 +73,8 @@ class DataRange(object):
     Raises:
       IOError: if the read failed.
     """
-    if self._range_offset < 0 or self._range_size < 0:
-      raise IOError(u'Invalid data range.')
-
-    if self._current_offset < 0:
-      raise IOError(
-          u'Invalid current offset: {0:d} value less than zero.'.format(
-              self._current_offset))
-
     if self._current_offset >= self._range_size:
-      return ''
+      return b''
 
     if size is None:
       size = self._range_size
@@ -108,19 +101,16 @@ class DataRange(object):
     Raises:
       IOError: if the seek failed.
     """
-    if self._current_offset < 0:
-      raise IOError(
-          u'Invalid current offset: {0:d} value less than zero.'.format(
-              self._current_offset))
-
     if whence == os.SEEK_CUR:
       offset += self._current_offset
     elif whence == os.SEEK_END:
       offset += self._range_size
     elif whence != os.SEEK_SET:
       raise IOError(u'Unsupported whence.')
+
     if offset < 0:
       raise IOError(u'Invalid offset value less than zero.')
+
     self._current_offset = offset
 
   def get_offset(self):
