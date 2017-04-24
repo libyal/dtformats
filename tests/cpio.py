@@ -29,7 +29,8 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
   @test_lib.skipUnlessHasTestFile([u'syslog.bin.cpio'])
   def testReadFileObjectOnBinary(self):
     """Tests the ReadFileObject function on binary format."""
-    test_file = cpio.CPIOArchiveFile()
+    output_writer = test_lib.TestOutputWriter()
+    test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([u'syslog.bin.cpio'])
     test_file.Open(test_file_path)
@@ -39,7 +40,8 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
   @test_lib.skipUnlessHasTestFile([u'syslog.newc.cpio'])
   def testReadFileObjectOnNewASCII(self):
     """Tests the ReadFileObject function on new ASCII format."""
-    test_file = cpio.CPIOArchiveFile()
+    output_writer = test_lib.TestOutputWriter()
+    test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([u'syslog.newc.cpio'])
     test_file.Open(test_file_path)
@@ -49,7 +51,8 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
   @test_lib.skipUnlessHasTestFile([u'syslog.crc.cpio'])
   def testReadFileObjectOnNewASCIIWithCRC(self):
     """Tests the ReadFileObject function on new ASCII with CRC format."""
-    test_file = cpio.CPIOArchiveFile()
+    output_writer = test_lib.TestOutputWriter()
+    test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([u'syslog.crc.cpio'])
     test_file.Open(test_file_path)
@@ -59,7 +62,8 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
   @test_lib.skipUnlessHasTestFile([u'syslog.odc.cpio'])
   def testReadFileObjectOnPortableASCII(self):
     """Tests the ReadFileObject function on portable ASCII format."""
-    test_file = cpio.CPIOArchiveFile()
+    output_writer = test_lib.TestOutputWriter()
+    test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([u'syslog.odc.cpio'])
     test_file.Open(test_file_path)

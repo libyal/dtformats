@@ -5,6 +5,8 @@ import os
 import sys
 import unittest
 
+from dtformats import output_writer
+
 
 def skipUnlessHasTestFile(path_segments):
   """Decorator to skip a test if the test file does not exist.
@@ -51,3 +53,32 @@ class BaseTestCase(unittest.TestCase):
     # Note that we need to pass the individual path segments to os.path.join
     # and not a list.
     return os.path.join(self._TEST_DATA_PATH, *path_segments)
+
+
+class TestOutputWriter(output_writer.OutputWriter):
+  """Test output writer.
+
+  Attributes:
+    output (list[str]): output written.
+  """
+
+  def __init__(self):
+    """Initializes a test output writer."""""
+    super(TestOutputWriter, self).__init__()
+    self.output = []
+
+  def Close(self):
+    """Closes the output writer object."""
+    return
+
+  def Open(self):
+    """Opens the output writer object."""
+    return
+
+  def WriteText(self, text):
+    """Writes text to the output.
+
+    Args:
+      text (str): text to write.
+    """
+    self.output.append(text)

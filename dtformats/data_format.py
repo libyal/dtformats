@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Binary data format."""
 
-from __future__ import print_function
 import abc
 import os
 
@@ -16,14 +15,16 @@ class BinaryDataFormat(object):
   _HEXDUMP_CHARACTER_MAP = [
       '.' if byte < 0x20 or byte > 0x7e else chr(byte) for byte in range(256)]
 
-  def __init__(self, debug=False):
+  def __init__(self, debug=False, output_writer=None):
     """Initializes a binary data format.
 
     Args:
-      debug (Optional[bool]): True if debug information should be printed.
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
     """
     super(BinaryDataFormat, self).__init__()
     self._debug = debug
+    self._output_writer = output_writer
 
   def _DebugPrintData(self, description, data):
     """Prints data debug information.
@@ -32,8 +33,8 @@ class BinaryDataFormat(object):
       description (str): description.
       data (bytes): data.
     """
-    print(u'{0:s}:'.format(description))
-    print(self.FormatDataInHexadecimal(data))
+    self._output_writer.WriteText(u'{0:s}:\n'.format(description))
+    self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
 
   def _DebugPrintValue(self, description, value):
     """Prints a value debug information.
@@ -44,10 +45,10 @@ class BinaryDataFormat(object):
     """
     alignment, _ = divmod(len(description), 8)
     alignment = 8 - alignment + 1
-    text = u'{0:s}{1:s}: {2!s}'.format(description, u'\t' * alignment, value)
-    print(text)
+    text = u'{0:s}{1:s}: {2!s}\n'.format(description, u'\t' * alignment, value)
+    self._output_writer.WriteText(text)
 
-  def FormatDataInHexadecimal(self, data):
+  def _FormatDataInHexadecimal(self, data):
     """Formats data in a hexadecimal represenation.
 
     Args:
@@ -126,8 +127,9 @@ class BinaryDataFormat(object):
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      print(u'Reading {0:s} at offset: 0x{1:08x}'.format(
-          description, file_offset))
+      self._output_writer.WriteText(
+          u'Reading {0:s} at offset: 0x{1:08x}'.format(
+              description, file_offset))
 
     try:
       data = file_object.read(data_size)
@@ -156,13 +158,15 @@ class BinaryDataFormat(object):
 class BinaryDataFile(BinaryDataFormat):
   """Binary data file."""
 
-  def __init__(self, debug=False):
+  def __init__(self, debug=False, output_writer=None):
     """Initializes a binary data file.
 
     Args:
-      debug (Optional[bool]): True if debug information should be printed.
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
     """
-    super(BinaryDataFile, self).__init__(debug=debug)
+    super(BinaryDataFile, self).__init__(
+        debug=debug, output_writer=output_writer)
     self._file_object = None
     self._file_object_opened_in_object = False
     self._file_size = 0

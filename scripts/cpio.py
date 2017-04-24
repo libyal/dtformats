@@ -14,6 +14,7 @@ import sys
 import lzma
 
 from dtformats import cpio
+from dtformats import output_writer
 
 
 class CPIOArchiveFileHasher(object):
@@ -28,23 +29,21 @@ class CPIOArchiveFileHasher(object):
   _GZIP_SIGNATURE = b'\x1f\x8b'
   _XZ_SIGNATURE = b'\xfd7zXZ\x00'
 
-  def __init__(self, path, debug=False):
+  def __init__(self, path, debug=False, output_writer=None):
     """Initializes the CPIO archive file hasher object.
 
     Args:
       path (str): path of the CPIO archive file.
-      debug (Optional[bool]): True if debug information should be printed.
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
     """
     super(CPIOArchiveFileHasher, self).__init__()
     self._debug = debug
+    self._output_writer = output_writer
     self._path = path
 
-  def HashFileEntries(self, output_writer):
-    """Hashes the file entries stored in the CPIO archive file.
-
-    Args:
-      output_writer (OutputWriter): output writer.
-    """
+  def HashFileEntries(self):
+    """Hashes the file entries stored in the CPIO archive file."""
     stat_object = os.stat(self._path)
 
     file_object = open(self._path, 'rb')
@@ -77,7 +76,7 @@ class CPIOArchiveFileHasher(object):
           file_type = u'xz'
 
       if not file_type:
-        output_writer.WriteText(
+        self._output_writer.WriteText(
             u'Unsupported file type at offset: 0x{0:08x}.'.format(file_offset))
         return
 
@@ -109,7 +108,7 @@ class CPIOArchiveFileHasher(object):
           sha256_context.update(file_data)
           file_data = file_entry.read(4096)
 
-        output_writer.WriteText(u'{0:s}\t{1:s}'.format(
+        self._output_writer.WriteText(u'{0:s}\t{1:s}'.format(
             sha256_context.hexdigest(), file_entry.path))
 
       file_offset += cpio_archive_file.size
@@ -119,30 +118,6 @@ class CPIOArchiveFileHasher(object):
         file_offset += 16 - padding_size
 
       cpio_archive_file.Close()
-
-
-class StdoutWriter(object):
-  """Stdout output writer."""
-
-  def Close(self):
-    """Closes the output writer object."""
-    return
-
-  def Open(self):
-    """Opens the output writer object.
-
-    Returns:
-      bool: True if successful or False if not.
-    """
-    return True
-
-  def WriteText(self, text):
-    """Writes text to stdout.
-
-    Args:
-      text (str): text to write.
-    """
-    print(text)
 
 
 def Main():
@@ -178,22 +153,25 @@ def Main():
   logging.basicConfig(
       level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
-  output_writer = StdoutWriter()
+  output_writer = output_writer.StdoutWriter()
 
-  if not output_writer.Open():
-    print(u'Unable to open output writer.')
+  try:
+    output_writer.Open():
+  except IOError as exception:
+    print(u'Unable to open output writer with error: {0!s}'.format(exception))
     print(u'')
     return False
 
   if options.hash:
     cpio_archive_file_hasher = CPIOArchiveFileHasher(
-        options.source, debug=options.debug)
+        options.source, debug=options.debug, output_writer=output_writer)
 
     cpio_archive_file_hasher.HashFileEntries(output_writer)
 
   else:
     # TODO: move functionality to CPIOArchiveFileInfo.
-    cpio_archive_file = cpio.CPIOArchiveFile(debug=options.debug)
+    cpio_archive_file = cpio.CPIOArchiveFile(
+        debug=options.debug, output_writer=output_writer)
     cpio_archive_file.Open(options.source)
 
     output_writer.WriteText(u'CPIO archive information:')

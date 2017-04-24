@@ -497,13 +497,15 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
   _CPIO_SIGNATURE_NEW_ASCII = b'070701'
   _CPIO_SIGNATURE_NEW_ASCII_WITH_CHECKSUM = b'070702'
 
-  def __init__(self, debug=False):
+  def __init__(self, debug=False, output_writer=None):
     """Initializes a CPIO archive file object.
 
     Args:
-      debug (Optional[bool]): True if debug information should be printed.
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CPIOArchiveFile, self).__init__(debug=debug)
+    super(CPIOArchiveFile, self).__init__(
+        debug=debug, output_writer=output_writer)
     self._file_entries = None
 
     self.file_format = None
