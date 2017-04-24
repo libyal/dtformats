@@ -8,11 +8,11 @@ L2TBINARIES_DEPENDENCIES="dtfabric PyYAML";
 
 L2TBINARIES_TEST_DEPENDENCIES="funcsigs mock pbr six";
 
-PYTHON2_DEPENDENCIES="python-yaml";
+PYTHON2_DEPENDENCIES="python-dtfabric python-yaml";
 
 PYTHON2_TEST_DEPENDENCIES="python-mock";
 
-PYTHON3_DEPENDENCIES="python3-yaml";
+PYTHON3_DEPENDENCIES="python3-dtfabric python3-yaml";
 
 PYTHON3_TEST_DEPENDENCIES="python3-mock";
 
