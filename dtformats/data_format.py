@@ -123,7 +123,14 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the structure cannot be read.
+      ValueError: if file-like object or date type map are invalid.
     """
+    if not file_object:
+      raise ValueError(u'Invalid file-like object.')
+
+    if not data_type_map:
+      raise ValueError(u'Invalid data type map.')
+
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
@@ -131,17 +138,21 @@ class BinaryDataFormat(object):
           u'Reading {0:s} at offset: 0x{1:08x}'.format(
               description, file_offset))
 
+    read_error = u''
+
     try:
       data = file_object.read(data_size)
-    except IOError as exception:
-      raise errors.ParseError((
-          u'Unable to read {0:s} data at offset: 0x{1:08x} with error: '
-          u'{2:s}').format(description, file_offset, exception))
 
-    if len(data) != data_size:
+      if len(data) != data_size:
+        read_error = u'missing data'
+
+    except IOError as exception:
+      read_error = u'{0!s}'.format(exception)
+
+    if read_error:
       raise errors.ParseError((
           u'Unable to read {0:s} data at offset: 0x{1:08x} with error: '
-          u'missing data').format(description, file_offset))
+          u'{2:s}').format(description, file_offset, read_error))
 
     if self._debug:
       data_description = u'{0:s} data'.format(description.title())
@@ -151,8 +162,8 @@ class BinaryDataFormat(object):
       return data_type_map.MapByteStream(data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to read {0:s} at offset: 0x{1:08x} with error: '
-          u'{2:s}').format(description, file_offset, exception))
+          u'Unable to map byte stream {0:s} at offset: 0x{1:08x} with error: '
+          u'{2!s}').format(description, file_offset, exception))
 
 
 class BinaryDataFile(BinaryDataFormat):
