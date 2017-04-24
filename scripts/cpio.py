@@ -14,7 +14,7 @@ import sys
 import lzma
 
 from dtformats import cpio
-from dtformats import output_writer
+from dtformats import output_writers
 
 
 class CPIOArchiveFileHasher(object):
@@ -153,10 +153,10 @@ def Main():
   logging.basicConfig(
       level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
-  output_writer = output_writer.StdoutWriter()
+  output_writer = output_writers.StdoutWriter()
 
   try:
-    output_writer.Open():
+    output_writer.Open()
   except IOError as exception:
     print(u'Unable to open output writer with error: {0!s}'.format(exception))
     print(u'')
@@ -166,7 +166,7 @@ def Main():
     cpio_archive_file_hasher = CPIOArchiveFileHasher(
         options.source, debug=options.debug, output_writer=output_writer)
 
-    cpio_archive_file_hasher.HashFileEntries(output_writer)
+    cpio_archive_file_hasher.HashFileEntries()
 
   else:
     # TODO: move functionality to CPIOArchiveFileInfo.

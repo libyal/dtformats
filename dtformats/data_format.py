@@ -27,26 +27,38 @@ class BinaryDataFormat(object):
     self._output_writer = output_writer
 
   def _DebugPrintData(self, description, data):
-    """Prints data debug information.
+    """Prints data for debugging.
 
     Args:
       description (str): description.
       data (bytes): data.
     """
-    self._output_writer.WriteText(u'{0:s}:\n'.format(description))
-    self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
+    if self._output_writer:
+      self._output_writer.WriteText(u'{0:s}:\n'.format(description))
+      self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
 
   def _DebugPrintValue(self, description, value):
-    """Prints a value debug information.
+    """Prints a value for debugging.
 
     Args:
       description (str): description.
       value (object): value.
     """
-    alignment, _ = divmod(len(description), 8)
-    alignment = 8 - alignment + 1
-    text = u'{0:s}{1:s}: {2!s}\n'.format(description, u'\t' * alignment, value)
-    self._output_writer.WriteText(text)
+    if self._output_writer:
+      alignment, _ = divmod(len(description), 8)
+      alignment = 8 - alignment + 1
+      text = u'{0:s}{1:s}: {2!s}\n'.format(
+          description, u'\t' * alignment, value)
+      self._output_writer.WriteText(text)
+
+  def _DebugPrintText(self, text):
+    """Prints text for debugging.
+
+    Args:
+      text (str): text.
+    """
+    if self._output_writer:
+      self._output_writer.WriteText(text)
 
   def _FormatDataInHexadecimal(self, data):
     """Formats data in a hexadecimal represenation.
@@ -134,9 +146,8 @@ class BinaryDataFormat(object):
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      self._output_writer.WriteText(
-          u'Reading {0:s} at offset: 0x{1:08x}'.format(
-              description, file_offset))
+      self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}'.format(
+          description, file_offset))
 
     read_error = u''
 

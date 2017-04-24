@@ -5,7 +5,7 @@ import os
 import sys
 import unittest
 
-from dtformats import output_writer
+from dtformats import output_writers
 
 
 def skipUnlessHasTestFile(path_segments):
@@ -55,7 +55,7 @@ class BaseTestCase(unittest.TestCase):
     return os.path.join(self._TEST_DATA_PATH, *path_segments)
 
 
-class TestOutputWriter(output_writer.OutputWriter):
+class TestOutputWriter(output_writers.OutputWriter):
   """Test output writer.
 
   Attributes:

@@ -2,9 +2,10 @@
 """Tests for the binary data format and file."""
 
 import io
-import os
 import unittest
 
+from dtfabric import data_maps as dtfabric_data_maps
+from dtfabric import errors as dtfabric_errors
 from dtfabric import fabric as dtfabric_fabric
 
 from dtformats import data_format
@@ -16,7 +17,7 @@ from tests import test_lib
 class ErrorBytesIO(io.BytesIO):
   """Bytes IO that errors."""
 
-  def read(self, size=None):
+  def read(self, size=None):  # pylint: disable=unused-argument
     """Reads bytes.
 
     Args:
@@ -32,8 +33,31 @@ class ErrorBytesIO(io.BytesIO):
     raise IOError(u'Unable to read for testing purposes.')
 
 
+class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
+  """Data type map that errors."""
+
+  def MapByteStream(self, byte_stream, context=None, **unused_kwargs):
+    """Maps the data type on a byte stream.
+
+    Args:
+      byte_stream (bytes): byte stream.
+      context (Optional[DataTypeMapContext]): data type map context.
+
+    Returns:
+      object: mapped value.
+
+    Raises:
+      dtfabric.MappingError: if the data type definition cannot be mapped on
+          the byte stream.
+    """
+    raise dtfabric_errors.MappingError(
+        u'Unable to map byte stream for testing purposes.')
+
+
 class BinaryDataFormatTest(test_lib.BaseTestCase):
   """Binary data format tests."""
+
+  # pylint: disable=protected-access
 
   _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
       b'name: uint32',
@@ -88,6 +112,17 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     expected_output = [u'Description\t\t\t\t\t\t\t\t: Value\n']
     self.assertEqual(output_writer.output, expected_output)
 
+  def testDebugPrintText(self):
+    """Tests the _DebugPrintText function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_format = data_format.BinaryDataFormat(
+        output_writer=output_writer)
+
+    test_format._DebugPrintText(u'Text')
+
+    expected_output = [u'Text']
+    self.assertEqual(output_writer.output, expected_output)
+
   def testFormatDataInHexadecimal(self):
     """Tests the _FormatDataInHexadecimal function."""
     test_format = data_format.BinaryDataFormat()
@@ -130,7 +165,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     """Tests the _ReadStructure function."""
     output_writer = test_lib.TestOutputWriter()
     test_format = data_format.BinaryDataFormat(
-        output_writer=output_writer)
+        debug=True, output_writer=output_writer)
 
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
@@ -164,13 +199,33 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
       test_format._ReadStructure(
           file_object, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
 
-    # TODO: improve test coverage.
+    # Test file-like object that raises an dtfabric.MappingError
+    # on map byte stream.
+    data_type_map = ErrorDataTypeMap(None)
+
+    with self.assertRaises(errors.ParseError):
+      test_format._ReadStructure(
+          file_object, 0, self._POINT3D_SIZE, data_type_map, u'point3d')
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):
   """Binary data file tests."""
 
-  # TODO: add tests for Open and Close.
+  @test_lib.skipUnlessHasTestFile([u'syslog.bin.cpio'])
+  def testOpenClose(self):
+    """Tests the Open and Close functions."""
+    test_file = data_format.BinaryDataFile()
+
+    test_file_path = self._GetTestFilePath([u'syslog.bin.cpio'])
+    test_file.Open(test_file_path)
+
+    with self.assertRaises(IOError):
+      test_file.Open(test_file_path)
+
+    test_file.Close()
+
+    with self.assertRaises(IOError):
+      test_file.Close()
 
 
 if __name__ == '__main__':

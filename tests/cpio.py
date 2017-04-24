@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the copy in and out (CPIO) archive format files."""
 
-import os
 import unittest
 
 from dtformats import cpio
