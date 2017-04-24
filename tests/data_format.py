@@ -163,6 +163,35 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
+  def testReadData(self):
+    """Tests the _ReadData function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_format = data_format.BinaryDataFormat(
+        debug=True, output_writer=output_writer)
+
+    file_object = io.BytesIO(
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
+
+    test_format._ReadData(file_object, 0, self._POINT3D_SIZE, u'point3d')
+
+    # Test with missing file-like object.
+    with self.assertRaises(ValueError):
+      test_format._ReadData(None, 0, self._POINT3D_SIZE, u'point3d')
+
+    # Test with file-like object with insufficient data.
+    file_object = io.BytesIO(
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00')
+
+    with self.assertRaises(errors.ParseError):
+      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, u'point3d')
+
+    # Test with file-like object that raises an IOError.
+    file_object = ErrorBytesIO(
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
+
+    with self.assertRaises(errors.ParseError):
+      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, u'point3d')
+
   def testReadStructure(self):
     """Tests the _ReadStructure function."""
     output_writer = test_lib.TestOutputWriter()
@@ -175,42 +204,34 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format._ReadStructure(
         file_object, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
 
-    # Test missing file-like object.
+  def testReadStructureFromByteStream(self):
+    """Tests the _ReadStructureFromByteStream function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_format = data_format.BinaryDataFormat(
+        debug=True, output_writer=output_writer)
+
+    test_format._ReadStructureFromByteStream(
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
+        self._POINT3D, u'point3d')
+
+    # Test with missing byte stream.
     with self.assertRaises(ValueError):
-      test_format._ReadStructure(
-          None, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
+      test_format._ReadStructureFromByteStream(
+          None, 0, self._POINT3D, u'point3d')
 
-    # Test missing data map type.
+    # Test with missing data map type.
     with self.assertRaises(ValueError):
-      test_format._ReadStructure(
-          file_object, 0, self._POINT3D_SIZE, None, u'point3d')
+      test_format._ReadStructureFromByteStream(
+          b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0, None,
+          u'point3d')
 
-    # Test file-like object with insufficient data.
-    file_object = io.BytesIO(
-        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00')
-
-    with self.assertRaises(errors.ParseError):
-      test_format._ReadStructure(
-          file_object, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
-
-    # Test file-like object that raises an IOError on read.
-    file_object = ErrorBytesIO(
-        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
-
-    with self.assertRaises(errors.ParseError):
-      test_format._ReadStructure(
-          file_object, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
-
-    # Test file-like object that raises an dtfabric.MappingError
-    # on map byte stream.
-    file_object = io.BytesIO(
-        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
-
+    # Test with data type map that raises an dtfabric.MappingError.
     data_type_map = ErrorDataTypeMap(None)
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadStructure(
-          file_object, 0, self._POINT3D_SIZE, data_type_map, u'point3d')
+      test_format._ReadStructureFromByteStream(
+          b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
+          data_type_map, u'point3d')
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):

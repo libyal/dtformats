@@ -78,7 +78,8 @@ class CPIOArchiveFileHasher(object):
 
       if not file_type:
         self._output_writer.WriteText(
-            u'Unsupported file type at offset: 0x{0:08x}.'.format(file_offset))
+            u'Unsupported file type at offset: 0x{0:08x}.\n'.format(
+                file_offset))
         return
 
       if file_type == u'cpio':
@@ -110,7 +111,7 @@ class CPIOArchiveFileHasher(object):
           sha256_context.update(file_data)
           file_data = file_entry.read(4096)
 
-        self._output_writer.WriteText(u'{0:s}\t{1:s}'.format(
+        self._output_writer.WriteText(u'{0:s}\t{1:s}\n'.format(
             sha256_context.hexdigest(), file_entry.path))
 
       file_offset += cpio_archive_file.size
@@ -176,15 +177,15 @@ def Main():
         debug=options.debug, output_writer=output_writer)
     cpio_archive_file.Open(options.source)
 
-    output_writer.WriteText(u'CPIO archive information:')
-    output_writer.WriteText(u'\tFormat\t\t: {0:s}'.format(
+    output_writer.WriteText(u'CPIO archive information:\n')
+    output_writer.WriteText(u'\tFormat\t\t: {0:s}\n'.format(
         cpio_archive_file.file_format))
-    output_writer.WriteText(u'\tSize\t\t: {0:d} bytes'.format(
+    output_writer.WriteText(u'\tSize\t\t: {0:d} bytes\n'.format(
         cpio_archive_file.size))
 
     cpio_archive_file.Close()
 
-  output_writer.WriteText(u'')
+  output_writer.WriteText(u'\n')
   output_writer.Close()
 
   return True

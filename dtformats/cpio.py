@@ -28,7 +28,7 @@ class CPIOArchiveFileEntry(data_range.DataRange):
   """
 
   def __init__(self, file_object, data_offset=0, data_size=0):
-    """Initializes a CPIO archive file entry object.
+    """Initializes a CPIO archive file entry.
 
     Args:
       file_object (file): file-like object of the CPIO archive file.
@@ -286,7 +286,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
   _CPIO_SIGNATURE_NEW_ASCII_WITH_CHECKSUM = b'070702'
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a CPIO archive file object.
+    """Initializes a CPIO archive file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -303,7 +303,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     """Prints file entry debug information.
 
     Args:
-      file_entry (cpio_new_file_entry): entry.
+      file_entry (cpio_new_file_entry): file entry.
     """
     if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
       value_string = u'0x{0:04x}'.format(file_entry.signature)
@@ -403,7 +403,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       file_entry = data_type_map.MapByteStream(file_entry_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to parse file entry data section with error: '
+          u'Unable to map file entry data section with error: '
           u'{0:s}').file_format(exception))
 
     if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
