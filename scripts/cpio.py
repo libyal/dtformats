@@ -14,6 +14,7 @@ import sys
 import lzma
 
 from dtformats import cpio
+from dtformats import data_range
 from dtformats import output_writers
 
 
@@ -84,9 +85,10 @@ class CPIOArchiveFileHasher(object):
         file_object.seek(file_offset, os.SEEK_SET)
         cpio_file_object = file_object
       elif file_type in (u'bzip', u'gzip', u'xz'):
-        compressed_data_file_object = cpio.DataRange(file_object)
-        compressed_data_file_object.SetRange(
-            file_offset, file_size - file_offset)
+        compressed_data_size = file_size - file_offset
+        compressed_data_file_object = data_range.DataRange(
+            file_object, data_offset=file_offset,
+            data_size=compressed_data_size)
 
         if file_type == u'bzip':
           cpio_file_object = bz2.BZ2File(compressed_data_file_object)

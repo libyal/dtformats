@@ -1,167 +1,42 @@
 # -*- coding: utf-8 -*-
 """Copy in and out (CPIO) archive format files."""
 
-from __future__ import print_function
 import os
 
 from dtfabric import errors as dtfabric_errors
 from dtfabric import fabric as dtfabric_fabric
 
 import data_format
+import data_range
 import errors
 
 
-class DataRange(object):
-  """In-file data range file-like object."""
+class CPIOArchiveFileEntry(data_range.DataRange):
+  """CPIO archive file entry.
 
-  def __init__(self, file_object):
-    """Initializes a file-like object.
+  Attributes:
+    data_offset (int): offset of the data.
+    data_size (int): size of the data.
+    group_identifier (int): group identifier (GID).
+    inode_number (int): inode number.
+    mode (int): file access mode.
+    modification_time (int): modification time, in number of seconds since
+        January 1, 1970 00:00:00.
+    path (str): path.
+    size (int): size of the file entry data.
+    user_identifier (int): user identifier (UID).
+  """
 
-    Args:
-      file_object (file): parent file-like object.
-    """
-    super(DataRange, self).__init__()
-    self._current_offset = 0
-    self._file_object = file_object
-    self._range_offset = 0
-    self._range_size = 0
-
-  def SetRange(self, range_offset, range_size):
-    """Sets the data range (offset and size).
-
-    The data range is used to map a range of data within one file
-    (e.g. a single partition within a full disk image) as a file-like object.
-
-    Args:
-      range_offset (int): start offset of the data range.
-      range_size (int): size of the data range.
-
-    Raises:
-      ValueError: if the range offset or range size is invalid.
-    """
-    if range_offset < 0:
-      raise ValueError(
-          u'Invalid range offset: {0:d} value out of bounds.'.format(
-              range_offset))
-
-    if range_size < 0:
-      raise ValueError(
-          u'Invalid range size: {0:d} value out of bounds.'.format(
-              range_size))
-
-    self._range_offset = range_offset
-    self._range_size = range_size
-    self._current_offset = 0
-
-    # TODO: test upper bound of range_size?
-
-  # The following methods are part of the file-like object interface.
-
-  def read(self, size=None):
-    """Reads a byte string from the file-like object at the current offset.
-
-    The function will read a byte string of the specified size or
-    all of the remaining data if no size was specified.
-
-    Args:
-      size (Optional[int]): number of bytes to read, where None represents
-          all remaining data.
-
-    Returns:
-      bytes: data read.
-
-    Raises:
-      IOError: if the read failed.
-    """
-    if self._current_offset >= self._range_size:
-      return b''
-
-    if size is None:
-      size = self._range_size
-    if self._current_offset + size > self._range_size:
-      size = self._range_size - self._current_offset
-
-    self._file_object.seek(
-        self._range_offset + self._current_offset, os.SEEK_SET)
-
-    data = self._file_object.read(size)
-
-    self._current_offset += len(data)
-
-    return data
-
-  def seek(self, offset, whence=os.SEEK_SET):
-    """Seeks an offset within the file-like object.
-
-    Args:
-      offset (int): offset to seek.
-      whence (Optional[int]): indicates whether offset is an absolute
-          or relative position within the file.
-
-    Raises:
-      IOError: if the seek failed.
-    """
-    if whence == os.SEEK_CUR:
-      offset += self._current_offset
-    elif whence == os.SEEK_END:
-      offset += self._range_size
-    elif whence != os.SEEK_SET:
-      raise IOError(u'Unsupported whence.')
-
-    if offset < 0:
-      raise IOError(u'Invalid offset value less than zero.')
-
-    self._current_offset = offset
-
-  def get_offset(self):
-    """Retrieves the current offset into the file-like object.
-
-    Returns:
-      int: offset.
-    """
-    return self._current_offset
-
-  # Pythonesque alias for get_offset().
-  def tell(self):
-    """Retrieves the current offset into the file-like object.
-
-    Returns:
-      int: offset.
-    """
-    return self.get_offset()
-
-  def get_size(self):
-    """Retrieves the size of the file-like object.
-
-    Returns:
-      int: size.
-    """
-    return self._range_size
-
-  def seekable(self):
-    """Determines if a file-like object is seekable.
-
-    Returns:
-      bool: True if seekable.
-    """
-    return True
-
-
-class CPIOArchiveFileEntry(object):
-  """CPIO archive file entry."""
-
-  def __init__(self, file_object):
-    """Initializes the CPIO archive file entry object.
+  def __init__(self, file_object, data_offset=0, data_size=0):
+    """Initializes a CPIO archive file entry object.
 
     Args:
       file_object (file): file-like object of the CPIO archive file.
+      data_offset (Optional[int]): offset of the data.
+      data_size (Optional[int]): size of the data.
     """
-    super(CPIOArchiveFileEntry, self).__init__()
-    self._current_offset = 0
-    self._file_object = file_object
-
-    self.data_offset = None
-    self.data_size = None
+    super(CPIOArchiveFileEntry, self).__init__(
+        file_object, data_offset=data_offset, data_size=data_size)
     self.group_identifier = None
     self.inode_number = None
     self.mode = None
@@ -169,83 +44,6 @@ class CPIOArchiveFileEntry(object):
     self.path = None
     self.size = None
     self.user_identifier = None
-
-  def read(self, size=None):
-    """Reads a byte string from the file-like object at the current offset.
-
-    The function will read a byte string of the specified size or
-    all of the remaining data if no size was specified.
-
-    Args:
-      size (Optional[int]): number of bytes to read, where None represents
-          all remaining data.
-
-    Returns:
-      bytes: data read.
-
-    Raises:
-      IOError: if the read failed.
-    """
-    if self._current_offset >= self.data_size:
-      return b''
-
-    read_size = self.data_size - self._current_offset
-    if read_size > size:
-      read_size = size
-
-    file_offset = self.data_offset + self._current_offset
-    self._file_object.seek(file_offset, os.SEEK_SET)
-    data = self._file_object.read(read_size)
-    self._current_offset += len(data)
-    return data
-
-  def seek(self, offset, whence=os.SEEK_SET):
-    """Seeks an offset within the file-like object.
-
-    Args:
-      offset (int): offset to seek.
-      whence (Optional[int]): indicates whether offset is an absolute
-          or relative position within the file.
-
-    Raises:
-      IOError: if the seek failed.
-    """
-    if whence == os.SEEK_CUR:
-      self._current_offset += offset
-
-    elif whence == os.SEEK_END:
-      self._current_offset = self.data_size + offset
-
-    elif whence == os.SEEK_SET:
-      self._current_offset = offset
-
-    else:
-      raise IOError(u'Unsupported whence.')
-
-  def get_offset(self):
-    """Retrieves the current offset into the file-like object.
-
-    Returns:
-      int: offset.
-    """
-    return self._current_offset
-
-  # Pythonesque alias for get_offset().
-  def tell(self):
-    """Retrieves the current offset into the file-like object.
-
-    Returns:
-      int: offset.
-    """
-    return self.get_offset()
-
-  def get_size(self):
-    """Retrieves the size of the file-like object.
-
-    Returns:
-      int: size.
-    """
-    return self.data_size
 
 
 class CPIOArchiveFile(data_format.BinaryDataFile):
@@ -577,7 +375,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       ParseError: if the file entry cannot be read.
     """
     if self._debug:
-      print(u'Seeking file entry at offset: 0x{0:08x}'.format(file_offset))
+      self._DebugPrintText(
+          u'Seeking file entry at offset: 0x{0:08x}\n'.format(file_offset))
 
     file_object.seek(file_offset, os.SEEK_SET)
 
@@ -711,7 +510,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       archive_file_entry.size += padding_size
 
     if self._debug:
-      print(u'')
+      self._DebugPrintText(u'\n')
 
     return archive_file_entry
 
