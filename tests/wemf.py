@@ -13,13 +13,13 @@ class EMFFileTest(test_lib.BaseTestCase):
 
   # TODO: add tests.
 
-  @test_lib.skipUnlessHasTestFile([u'test.emf'])
+  @test_lib.skipUnlessHasTestFile([u'Memo.emf'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
     test_file = wemf.EMFFile(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([u'test.emf'])
+    test_file_path = self._GetTestFilePath([u'Memo.emf'])
     test_file.Open(test_file_path)
 
 
@@ -28,13 +28,13 @@ class WMFFileTest(test_lib.BaseTestCase):
 
   # TODO: add tests.
 
-  @test_lib.skipUnlessHasTestFile([u'test.wmf'])
+  @test_lib.skipUnlessHasTestFile([u'grid.wmf'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
     test_file = wemf.WMFFile(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([u'test.wmf'])
+    test_file_path = self._GetTestFilePath([u'grid.wmf'])
     test_file.Open(test_file_path)
 
 

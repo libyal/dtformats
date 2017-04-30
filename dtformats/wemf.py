@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
+import os
+
 from dtfabric import errors as dtfabric_errors
 from dtfabric import fabric as dtfabric_fabric
 
@@ -36,6 +38,8 @@ class Record(object):
 
 class EMFFile(data_format.BinaryDataFile):
   """Enhanced Metafile Format (EMF) file."""
+
+  FILE_TYPE = u'Windows Enhanced Metafile'
 
   _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
       b'name: byte',
@@ -472,7 +476,7 @@ class EMFFile(data_format.BinaryDataFile):
     self._DebugPrintValue(u'Format version', value_string)
 
     value_string = u'{0:d}'.format(file_header.file_size)
-    self._DebugPrintValue(u'Format size', value_string)
+    self._DebugPrintValue(u'File size', value_string)
 
     value_string = u'{0:d}'.format(file_header.number_of_records)
     self._DebugPrintValue(u'Number of records', value_string)
@@ -622,7 +626,17 @@ class EMFFile(data_format.BinaryDataFile):
 class WMFFile(data_format.BinaryDataFile):
   """Windows Metafile Format (WMF) file."""
 
+  FILE_TYPE = u'Windows Metafile'
+
+  # https://msdn.microsoft.com/en-us/library/cc250370.aspx
   _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
+      b'name: byte',
+      b'type: integer',
+      b'attributes:',
+      b'  format: unsigned',
+      b'  size: 1',
+      b'  units: bytes',
+      b'---',
       b'name: uint16',
       b'type: integer',
       b'attributes:',
@@ -1336,24 +1350,64 @@ class WMFFile(data_format.BinaryDataFile):
       b'- name: HALFTONE',
       b'  number: 0x0004',
       b'---',
-      b'name: wmf_file_header',
+      b'name: wmf_header',
+      b'aliases: [META_HEADER]',
       b'type: structure',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc250418.aspx"]',
       b'attributes:',
       b'  byte_order: little-endian',
       b'members:',
       b'- name: file_type',
+      b'  aliases: [Type]',
       b'  data_type: uint16',
       b'- name: record_size',
+      b'  aliases: [HeaderSize]',
       b'  data_type: uint16',
       b'- name: format_version',
+      b'  aliases: [Version]',
       b'  data_type: uint16',
-      b'- name: file_size',
-      b'  data_type: uint32',
+      b'- name: file_size_lower',
+      b'  aliases: [SizeLow]',
+      b'  data_type: uint16',
+      b'- name: file_size_upper',
+      b'  aliases: [SizeHigh]',
+      b'  data_type: uint16',
       b'- name: maximum_number_of_objects',
+      b'  aliases: [NumberOfObjects]',
       b'  data_type: uint16',
       b'- name: largest_record_size',
+      b'  aliases: [MaxRecord]',
       b'  data_type: uint32',
       b'- name: number_of_records',
+      b'  aliases: [NumberOfMembers]',
+      b'  data_type: uint16',
+      b'---',
+      b'name: wmf_placeable',
+      b'aliases: [META_PLACEABLE]',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc669452.aspx"]',
+      b'type: structure',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: signature',
+      b'  aliases: [Key]',
+      b'  data_type: uint32',
+      b'- name: resource_handle',
+      b'  aliases: [HWmf]',
+      b'  data_type: uint16',
+      b'- name: bounding_box',
+      b'  aliases: [BoundingBox]',
+      b'  type: stream',
+      b'  element_data_type: byte',
+      b'  number_of_elements: 8',
+      b'- name: number_of_units_per_inch',
+      b'  aliases: [Inch]',
+      b'  data_type: uint16',
+      b'- name: unknown1',
+      b'  aliases: [Reserved]',
+      b'  data_type: uint32',
+      b'- name: checksum',
+      b'  aliases: [Checksum]',
       b'  data_type: uint16',
       b'---',
       # TODO: deprecate wmf_record_header in favor of wmf_record
@@ -1505,15 +1559,21 @@ class WMFFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'wmf_file_header')
+  _HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'wmf_header')
 
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
+  _HEADER_SIZE = _HEADER.GetByteSize()
+
+  _PLACEABLE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'wmf_placeable')
+
+  _PLACEABLE_SIZE = _PLACEABLE.GetByteSize()
 
   _RECORD_TYPE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'wmf_record_type')
 
   _RECORD_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'wmf_record_header')
 
   _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
+
+  _WMF_PLACEABLE_SIGNATURE = b'\xd7\xcd\xc6\x9a'
 
   _MAP_MODE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'wmf_map_mode')
 
@@ -1792,11 +1852,11 @@ class WMFFile(data_format.BinaryDataFile):
       0x00FE02A9: u'DPSOO',
       0x00FF0062: u'WHITENESS'}
 
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
+  def _DebugPrintHeader(self, file_header):
+    """Prints header debug information.
 
     Args:
-      file_header (wmf_file_header): file header.
+      file_header (wmf_header): file header.
     """
     value_string = u'0x{0:04x}'.format(file_header.file_type)
     self._DebugPrintValue(u'File type', value_string)
@@ -1807,8 +1867,11 @@ class WMFFile(data_format.BinaryDataFile):
     value_string = u'{0:d}'.format(file_header.format_version)
     self._DebugPrintValue(u'Format version', value_string)
 
-    value_string = u'{0:d}'.format(file_header.file_size)
-    self._DebugPrintValue(u'File size', value_string)
+    value_string = u'{0:d}'.format(file_header.file_size_lower)
+    self._DebugPrintValue(u'File size lower', value_string)
+
+    value_string = u'{0:d}'.format(file_header.file_size_upper)
+    self._DebugPrintValue(u'File size upper', value_string)
 
     value_string = u'{0:d}'.format(file_header.maximum_number_of_objects)
     self._DebugPrintValue(u'Maximum number of object', value_string)
@@ -1821,11 +1884,36 @@ class WMFFile(data_format.BinaryDataFile):
 
     self._DebugPrintText(u'\n')
 
+  def _DebugPrintPlaceable(self, placeable):
+    """Prints placeable debug information.
+
+    Args:
+      placeable (wmf_placeable): placeable.
+    """
+    value_string = u'0x{0:08x}'.format(placeable.signature)
+    self._DebugPrintValue(u'Signature', value_string)
+
+    value_string = u'0x{0:04x}'.format(placeable.resource_handle)
+    self._DebugPrintValue(u'Resource handle', value_string)
+
+    self._DebugPrintData(u'Bounding box', placeable.bounding_box)
+
+    value_string = u'{0:d}'.format(placeable.number_of_units_per_inch)
+    self._DebugPrintValue(u'Number of units per inch', value_string)
+
+    value_string = u'0x{0:08x}'.format(placeable.unknown1)
+    self._DebugPrintValue(u'Unknown1', value_string)
+
+    value_string = u'0x{0:04x}'.format(placeable.checksum)
+    self._DebugPrintValue(u'Checksum', value_string)
+
+    self._DebugPrintText(u'\n')
+
   def _DebugPrintRecordHeader(self, record_header):
     """Prints record header debug information.
 
     Args:
-      record_header (emf_record_header): record header.
+      record_header (wmf_record_header): record header.
     """
     value_string = u'{0:d} ({1:d} bytes)'.format(
         record_header.record_size, record_header.record_size * 2)
@@ -1838,22 +1926,21 @@ class WMFFile(data_format.BinaryDataFile):
 
     self._DebugPrintText(u'\n')
 
-  def _ReadFileHeader(self, file_object):
-    """Reads a file header.
+  def _ReadHeader(self, file_object):
+    """Reads a header.
 
     Args:
       file_object (file): file-like object.
 
     Raises:
-      ParseError: if the file header cannot be read.
+      ParseError: if the header cannot be read.
     """
     file_offset = file_object.tell()
     file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        u'file header')
+        file_object, file_offset, self._HEADER_SIZE, self._HEADER, u'header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintHeader(file_header)
 
     if file_header.file_type not in (1, 2):
       raise errors.ParseError(u'Unsupported file type: {0:d}'.format(
@@ -1862,6 +1949,23 @@ class WMFFile(data_format.BinaryDataFile):
     if file_header.record_size != 9:
       raise errors.ParseError(u'Unsupported record size: {0:d}'.format(
           file_header.record_size))
+
+  def _ReadPlaceable(self, file_object):
+    """Reads a placeable.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the placeable cannot be read.
+    """
+    file_offset = file_object.tell()
+    placeable = self._ReadStructure(
+        file_object, file_offset, self._PLACEABLE_SIZE, self._PLACEABLE,
+        u'placeable')
+
+    if self._debug:
+      self._DebugPrintPlaceable(placeable)
 
   def _ReadRecord(self, file_object, file_offset):
     """Reads a record.
@@ -1984,8 +2088,22 @@ class WMFFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
     """
-    self._ReadFileHeader(file_object)
+    try:
+      signature = file_object.read(4)
+      file_object.seek(-4, os.SEEK_CUR)
+    except IOError as exception:
+      raise errors.ParseError(
+          u'Unable to read file signature with error: {0!s}'.format(
+              exception))
+
+    if signature == self._WMF_PLACEABLE_SIGNATURE:
+      self._ReadPlaceable(file_object)
+
+    self._ReadHeader(file_object)
 
     file_offset = file_object.tell()
     while file_offset < self._file_size:

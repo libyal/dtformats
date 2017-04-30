@@ -115,7 +115,7 @@ class BinaryDataFormat(object):
         in_group = False
         previous_hexadecimal_string = hexadecimal_string
 
-    lines.append(u'')
+    lines.extend([u'', u''])
     return u'\n'.join(lines)
 
   def _ReadData(self, file_object, file_offset, data_size, description):
@@ -141,7 +141,7 @@ class BinaryDataFormat(object):
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}'.format(
+      self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}\n'.format(
           description, file_offset))
 
     read_error = u''

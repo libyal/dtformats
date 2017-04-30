@@ -5,6 +5,7 @@
 from __future__ import print_function
 import argparse
 import logging
+import os
 import sys
 
 from dtformats import output_writers
@@ -49,22 +50,23 @@ def Main():
   logging.basicConfig(
       level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
-  try:
-    wmf_file = wemf.WMFFile(debug=options.debug, output_writer=output_writer)
-    wmf_file.Open(options.source)
-  except IOError:
-    wmf_file = None
+  with open(options.source, 'rb') as file_object:
+    file_object.seek(40, os.SEEK_SET)
+    emf_signature = file_object.read(4)
 
-  if wmf_file:
-    output_writer.WriteText(u'Windows Metafile information:')
-    wmf_file.Close()
-
+  if emf_signature == b'FME ':
+    file_type = u'Windows Enhanced Metafile'
+    wemf_file = wemf.EMFFile(debug=options.debug, output_writer=output_writer)
   else:
-    emf_file = wemf.EMFFile(debug=options.debug, output_writer=output_writer)
-    emf_file.Open(options.source)
+    file_type = u'Windows Metafile'
+    wemf_file = wemf.WMFFile(debug=options.debug, output_writer=output_writer)
 
-    output_writer.WriteText(u'Windows Enhanced Metafile information:')
-    emf_file.Close()
+  wemf_file.Open(options.source)
+
+  description = u'{0:s} information:'.format(wemf_file.FILE_TYPE)
+  output_writer.WriteText(description)
+
+  wemf_file.Close()
 
   output_writer.Close()
 
