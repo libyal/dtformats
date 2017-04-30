@@ -5,8 +5,7 @@ import datetime
 
 from dtfabric import fabric as dtfabric_fabric
 
-import data_format
-import errors
+from dtformats import data_format
 
 
 class UTMPFile(data_format.BinaryDataFile):

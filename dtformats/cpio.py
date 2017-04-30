@@ -6,9 +6,9 @@ import os
 from dtfabric import errors as dtfabric_errors
 from dtfabric import fabric as dtfabric_fabric
 
-import data_format
-import data_range
-import errors
+from dtformats import data_format
+from dtformats import data_range
+from dtformats import errors
 
 
 class CPIOArchiveFileEntry(data_range.DataRange):
@@ -369,7 +369,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
-      file_offset (int): current file offset.
+      file_offset (int): offset of the data relative from the start of
+          the file-like object.
 
     Raises:
       ParseError: if the file entry cannot be read.

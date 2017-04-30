@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Script to parse UTMP files."""
+"""Script to parse Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
 from __future__ import print_function
 import argparse
@@ -8,7 +8,7 @@ import logging
 import sys
 
 from dtformats import output_writers
-from dtformats import utmp
+from dtformats import wemf
 
 
 def Main():
@@ -18,7 +18,7 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      u'Extracts information from UTMP files.'))
+      u'Extracts information from Windows (Enhanced) Metafile files.'))
 
   argument_parser.add_argument(
       u'-d', u'--debug', dest=u'debug', action=u'store_true', default=False,
@@ -26,7 +26,7 @@ def Main():
 
   argument_parser.add_argument(
       u'source', nargs=u'?', action=u'store', metavar=u'PATH',
-      default=None, help=u'path of the UTMP file.')
+      default=None, help=u'path of the Windows (Enhanced) Metafile file.')
 
   options = argument_parser.parse_args()
 
@@ -37,9 +37,6 @@ def Main():
     print(u'')
     return False
 
-  logging.basicConfig(
-      level=logging.INFO, format=u'[%(levelname)s] %(message)s')
-
   output_writer = output_writers.StdoutWriter()
 
   try:
@@ -49,15 +46,26 @@ def Main():
     print(u'')
     return False
 
-  utmp_file = utmp.UTMPFile(
-      debug=options.debug, output_writer=output_writer)
-  utmp_file.Open(options.source)
+  logging.basicConfig(
+      level=logging.INFO, format=u'[%(levelname)s] %(message)s')
 
-  output_writer.WriteText(u'UTMP information:')
+  try:
+    wmf_file = wemf.WMFFile(debug=options.debug, output_writer=output_writer)
+    wmf_file.Open(options.source)
+  except IOError:
+    wmf_file = None
 
-  utmp_file.Close()
+  if wmf_file:
+    output_writer.WriteText(u'Windows Metafile information:')
+    wmf_file.Close()
 
-  output_writer.WriteText(u'')
+  else:
+    emf_file = wemf.EMFFile(debug=options.debug, output_writer=output_writer)
+    emf_file.Open(options.source)
+
+    output_writer.WriteText(u'Windows Enhanced Metafile information:')
+    emf_file.Close()
+
   output_writer.Close()
 
   return True

@@ -6,7 +6,7 @@ import os
 
 from dtfabric import errors as dtfabric_errors
 
-import errors
+from dtformats import errors
 
 
 class BinaryDataFormat(object):
