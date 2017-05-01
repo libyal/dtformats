@@ -27,7 +27,7 @@ tooling to be able to process these file types.
 [preface]
 == License
 ....
-Copyright (C) 2016, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2016-2017, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the 
 terms of the GNU Free Documentation License, Version 1.3 or any later version 
 published by the Free Software Foundation; with no Invariant Sections, no 
@@ -42,6 +42,7 @@ in the section entitled "GNU Free Documentation License".
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | January 2016 | Initial version.
 | 0.0.2 | J.B. Metz | July 2016 | Additional information.
+| 0.0.3 | J.B. Metz | May 2017 | Textual changes.
 |===
 
 :numbered:
@@ -70,10 +71,11 @@ See section: <<product_versions,Product versions>>
 | 2 | 2 | | Format version
 | 4 | 16 | | Job identifier +
 Contains a UUID stored in little-endian
-| 20 | 2 | | Application name size offset +
-Contains the offest of the size of the application name string +
+| 20 | 2 | | Application name offset +
+Offset to the start of the application name in the variable-length data section +
 The offset is relative from the start of the file
-| 22 | 2 | | Trigger offset +
+| 22 | 2 | | Triggers offset +
+Offset to the start of the <<variable_length_triggers,triggers>> in the variable-length data section +
 The offset is relative from the start of the file
 | 24 | 2 | | Error retry count
 | 26 | 2 | | Error retry interval +
@@ -206,9 +208,8 @@ Contains a <<variable_length_unicode_string,Variable-length Unicode string>>
 Contains a <<variable_length_user_data,User data>>
 | ... | ... | | Reserved Data +
 Contains a <<variable_length_reserved_data,Reserved data>>
-| ... | 2 | | Number of triggers
-| ... | ... | | Array of triggers +
-See section: <<variable_length_trigger,Trigger>
+| ... | ... | | Triggers +
+See section: <<variable_length_triggers,Triggers>
 4+| _Optional_
 | ... | ... | | Job Signature
 |===
@@ -220,7 +221,7 @@ The variable-length Unicode string is variable of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 2 | | String size +
-Contains the number of characters, which does not include in the end-of-string character
+Contains the number of characters including the end-of-string character
 | 2 | ... | | String +
 Contains a UTF-16 little-endian formatted string with end-of-string character
 |===
@@ -232,7 +233,7 @@ The user data is variable of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 2 | | Data size +
-Contains the number of bytes
+Contains the number of bytes or 0 if not set
 | 2 | ... | | Data
 |===
 
@@ -250,7 +251,18 @@ Contains the HRESULT error from the most recent attempt to start the task.
 According to `[MSDN]` the task flags are not used.
 |===
 
-==== [[variable_length_trigger]]Trigger
+==== [[variable_length_triggers]]Triggers
+The triggers are variable of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Number of triggers
+| 2 | ... | | Array of triggers +
+See section: <<variable_length_trigger,Trigger>
+|===
+
+===== [[variable_length_trigger]]Trigger
 The trigger is 48 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -259,22 +271,26 @@ The trigger is 48 bytes of size and consists of:
 | 0 | 2 | 48 | Trigger size +
 Contains the number of bytes
 | 2 | 2 | 0 | [yellow-background]*Unknown (reserved)*
+4+| _Start date_
 | 4 | 2 | | Start year +
 Contains a value in the range of 1601 to 30827
 | 6 | 2 | | Start month +
 Contains a value in the range of 1 to 12
 | 8 | 2 | | Start day of month +
 Contains a value in the range of 1 to 31
+4+| _End date_
 | 10 | 2 | | End year +
 Contains a value in the range of 1601 to 30827
 | 12 | 2 | | End month +
 Contains a value in the range of 1 to 12
 | 14 | 2 | | End day of month +
 Contains a value in the range of 1 to 31
+4+| _Start time_
 | 16 | 2 | | Start hours +
 Contains a value in range 0 to 23
 | 18 | 2 | | Start minutes +
 Contains a value in range 0 to 59
+4+|
 | 20 | 4 | | Duration in minutes
 | 24 | 4 | | Interval in minutes
 | 28 | 4 | | Trigger flags +
