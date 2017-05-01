@@ -425,7 +425,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
       ParseError: if the change log entry cannot be read.
     """
     file_offset = file_object.tell()
-    change_log_entry_record = self._ReadStructure2(
+    change_log_entry_record = self._ReadStructure(
         file_object, file_offset, self._CHANGE_LOG_ENTRY_SIZE,
         self._CHANGE_LOG_ENTRY, u'change log entry record')
 

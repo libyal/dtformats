@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Tests for the Windows Restore Point change.log files."""
+"""Tests for the Windows Task Scheduler job files."""
 
 import unittest
 
-from dtformats import rp_change_log
+from dtformats import job
 
 from tests import test_lib
 
 
 class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
-  """Windows Restore Point change.log file tests."""
+  """Windows Task Scheduler job file tests."""
 
   # TODO: add tests.
 
-  @test_lib.skipUnlessHasTestFile([u'change.log.1'])
+  @test_lib.skipUnlessHasTestFile([u'wintask.job'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = rp_change_log.RestorePointChangeLogFile(
+    test_file = job.WindowsTaskSchedularJobFile(
         output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([u'change.log.1'])
+    test_file_path = self._GetTestFilePath([u'wintask.job'])
     test_file.Open(test_file_path)
 
 
