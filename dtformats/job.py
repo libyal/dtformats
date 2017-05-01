@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Windows Task Scheduler job files."""
 
-import construct
-
 from dtfabric import fabric as dtfabric_fabric
 
 from dtformats import data_format
@@ -10,6 +8,9 @@ from dtformats import data_format
 
 class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
   """Windows Task Scheduler job (.job) file."""
+
+  # TODO: add format definition.
+  # https://msdn.microsoft.com/en-us/library/cc248285.aspx
 
   _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
       b'name: byte',
@@ -78,7 +79,9 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       b'  data_type: uint16',
       b'---',
       b'name: job_fixed_length_data_section',
+      b'aliases: [FIXDLEN_DATA]',
       b'type: structure',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc248286.aspx"]',
       b'attributes:',
       b'  byte_order: little-endian',
       b'members:',
@@ -112,6 +115,46 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       b'  data_type: uint32',
       b'- name: last_run_time',
       b'  data_type: system_time',
+      b'---',
+      b'name: job_string',
+      b'type: structure',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc248301.aspx"]',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: number_of_characters',
+      b'  data_type: uint16',
+      b'- name: string',
+      b'  type: string',
+      b'  encoding: utf-16-le',
+      b'  element_data_type: wchar16',
+      b'  number_of_elements: job_string.number_of_characters',
+      b'---',
+      b'name: job_user_data',
+      b'type: structure',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc248306.aspx"]',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: size',
+      b'  data_type: uint16',
+      b'- name: stream',
+      b'  type: stream',
+      b'  element_data_type: byte',
+      b'  elements_data_size: job_user_data.size',
+      b'---',
+      b'name: job_reserved_data',
+      b'type: structure',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc248307.aspx"]',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: size',
+      b'  data_type: uint16',
+      b'- name: stream',
+      b'  type: stream',
+      b'  element_data_type: byte',
+      b'  elements_data_size: job_reserved_data.size',
       b'---',
       b'name: job_trigger',
       b'type: structure',
@@ -149,33 +192,21 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       b'- name: trigger_reserved3',
       b'  data_type: uint16',
       b'---',
-      b'name: job_string',
+      b'name: job_triggers',
       b'type: structure',
       b'attributes:',
       b'  byte_order: little-endian',
       b'members:',
-      b'- name: number_of_characters',
+      b'- name: number_of_triggers',
       b'  data_type: uint16',
-      b'- name: string',
-      b'  type: string',
-      b'  encoding: utf-16-le',
-      b'  element_data_type: wchar16',
-      b'  number_of_elements: job_string.number_of_characters',
-      b'---',
-      b'name: job_data',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: size',
-      b'  data_type: uint16',
-      b'- name: stream',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: job_data.size',
+      b'- name: triggers_array',
+      b'  type: sequence',
+      b'  element_data_type: job_trigger',
+      b'  number_of_elements: job_triggers.number_of_triggers',
       b'---',
       b'name: job_variable_length_data_section',
       b'type: structure',
+      b'urls: ["https://msdn.microsoft.com/en-us/library/cc248287.aspx"]',
       b'attributes:',
       b'  byte_order: little-endian',
       b'members:',
@@ -192,22 +223,15 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       b'- name: comment',
       b'  data_type: job_string',
       b'- name: user_data',
-      b'  data_type: job_data',
+      b'  data_type: job_user_data',
       b'- name: reserved_data',
-      b'  data_type: job_data',
-      b'---',
-      b'name: job_triggers',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: number_of_triggers',
-      b'  data_type: uint16',
+      b'  data_type: job_reserved_data',
       b'- name: triggers',
-      b'  type: sequence',
-      b'  element_data_type: job_trigger',
-      b'  elements_data_size: job_triggers.number_of_triggers',
+      b'  data_type: job_triggers',
   ])
+
+  # TODO: add job signature
+  # https://msdn.microsoft.com/en-us/library/cc248299.aspx
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
@@ -219,17 +243,6 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
 
   _VARIABLE_LENGTH_DATA_SECTION = _DATA_TYPE_FABRIC.CreateDataTypeMap(
       u'job_variable_length_data_section')
-
-  def __init__(self, debug=False, output_writer=None):
-    """Initializes a Windows Task Scheduler job file.
-
-    Args:
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(WindowsTaskSchedularJobFile, self).__init__(
-        debug=debug, output_writer=output_writer)
-    self._variable_length_data_section_size = None
 
   def _DebugPrintFixedLengthDataSection(self, data_section):
     """Prints fixed-length data section debug information.
@@ -295,8 +308,8 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
 
     self._DebugPrintText(u'\n')
 
-  def _DebugPrintTriger(self, trigger):
-    """Prints trigger section debug information.
+  def _DebugPrintTrigger(self, trigger):
+    """Prints trigger debug information.
 
     Args:
       trigger (job_trigger): trigger.
@@ -396,8 +409,13 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
     self._DebugPrintValue(u'Reserved data size', value_string)
     self._DebugPrintData(u'Reserved data', data_section.reserved_data.stream)
 
-    # value_string = u'{0:d}'.format(data_section.number_of_triggers)
-    # self._DebugPrintValue(u'Number of triggers', value_string)
+    value_string = u'{0:d}'.format(data_section.triggers.number_of_triggers)
+    self._DebugPrintValue(u'Number of triggers', value_string)
+
+    self._DebugPrintText(u'\n')
+
+    for trigger in data_section.triggers.triggers_array:
+      self._DebugPrintTrigger(trigger)
 
   def _ReadFixedLengthDataSection(self, file_object):
     """Reads the fixed-length data section.
@@ -416,9 +434,6 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFixedLengthDataSection(data_section)
 
-    self._variable_length_data_section_size = (
-        data_section.triggers_offset - self._FIXED_LENGTH_DATA_SECTION_SIZE)
-
   def _ReadVariableLengthDataSection(self, file_object):
     """Reads the variable-length data section.
 
@@ -429,8 +444,9 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       IOError: if the variable-length data section cannot be read.
     """
     file_offset = file_object.tell()
+    data_size = self._file_size - file_offset
     data_section = self._ReadStructure(
-        file_object, file_offset, self._variable_length_data_section_size,
+        file_object, file_offset, data_size,
         self._VARIABLE_LENGTH_DATA_SECTION, u'variable-length data section')
 
     if self._debug:
