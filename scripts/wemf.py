@@ -38,6 +38,9 @@ def Main():
     print(u'')
     return False
 
+  logging.basicConfig(
+      level=logging.INFO, format=u'[%(levelname)s] %(message)s')
+
   output_writer = output_writers.StdoutWriter()
 
   try:
@@ -47,18 +50,13 @@ def Main():
     print(u'')
     return False
 
-  logging.basicConfig(
-      level=logging.INFO, format=u'[%(levelname)s] %(message)s')
-
   with open(options.source, 'rb') as file_object:
     file_object.seek(40, os.SEEK_SET)
     emf_signature = file_object.read(4)
 
   if emf_signature == b'FME ':
-    file_type = u'Windows Enhanced Metafile'
     wemf_file = wemf.EMFFile(debug=options.debug, output_writer=output_writer)
   else:
-    file_type = u'Windows Metafile'
     wemf_file = wemf.WMFFile(debug=options.debug, output_writer=output_writer)
 
   wemf_file.Open(options.source)

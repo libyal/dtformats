@@ -1,0 +1,911 @@
+= The Windows Restore Point formats
+
+:toc:
+:toclevels: 4
+
+:numbered!:
+[abstract]
+== Summary
+The Windows Restore Point formats were used by the System Restore subsystem
+prior to Windows Vista. This specification is based on available documentation
+and was enhanced by reverse engineering of the file format. 
+
+This document is intended as a working document for the Windows Restore Point 
+format specifications. Which should allow existing Open Source forensic 
+tooling to be able to process these file types.
+
+[preface]
+== Document information
+[cols="1,5"]
+|===
+| Author(s): | Joachim Metz <joachim.metz@gmail.com>
+| Abstract: | This document contains information about the Windows Restore Point formats
+| Classification: | Public
+| Keywords: | Restore Point, change.log, fifo.log, rp.log
+|===
+
+[preface]
+== License
+....
+Copyright (C) 2015, Joachim Metz <joachim.metz@gmail.com>.
+Permission is granted to copy, distribute and/or modify this document under the 
+terms of the GNU Free Documentation License, Version 1.3 or any later version 
+published by the Free Software Foundation; with no Invariant Sections, no 
+Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included 
+in the section entitled "GNU Free Documentation License".
+....
+
+[preface]
+== Revision history
+[cols="1,1,1,5",options="header"]
+|===
+| Version | Author | Date | Comments
+| 0.0.1 | J.B. Metz | April 2015 | Initial version.
+| 0.0.2 | J.B. Metz | April 2015 | Additional findings for the change.log format.
+| 0.0.3 | J.B. Metz | May 2015 | Additional findings for the change.log format.
+|===
+
+:numbered:
+== Overview
+The Windows Restore Points formats were used by the System Restore subsystem
+in Windows XP, and presumably Windows ME.
+
+
+On Windows XP a Restore Points can be found in:
+....
+C:\System Volume Information\_restore{%GUID%}\
+....
+
+Where %GUID% is the machine GUID, for which the Restore Point was created.
+
+This directory contains:
+
+* `drivetable.txt`; UTF-16 little-endian text file without byte-order-mark
+* `fifo.log`; Restore Point deletion information
+* `RP[1-9][0-9]*` (e.g. `RP1`); a Restore Point sub directory
+
+Each Restore Point sub directory contains:
+
+* `change.log` or `change.log.[1-9]`; 
+* `drivetable.txt`; UTF-16 little-endian text file without byte-order-mark
+* `RestorePointSize`;
+* `rp.log`; Restore Point information log file
+* `snapshot`; the Restore Point Snapshot sub directory
+
+The Restore Point snapshot sub directory contains:
+
+* `ComDb.Dat`; a copy of the COM+ database
+* `domain.txt`; UTF-16 little-endian text file without byte-order-mark
+* a copy of the IIS database
+* `_REGISTRY_[0-9A-Z_]*`; a copy of the Windows Registry hive files
+* `Repository`; sub directory that contains a copy of the WMI repository (also referred to as the Common Information Model (CIM) repository)
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | little-endian
+| Date and time values | FILETIME in UTC
+| Character strings | UTF-16 little-endian formatted string with end-of-string character
+|===
+
+=== Test version
+Files created by the following version of programs were used to test the 
+information within this document:
+
+* [yellow-background]*TODO: Windows ME*
+* Windows XP
+
+=== The fifo.log file
+The fifo.log file contains Restore Point deletion information.
+
+Extended ASCII strings:
+....
+11/14/12-13:54:45 : Fifoed RP1 on drive C:\
+....
+
+[yellow-background]*Date format seems MM/DD/YY*
+
+== The change.log file
+A change.log file consists of:
+
+* change log header
+* change log entries
+
+=== Change log header
+The change log header (CHANGE_LOG_HEADER) is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeLogHeader_
+| 0 | 4 | | Record size +
+Includes the size of the volume path record.
+| 4 | 4 | 0 | Record type
+4+|
+| 8 | 4 | 0xabcdef12 | Signature
+| 12 | 4 | 2 | Format version
+4+| _RECORD_HEADER of type RecordTypeVolumePath_
+| 16 | 4 | | Record size
+| 20 | 4 | 2 | Record type
+4+|
+| 16 | ... | | Volume path +
+UTF-16 little-endian string with end-of-string character.
+4+|
+| ... | 4 | | Copy of record size
+|===
+
+==== Change log record types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | RecordTypeLogHeader | The record contains the header for the change log.
+| 1 | RecordTypeLogEntry | The record contains the header for a change log entry.
+| 2 | RecordTypeVolumePath | The data contains the volume path for the change log entry.
+| 3 | RecordTypeFirstPath | The data contains the file path for the change log entry.
+| 4 | RecordTypeSecondPath | The data contains the file path of the renamed file for the change log entry.
+| 5 | RecordTypeTempPath | The data contains the name of the backup file used to restore the change log entry.
+| 6 | RecordTypeAclInline | The data contains an access control list (ACL).
+| 7 | RecordTypeAclFile | The data contains the name of the ACL file used to store the ACL.
+| 8 | RecordTypeDebugInfo | The data contains debug information for the change log entry.
+| 9 | RecordTypeShortName | The data contains the short name of the backup file.
+|===
+
+=== Change log entry
+The change log entry (CHANGE_LOG_ENTRY) is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeLogEntry_
+| 0 | 4 | | Record size
+| 4 | 4 | 1 | Record type
+4+|
+| 8 | 4 | 0xabcdef12 | Signature
+| 12 | 4 | | Entry type
+| 16 | 4 | | Entry flags
+| 20 | 4 | | File attributes +
+Set to 0xffffffff if not used.
+| 24 | 8 | | Sequence number
+| 32 | 32 | | [yellow-background]*Unknown (empty values)*
+4+| _Process name_
+| 64 | 4 | | [yellow-background]*Unknown (size of process name data)* +
+[yellow-background]*The value does not include the 4 bytes of the size itself*
+| 68 | 4 | | [yellow-background]*Unknown (string data type?)* +
+[yellow-background]*Seen: 0x00000003 (Unicode?)*
+| 73 | ... | | Name of the process that made the change +
+UTF-16 little-endian string with end-of-string character.
+4+| _If < record size - 4_
+| ... | ... | | [yellow-background]*Unknown (sub records?)* +
+[yellow-background]*Contains a list? of records?*
+4+|
+| ... | 4 | | Copy of record size
+|===
+
+==== Change log entry types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000001 | CHANGE_LOG_ENTRYTYPES_STREAMCHANGE | 
+| 0x00000002 | CHANGE_LOG_ENTRYTYPES_ACLCHANGE | 
+| 0x00000004 | CHANGE_LOG_ENTRYTYPES_ATTRCHANGE | 
+| 0x00000008 | CHANGE_LOG_ENTRYTYPES_STREAMOVERWRITE | 
+| 0x00000010 | CHANGE_LOG_ENTRYTYPES_FILEDELETE | 
+| 0x00000020 | CHANGE_LOG_ENTRYTYPES_FILECREATE | 
+| 0x00000040 | CHANGE_LOG_ENTRYTYPES_FILERENAME | 
+| 0x00000080 | CHANGE_LOG_ENTRYTYPES_DIRCREATE | 
+| 0x00000100 | CHANGE_LOG_ENTRYTYPES_DIRRENAME | 
+| 0x00000200 | CHANGE_LOG_ENTRYTYPES_DIRDELETE | 
+| 0x00000400 | CHANGE_LOG_ENTRYTYPES_MOUNTCREATE | 
+| 0x00000800 | CHANGE_LOG_ENTRYTYPES_MOUNTDELETE | 
+| 0x00001000 | CHANGE_LOG_ENTRYTYPES_VOLUMEERROR | 
+| 0x00002000 | CHANGE_LOG_ENTRYTYPES_STREAMCREATE | 
+| 0x00010000 | CHANGE_LOG_ENTRYTYPES_NOOPTIMIZE | 
+| 0x00020000 | CHANGE_LOG_ENTRYTYPES_ISDIR | 
+| 0x00040000 | CHANGE_LOG_ENTRYTYPES_ISNOTDIR | 
+| 0x00080000 | CHANGE_LOG_ENTRYTYPES_SIMULATEDELETE | 
+| 0x00100000 | CHANGE_LOG_ENTRYTYPES_INPRECREATE | 
+| 0x00200000 | CHANGE_LOG_ENTRYTYPES_OPENBYID | 
+|===
+
+==== Change log entry flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000001 | CHANGE_LOG_ENTRYFLAGS_TEMPPATH | 
+| 0x00000002 | CHANGE_LOG_ENTRYFLAGS_SECONDPATH | 
+| 0x00000004 | CHANGE_LOG_ENTRYFLAGS_ACLINFO | 
+| 0x00000008 | CHANGE_LOG_ENTRYFLAGS_DEBUGINFO | 
+| 0x00000010 | CHANGE_LOG_ENTRYFLAGS_SHORTNAME | 
+|===
+
+=== First path record data
+The first path record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeFirstPath_
+| 0 | 4 | | Record size
+| 4 | 4 | 3 | Record type
+4+|
+| 8 | ... | | The first path string +
+UTF-16 little-endian string with end-of-string character.
+|===
+
+*TODO: need sample.*
+
+=== Second path record data
+The second path record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeSecondPath_
+| 0 | 4 | | Record size
+| 4 | 4 | 4 | Record type
+4+|
+| 8 | ... | | The secondary path string +
+UTF-16 little-endian string with end-of-string character.
+|===
+
+=== Backup file record data
+The backup file record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeTempPath_
+| 0 | 4 | | Record size
+| 4 | 4 | 5 | Record type
+4+|
+| 8 | ... | | The backup filename string +
+UTF-16 little-endian string with end-of-string character.
+|===
+
+The backup files are located in the RP# folder. The filename has the following 
+format: `A#######.ext`, where `#######` is a seven-digit number and ext is the file 
+name extension.
+
+=== Inline ACL record data
+The inline ACL record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeAclInline_
+| 0 | 4 | | Record size
+| 4 | 4 | 6 | Record type
+4+|
+| 8 | ... | | [yellow-background]*Unknown (SECURITY_DESCRIPTOR?)*
+|===
+
+[NOTE]
+According to `[MSDN]` this value cannot be larger than 8192 bytes. It states 
+that to specify a value larger than 8192 bytes a RecordTypeAclFile record must 
+be used.
+
+=== File ACL record data
+The file ACL record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeAclFile_
+| 0 | 4 | | Record size
+| 4 | 4 | 7 | Record type
+4+|
+| 8 | ... | | [yellow-background]*Unknown (SECURITY_DESCRIPTOR?)*
+|===
+
+*TODO: need sample.*
+
+The ACL files are located in the RP# folder. The filename has the following 
+format: `S#######.acl`, where `#######` is a seven-digit number.
+
+=== Debug information record data
+The debug information record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeDebugInfo_
+| 0 | 4 | | Record size
+| 4 | 4 | 8 | Record type
+4+|
+| 8 | ... | | [yellow-background]*Unknown (SR_LOG_DEBUG_INFO?)*
+|===
+
+*TODO: need sample.*
+
+....
+typedef struct _SR_LOG_DEBUG_INFO {
+    RECORD_HEADER Header;         // log entry header
+    HANDLE ThreadId;              // thread identifier
+    HANDLE ProcessId;             // process identifier
+    ULARGER_INTEGER TimeStamp;    // event time stamp
+    CHAR ProcesName[13];          // process name
+} SR_LOG_DEBUG_INFO, *PSR_LOG_DEBUG_INFO;
+....
+
+=== Short filename record data
+The short filename record data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _RECORD_HEADER of type RecordTypeShortName_
+| 0 | 4 | | Record size
+| 4 | 4 | 9 | Record type
+4+|
+| 8 | ... | | The short filename string +
+UTF-16 little-endian string with end-of-string character.
+|===
+
+== The rp.log file
+The rp.log file consists of:
+
+* Restore Point information
+* [yellow-background]*Unknown data*
+* file footer
+
+=== Restore point information
+The Restore Point information (RESTOREPOINTINFO) is variable of size and 
+consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Event type |
+See section: <<restore_point_event_types,Event types>>
+| 4 | 4 | | Restore point typeRestore point type +
+See section: <<restore_point_types,Restore point types>>
+| 8 | 8 | | Sequence number
+| 16 | ... | | Description +
+Contains an UTF-16 little-endian string with end-of-string character +
+The string is stored in the primary language configured on the system.
+|===
+
+[yellow-background]*TODO: determine if the description always stored as UTF-16, 
+since WINAPI provides both RESTOREPOINTINFOA and RESTOREPOINTINFOW.*
+
+==== [[restore_point_event_types]]Event types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000064 | BEGIN_SYSTEM_CHANGE | Event to mark the start of a system change.
+| 0x00000065 | END_SYSTEM_CHANGE | Event to mark the end of a system change.
+| 0x00000066 | BEGIN_NESTED_SYSTEM_CHANGE | Event to mark the start of a nested system change. +
+A nested system change does not create a new Restore Point. +
+Must be ended with END_NESTED_SYSTEM_CHANGE, not END_SYSTEM_CHANGE.
+| 0x00000067 | END_NESTED_SYSTEM_CHANGE | Event to mark the end of a nested system change.
+|===
+
+==== [[restore_point_types]]Restore point types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000000 | APPLICATION_INSTALL | Installation of an application.
+| 0x00000001 | APPLICATION_UNINSTALL | Uninstall of an application.
+| | | 
+| 0x00000007 | | [yellow-background]*Unknown* +
+Seen in XP rp.log
+| | | 
+| 0x0000000a | DEVICE_DRIVER_INSTALL | Installation of a device driver.
+| | | 
+| 0x0000000c | MODIFY_SETTINGS | Features added or removed of an application.
+| 0x0000000d | CANCELLED_OPERATION | An application needs to delete the Restore Point it created. +
+For example, an application would use this flag when a user cancels an installation.
+| | | 
+| 0x00000010 | | [yellow-background]*Unknown* +
+Seen in Windows 8 RESTOREPOINTINFO
+|===
+
+=== File footer
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Restore point creation time +
+Contains a FILETIME +
+[yellow-background]*Could this be the rp.log last write time instead?*
+|===
+
+== Notes
+Files Contained in Each RP#Folder
+
+=== rp.log
+....
+00000000  66 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |f...............|
+00000010  49 00 6e 00 73 00 74 00  61 00 6c 00 6c 00 65 00  |I.n.s.t.a.l.l.e.|
+00000020  64 00 20 00 50 00 79 00  74 00 68 00 6f 00 6e 00  |d. .P.y.t.h.o.n.|
+00000030  20 00 6d 00 6f 00 63 00  6b 00 2d 00 31 00 2e 00  | .m.o.c.k.-.1...|
+00000040  30 00 2e 00 31 00 00 00                           |0...1...]...X...|
+
+00000040                           5d 01 00 00 58 aa 12 00  |0...1...]...X...|
+00000050  7c ee ad 00 a6 16 91 7c  62 01 00 00 58 aa 12 00  ||......|b...X...|
+00000060  00 00 0a 00 68 b5 12 00  00 00 00 00 00 00 0a 00  |....h...........|
+00000070  08 e6 11 00 00 00 00 00  5c ef ad 00 4c 08 91 7c  |........\...L..||
+00000080  00 00 0a 00 81 09 91 7c  08 06 0a 00 5d 00 91 7c  |.......|....]..||
+00000090  b8 e2 10 00 10 e6 11 00  10 e6 11 00 00 00 00 00  |................|
+000000a0  03 00 00 00 08 e6 11 00  c8 ee ad 00 00 00 00 00  |................|
+000000b0  b8 00 91 7c 88 1e 10 00  94 ef ad 00 dc ee ad 00  |...|............|
+000000c0  00 00 00 00 b8 00 91 7c  a0 51 11 00 a8 ef ad 00  |.......|.Q......|
+000000d0  41 00 91 7c 08 08 0a 00  5d 00 91 7c 38 d9 0b 00  |A..|....]..|8...|
+000000e0  a8 51 11 00 a8 51 11 00  30 01 00 00 c0 00 00 00  |.Q...Q..0.......|
+000000f0  13 00 00 00 78 01 0a 00  e0 02 0a 00 18 0b 00 00  |....x...........|
+00000100  20 00 00 00 30 00 00 00  00 00 0a 00 e0 02 0a 00  | ...0...........|
+00000110  00 00 0a 00 00 00 0a 00  00 00 00 00 00 00 00 00  |................|
+00000120  00 00 00 00 98 00 00 00  00 00 00 00 26 00 01 01  |............&...|
+00000130  08 00 00 00 a0 ee 00 00  40 00 00 00 44 ed ad 00  |........@...D...|
+00000140  20 e9 90 7c 2d f6 90 7c  10 f0 ad 00 00 00 0a 00  | ..|-..|........|
+00000150  90 ef ad 00 5c f6 90 7c  61 f6 90 7c 34 00 00 c0  |....\..|a..|4...|
+00000160  00 00 0a 00 2d f6 01 00  13 00 00 00 d8 ee ad 00  |....-...........|
+00000170  d8 ef ad 00 cc ef ad 00  20 e9 01 00 08 00 00 00  |........ .......|
+00000180  ec ee ad 00 5d 00 91 7c  e0 ef ad 00 20 e9 90 7c  |....]..|.... ..||
+00000190  60 00 91 7c ff ff ff ff  5d 00 91 7c cf fd 7d 7c  |`..|....]..|..}||
+000001a0  00 00 0a 00 00 00 00 00  9f fd 7d 7c 38 d9 0b 00  |..........}|8...|
+000001b0  a8 51 11 00 00 00 00 00  48 9b 80 7c a4 ff ad 00  |.Q......H..|....|
+000001c0  48 9b 80 7c a8 fd 7d 7c  bc ef ad 00 9f fd 7d 7c  |H..|..}|......}||
+000001d0  a4 ff ad 00 48 9b 80 7c  a8 fd 7d 7c ff ff ff ff  |....H..|..}|....|
+000001e0  9f fd 7d 7c e6 5f 2d 7d  a8 51 11 00 08 f0 ad 00  |..}|._-}.Q......|
+000001f0  02 f3 38 7d a8 51 11 00  14 f0 ad 00 4e f4 38 7d  |..8}.Q......N.8}|
+00000200  a8 51 11 00 24 f0 ad 00  76 60 2d 7d 18 6c 3a 7d  |.Q..$...v`-}.l:}|
+....
+
+....
+00000000  64 00 00 00 07 00 00 00  88 61 07 07 64 fa b2 00  |d........a..d...|
+
+00000010  43 00 6f 00 6e 00 74 00  72 00 6f 00 6c 00 65 00  |C.o.n.t.r.o.l.e.|
+00000020  70 00 75 00 6e 00 74 00  20 00 76 00 61 00 6e 00  |p.u.n.t. .v.a.n.|
+00000030  20 00 73 00 79 00 73 00  74 00 65 00 65 00 6d 00  | .s.y.s.t.e.e.m.|
+00000040  00 00                                             |....p...A..|8...|
+
+00000040        07 07 70 fd b2 00  41 00 91 7c 38 0b 09 00  |....p...A..|8...|
+00000050  5d 00 91 7c 00 00 00 00  00 d5 11 00 00 00 00 00  |]..|............|
+00000060  d8 fc b2 00 c4 2c 7e 7c  58 59 0d 00 38 e7 11 00  |.....,~|XY..8...|
+00000070  30 75 00 00 fe ff ff ff  f0 fc b2 00 85 32 56 42  |0u...........2VB|
+00000080  00 00 00 00 00 00 09 00  30 75 00 00 fc fc b2 00  |........0u......|
+00000090  00 00 00 00 b8 00 91 7c  30 9d 88 05 c8 fd b2 00  |.......|0.......|
+000000a0  41 00 91 7c 48 07 09 00  5d 00 91 7c 1c fd b2 00  |A..|H...]..|....|
+000000b0  00 00 00 00 b8 00 91 7c  68 88 29 07 e8 fd b2 00  |.......|h.).....|
+000000c0  41 00 91 7c e8 06 09 00  5d 00 91 7c 00 00 00 00  |A..|....]..|....|
+000000d0  00 d5 11 00 00 00 00 00  00 00 09 00 34 70 5c 77  |............4p\w|
+000000e0  80 48 0e 77 68 61 07 07  00 00 00 00 78 fd b2 00  |.H.wha......x...|
+000000f0  3e ad 01 00 19 00 00 00  0b 00 00 00 44 61 07 07  |>...........Da..|
+00000100  70 fe b2 00 20 e9 90 7c  20 00 00 00 ff ff ff ff  |p... ..| .......|
+00000110  5d 00 91 7c 6f c6 59 42  00 00 09 00 00 00 00 00  |]..|o.YB........|
+00000120  30 61 07 07 00 00 00 00  00 00 00 00 80 b1 e6 06  |0a..............|
+00000130  5c 08 00 00 2c 08 00 00  58 00 00 00 cc fd 00 00  |\...,...X.......|
+00000140  00 00 09 00 9c fb b2 00  36 14 4c 77 00 00 00 00  |........6.Lw....|
+00000150  10 fe b2 00 e8 77 5c 77  00 00 00 00 00 00 00 00  |.....w\w........|
+00000160  70 db c2 06 ac fd b2 00  2c a3 09 00 70 fe b2 00  |p.......,...p...|
+00000170  79 4d 5b 77 00 00 00 00  10 fe b2 00 70 db c2 06  |yM[w........p...|
+00000180  00 00 00 00 00 c0 fd 7f  48 fe b2 00 2a 26 7d 7c  |........H...*&}||
+00000190  04 fe b2 00 00 26 7d 7c  5c 08 00 00 00 00 00 00  |.....&}|\.......|
+000001a0  00 00 00 00 14 00 00 00  01 00 00 00 00 00 00 00  |................|
+000001b0  00 00 00 00 10 00 00 00  00 00 00 00 00 00 00 00  |................|
+000001c0  00 a0 fd 7f 00 c0 fd 7f  18 fe b2 00 02 01 00 00  |................|
+000001d0  f8 fd b2 00 fc fd b2 00  c8 fe b2 00 48 9b 80 7c  |............H..||
+000001e0  08 26 7d 7c ff ff ff ff  00 26 7d 7c 42 25 7d 7c  |.&}|.....&}|B%}||
+000001f0  5c 08 00 00 00 00 00 00  00 00 00 00 78 fe b2 00  |\...........x...|
+00000200  6b 0f 13 75 5c 08 00 00  00 00 00 00 00 00 00 00  |k..u\...........|
+....
+
+=== Corresponding Registry keys
+....
+HKEY_LOCAL_MACHINE\Software\Microsoft\WindowsNT\CurrentVersion\SystemRestore
+....
+
+=== Machine GUID
+On Windows XP SP2 the machine GUID can be found in:
+....
+%SytemRoot%\System32\Restore\MachineGUID.txt
+....
+
+:numbered!:
+[appendix]
+== References
+
+`[BUNTING]`
+
+[cols="1,5",options="header"]
+|===
+| Title: | Restore Point Forensics
+| Author(s): | Steve Bunting
+| URL: | http://www.stevebunting.org/udpd4n6/forensics/restorepoints.htm
+|===
+
+`[MSDN]`
+
+[cols="1,5",options="header"]
+|===
+| Title: | MSDN
+| URL: | https://msdn.microsoft.com/en-us/library/windows/desktop/bb395209(v=vs.85).aspx +
+https://msdn.microsoft.com/en-us/library/windows/desktop/aa378903(v=vs.85).aspx +
+https://msdn.microsoft.com/en-us/library/windows/desktop/aa378947(v=vs.85).aspx +
+https://msdn.microsoft.com/en-us/library/windows/desktop/bb395208(v=vs.85).aspx +
+https://msdn.microsoft.com/en-us/library/windows/desktop/bb395207(v=vs.85).aspx
+|===
+
+[appendix]
+== GNU Free Documentation License
+Version 1.3, 3 November 2008
+Copyright © 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc. 
+<http://fsf.org/>
+
+Everyone is permitted to copy and distribute verbatim copies of this license 
+document, but changing it is not allowed.
+
+=== 0. PREAMBLE
+The purpose of this License is to make a manual, textbook, or other functional 
+and useful document "free" in the sense of freedom: to assure everyone the 
+effective freedom to copy and redistribute it, with or without modifying it, 
+either commercially or noncommercially. Secondarily, this License preserves for 
+the author and publisher a way to get credit for their work, while not being 
+considered responsible for modifications made by others.
+
+This License is a kind of "copyleft", which means that derivative works of the 
+document must themselves be free in the same sense. It complements the GNU 
+General Public License, which is a copyleft license designed for free software.
+
+We have designed this License in order to use it for manuals for free software, 
+because free software needs free documentation: a free program should come with 
+manuals providing the same freedoms that the software does. But this License is 
+not limited to software manuals; it can be used for any textual work, 
+regardless of subject matter or whether it is published as a printed book. We 
+recommend this License principally for works whose purpose is instruction or 
+reference.
+
+=== 1. APPLICABILITY AND DEFINITIONS
+This License applies to any manual or other work, in any medium, that contains 
+a notice placed by the copyright holder saying it can be distributed under the 
+terms of this License. Such a notice grants a world-wide, royalty-free license, 
+unlimited in duration, to use that work under the conditions stated herein. The 
+"Document", below, refers to any such manual or work. Any member of the public 
+is a licensee, and is addressed as "you". You accept the license if you copy, 
+modify or distribute the work in a way requiring permission under copyright law.
+
+A "Modified Version" of the Document means any work containing the Document or 
+a portion of it, either copied verbatim, or with modifications and/or 
+translated into another language.
+
+A "Secondary Section" is a named appendix or a front-matter section of the 
+Document that deals exclusively with the relationship of the publishers or 
+authors of the Document to the Document's overall subject (or to related 
+matters) and contains nothing that could fall directly within that overall 
+subject. (Thus, if the Document is in part a textbook of mathematics, a 
+Secondary Section may not explain any mathematics.) The relationship could be a 
+matter of historical connection with the subject or with related matters, or of 
+legal, commercial, philosophical, ethical or political position regarding them.
+
+The "Invariant Sections" are certain Secondary Sections whose titles are 
+designated, as being those of Invariant Sections, in the notice that says that 
+the Document is released under this License. If a section does not fit the 
+above definition of Secondary then it is not allowed to be designated as 
+Invariant. The Document may contain zero Invariant Sections. If the Document 
+does not identify any Invariant Sections then there are none.
+
+The "Cover Texts" are certain short passages of text that are listed, as 
+Front-Cover Texts or Back-Cover Texts, in the notice that says that the 
+Document is released under this License. A Front-Cover Text may be at most 5 
+words, and a Back-Cover Text may be at most 25 words.
+
+A "Transparent" copy of the Document means a machine-readable copy, represented 
+in a format whose specification is available to the general public, that is 
+suitable for revising the document straightforwardly with generic text editors 
+or (for images composed of pixels) generic paint programs or (for drawings) 
+some widely available drawing editor, and that is suitable for input to text 
+formatters or for automatic translation to a variety of formats suitable for 
+input to text formatters. A copy made in an otherwise Transparent file format 
+whose markup, or absence of markup, has been arranged to thwart or discourage 
+subsequent modification by readers is not Transparent. An image format is not 
+Transparent if used for any substantial amount of text. A copy that is not 
+"Transparent" is called "Opaque".
+
+Examples of suitable formats for Transparent copies include plain ASCII without 
+markup, Texinfo input format, LaTeX input format, SGML or XML using a publicly 
+available DTD, and standard-conforming simple HTML, PostScript or PDF designed 
+for human modification. Examples of transparent image formats include PNG, XCF 
+and JPG. Opaque formats include proprietary formats that can be read and edited 
+only by proprietary word processors, SGML or XML for which the DTD and/or 
+processing tools are not generally available, and the machine-generated HTML, 
+PostScript or PDF produced by some word processors for output purposes only.
+
+The "Title Page" means, for a printed book, the title page itself, plus such 
+following pages as are needed to hold, legibly, the material this License 
+requires to appear in the title page. For works in formats which do not have 
+any title page as such, "Title Page" means the text near the most prominent 
+appearance of the work's title, preceding the beginning of the body of the text.
+
+The "publisher" means any person or entity that distributes copies of the 
+Document to the public.
+
+A section "Entitled XYZ" means a named subunit of the Document whose title 
+either is precisely XYZ or contains XYZ in parentheses following text that 
+translates XYZ in another language. (Here XYZ stands for a specific section 
+name mentioned below, such as "Acknowledgements", "Dedications", 
+"Endorsements", or "History".) To "Preserve the Title" of such a section when 
+you modify the Document means that it remains a section "Entitled XYZ" 
+according to this definition.
+
+The Document may include Warranty Disclaimers next to the notice which states 
+that this License applies to the Document. These Warranty Disclaimers are 
+considered to be included by reference in this License, but only as regards 
+disclaiming warranties: any other implication that these Warranty Disclaimers 
+may have is void and has no effect on the meaning of this License.
+
+=== 2. VERBATIM COPYING
+You may copy and distribute the Document in any medium, either commercially or 
+noncommercially, provided that this License, the copyright notices, and the 
+license notice saying this License applies to the Document are reproduced in 
+all copies, and that you add no other conditions whatsoever to those of this 
+License. You may not use technical measures to obstruct or control the reading 
+or further copying of the copies you make or distribute. However, you may 
+accept compensation in exchange for copies. If you distribute a large enough 
+number of copies you must also follow the conditions in section 3.
+
+You may also lend copies, under the same conditions stated above, and you may 
+publicly display copies.
+
+=== 3. COPYING IN QUANTITY
+If you publish printed copies (or copies in media that commonly have printed 
+covers) of the Document, numbering more than 100, and the Document's license 
+notice requires Cover Texts, you must enclose the copies in covers that carry, 
+clearly and legibly, all these Cover Texts: Front-Cover Texts on the front 
+cover, and Back-Cover Texts on the back cover. Both covers must also clearly 
+and legibly identify you as the publisher of these copies. The front cover must 
+present the full title with all words of the title equally prominent and 
+visible. You may add other material on the covers in addition. Copying with 
+changes limited to the covers, as long as they preserve the title of the 
+Document and satisfy these conditions, can be treated as verbatim copying in 
+other respects.
+
+If the required texts for either cover are too voluminous to fit legibly, you 
+should put the first ones listed (as many as fit reasonably) on the actual 
+cover, and continue the rest onto adjacent pages.
+
+If you publish or distribute Opaque copies of the Document numbering more than 
+100, you must either include a machine-readable Transparent copy along with 
+each Opaque copy, or state in or with each Opaque copy a computer-network 
+location from which the general network-using public has access to download 
+using public-standard network protocols a complete Transparent copy of the 
+Document, free of added material. If you use the latter option, you must take 
+reasonably prudent steps, when you begin distribution of Opaque copies in 
+quantity, to ensure that this Transparent copy will remain thus accessible at 
+the stated location until at least one year after the last time you distribute 
+an Opaque copy (directly or through your agents or retailers) of that edition 
+to the public.
+
+It is requested, but not required, that you contact the authors of the Document 
+well before redistributing any large number of copies, to give them a chance to 
+provide you with an updated version of the Document.
+
+=== 4. MODIFICATIONS
+You may copy and distribute a Modified Version of the Document under the 
+conditions of sections 2 and 3 above, provided that you release the Modified 
+Version under precisely this License, with the Modified Version filling the 
+role of the Document, thus licensing distribution and modification of the 
+Modified Version to whoever possesses a copy of it. In addition, you must do 
+these things in the Modified Version:
+
+A. Use in the Title Page (and on the covers, if any) a title distinct from that 
+of the Document, and from those of previous versions (which should, if there 
+were any, be listed in the History section of the Document). You may use the 
+same title as a previous version if the original publisher of that version 
+gives permission. 
+
+B. List on the Title Page, as authors, one or more persons or entities 
+responsible for authorship of the modifications in the Modified Version, 
+together with at least five of the principal authors of the Document (all of 
+its principal authors, if it has fewer than five), unless they release you from 
+this requirement. 
+
+C. State on the Title page the name of the publisher of the Modified Version, 
+as the publisher. 
+
+D. Preserve all the copyright notices of the Document. 
+
+E. Add an appropriate copyright notice for your modifications adjacent to the 
+other copyright notices. 
+
+F. Include, immediately after the copyright notices, a license notice giving 
+the public permission to use the Modified Version under the terms of this 
+License, in the form shown in the Addendum below. 
+
+G. Preserve in that license notice the full lists of Invariant Sections and 
+required Cover Texts given in the Document's license notice. 
+
+H. Include an unaltered copy of this License. 
+
+I. Preserve the section Entitled "History", Preserve its Title, and add to it 
+an item stating at least the title, year, new authors, and publisher of the 
+Modified Version as given on the Title Page. If there is no section Entitled 
+"History" in the Document, create one stating the title, year, authors, and 
+publisher of the Document as given on its Title Page, then add an item 
+describing the Modified Version as stated in the previous sentence. 
+
+J. Preserve the network location, if any, given in the Document for public 
+access to a Transparent copy of the Document, and likewise the network 
+locations given in the Document for previous versions it was based on. These 
+may be placed in the "History" section. You may omit a network location for a 
+work that was published at least four years before the Document itself, or if 
+the original publisher of the version it refers to gives permission. 
+
+K. For any section Entitled "Acknowledgements" or "Dedications", Preserve the 
+Title of the section, and preserve in the section all the substance and tone of 
+each of the contributor acknowledgements and/or dedications given therein. 
+
+L. Preserve all the Invariant Sections of the Document, unaltered in their text 
+and in their titles. Section numbers or the equivalent are not considered part 
+of the section titles. 
+
+M. Delete any section Entitled "Endorsements". Such a section may not be 
+included in the Modified Version. 
+
+N. Do not retitle any existing section to be Entitled "Endorsements" or to 
+conflict in title with any Invariant Section. 
+
+O. Preserve any Warranty Disclaimers. 
+
+If the Modified Version includes new front-matter sections or appendices that 
+qualify as Secondary Sections and contain no material copied from the Document, 
+you may at your option designate some or all of these sections as invariant. To 
+do this, add their titles to the list of Invariant Sections in the Modified 
+Version's license notice. These titles must be distinct from any other section 
+titles.
+
+You may add a section Entitled "Endorsements", provided it contains nothing but 
+endorsements of your Modified Version by various parties—for example, 
+statements of peer review or that the text has been approved by an organization 
+as the authoritative definition of a standard.
+
+You may add a passage of up to five words as a Front-Cover Text, and a passage 
+of up to 25 words as a Back-Cover Text, to the end of the list of Cover Texts 
+in the Modified Version. Only one passage of Front-Cover Text and one of 
+Back-Cover Text may be added by (or through arrangements made by) any one 
+entity. If the Document already includes a cover text for the same cover, 
+previously added by you or by arrangement made by the same entity you are 
+acting on behalf of, you may not add another; but you may replace the old one, 
+on explicit permission from the previous publisher that added the old one.
+
+The author(s) and publisher(s) of the Document do not by this License give 
+permission to use their names for publicity for or to assert or imply 
+endorsement of any Modified Version.
+
+=== 5. COMBINING DOCUMENTS
+You may combine the Document with other documents released under this License, 
+under the terms defined in section 4 above for modified versions, provided that 
+you include in the combination all of the Invariant Sections of all of the 
+original documents, unmodified, and list them all as Invariant Sections of your 
+combined work in its license notice, and that you preserve all their Warranty 
+Disclaimers.
+
+The combined work need only contain one copy of this License, and multiple 
+identical Invariant Sections may be replaced with a single copy. If there are 
+multiple Invariant Sections with the same name but different contents, make the 
+title of each such section unique by adding at the end of it, in parentheses, 
+the name of the original author or publisher of that section if known, or else 
+a unique number. Make the same adjustment to the section titles in the list of 
+Invariant Sections in the license notice of the combined work.
+
+In the combination, you must combine any sections Entitled "History" in the 
+various original documents, forming one section Entitled "History"; likewise 
+combine any sections Entitled "Acknowledgements", and any sections Entitled 
+"Dedications". You must delete all sections Entitled "Endorsements".
+
+=== 6. COLLECTIONS OF DOCUMENTS
+You may make a collection consisting of the Document and other documents 
+released under this License, and replace the individual copies of this License 
+in the various documents with a single copy that is included in the collection, 
+provided that you follow the rules of this License for verbatim copying of each 
+of the documents in all other respects.
+
+You may extract a single document from such a collection, and distribute it 
+individually under this License, provided you insert a copy of this License 
+into the extracted document, and follow this License in all other respects 
+regarding verbatim copying of that document.
+
+=== 7. AGGREGATION WITH INDEPENDENT WORKS
+A compilation of the Document or its derivatives with other separate and 
+independent documents or works, in or on a volume of a storage or distribution 
+medium, is called an "aggregate" if the copyright resulting from the 
+compilation is not used to limit the legal rights of the compilation's users 
+beyond what the individual works permit. When the Document is included in an 
+aggregate, this License does not apply to the other works in the aggregate 
+which are not themselves derivative works of the Document.
+
+If the Cover Text requirement of section 3 is applicable to these copies of the 
+Document, then if the Document is less than one half of the entire aggregate, 
+the Document's Cover Texts may be placed on covers that bracket the Document 
+within the aggregate, or the electronic equivalent of covers if the Document is 
+in electronic form. Otherwise they must appear on printed covers that bracket 
+the whole aggregate.
+
+=== 8. TRANSLATION
+Translation is considered a kind of modification, so you may distribute 
+translations of the Document under the terms of section 4. Replacing Invariant 
+Sections with translations requires special permission from their copyright 
+holders, but you may include translations of some or all Invariant Sections in 
+addition to the original versions of these Invariant Sections. You may include 
+a translation of this License, and all the license notices in the Document, and 
+any Warranty Disclaimers, provided that you also include the original English 
+version of this License and the original versions of those notices and 
+disclaimers. In case of a disagreement between the translation and the original 
+version of this License or a notice or disclaimer, the original version will 
+prevail.
+
+If a section in the Document is Entitled "Acknowledgements", "Dedications", or 
+"History", the requirement (section 4) to Preserve its Title (section 1) will 
+typically require changing the actual title.
+
+=== 9. TERMINATION
+You may not copy, modify, sublicense, or distribute the Document except as 
+expressly provided under this License. Any attempt otherwise to copy, modify, 
+sublicense, or distribute it is void, and will automatically terminate your 
+rights under this License.
+
+However, if you cease all violation of this License, then your license from a 
+particular copyright holder is reinstated (a) provisionally, unless and until 
+the copyright holder explicitly and finally terminates your license, and (b) 
+permanently, if the copyright holder fails to notify you of the violation by 
+some reasonable means prior to 60 days after the cessation.
+
+Moreover, your license from a particular copyright holder is reinstated 
+permanently if the copyright holder notifies you of the violation by some 
+reasonable means, this is the first time you have received notice of violation 
+of this License (for any work) from that copyright holder, and you cure the 
+violation prior to 30 days after your receipt of the notice.
+
+Termination of your rights under this section does not terminate the licenses 
+of parties who have received copies or rights from you under this License. If 
+your rights have been terminated and not permanently reinstated, receipt of a 
+copy of some or all of the same material does not give you any rights to use it.
+
+=== 10. FUTURE REVISIONS OF THIS LICENSE
+The Free Software Foundation may publish new, revised versions of the GNU Free 
+Documentation License from time to time. Such new versions will be similar in 
+spirit to the present version, but may differ in detail to address new problems 
+or concerns. See http://www.gnu.org/copyleft/.
+
+Each version of the License is given a distinguishing version number. If the 
+Document specifies that a particular numbered version of this License "or any 
+later version" applies to it, you have the option of following the terms and 
+conditions either of that specified version or of any later version that has 
+been published (not as a draft) by the Free Software Foundation. If the 
+Document does not specify a version number of this License, you may choose any 
+version ever published (not as a draft) by the Free Software Foundation. If the 
+Document specifies that a proxy can decide which future versions of this 
+License can be used, that proxy's public statement of acceptance of a version 
+permanently authorizes you to choose that version for the Document.
+
+=== 11. RELICENSING
+"Massive Multiauthor Collaboration Site" (or "MMC Site") means any World Wide 
+Web server that publishes copyrightable works and also provides prominent 
+facilities for anybody to edit those works. A public wiki that anybody can edit 
+is an example of such a server. A "Massive Multiauthor Collaboration" (or 
+"MMC") contained in the site means any set of copyrightable works thus 
+published on the MMC site.
+
+"CC-BY-SA" means the Creative Commons Attribution-Share Alike 3.0 license 
+published by Creative Commons Corporation, a not-for-profit corporation with a 
+principal place of business in San Francisco, California, as well as future 
+copyleft versions of that license published by that same organization.
+
+"Incorporate" means to publish or republish a Document, in whole or in part, as 
+part of another Document.
+
+An MMC is "eligible for relicensing" if it is licensed under this License, and 
+if all works that were first published under this License somewhere other than 
+this MMC, and subsequently incorporated in whole or in part into the MMC, (1) 
+had no cover texts or invariant sections, and (2) were thus incorporated prior 
+to November 1, 2008.
+
+The operator of an MMC Site may republish an MMC contained in the site under 
+CC-BY-SA on the same site at any time before August 1, 2009, provided the MMC 
+is eligible for relicensing.
+

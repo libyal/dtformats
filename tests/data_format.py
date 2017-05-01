@@ -100,7 +100,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     expected_output = [
         u'Description:\n',
         (u'0x00000000  00 01 02 03 04 05 06                              '
-         u'.......\n')]
+         u'.......\n\n')]
     self.assertEqual(output_writer.output, expected_output)
 
   def testDebugPrintValue(self):
@@ -132,21 +132,24 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     data = b'\x00\x01\x02\x03\x04\x05\x06'
     expected_formatted_data = (
         u'0x00000000  00 01 02 03 04 05 06                              '
-        u'.......\n')
+        u'.......\n'
+        u'\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09'
     expected_formatted_data = (
         u'0x00000000  00 01 02 03 04 05 06 07  08 09                    '
-        u'..........\n')
+        u'..........\n'
+        u'\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
     expected_formatted_data = (
         u'0x00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
-        u'................\n')
+        u'................\n'
+        u'\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
@@ -159,7 +162,8 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         u'................\n'
         u'...\n'
         u'0x00000020  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
-        u'................\n')
+        u'................\n'
+        u'\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 

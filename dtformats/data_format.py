@@ -186,6 +186,36 @@ class BinaryDataFormat(object):
     return self._ReadStructureFromByteStream(
         data, file_offset, data_type_map, description)
 
+  def _ReadStructure2(
+      self, file_object, file_offset, data_size, data_type_map, description):
+    """Reads a structure.
+
+    Args:
+      file_object (file): a file-like object.
+      file_offset (int): offset of the data relative from the start of
+          the file-like object.
+      data_size (int): data size of the structure.
+      data_type_map (dtfabric.DataTypeMap): data type map of the structure.
+      description (str): description of the structure.
+
+    Returns:
+      object: structure values object.
+
+    Raises:
+      ParseError: if the structure cannot be read.
+      ValueError: if file-like object or date type map are invalid.
+    """
+    for size_hint in data_type_map.GetSizeHints():
+      if size_hint.data_offset is None or size_hint.data_size is None:
+        break
+
+      data_offset = file_offset + size_hint.data_offset
+      data = self._ReadData(
+          file_object, data_offset, size_hint.data_size, description)
+
+    return self._ReadStructureFromByteStream(
+        data, file_offset, data_type_map, description)
+
   def _ReadStructureFromByteStream(
       self, byte_stream, file_offset, data_type_map, description):
     """Reads a structure from a byte stream.
