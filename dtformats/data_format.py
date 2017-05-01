@@ -5,6 +5,7 @@ import abc
 import os
 
 from dtfabric import errors as dtfabric_errors
+from dtfabric import data_maps as dtfabric_data_maps
 
 from dtformats import errors
 
@@ -186,38 +187,41 @@ class BinaryDataFormat(object):
     return self._ReadStructureFromByteStream(
         data, file_offset, data_type_map, description)
 
-  def _ReadStructure2(
-      self, file_object, file_offset, data_size, data_type_map, description):
-    """Reads a structure.
+  def _ReadStructureWithSizeHint(
+      self, file_object, file_offset, data_type_map, description):
+    """Reads a structure using a size hint.
 
     Args:
       file_object (file): a file-like object.
       file_offset (int): offset of the data relative from the start of
           the file-like object.
-      data_size (int): data size of the structure.
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
       description (str): description of the structure.
 
     Returns:
-      object: structure values object.
+      tuple[object, int]: structure values object and data size of
+          the structure.
 
     Raises:
       ParseError: if the structure cannot be read.
       ValueError: if file-like object or date type map are invalid.
     """
-    for size_hint in data_type_map.GetSizeHints():
-      if size_hint.data_offset is None or size_hint.data_size is None:
-        break
+    context = None
+    while True:
+      size_hint = data_type_map.GetSizeHint(context=context)
+      data = self._ReadData(file_object, file_offset, size_hint, description)
 
-      data_offset = file_offset + size_hint.data_offset
-      data = self._ReadData(
-          file_object, data_offset, size_hint.data_size, description)
+      try:
+        context = dtfabric_data_maps.DataTypeMapContext()
+        structure_values_object = self._ReadStructureFromByteStream(
+            data, file_offset, data_type_map, description, context=context)
+        return structure_values_object, size_hint
 
-    return self._ReadStructureFromByteStream(
-        data, file_offset, data_type_map, description)
+      except dtfabric_errors.ByteStreamTooSmallError:
+        pass
 
   def _ReadStructureFromByteStream(
-      self, byte_stream, file_offset, data_type_map, description):
+      self, byte_stream, file_offset, data_type_map, description, context=None):
     """Reads a structure from a byte stream.
 
     Args:
@@ -226,6 +230,7 @@ class BinaryDataFormat(object):
           the file-like object.
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
       description (str): description of the structure.
+      context (Optional[dtfabric.DataTypeMapContext]): data type map context.
 
     Returns:
       object: structure values object.
@@ -245,7 +250,7 @@ class BinaryDataFormat(object):
       self._DebugPrintData(data_description, byte_stream)
 
     try:
-      return data_type_map.MapByteStream(byte_stream)
+      return data_type_map.MapByteStream(byte_stream, context=context)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
           u'Unable to map {0:s} data at offset: 0x{1:08x} with error: '

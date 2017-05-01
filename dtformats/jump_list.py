@@ -123,6 +123,13 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       b'  size: 2',
       b'  units: bytes',
       b'---',
+      b'name: int32',
+      b'type: integer',
+      b'attributes:',
+      b'  format: signed',
+      b'  size: 4',
+      b'  units: bytes',
+      b'---',
       b'name: uint32',
       b'type: integer',
       b'attributes:',
@@ -200,9 +207,14 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       b'- name: last_modification_time',
       b'  data_type: uint64',
       b'- name: pin_status',
-      b'  data_type: uint32',
+      b'  data_type: int32',
       b'- name: path_size',
       b'  data_type: uint16',
+      b'- name: path',
+      b'  type: string',
+      b'  encoding: utf-16-le',
+      b'  element_data_type: wchar16',
+      b'  number_of_elements: dest_list_entry_v1.path_size',
       b'---',
       b'name: dest_list_entry_v3',
       b'type: structure',
@@ -233,21 +245,22 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       b'- name: last_modification_time',
       b'  data_type: uint64',
       b'- name: pin_status',
-      b'  data_type: uint32',
+      b'  data_type: int32',
       b'- name: unknown4',
-      b'  data_type: uint32',
+      b'  data_type: int32',
       b'- name: unknown5',
       b'  data_type: uint32',
       b'- name: unknown6',
       b'  data_type: uint64',
       b'- name: path_size',
       b'  data_type: uint16',
-      b'---',
-      b'name: dest_list_entry_path',
-      b'type: string',
-      b'encoding: utf-16-le',
-      b'element_data_type: wchar16',
-      b'number_of_elements: dest_list_entry.path_size',
+      b'- name: path',
+      b'  type: string',
+      b'  encoding: utf-16-le',
+      b'  element_data_type: wchar16',
+      b'  number_of_elements: dest_list_entry_v3.path_size',
+      b'- name: unknown7',
+      b'  data_type: uint32',
   ])
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
@@ -260,15 +273,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
   _DEST_LIST_ENTRY_V1 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
       u'dest_list_entry_v1')
 
-  _DEST_LIST_ENTRY_V1_SIZE = _DEST_LIST_ENTRY_V1.GetByteSize()
-
   _DEST_LIST_ENTRY_V3 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
       u'dest_list_entry_v3')
-
-  _DEST_LIST_ENTRY_V3_SIZE = _DEST_LIST_ENTRY_V3.GetByteSize()
-
-  _DEST_LIST_ENTRY_PATH = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'dest_list_entry_path')
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes an Automatic Destinations Jump List file.
@@ -322,11 +328,11 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     self._DebugPrintValue(u'Last modification time', value_string)
 
     # TODO: debug print pin status.
-    value_string = u'0x{0:08x}'.format(dest_list_entry.pin_status)
+    value_string = u'{0:d}'.format(dest_list_entry.pin_status)
     self._DebugPrintValue(u'Pin status', value_string)
 
     if self._format_version >= 3:
-      value_string = u'0x{0:08x}'.format(dest_list_entry.unknown4)
+      value_string = u'{0:d}'.format(dest_list_entry.unknown4)
       self._DebugPrintValue(u'Unknown4', value_string)
 
       value_string = u'0x{0:08x}'.format(dest_list_entry.unknown5)
@@ -335,9 +341,15 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       value_string = u'0x{0:08x}'.format(dest_list_entry.unknown6)
       self._DebugPrintValue(u'Unknown6', value_string)
 
-    value_string = u'{0:d} ({1:d})'.format(
+    value_string = u'{0:d} characters ({1:d} bytes)'.format(
         dest_list_entry.path_size, dest_list_entry.path_size * 2)
     self._DebugPrintValue(u'Path size', value_string)
+
+    self._DebugPrintValue(u'Path string', dest_list_entry.path)
+
+    if self._format_version >= 3:
+      value_string = u'0x{0:08x}'.format(dest_list_entry.unknown7)
+      self._DebugPrintValue(u'Unknown7', value_string)
 
     self._DebugPrintText(u'\n')
 
@@ -401,51 +413,17 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     """
     if self._format_version == 1:
       data_type_map = self._DEST_LIST_ENTRY_V1
-      entry_data_size = self._DEST_LIST_ENTRY_V1_SIZE
       description = u'dest list entry v1'
 
     elif self._format_version >= 3:
       data_type_map = self._DEST_LIST_ENTRY_V3
-      entry_data_size = self._DEST_LIST_ENTRY_V3_SIZE
       description = u'dest list entry v3'
 
-    dest_list_entry = self._ReadStructure(
-        olecf_item, stream_offset, entry_data_size, data_type_map, description)
+    dest_list_entry, entry_data_size = self._ReadStructureWithSizeHint(
+        olecf_item, stream_offset, data_type_map, description)
 
     if self._debug:
       self._DebugPrintDestListEntry(dest_list_entry)
-
-    entry_path_size = dest_list_entry.path_size * 2
-    entry_path_data = olecf_item.read(entry_path_size)
-
-    if self._debug:
-      self._DebugPrintData(u'Entry path data', entry_path_data)
-
-    context = dtfabric_data_maps.DataTypeMapContext(values={
-        u'dest_list_entry': dest_list_entry})
-
-    try:
-      path_string = self._DEST_LIST_ENTRY_PATH.MapByteStream(
-          entry_path_data, context=context)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to map entry path string data at offset: 0x{0:08x} with '
-          u'error: {1!s}').format(stream_offset, exception))
-
-    if self._debug:
-      self._DebugPrintValue(u'Path string', path_string)
-
-      self._DebugPrintText(u'\n')
-
-    entry_data_size += entry_path_size
-
-    if self._format_version >= 3:
-      entry_footer_data = olecf_item.read(4)
-
-      if self._debug:
-        self._DebugPrintData(u'Entry footer data', entry_footer_data)
-
-      entry_data_size += 4
 
     return entry_data_size
 
