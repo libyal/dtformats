@@ -1,3 +1,8 @@
-dtfabric
-PyYAML
+pip >= 7.0.0
+pytest
 mock
+PyYAML >= 3.10
+dtfabric >= 20170501
+libfwsi-python >= 20150606
+liblnk-python >= 20150830
+libolecf-python >= 20151223

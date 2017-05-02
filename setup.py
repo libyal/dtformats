@@ -118,10 +118,10 @@ if 'bdist_msi' in sys.argv:
   dtformats_version += '.1'
 
 dtformats_description = (
-    'Data formats (dtformats).')
+    'Data formats (dtFormats).')
 
 dtformats_long_description = (
-    'dtformats is a collection of various file formats.')
+    'dtFormats is a collection of various file formats.')
 
 setup(
     name='dtformats',

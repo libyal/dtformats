@@ -1,0 +1,20 @@
+Source: dtformats
+Section: python
+Priority: extra
+Maintainer: Joachim Metz <joachim.metz@gmail.com>
+Build-Depends: debhelper (>= 7), python-all (>= 2.7~), python-setuptools, python3-all (>= 3.4~), python3-setuptools
+Standards-Version: 3.9.5
+X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
+Homepage: https://github.com/libyal/dtformats
+
+Package: python-dtformats
+Architecture: all
+Depends: libfwsi-python (>= 20150606), liblnk-python (>= 20150830), libolecf-python (>= 20151223), python-dtfabric (>= 20170501), python-yaml (>= 3.10), ${python:Depends}, ${misc:Depends}
+Description: Collection of data formats (dtFormats)
+ dtFormats, is a collection of data formats.
+Package: python3-dtformats
+Architecture: all
+Depends: libfwsi-python3 (>= 20150606), liblnk-python3 (>= 20150830), libolecf-python3 (>= 20151223), python3-dtfabric (>= 20170501), python3-yaml (>= 3.10), ${python3:Depends}, ${misc:Depends}
+Description: Collection of data formats (dtFormats)
+ dtFormats, is a collection of data formats.
