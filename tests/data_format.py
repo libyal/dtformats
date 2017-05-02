@@ -38,12 +38,11 @@ class ErrorBytesIO(io.BytesIO):
 class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
   """Data type map that errors."""
 
-  def MapByteStream(self, byte_stream, context=None, **unused_kwargs):
+  def MapByteStream(self, byte_stream, **unused_kwargs):
     """Maps the data type on a byte stream.
 
     Args:
       byte_stream (bytes): byte stream.
-      context (Optional[DataTypeMapContext]): data type map context.
 
     Returns:
       object: mapped value.

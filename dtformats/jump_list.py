@@ -8,15 +8,12 @@ import datetime
 import logging
 import os
 
-import construct
-# pylint: disable=wrong-import-order
 import pyfwsi
 import pylnk
 import pyolecf
 
 from dtfabric import errors as dtfabric_errors
 from dtfabric import fabric as dtfabric_fabric
-from dtfabric import data_maps as dtfabric_data_maps
 
 from dtformats import data_format
 from dtformats import data_range
@@ -781,7 +778,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
             file_object, file_offset, self._ENTRY_HEADER_SIZE,
             self._ENTRY_HEADER, u'entry header')
 
-      except (IOError, construct.FieldError) as exception:
+      except errors.ParseError as exception:
         error_message = (
             u'Unable to parse file entry header at offset: 0x{0:08x} '
             u'with error: {1:s}').format(file_offset, exception)
