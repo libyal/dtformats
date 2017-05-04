@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the binary data format and file."""
+"""Tests for binary data format and file."""
 
 import io
 import unittest

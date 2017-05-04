@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the ata range file-like object."""
+"""Tests for the data range file-like object."""
 
 import io
 import os

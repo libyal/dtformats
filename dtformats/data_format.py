@@ -38,6 +38,16 @@ class BinaryDataFormat(object):
       self._output_writer.WriteText(u'{0:s}:\n'.format(description))
       self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
 
+  def _DebugPrintValueDecimal(self, description, value):
+    """Prints a value in decimal for debugging.
+
+    Args:
+      description (str): description.
+      value (int): value.
+    """
+    value_string = u'{0:d}'.format(value)
+    self._DebugPrintValue(description, value_string)
+
   def _DebugPrintValue(self, description, value):
     """Prints a value for debugging.
 

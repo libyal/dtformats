@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the Chrome Cache files."""
+"""Tests for Chrome Cache files."""
 
 import unittest
 

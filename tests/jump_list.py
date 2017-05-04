@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the Windows Jump List files:
+"""Tests for Windows Jump List files:
 * .automaticDestinations-ms
 * .customDestinations-ms
 """

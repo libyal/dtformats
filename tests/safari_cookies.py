@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the Safari Cookies (Cookies.binarycookies) files."""
+"""Tests for Safari Cookies (Cookies.binarycookies) files."""
 
 import unittest
 

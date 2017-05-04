@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the Windows Restore Point change.log files."""
+"""Tests for Windows Restore Point change.log files."""
 
 import unittest
 

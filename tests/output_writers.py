@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the output writer."""
+"""Tests for output writers."""
 
 import unittest
 

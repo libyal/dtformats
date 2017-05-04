@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the copy in and out (CPIO) archive format files."""
+"""Tests for copy in and out (CPIO) archive format files."""
 
 import io
 import unittest

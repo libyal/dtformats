@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the Windows (Enhanced) Metafile Format (WMF and EMF) files."""
+"""Tests for Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
 import unittest
 

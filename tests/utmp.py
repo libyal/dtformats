@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the UTMP files."""
+"""Tests for UTMP files."""
 
 import unittest
 
