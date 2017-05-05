@@ -91,23 +91,23 @@ class CacheAddress(object):
   FILE_TYPE_BLOCK_1024 = 3
   FILE_TYPE_BLOCK_4096 = 4
 
-  _BLOCK_DATA_FILE_TYPES = [
+  _BLOCK_DATA_FILE_TYPES = (
       FILE_TYPE_BLOCK_RANKINGS,
       FILE_TYPE_BLOCK_256,
       FILE_TYPE_BLOCK_1024,
-      FILE_TYPE_BLOCK_4096]
+      FILE_TYPE_BLOCK_4096)
 
-  _FILE_TYPE_DESCRIPTIONS = [
-      u'Separate file',
-      u'Rankings block file',
-      u'256 byte block file',
-      u'1024 byte block file',
-      u'4096 byte block file']
+  _FILE_TYPE_DESCRIPTIONS = {
+      FILE_TYPE_SEPARATE: u'Separate file',
+      FILE_TYPE_BLOCK_RANKINGS: u'Rankings block file',
+      FILE_TYPE_BLOCK_256: u'256 byte block file',
+      FILE_TYPE_BLOCK_1024: u'1024 byte block file',
+      FILE_TYPE_BLOCK_4096: u'4096 byte block file'}
 
-  _FILE_TYPE_BLOCK_SIZES = [0, 36, 256, 1024, 4096]
+  _FILE_TYPE_BLOCK_SIZES = (0, 36, 256, 1024, 4096)
 
   def __init__(self, cache_address):
-    """Initializes a cache address object.
+    """Initializes a cache address.
 
     Args:
       cache_address (int): cache address.
@@ -117,12 +117,11 @@ class CacheAddress(object):
     self.block_offset = None
     self.block_size = None
     self.filename = None
+    self.is_initialized = False
     self.value = cache_address
 
     if cache_address & 0x80000000:
-      self.is_initialized = u'True'
-    else:
-      self.is_initialized = u'False'
+      self.is_initialized = True
 
     self.file_type = (cache_address & 0x70000000) >> 28
     if not cache_address == 0x00000000:
@@ -146,24 +145,22 @@ class CacheAddress(object):
     Return:
       str: debug string of the cache address object.
     """
-    if self.file_type <= 4:
-      file_type_description = self._FILE_TYPE_DESCRIPTIONS[self.file_type]
-    else:
-      file_type_description = u'Unknown'
-
     if self.value == 0x00000000:
       return u'0x{0:08x} (uninitialized)'.format(self.value)
 
+    file_type_description = self._FILE_TYPE_DESCRIPTIONS.get(
+        self.file_type, u'Unknown')
+
     if self.file_type == 0:
       return (
-          u'0x{0:08x} (initialized: {1:s}, file type: {2:s}, '
+          u'0x{0:08x} (initialized: {1!s}, file type: {2:s}, '
           u'filename: {3:s})').format(
               self.value, self.is_initialized, file_type_description,
               self.filename)
 
     # TODO: print reserved bits.
     return (
-        u'0x{0:08x} (initialized: {1:s}, file type: {2:s}, '
+        u'0x{0:08x} (initialized: {1!s}, file type: {2:s}, '
         u'filename: {3:s}, block number: {4:d}, block offset: 0x{5:08x}, '
         u'block size: {6:d})').format(
             self.value, self.is_initialized, file_type_description,
@@ -184,7 +181,7 @@ class CacheEntry(object):
   """
 
   def __init__(self):
-    """Initializes a cache entry object."""
+    """Initializes a cache entry."""
     super(CacheEntry, self).__init__()
     self.creation_time = None
     self.hash = None
@@ -1033,14 +1030,17 @@ class ChromeCacheParser(object):
         raise errors.ParseError(
             u'Unable to signature with error: {0!s}'.format(exception))
 
-      if signature == IndexFile.SIGNATURE:
-        index_file = IndexFile(
-            debug=self._debug, output_writer=self._output_writer)
-        index_file.ReadFileObject(file_object)
-        index_file.Close()
+      if signature not in (DataBlockFile.SIGNATURE, IndexFile.SIGNATURE):
+        raise errors.ParseError(
+            u'Unsupported signature: 0x{0:08x}'.format(signature))
 
-      elif signature == DataBlockFile.SIGNATURE:
-        data_block_file = DataBlockFile(
+      if signature == DataBlockFile.SIGNATURE:
+        chrome_cache_file = DataBlockFile(
             debug=self._debug, output_writer=self._output_writer)
-        data_block_file.ReadFileObject(file_object)
-        data_block_file.Close()
+
+      elif signature == IndexFile.SIGNATURE:
+        chrome_cache_file = IndexFile(
+            debug=self._debug, output_writer=self._output_writer)
+
+      chrome_cache_file.ReadFileObject(file_object)
+      chrome_cache_file.Close()

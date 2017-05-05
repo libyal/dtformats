@@ -102,6 +102,17 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
          u'.......\n\n')]
     self.assertEqual(output_writer.output, expected_output)
 
+  def testDebugPrintValueDecimal(self):
+    """Tests the _DebugPrintValueDecimal function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_format = data_format.BinaryDataFormat(
+        output_writer=output_writer)
+
+    test_format._DebugPrintValueDecimal(u'Description', 1)
+
+    expected_output = [u'Description\t\t\t\t\t\t\t\t: 1\n']
+    self.assertEqual(output_writer.output, expected_output)
+
   def testDebugPrintValue(self):
     """Tests the _DebugPrintValue function."""
     output_writer = test_lib.TestOutputWriter()
@@ -206,6 +217,8 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
     test_format._ReadStructure(
         file_object, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
+
+  # TODO: add tests for _ReadStructureWithSizeHint.
 
   def testReadStructureFromByteStream(self):
     """Tests the _ReadStructureFromByteStream function."""
