@@ -75,8 +75,7 @@ The binary CPIO file entry is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | 0x71c7 +
-0xc771 | Signature +
+| 0 | 2 | 0x71c7 | Signature +
 070707 (0x71c7) in octal where 0x71 0xc7 indicates the format is in big-endian and 0xc7 0x71 little-endian
 | 2 | 2 | | Device number
 | 4 | 2 | | Inode number
@@ -95,6 +94,8 @@ Stored with the most significant 16-bits in the first 2 bytes and the least sign
 | ... | ... | | 16-bit alignment padding +
 Should be set to 0
 | ... | ... | | File data
+| ... | ... | | 16-bit alignment padding +
+Should be set to 0
 |===
 
 == Portable ASCII CPIO format

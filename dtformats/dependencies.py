@@ -13,7 +13,7 @@ import re
 # Where version_attribute_name is either a name of an attribute,
 # property or method.
 PYTHON_DEPENDENCIES = {
-    u'dtfabric': (u'__version__', u'20170501', None, True),
+    u'dtfabric': (u'__version__', u'20170507', None, True),
     u'pyfwsi': (u'get_version()', u'20150606', None, True),
     u'pylnk': (u'get_version()', u'20150830', None, True),
     u'pyolecf': (u'get_version()', u'20151223', None, True),

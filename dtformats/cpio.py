@@ -69,8 +69,18 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       b'  size: 2',
       b'  units: bytes',
       b'---',
+      b'name: uint32',
+      b'type: structure',
+      b'members:',
+      b'- name: upper',
+      b'  data_type: uint16',
+      b'- name: lower',
+      b'  data_type: uint16',
+      b'---',
       b'name: cpio_binary_big_endian_file_entry',
       b'type: structure',
+      (b'urls: ['
+       b'"https://people.freebsd.org/~kientzle/libarchive/man/cpio.5.txt"]'),
       b'description: big-endian CPIO file entry',
       b'attributes:',
       b'  byte_order: big-endian',
@@ -91,16 +101,12 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       b'  data_type: uint16',
       b'- name: special_device_number',
       b'  data_type: uint16',
-      b'- name: modification_time_upper',
+      b'- name: modification_time',
+      b'  data_type: uint32',
+      b'- name: path_size',
       b'  data_type: uint16',
-      b'- name: modification_time_lower',
-      b'  data_type: uint16',
-      b'- name: path_string_size',
-      b'  data_type: uint16',
-      b'- name: file_size_upper',
-      b'  data_type: uint16',
-      b'- name: file_size_lower',
-      b'  data_type: uint16',
+      b'- name: file_size',
+      b'  data_type: uint32',
       b'---',
       b'name: cpio_binary_little_endian_file_entry',
       b'type: structure',
@@ -124,16 +130,12 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       b'  data_type: uint16',
       b'- name: special_device_number',
       b'  data_type: uint16',
-      b'- name: modification_time_upper',
+      b'- name: modification_time',
+      b'  data_type: uint32',
+      b'- name: path_size',
       b'  data_type: uint16',
-      b'- name: modification_time_lower',
-      b'  data_type: uint16',
-      b'- name: path_string_size',
-      b'  data_type: uint16',
-      b'- name: file_size_upper',
-      b'  data_type: uint16',
-      b'- name: file_size_lower',
-      b'  data_type: uint16',
+      b'- name: file_size',
+      b'  data_type: uint32',
       b'---',
       b'name: cpio_portable_ascii_file_entry',
       b'type: structure',
@@ -177,7 +179,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 11',
-      b'- name: path_string_size',
+      b'- name: path_size',
       b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 6',
@@ -240,7 +242,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 8',
-      b'- name: path_string_size',
+      b'- name: path_size',
       b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 8',
@@ -250,7 +252,6 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       b'  number_of_elements: 8',
   ])
 
-  # TODO: move split uint32 into structure.
   # TODO: move path into structure.
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
@@ -339,8 +340,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     self._DebugPrintValue(u'Modification time', value_string)
 
     if self.file_format not in (u'crc', u'newc'):
-      value_string = u'{0:d}'.format(file_entry.path_string_size)
-      self._DebugPrintValue(u'Path string size', value_string)
+      value_string = u'{0:d}'.format(file_entry.path_size)
+      self._DebugPrintValue(u'Path size', value_string)
 
     value_string = u'{0:d}'.format(file_entry.file_size)
     self._DebugPrintValue(u'File size', value_string)
@@ -358,8 +359,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       value_string = u'{0:d}'.format(file_entry.special_device_minor_number)
       self._DebugPrintValue(u'Special device minor number', value_string)
 
-      value_string = u'{0:d}'.format(file_entry.path_string_size)
-      self._DebugPrintValue(u'Path string size', value_string)
+      value_string = u'{0:d}'.format(file_entry.path_size)
+      self._DebugPrintValue(u'Path size', value_string)
 
       value_string = u'0x{0:08x}'.format(file_entry.checksum)
       self._DebugPrintValue(u'Checksum', value_string)
@@ -409,17 +410,17 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
 
     if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
       file_entry.modification_time = (
-          (file_entry.modification_time_upper << 16) |
-          file_entry.modification_time_lower)
+          (file_entry.modification_time.upper << 16) |
+          file_entry.modification_time.lower)
 
       file_entry.file_size = (
-          (file_entry.file_size_upper << 16) | file_entry.file_size_lower)
+          (file_entry.file_size.upper << 16) | file_entry.file_size.lower)
 
     if self.file_format == u'odc':
       for attribute_name in (
           u'device_number', u'inode_number', u'mode', u'user_identifier',
           u'group_identifier', u'number_of_links', u'special_device_number',
-          u'modification_time', u'path_string_size', u'file_size'):
+          u'modification_time', u'path_size', u'file_size'):
 
         value = getattr(file_entry, attribute_name, None)
         try:
@@ -434,7 +435,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     elif self.file_format in (u'crc', u'newc'):
       for attribute_name in (
           u'inode_number', u'mode', u'user_identifier', u'group_identifier',
-          u'number_of_links', u'modification_time', u'path_string_size',
+          u'number_of_links', u'modification_time', u'path_size',
           u'file_size', u'device_major_number', u'device_minor_number',
           u'special_device_major_number', u'special_device_minor_number',
           u'checksum'):
@@ -452,15 +453,19 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFileEntry(file_entry)
 
-    path_string_data = file_object.read(file_entry.path_string_size)
-    file_offset += file_entry.path_string_size
-
-    # TODO: should this be ASCII?
-    path_string = path_string_data.decode(u'ascii')
-    path_string, _, _ = path_string.partition(u'\x00')
+    path_data = file_object.read(file_entry.path_size)
 
     if self._debug:
-      self._DebugPrintValue(u'Path string', path_string)
+      self._DebugPrintData(u'Path data', path_data)
+
+    file_offset += file_entry.path_size
+
+    # TODO: should this be ASCII?
+    path = path_data.decode(u'ascii')
+    path, _, _ = path.partition(u'\x00')
+
+    if self._debug:
+      self._DebugPrintValue(u'Path', path)
 
     if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
       padding_size = file_offset % 2
@@ -477,7 +482,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
 
     if self._debug:
       padding_data = file_object.read(padding_size)
-      self._DebugPrintData(u'Path string alignment padding', padding_data)
+      self._DebugPrintData(u'Path alignment padding', padding_data)
 
     file_offset += padding_size
 
@@ -488,20 +493,29 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     archive_file_entry.group_identifier = file_entry.group_identifier
     archive_file_entry.inode_number = file_entry.inode_number
     archive_file_entry.modification_time = file_entry.modification_time
-    archive_file_entry.path = path_string
+    archive_file_entry.path = path
     archive_file_entry.mode = file_entry.mode
     archive_file_entry.size = (
-        file_entry_data_size + file_entry.path_string_size + padding_size +
+        file_entry_data_size + file_entry.path_size + padding_size +
         file_entry.file_size)
     archive_file_entry.user_identifier = file_entry.user_identifier
 
-    if self.file_format in (u'crc', u'newc'):
-      file_offset += file_entry.file_size
+    file_offset += file_entry.file_size
 
+    if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
+      padding_size = file_offset % 2
+      if padding_size > 0:
+        padding_size = 2 - padding_size
+
+    elif self.file_format == u'odc':
+      padding_size = 0
+
+    elif self.file_format in (u'crc', u'newc'):
       padding_size = file_offset % 4
       if padding_size > 0:
         padding_size = 4 - padding_size
 
+    if padding_size > 0:
       if self._debug:
         file_object.seek(file_offset, os.SEEK_SET)
         padding_data = file_object.read(padding_size)
@@ -521,6 +535,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Args:
       file_object (file): file-like object.
     """
+    self._file_entries = {}
+
     file_offset = 0
     while file_offset < self._file_size or self._file_size == 0:
       file_entry = self._ReadFileEntry(file_object, file_offset)
@@ -549,10 +565,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Returns:
       bool: True if the file entry exists.
     """
-    if self._file_entries is None:
-      return False
-
-    return path in self._file_entries
+    if self._file_entries:
+      return path in self._file_entries
 
   def GetFileEntries(self, path_prefix=u''):
     """Retrieves the file entries.
@@ -563,9 +577,10 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Yields:
       CPIOArchiveFileEntry: CPIO archive file entry.
     """
-    for path, file_entry in iter(self._file_entries.items()):
-      if path.startswith(path_prefix):
-        yield file_entry
+    if self._file_entries:
+      for path, file_entry in iter(self._file_entries.items()):
+        if path.startswith(path_prefix):
+          yield file_entry
 
   def GetFileEntryByPath(self, path):
     """Retrieves a file entry for a specific path.
@@ -576,10 +591,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Returns:
       CPIOArchiveFileEntry: CPIO archive file entry or None.
     """
-    if self._file_entries is None:
-      return
-
-    return self._file_entries.get(path, None)
+    if self._file_entries:
+      return self._file_entries.get(path, None)
 
   def ReadFileObject(self, file_object):
     """Reads binary data from a file-like object.
@@ -608,8 +621,6 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
 
     if self.file_format is None:
       raise errors.ParseError(u'Unsupported CPIO format.')
-
-    self._file_entries = {}
 
     self._ReadFileEntries(file_object)
 

@@ -253,12 +253,12 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 class BinaryDataFileTest(test_lib.BaseTestCase):
   """Binary data file tests."""
 
-  @test_lib.skipUnlessHasTestFile([u'syslog.bin.cpio'])
+  @test_lib.skipUnlessHasTestFile([u'cpio', u'syslog.bin.cpio'])
   def testOpenClose(self):
     """Tests the Open and Close functions."""
     test_file = data_format.BinaryDataFile()
 
-    test_file_path = self._GetTestFilePath([u'syslog.bin.cpio'])
+    test_file_path = self._GetTestFilePath([u'cpio', u'syslog.bin.cpio'])
     test_file.Open(test_file_path)
 
     with self.assertRaises(IOError):
