@@ -11,7 +11,8 @@ from tests import test_lib
 class UTMPFileTest(test_lib.BaseTestCase):
   """UTMP file tests."""
 
-  # TODO: add tests.
+  # TODO: add tests for _DebugPrintEntry.
+  # TODO: add tests for _ReadEntries.
 
   @test_lib.skipUnlessHasTestFile([u'utmp'])
   def testReadFileObject(self):

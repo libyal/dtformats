@@ -671,6 +671,27 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
     self._DebugPrintText(u'\n')
 
+  def _ReadFileFooter(self, file_object):
+    """Reads the file footer.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file footer cannot be read.
+    """
+    file_offset = file_object.tell()
+    file_footer = self._ReadStructure(
+        file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
+        u'file footer')
+
+    if self._debug:
+      self._DebugPrintFileFooter(file_footer)
+
+    if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
+      raise errors.ParseError(
+          u'Invalid footer signature at offset: 0x{0:08x}.'.format(file_offset))
+
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
 
@@ -817,27 +838,6 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       remaining_file_size -= lnk_file_entry.data_size
 
       file_object.seek(file_offset, os.SEEK_SET)
-
-  def _ReadFileFooter(self, file_object):
-    """Reads the file footer.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the file footer cannot be read.
-    """
-    file_offset = file_object.tell()
-    file_footer = self._ReadStructure(
-        file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        u'file footer')
-
-    if self._debug:
-      self._DebugPrintFileFooter(file_footer)
-
-    if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
-      raise errors.ParseError(
-          u'Invalid footer signature at offset: 0x{0:08x}.'.format(file_offset))
 
   def ReadFileObject(self, file_object):
     """Reads a Custom Destinations Jump List file-like object.

@@ -161,6 +161,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
 
   _CSTRING = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cstring')
 
+  SIGNATURE = b'cook'
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Safari Cookies (Cookies.binarycookies) file.
 
@@ -247,6 +249,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
         file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
         u'file footer')
 
+    # TODO: add _DebugPrintFileFooter
+
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
 
@@ -263,6 +267,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
+
+    if file_header.signature != self.SIGNATURE:
+      raise errors.ParseError(
+          u'Unsupported file signature: {0!s}'.format(file_header.signature))
 
     # TODO: check for upper limit.
     page_sizes_data_size = file_header.number_of_pages * 4
