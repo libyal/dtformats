@@ -38,6 +38,22 @@ class ErrorBytesIO(io.BytesIO):
 class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
   """Data type map that errors."""
 
+  def FoldByteStream(self, mapped_value, **unused_kwargs):
+    """Folds the data type into a byte stream.
+
+    Args:
+      mapped_value (object): mapped value.
+
+    Returns:
+      bytes: byte stream.
+
+    Raises:
+      FoldingError: if the data type definition cannot be folded into
+          the byte stream.
+    """
+    raise dtfabric_errors.FoldingError(
+        u'Unable to fold to byte stream for testing purposes.')
+
   def MapByteStream(self, byte_stream, **unused_kwargs):
     """Maps the data type on a byte stream.
 

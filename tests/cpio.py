@@ -4,8 +4,6 @@
 import io
 import unittest
 
-from dtfabric import data_maps as dtfabric_data_maps
-
 from dtformats import cpio
 
 from tests import test_lib

@@ -7,8 +7,6 @@
 import unittest
 import uuid
 
-from dtfabric import data_maps as dtfabric_data_maps
-
 from dtformats import jump_list
 
 from tests import test_lib

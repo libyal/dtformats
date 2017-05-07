@@ -4,8 +4,6 @@
 import unittest
 import uuid
 
-from dtfabric import data_maps as dtfabric_data_maps
-
 from dtformats import job
 
 from tests import test_lib
