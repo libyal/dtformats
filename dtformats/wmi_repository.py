@@ -59,606 +59,31 @@ class PropertyDescriptor(object):
     self.name_offset = name_offset
 
 
-class IndexBinaryTreePage(data_format.BinaryDataFormat):
+class IndexBinaryTreePage(object):
   """Index binary-tree page.
 
   Attributes:
     keys (list[str]): index binary-tree keys.
+    number_of_keys (int): number of keys.
+    page_key_segments (list[bytes]): page key segments.
     page_type (int): page type.
+    page_value_offsets (list[int]): page value offsets.
+    page_values (list[bytes]): page values.
     root_page_number (int): root page number.
     sub_pages (list[int]): sub page numbers.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: byte',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 1',
-      b'  units: bytes',
-      b'---',
-      b'name: uint16',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: uint16le',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'  format: unsigned',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32le',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: cim_page_header',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: page_type',
-      b'  data_type: uint32',
-      b'- name: mapped_page_number',
-      b'  data_type: uint32',
-      b'- name: unknown1',
-      b'  data_type: uint32',
-      b'- name: root_page_number',
-      b'  data_type: uint32',
-      b'- name: number_of_keys',
-      b'  data_type: uint32',
-      b'---',
-      b'name: cim_page_offsets',
-      b'type: sequence',
-      b'element_data_type: uint16le',
-      b'number_of_elements: cim_page_header.number_of_keys',
-      b'---',
-      b'name: cim_page_subpages',
-      b'type: sequence',
-      b'element_data_type: uint32le',
-      b'number_of_elements: cim_page_header.number_of_keys + 1',
-      b'---',
-      b'name: cim_page_key',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: number_of_segments',
-      b'  data_type: uint16',
-      b'- name: segments',
-      b'  type: sequence',
-      b'  element_data_type: uint16',
-      b'  number_of_elements: cim_page_key.number_of_segments',
-      b'---',
-      b'name: cim_offsets',
-      b'type: sequence',
-      b'element_data_type: uint16le',
-      b'number_of_elements: number_of_offsets',
-      b'---',
-      b'name: string',
-      b'type: string',
-      b'encoding: ascii',
-      b'element_data_type: byte',
-      b'elements_terminator: "\\x00"',
-  ])
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'uint16le')
-
-  _UINT16LE_SIZE = _UINT16LE.GetByteSize()
-
-  _PAGE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_header')
-
-  _PAGE_HEADER_SIZE = _PAGE_HEADER.GetByteSize()
-
-  _PAGE_KEY_OFFSETS = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_offsets')
-
-  _PAGE_SUBPAGES = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_subpages')
-
-  _PAGE_KEY = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_key')
-
-  _OFFSETS = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_offsets')
-
-  _STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'string')
-
-  _PAGE_TYPES = {
-      0xaccc: u'Is active',
-      0xaddd: u'Is administrative',
-      0xbadd: u'Is deleted',
-  }
-
-  _KEY_SEGMENT_SEPARATOR = u'\\'
-
-  PAGE_SIZE = 8192
-
-  def __init__(self, debug=False, output_writer=None):
-    """Initializes an index binary-tree page.
-
-    Args:
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(IndexBinaryTreePage, self).__init__(
-        debug=debug, output_writer=output_writer)
-    self._key_offsets = None
-    self._number_of_keys = None
-    self._page_key_segments = []
-    self._page_values = []
-    self._page_value_offsets = None
-
+  def __init__(self):
+    """Initializes an index binary-tree page."""
+    super(IndexBinaryTreePage, self).__init__()
     self.keys = []
+    self.number_of_keys = None
+    self.page_key_segments = []
     self.page_type = None
+    self.page_value_offsets = None
+    self.page_values = []
     self.root_page_number = None
     self.sub_pages = []
-
-  def _DebugPrintHeader(self, page_header):
-    """Prints page header debug information.
-
-    Args:
-      page_header (cim_page_header): page header.
-    """
-    page_type_string = self._PAGE_TYPES.get(page_header.page_type, u'Unknown')
-    value_string = u'0x{0:04x} ({1:s})'.format(
-        page_header.page_type, page_type_string)
-    self._DebugPrintValue(u'Page type', value_string)
-
-    self._DebugPrintValueDecimal(
-        u'Mapped page number', page_header.mapped_page_number)
-
-    value_string = u'0x{0:08x}'.format(page_header.unknown1)
-    self._DebugPrintValue(u'Unknown1', value_string)
-
-    self._DebugPrintValueDecimal(
-        u'Root page number', page_header.root_page_number)
-
-    self._DebugPrintValueDecimal(u'Number of keys', page_header.number_of_keys)
-
-    self._DebugPrintText(u'\n')
-
-  def _DebugPrintKeyOffsets(self, key_offsets):
-    """Prints key offsets debug information.
-
-    Args:
-      key_offsets (list[int]): key offsets.
-    """
-    for index, key_offset in enumerate(key_offsets):
-      description = u'Page key: {0:d} offset'.format(index)
-      value_string = u'0x{0:04x}'.format(key_offset)
-      self._DebugPrintValue(description, value_string)
-
-    self._DebugPrintText(u'\n')
-
-  def _DebugPrintPageNumber(
-      self, description, page_number, unavailable_page_numbers=None):
-    """Prints a page number debug information.
-
-    Args:
-      description (str): description.
-      page_number (int): page number.
-      unavailable_page_numbers (Optional[set[int]]): unavailable page numbers.
-    """
-    if not unavailable_page_numbers:
-      unavailable_page_numbers = set()
-
-    if page_number in unavailable_page_numbers:
-      value_string = u'0x{0:08x} (unavailable)'.format(page_number)
-    else:
-      value_string = u'{0:d}'.format(page_number)
-
-    self._DebugPrintValue(description, value_string)
-
-  def _ReadHeader(self, file_object):
-    """Reads a page header.
-
-    Args:
-      file_object (file): a file-like object.
-
-    Returns:
-      cim_page_header: page header.
-
-    Raises:
-      ParseError: if the page header cannot be read.
-    """
-    file_offset = file_object.tell()
-
-    page_header = self._ReadStructure(
-        file_object, file_offset, self._PAGE_HEADER_SIZE, self._PAGE_HEADER,
-        u'page header')
-
-    if self._debug:
-      self._DebugPrintHeader(page_header)
-
-    self.page_type = page_header.page_type
-    self.root_page_number = page_header.root_page_number
-    self._number_of_keys = page_header.number_of_keys
-
-    return page_header
-
-  def _ReadKeyOffsets(self, page_header, file_object):
-    """Reads page key offsets.
-
-    Args:
-      page_header (cim_page_header): page header.
-      file_object (file): a file-like object.
-
-    Raises:
-      ParseError: if the page key offsets cannot be read.
-    """
-    if page_header.number_of_keys == 0:
-      return
-
-    file_offset = file_object.tell()
-    if self._debug:
-      self._DebugPrintText(
-          u'Reading page key offsets at offset: 0x{0:08x}\n'.format(
-              file_offset))
-
-    offsets_data_size = page_header.number_of_keys * 2
-    offsets_data = file_object.read(offsets_data_size)
-
-    if self._debug:
-      self._DebugPrintData(u'Page key offsets data', offsets_data)
-
-    context = dtfabric_data_maps.DataTypeMapContext(values={
-        u'cim_page_header': page_header})
-
-    try:
-      self._key_offsets = self._PAGE_KEY_OFFSETS.MapByteStream(
-          offsets_data, context=context)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to parse page key offsets at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
-
-    if self._debug:
-      self._DebugPrintKeyOffsets(self._key_offsets)
-
-  def _ReadKeyData(self, file_object):
-    """Reads page key data.
-
-    Args:
-      file_object (file): a file-like object.
-
-    Raises:
-      ParseError: if the page key data cannot be read.
-    """
-    file_offset = file_object.tell()
-    if self._debug:
-      self._DebugPrintText(
-          u'Reading page key data at offset: 0x{0:08x}\n'.format(file_offset))
-
-    size_data = file_object.read(self._UINT16LE_SIZE)
-
-    try:
-      data_size = self._UINT16LE.MapByteStream(size_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to parse page key data size at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
-
-    if self._debug:
-      value_string = u'{0:d} ({1:d} bytes)'.format(data_size, data_size * 2)
-      self._DebugPrintValue(u'Page key data size', value_string)
-
-    if data_size == 0:
-      if self._debug:
-        self._DebugPrintData(u'Page key data', size_data)
-      return
-
-    key_data = file_object.read(data_size * 2)
-
-    if self._debug:
-      self._DebugPrintData(u'Page key data', b''.join([size_data, key_data]))
-
-    for index, key_offset in enumerate(self._key_offsets):
-      page_key_offset = key_offset * 2
-
-      if self._debug:
-        description = u'Page key: {0:d} offset'.format(index)
-        value_string = u'{0:d} (0x{0:08x})'.format(page_key_offset)
-        self._DebugPrintValue(description, value_string)
-
-      try:
-        page_key = self._PAGE_KEY.MapByteStream(key_data[page_key_offset:])
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError(
-            u'Unable to parse page key: {0:d} with error: {1:s}'.format(
-                index, exception))
-
-      page_key_size = page_key_offset + 2 + (page_key.number_of_segments * 2)
-
-      if self._debug:
-        description = u'Page key: {0:d} data:'.format(index)
-        self._DebugPrintData(
-            description, key_data[page_key_offset:page_key_size])
-
-      self._page_key_segments.append(page_key.segments)
-
-      if self._debug:
-        description = u'Page key: {0:d} number of segments'.format(index)
-        self._DebugPrintValueDecimal(description, page_key.number_of_segments)
-
-        description = u'Page key: {0:d} segments'.format(index)
-        value_string = u', '.join([
-            u'{0:d}'.format(segment_index)
-            for segment_index in page_key.segments])
-        self._DebugPrintValue(description, value_string)
-
-        self._DebugPrintText(u'\n')
-
-  def _ReadOffsetsTable(self, file_object, file_offset, description):
-    """Reads an offsets table.
-
-    Args:
-      file_object (file): a file-like object.
-      file_offset (int): offset of the data relative from the start of
-          the file-like object.
-      description (str): description of the offsets table.
-
-    Returns:
-      tuple[int, ...]: offsets number array.
-
-    Raises:
-      ParseError: if the offsets table cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}\n'.format(
-          description, file_offset))
-
-    try:
-      number_of_offsets_data = file_object.read(self._UINT16LE_SIZE)
-    except IOError as exception:
-      raise errors.ParseError((
-          u'Unable to read number of offsets data at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
-
-    if len(number_of_offsets_data) != self._UINT16LE_SIZE:
-      raise errors.ParseError((
-          u'Unable to read number of offsets data at offset: 0x{0:08x} '
-          u'with error: missing data').format(file_offset))
-
-    try:
-      number_of_offsets = self._UINT16LE.MapByteStream(number_of_offsets_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to parse number of offsets at offset: 0x{0:08x} with error '
-          u'error: {1:s}').format(file_offset, exception))
-
-    if number_of_offsets == 0:
-      offsets_data = b''
-    else:
-      offsets_data_size = number_of_offsets * self._UINT16LE_SIZE
-
-      try:
-        offsets_data = file_object.read(offsets_data_size)
-      except IOError as exception:
-        raise errors.ParseError((
-            u'Unable to read offsets data at offset: 0x{0:08x} with error: '
-            u'{1:s}').format(file_offset, exception))
-
-      if len(offsets_data) != offsets_data_size:
-        raise errors.ParseError((
-            u'Unable to read offsets data at offset: 0x{0:08x} with error: '
-            u'missing data').format(file_offset))
-
-    if self._debug:
-      data_description = u'{0:s} data'.format(description.title())
-      self._DebugPrintData(data_description, b''.join([
-          number_of_offsets_data, offsets_data]))
-
-      self._DebugPrintValueDecimal(u'Number of offsets', number_of_offsets)
-
-    if not offsets_data:
-      offsets = tuple()
-    else:
-      context = dtfabric_data_maps.DataTypeMapContext(values={
-          u'number_of_offsets': number_of_offsets})
-
-      try:
-        offsets = self._OFFSETS.MapByteStream(offsets_data, context=context)
-
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError((
-            u'Unable to parse offsets data at offset: 0x{0:08x} with error: '
-            u'{1:s}').format(file_offset, exception))
-
-    return offsets
-
-  def _ReadValueOffsets(self, file_object):
-    """Reads page value offsets.
-
-    Args:
-      file_object (file): a file-like object.
-
-    Raises:
-      ParseError: if the page value offsets cannot be read.
-    """
-    file_offset = file_object.tell()
-    offset_array = self._ReadOffsetsTable(
-        file_object, file_offset, u'page value offsets')
-
-    if self._debug:
-      for index, offset in enumerate(offset_array):
-        description = u'Page value: {0:d} offset'.format(index)
-        value_string = u'0x{0:04x}'.format(offset)
-        self._DebugPrintValue(description, value_string)
-
-      self._DebugPrintText(u'\n')
-
-    self._page_value_offsets = offset_array
-
-  def _ReadValueData(self, file_object):
-    """Reads page value data.
-
-    Args:
-      file_object (file): a file-like object.
-
-    Raises:
-      ParseError: if the page value data cannot be read.
-    """
-    file_offset = file_object.tell()
-    if self._debug:
-      self._DebugPrintText(
-          u'Reading page value data at offset: 0x{0:08x}\n'.format(file_offset))
-
-    size_data = file_object.read(self._UINT16LE_SIZE)
-
-    try:
-      data_size = self._UINT16LE.MapByteStream(size_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to parse page value data size at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
-
-    if self._debug:
-      value_string = u'{0:d} bytes'.format(data_size)
-      self._DebugPrintValue(u'Page value data size', value_string)
-
-    if data_size == 0:
-      self._DebugPrintData(u'Page value data', size_data)
-      return
-
-    value_data = file_object.read(data_size)
-
-    if self._debug:
-      self._DebugPrintData(u'Page value data', b''.join([
-          size_data, value_data]))
-
-    for index, page_value_offset in enumerate(self._page_value_offsets):
-      # TODO: determine size
-
-      try:
-        value_string = self._STRING.MapByteStream(
-            value_data[page_value_offset:])
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError((
-            u'Unable to parse page value: {0:d} string with error: '
-            u'{1!s}').format(index, exception))
-
-      if self._debug:
-        description = u'Page value: {0:d} data'.format(index)
-        self._DebugPrintValue(description, value_string)
-
-      self._page_values.append(value_string)
-
-    if self._debug and self._page_value_offsets:
-      self._DebugPrintText(u'\n')
-
-  def _ReadSubPages(self, page_header, file_object):
-    """Reads sub pages data.
-
-    Args:
-      page_header (cim_page_header): page header.
-      file_object (file): a file-like object.
-
-    Raises:
-      ParseError: if the sub pages cannot be read.
-    """
-    file_offset = file_object.tell()
-    if self._debug:
-      self._DebugPrintText(
-          u'Reading sub pages at offset: 0x{0:08x}\n'.format(file_offset))
-
-    number_of_entries = self._number_of_keys + 1
-    entries_data_size = number_of_entries * 4
-
-    entries_data = file_object.read(entries_data_size)
-
-    if self._debug:
-      self._DebugPrintData(u'Sub pages array data', entries_data)
-
-    context = dtfabric_data_maps.DataTypeMapContext(values={
-        u'cim_page_header': page_header})
-
-    try:
-      sub_pages_array = self._PAGE_SUBPAGES.MapByteStream(
-          entries_data, context=context)
-
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to parse sub pages at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
-
-    for index, page_number in enumerate(sub_pages_array):
-      if page_number not in (0, 0xffffffff):
-        self.sub_pages.append(page_number)
-
-      if self._debug:
-        description = u'Sub page: {0:d} mapped page number'.format(index)
-        self._DebugPrintPageNumber(
-            description, page_number,
-            unavailable_page_numbers=set([0, 0xffffffff]))
-
-    if self._debug:
-      self._DebugPrintText(u'\n')
-
-  def ReadPage(self, file_object, file_offset):
-    """Reads a page.
-
-    Args:
-      file_object (file): a file-like object.
-      file_offset (int): offset of the page relative from the start of the file.
-
-    Raises:
-      ParseError: if the page cannot be read.
-    """
-    file_object.seek(file_offset, os.SEEK_SET)
-
-    if self._debug:
-      self._DebugPrintText(
-          u'Reading index binary-tree page at offset: 0x{0:08x}\n'.format(
-              file_offset))
-
-    page_header = self._ReadHeader(file_object)
-
-    if page_header.number_of_keys > 0:
-      array_data_size = page_header.number_of_keys * 4
-      array_data = file_object.read(array_data_size)
-
-      if self._debug:
-        self._DebugPrintData(u'Unknown array data', array_data)
-
-    self._ReadSubPages(page_header, file_object)
-    self._ReadKeyOffsets(page_header, file_object)
-    self._ReadKeyData(file_object)
-    self._ReadValueOffsets(file_object)
-    self._ReadValueData(file_object)
-
-    trailing_data_size = (
-        (file_offset + self.PAGE_SIZE) - file_object.tell())
-    trailing_data = file_object.read(trailing_data_size)
-
-    if self._debug:
-      self._DebugPrintData(u'Trailing data', trailing_data)
-
-    self.keys = []
-    for page_key_segments in self._page_key_segments:
-      key_segments = []
-      for segment_index in page_key_segments:
-        key_segments.append(self._page_values[segment_index])
-
-      key_path = u'{0:s}{1:s}'.format(
-          self._KEY_SEGMENT_SEPARATOR,
-          self._KEY_SEGMENT_SEPARATOR.join(key_segments))
-
-      self.keys.append(key_path)
 
 
 class ObjectRecord(data_format.BinaryDataFormat):
@@ -1672,8 +1097,144 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
     return file_object.read(read_size)
 
 
-class IndexBinaryTreeFile(object):
+class IndexBinaryTreeFile(data_format.BinaryDataFile):
   """Index binary-tree (Index.btr) file."""
+
+  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
+      b'name: byte',
+      b'type: integer',
+      b'attributes:',
+      b'  format: unsigned',
+      b'  size: 1',
+      b'  units: bytes',
+      b'---',
+      b'name: uint16',
+      b'type: integer',
+      b'attributes:',
+      b'  format: unsigned',
+      b'  size: 2',
+      b'  units: bytes',
+      b'---',
+      b'name: uint32',
+      b'type: integer',
+      b'attributes:',
+      b'  format: unsigned',
+      b'  size: 4',
+      b'  units: bytes',
+      b'---',
+      b'name: uint16le',
+      b'type: integer',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'  format: unsigned',
+      b'  size: 2',
+      b'  units: bytes',
+      b'---',
+      b'name: uint32le',
+      b'type: integer',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'  format: unsigned',
+      b'  size: 4',
+      b'  units: bytes',
+      b'---',
+      b'name: cim_page_header',
+      b'type: structure',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: page_type',
+      b'  data_type: uint32',
+      b'- name: mapped_page_number',
+      b'  data_type: uint32',
+      b'- name: unknown1',
+      b'  data_type: uint32',
+      b'- name: root_page_number',
+      b'  data_type: uint32',
+      b'---',
+      b'name: cim_page_body',
+      b'type: structure',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: number_of_keys',
+      b'  data_type: uint32',
+      b'- name: unknown2',
+      b'  type: sequence',
+      b'  element_data_type: uint32',
+      b'  number_of_elements: cim_page_body.number_of_keys',
+      b'- name: sub_pages',
+      b'  type: sequence',
+      b'  element_data_type: uint32',
+      b'  number_of_elements: cim_page_body.number_of_keys + 1',
+      b'- name: key_offsets',
+      b'  type: sequence',
+      b'  element_data_type: uint16',
+      b'  number_of_elements: cim_page_body.number_of_keys',
+      b'- name: key_data_size',
+      b'  data_type: uint16',
+      b'- name: key_data',
+      b'  type: stream',
+      b'  element_data_type: uint16',
+      b'  number_of_elements: cim_page_body.key_data_size',
+      b'- name: number_of_values',
+      b'  data_type: uint16',
+      b'- name: value_offsets',
+      b'  type: sequence',
+      b'  element_data_type: uint16',
+      b'  number_of_elements: cim_page_body.number_of_values',
+      b'- name: value_data_size',
+      b'  data_type: uint16',
+      b'- name: value_data',
+      b'  type: stream',
+      b'  element_data_type: byte',
+      b'  elements_data_size: cim_page_body.value_data_size',
+      b'---',
+      b'name: cim_page_key',
+      b'type: structure',
+      b'attributes:',
+      b'  byte_order: little-endian',
+      b'members:',
+      b'- name: number_of_segments',
+      b'  data_type: uint16',
+      b'- name: segments',
+      b'  type: sequence',
+      b'  element_data_type: uint16',
+      b'  number_of_elements: cim_page_key.number_of_segments',
+      b'---',
+      b'name: string',
+      b'type: string',
+      b'encoding: ascii',
+      b'element_data_type: byte',
+      b'elements_terminator: "\\x00"',
+  ])
+
+  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
+      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
+
+  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'uint16le')
+
+  _UINT16LE_SIZE = _UINT16LE.GetByteSize()
+
+  _PAGE_SIZE = 8192
+
+  _PAGE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_header')
+
+  _PAGE_HEADER_SIZE = _PAGE_HEADER.GetByteSize()
+
+  _PAGE_BODY = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_body')
+
+  _PAGE_KEY = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_key')
+
+  _STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'string')
+
+  _PAGE_TYPES = {
+      0xaccc: u'Is active',
+      0xaddd: u'Is administrative',
+      0xbadd: u'Is deleted',
+  }
+
+  _KEY_SEGMENT_SEPARATOR = u'\\'
 
   def __init__(self, index_mapping_file, debug=False, output_writer=None):
     """Initializes an index binary-tree file.
@@ -1683,17 +1244,95 @@ class IndexBinaryTreeFile(object):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(IndexBinaryTreeFile, self).__init__()
-    self._debug = debug
-    self._output_writer = output_writer
-
-    self._file_object = None
-    self._file_object_opened_in_object = False
-    self._file_size = 0
-
+    super(IndexBinaryTreeFile, self).__init__(
+        debug=debug, output_writer=output_writer)
     self._index_mapping_file = index_mapping_file
     self._first_mapped_page = None
     self._root_page = None
+
+  def _DebugPrintPageBody(self, page_header):
+    """Prints page body debug information.
+
+    Args:
+      page_body (cim_page_body): page body.
+    """
+    self._DebugPrintValueDecimal(u'Number of keys', page_header.number_of_keys)
+
+    for index, value in enumerate(page_header.unknown2):
+      description = u'Unknown2: {0:d}'.format(index)
+      self._DebugPrintValueDecimal(description, value)
+
+    for index, page_number in enumerate(page_header.sub_pages):
+      description = u'Sub page: {0:d} mapped page number'.format(index)
+      self._DebugPrintPageNumber(
+          description, page_number,
+          unavailable_page_numbers=set([0, 0xffffffff]))
+
+    for index, key_offset in enumerate(page_header.key_offsets):
+      description = u'Key: {0:d} offset'.format(index)
+      value_string = u'0x{0:04x}'.format(key_offset)
+      self._DebugPrintValue(description, value_string)
+
+    value_string = u'{0:d} ({1:d} bytes)'.format(
+        page_header.key_data_size, page_header.key_data_size * 2)
+    self._DebugPrintValue(u'Key data size', value_string)
+
+    self._DebugPrintData(u'Key data', page_header.key_data)
+
+    self._DebugPrintValueDecimal(
+        u'Number of values', page_header.number_of_values)
+
+    for index, offset in enumerate(page_header.value_offsets):
+      description = u'Value: {0:d} offset'.format(index)
+      value_string = u'0x{0:04x}'.format(offset)
+      self._DebugPrintValue(description, value_string)
+
+    value_string = u'{0:d} ({1:d} bytes)'.format(
+        page_header.value_data_size, page_header.value_data_size * 2)
+    self._DebugPrintValue(u'Value data size', value_string)
+
+    self._DebugPrintData(u'Value data', page_header.value_data)
+
+  def _DebugPrintPageHeader(self, page_header):
+    """Prints page header debug information.
+
+    Args:
+      page_header (cim_page_header): page header.
+    """
+    page_type_string = self._PAGE_TYPES.get(page_header.page_type, u'Unknown')
+    value_string = u'0x{0:04x} ({1:s})'.format(
+        page_header.page_type, page_type_string)
+    self._DebugPrintValue(u'Page type', value_string)
+
+    self._DebugPrintValueDecimal(
+        u'Mapped page number', page_header.mapped_page_number)
+
+    value_string = u'0x{0:08x}'.format(page_header.unknown1)
+    self._DebugPrintValue(u'Unknown1', value_string)
+
+    self._DebugPrintValueDecimal(
+        u'Root page number', page_header.root_page_number)
+
+    self._DebugPrintText(u'\n')
+
+  def _DebugPrintPageNumber(
+      self, description, page_number, unavailable_page_numbers=None):
+    """Prints a page number debug information.
+
+    Args:
+      description (str): description.
+      page_number (int): page number.
+      unavailable_page_numbers (Optional[set[int]]): unavailable page numbers.
+    """
+    if not unavailable_page_numbers:
+      unavailable_page_numbers = set()
+
+    if page_number in unavailable_page_numbers:
+      value_string = u'0x{0:08x} (unavailable)'.format(page_number)
+    else:
+      value_string = u'{0:d}'.format(page_number)
+
+    self._DebugPrintValue(description, value_string)
 
   def _GetPage(self, page_number):
     """Retrieves a specific page.
@@ -1704,32 +1343,180 @@ class IndexBinaryTreeFile(object):
     Returns:
       IndexBinaryTreePage: an index binary-tree page or None.
     """
-    file_offset = page_number * IndexBinaryTreePage.PAGE_SIZE
+    file_offset = page_number * self._PAGE_SIZE
     if file_offset >= self._file_size:
       return
 
     # TODO: cache pages.
-    return self._ReadPage(file_offset)
+    return self._ReadPage(self._file_object, file_offset)
 
-  def _ReadPage(self, file_offset):
+  def _ReadPage(self, file_object, file_offset):
     """Reads a page.
 
     Args:
+      file_object (file): a file-like object.
       file_offset (int): offset of the page relative from the start of the file.
 
     Return:
       IndexBinaryTreePage: an index binary-tree page.
-    """
-    index_page = IndexBinaryTreePage(
-        debug=self._debug, output_writer=self._output_writer)
-    index_page.ReadPage(self._file_object, file_offset)
-    return index_page
 
-  def Close(self):
-    """Closes the index binary-tree file."""
-    if self._file_object_opened_in_object:
-      self._file_object.close()
-    self._file_object = None
+    Raises:
+      ParseError: if the page cannot be read.
+    """
+    page_data = self._ReadData(
+        file_object, file_offset, self._PAGE_SIZE, u'index binary-tree page')
+
+    if self._debug:
+      self._DebugPrintData(
+          u'Page header data', page_data[:self._PAGE_HEADER_SIZE])
+
+    try:
+      page_header = self._PAGE_HEADER.MapByteStream(page_data)
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError((
+          u'Unable to map page header data at offset: 0x{0:08x} with error: '
+          u'{1!s}').format(file_offset, exception))
+
+    if self._debug:
+      self._DebugPrintPageHeader(page_header)
+
+    index_binary_tree_page = IndexBinaryTreePage()
+    index_binary_tree_page.page_type = page_header.page_type
+    index_binary_tree_page.root_page_number = page_header.root_page_number
+
+    page_data_size = self._PAGE_HEADER_SIZE
+    if page_header.page_type == 0xaccc:
+      context = dtfabric_data_maps.DataTypeMapContext()
+
+      try:
+        page_body = self._PAGE_BODY.MapByteStream(
+            page_data[self._PAGE_HEADER_SIZE:], context=context)
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            u'Unable to map page body data at offset: 0x{0:08x} with error: '
+            u'{1!s}').format(file_offset, exception))
+
+      page_data_size += context.byte_size
+
+      if self._debug:
+        self._DebugPrintData(
+            u'Page body data', page_data[self._PAGE_HEADER_SIZE:page_data_size])
+
+      if self._debug:
+        self._DebugPrintPageBody(page_body)
+
+    if self._debug:
+      trailing_data_size = self._PAGE_SIZE - page_data_size
+      if trailing_data_size > 0:
+        self._DebugPrintData(u'Trailing data', page_data[page_data_size:])
+
+    if page_header.page_type == 0xaccc:
+      index_binary_tree_page.number_of_keys = page_body.number_of_keys
+
+      for page_number in iter(page_body.sub_pages):
+        if page_number not in (0, 0xffffffff):
+          index_binary_tree_page.sub_pages.append(page_number)
+
+      index_binary_tree_page.page_value_offsets = page_body.value_offsets
+
+      # TODO: return page_key_segments
+      self._ReadPageKeyData(index_binary_tree_page, page_body)
+      self._ReadPageValueData(index_binary_tree_page, page_body)
+
+      index_binary_tree_page.keys = []
+      for page_key_segments in index_binary_tree_page.page_key_segments:
+        key_segments = []
+        for segment_index in page_key_segments:
+          key_segments.append(index_binary_tree_page.page_values[segment_index])
+
+        key_path = u'{0:s}{1:s}'.format(
+            self._KEY_SEGMENT_SEPARATOR,
+            self._KEY_SEGMENT_SEPARATOR.join(key_segments))
+
+        index_binary_tree_page.keys.append(key_path)
+
+    return index_binary_tree_page
+
+  def _ReadPageKeyData(self, index_binary_tree_page, page_body):
+    """Reads page key data.
+
+    Args:
+      index_binary_tree_page (IndexBinaryTreePage): index binary-tree page.
+      page_body (cim_page_body): page body.
+
+    Raises:
+      ParseError: if the page key data cannot be read.
+    """
+    key_data = page_body.key_data
+
+    for index, key_offset in enumerate(page_body.key_offsets):
+      page_key_offset = key_offset * 2
+
+      if self._debug:
+        description = u'Page key: {0:d} offset'.format(index)
+        value_string = u'{0:d} (0x{0:08x})'.format(page_key_offset)
+        self._DebugPrintValue(description, value_string)
+
+      try:
+        page_key = self._PAGE_KEY.MapByteStream(key_data[page_key_offset:])
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError(
+            u'Unable to parse page key: {0:d} with error: {1:s}'.format(
+                index, exception))
+
+      page_key_size = page_key_offset + 2 + (page_key.number_of_segments * 2)
+
+      if self._debug:
+        description = u'Page key: {0:d} data:'.format(index)
+        self._DebugPrintData(
+            description, key_data[page_key_offset:page_key_size])
+
+      index_binary_tree_page.page_key_segments.append(page_key.segments)
+
+      if self._debug:
+        description = u'Page key: {0:d} number of segments'.format(index)
+        self._DebugPrintValueDecimal(description, page_key.number_of_segments)
+
+        description = u'Page key: {0:d} segments'.format(index)
+        value_string = u', '.join([
+            u'{0:d}'.format(segment_index)
+            for segment_index in page_key.segments])
+        self._DebugPrintValue(description, value_string)
+
+        self._DebugPrintText(u'\n')
+
+  def _ReadPageValueData(self, index_binary_tree_page, page_body):
+    """Reads page value data.
+
+    Args:
+      index_binary_tree_page (IndexBinaryTreePage): index binary-tree page.
+      page_body (cim_page_body): page body.
+
+    Raises:
+      ParseError: if the page value data cannot be read.
+    """
+    value_data = page_body.value_data
+
+    for index, page_value_offset in enumerate(
+        index_binary_tree_page.page_value_offsets):
+      # TODO: determine size
+
+      try:
+        value_string = self._STRING.MapByteStream(
+            value_data[page_value_offset:])
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            u'Unable to parse page value: {0:d} string with error: '
+            u'{1!s}').format(index, exception))
+
+      if self._debug:
+        description = u'Page value: {0:d} data'.format(index)
+        self._DebugPrintValue(description, value_string[:-1])
+
+      index_binary_tree_page.page_values.append(value_string)
+
+    if self._debug and index_binary_tree_page.page_value_offsets:
+      self._DebugPrintText(u'\n')
 
   def GetFirstMappedPage(self):
     """Retrieves the first mapped page.
@@ -1800,23 +1587,20 @@ class IndexBinaryTreeFile(object):
 
     return self._root_page
 
-  def Open(self, filename):
-    """Opens the index binary-tree file.
+  def ReadFileObject(self, file_object):
+    """Reads an index binary-tree file-like object.
 
     Args:
-      filename (str): name of the file.
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
     """
-    stat_object = os.stat(filename)
-    self._file_size = stat_object.st_size
-
-    self._file_object = open(filename, 'rb')
-    self._file_object_opened_in_object = True
-
     if self._debug:
       file_offset = 0
       while file_offset < self._file_size:
-        self._ReadPage(file_offset)
-        file_offset += IndexBinaryTreePage.PAGE_SIZE
+        self._ReadPage(file_object, file_offset)
+        file_offset += self._PAGE_SIZE
 
 
 class MappingFile(data_format.BinaryDataFile):
@@ -1877,13 +1661,13 @@ class MappingFile(data_format.BinaryDataFile):
 
   _UINT32LE_SIZE = _UINT32LE.GetByteSize()
 
-  _HEADER_SIGNATURE = 0x0000abcd
+  _FILE_HEADER_SIGNATURE = 0x0000abcd
 
   _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_map_header')
 
   _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
 
-  _FOOTER_SIGNATURE = 0x0000dcba
+  _FILE_FOOTER_SIGNATURE = 0x0000dcba
 
   _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_map_footer')
 
@@ -1950,6 +1734,23 @@ class MappingFile(data_format.BinaryDataFile):
 
     self._DebugPrintValue(description, value_string)
 
+  def _DebugPrintPageNumbersTable(
+      self, description, page_number_table, unavailable_page_numbers=None):
+    """Prints a page number table debug information.
+
+    Args:
+      description (str): description.
+      page_number_table (tuple[int, ...]): page number table.
+      unavailable_page_numbers (Optional[set[int]]): unavailable page numbers.
+    """
+    for index, page_number in enumerate(page_number_table):
+      sub_description = u'{0:s}: {1:d} page number'.format(description, index)
+      self._DebugPrintPageNumber(
+          sub_description, page_number,
+          unavailable_page_numbers=unavailable_page_numbers)
+
+    self._DebugPrintText(u'\n')
+
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
 
@@ -1968,7 +1769,7 @@ class MappingFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFileFooter(file_footer)
 
-    if file_footer.signature != self._FOOTER_SIGNATURE:
+    if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
       raise errors.ParseError(
           u'Unsupported file footer signature: 0x{0:08x}'.format(
               file_footer.signature))
@@ -1991,7 +1792,7 @@ class MappingFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
-    if file_header.signature != self._HEADER_SIGNATURE:
+    if file_header.signature != self._FILE_HEADER_SIGNATURE:
       raise errors.ParseError(
           u'Unsupported file header signature: 0x{0:08x}'.format(
               file_header.signature))
@@ -2010,13 +1811,9 @@ class MappingFile(data_format.BinaryDataFile):
         file_object, file_offset, u'mappings')
 
     if self._debug:
-      for index, page_number in enumerate(mappings_array):
-        description = u'Mapping entry: {0:d} page number'.format(index)
-        self._DebugPrintPageNumber(
-            description, page_number,
-            unavailable_page_numbers=set([0xffffffff]))
-
-      self._DebugPrintText(u'\n')
+      self._DebugPrintPageNumbersTable(
+          u'Mapping entry', mappings_array,
+          unavailable_page_numbers=set([0xffffffff]))
 
     self.mappings = mappings_array
 
@@ -2035,6 +1832,8 @@ class MappingFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the page numbers table cannot be read.
     """
+    file_object.seek(file_offset, os.SEEK_SET)
+
     if self._debug:
       self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}\n'.format(
           description, file_offset))
@@ -2113,11 +1912,9 @@ class MappingFile(data_format.BinaryDataFile):
         file_object, file_offset, u'unknown entries')
 
     if self._debug:
-      for index, page_number in enumerate(unknown_entries_array):
-        description = u'Unknown entry: {0:d} page number'.format(index)
-        self._DebugPrintPageNumber(
-            description, page_number,
-            unavailable_page_numbers=set([0xffffffff]))
+      self._DebugPrintPageNumbersTable(
+          u'Unknown entry', unknown_entries_array,
+          unavailable_page_numbers=set([0xffffffff]))
 
       self._DebugPrintText(u'\n')
 
@@ -2358,6 +2155,15 @@ class CIMRepository(object):
     self._objects_mapping_file = None
     self._output_writer = output_writer
 
+  def _DebugPrintText(self, text):
+    """Prints text for debugging.
+
+    Args:
+      text (str): text.
+    """
+    if self._output_writer:
+      self._output_writer.WriteText(text)
+
   def _GetCurrentMappingFile(self, path):
     """Retrieves the current mapping file.
 
@@ -2471,9 +2277,19 @@ class CIMRepository(object):
     """
     # TODO: self._GetCurrentMappingFile(path)
 
+    self.OpenIndexBinaryTree(path)
+    self.OpenObjectsData(path)
+
+  def OpenIndexBinaryTree(self, path):
+    """Opens the CIM repository index binary tree.
+
+    Args:
+      path (str): path to the CIM repository.
+    """
     # Index mappings file.
-    index_mapping_file_path = glob.glob(
-        os.path.join(path, u'[Ii][Nn][Dd][Ee][Xx].[Mm][Aa][Pp]'))[0]
+    index_mapping_file_glob = os.path.join(
+        path, u'[Ii][Nn][Dd][Ee][Xx].[Mm][Aa][Pp]')
+    index_mapping_file_path = glob.glob(index_mapping_file_glob)[0]
 
     if self._debug:
       self._DebugPrintText(u'Reading: {0:s}\n'.format(index_mapping_file_path))
@@ -2483,8 +2299,9 @@ class CIMRepository(object):
     self._index_mapping_file.Open(index_mapping_file_path)
 
     # Index binary tree file.
-    index_binary_tree_file_path = glob.glob(
-        os.path.join(path, u'[Ii][Nn][Dd][Ee][Xx].[Bb][Tt][Rr]'))[0]
+    index_binary_tree_file_glob = os.path.join(
+        path, u'[Ii][Nn][Dd][Ee][Xx].[Bb][Tt][Rr]')
+    index_binary_tree_file_path = glob.glob(index_binary_tree_file_glob)[0]
 
     if self._debug:
       self._DebugPrintText(u'Reading: {0:s}\n'.format(
@@ -2495,9 +2312,16 @@ class CIMRepository(object):
         output_writer=self._output_writer)
     self._index_binary_tree_file.Open(index_binary_tree_file_path)
 
+  def OpenObjectsData(self, path):
+    """Opens the CIM repository objects data.
+
+    Args:
+      path (str): path to the CIM repository.
+    """
     # Objects mappings file.
-    objects_mapping_file_path = glob.glob(
-        os.path.join(path, u'[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Mm][Aa][Pp]'))[0]
+    objects_mapping_file_glob = os.path.join(
+        path, u'[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Mm][Aa][Pp]')
+    objects_mapping_file_path = glob.glob(objects_mapping_file_glob)[0]
 
     if self._debug:
       self._DebugPrintText(u'Reading: {0:s}\n'.format(
@@ -2508,8 +2332,9 @@ class CIMRepository(object):
     self._objects_mapping_file.Open(objects_mapping_file_path)
 
     # Objects data file.
-    objects_data_file_path = glob.glob(
-        os.path.join(path, u'[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Da][Aa][Tt][Aa]'))[0]
+    objects_data_file_glob = os.path.join(
+        path, u'[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Da][Aa][Tt][Aa]')
+    objects_data_file_path = glob.glob(objects_data_file_glob)[0]
 
     if self._debug:
       self._DebugPrintText(u'Reading: {0:s}\n'.format(objects_data_file_path))

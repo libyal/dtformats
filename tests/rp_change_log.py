@@ -11,8 +11,6 @@ from tests import test_lib
 class ChangeLogEntryTest(test_lib.BaseTestCase):
   """Windows Restore Point change log entry tests."""
 
-  _FILE_DATA = bytes(bytearray(range(128)))
-
   def testInitialize(self):
     """Tests the __init__ function."""
     change_log_entry = rp_change_log.ChangeLogEntry()

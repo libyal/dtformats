@@ -217,8 +217,10 @@ class BinaryDataFormat(object):
       ValueError: if file-like object or date type map are invalid.
     """
     context = None
-    while True:
-      size_hint = data_type_map.GetSizeHint(context=context)
+    last_size_hint = 0
+    size_hint = data_type_map.GetSizeHint()
+
+    while size_hint != last_size_hint:
       data = self._ReadData(file_object, file_offset, size_hint, description)
 
       try:
@@ -229,6 +231,11 @@ class BinaryDataFormat(object):
 
       except dtfabric_errors.ByteStreamTooSmallError:
         pass
+
+      last_size_hint = size_hint
+      size_hint = data_type_map.GetSizeHint(context=context)
+
+    raise errors.ParseError(u'Unable to read {0:s}'.format(description))
 
   def _ReadStructureFromByteStream(
       self, byte_stream, file_offset, data_type_map, description, context=None):

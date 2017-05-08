@@ -5,6 +5,7 @@
 from __future__ import print_function
 import argparse
 import logging
+import os
 import sys
 
 from dtformats import output_writers
@@ -52,29 +53,37 @@ def Main():
     print(u'')
     return False
 
+  source_basename = os.path.basename(options.source)
+  source_basename = source_basename.upper()
+
   cim_repository = wmi_repository.CIMRepository(
       debug=options.debug, output_writer=output_writer)
 
-  cim_repository.Open(options.source)
+  if source_basename == u'INDEX.BTR':
+    source = os.path.dirname(options.source)
+    cim_repository.OpenIndexBinaryTree(source)
 
-  object_record_keys = {}
-  for key in cim_repository.GetKeys():
-    if u'.' not in key:
-      continue
+  else:
+    cim_repository.Open(options.source)
 
-    _, _, key_name = key.rpartition(u'\\')
-    key_name, _, _ = key_name.partition(u'.')
+    object_record_keys = {}
+    for key in cim_repository.GetKeys():
+      if u'.' not in key:
+        continue
 
-    if key_name not in object_record_keys:
-      object_record_keys[key_name] = []
+      _, _, key_name = key.rpartition(u'\\')
+      key_name, _, _ = key_name.partition(u'.')
 
-    object_record_keys[key_name].append(key)
+      if key_name not in object_record_keys:
+        object_record_keys[key_name] = []
 
-  for key_name, keys in iter(object_record_keys.items()):
-    for key in keys:
-      print(key)
-      object_record = cim_repository.GetObjectRecordByKey(key)
-      object_record.Read()
+      object_record_keys[key_name].append(key)
+
+    for key_name, keys in iter(object_record_keys.items()):
+      for key in keys:
+        print(key)
+        object_record = cim_repository.GetObjectRecordByKey(key)
+        object_record.Read()
 
   cim_repository.Close()
 
