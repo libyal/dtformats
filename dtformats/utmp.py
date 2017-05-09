@@ -43,17 +43,17 @@ class UTMPFile(data_format.BinaryDataFile):
       b'- name: pid',
       b'  data_type: uint32',
       b'- name: terminal',
-      b'  type: sequence',
+      b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 32',
       b'- name: terminal_identifier',
       b'  data_type: uint32',
       b'- name: username',
-      b'  type: sequence',
+      b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 32',
       b'- name: hostname',
-      b'  type: sequence',
+      b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 256',
       b'- name: termination',
@@ -75,7 +75,7 @@ class UTMPFile(data_format.BinaryDataFile):
       b'- name: address_d',
       b'  data_type: uint32',
       b'- name: unknown1',
-      b'  type: sequence',
+      b'  type: stream',
       b'  element_data_type: byte',
       b'  number_of_elements: 20',
   ])
@@ -99,22 +99,18 @@ class UTMPFile(data_format.BinaryDataFile):
     value_string = u'{0:d}'.format(entry.pid)
     self._DebugPrintValue(u'PID', value_string)
 
-    # TODO: add dtfabric string support.
-    value_string = bytes(bytearray(entry.terminal))
-    value_string = value_string.replace(b'\0', b'')
+    value_string = entry.terminal.replace(b'\0', b'')
     value_string = value_string.decode(u'utf-8')
     self._DebugPrintValue(u'Terminal', value_string)
 
     value_string = u'{0:d}'.format(entry.terminal_identifier)
     self._DebugPrintValue(u'Terminal ID', value_string)
 
-    value_string = bytes(bytearray(entry.username))
-    value_string = value_string.replace(b'\0', b'')
+    value_string = entry.username.replace(b'\0', b'')
     value_string = value_string.decode(u'utf-8')
     self._DebugPrintValue(u'Username', value_string)
 
-    value_string = bytes(bytearray(entry.hostname))
-    value_string = value_string.replace(b'\0', b'')
+    value_string = entry.hostname.replace(b'\0', b'')
     value_string = value_string.decode(u'utf-8')
     self._DebugPrintValue(u'Hostname', value_string)
 
@@ -148,8 +144,7 @@ class UTMPFile(data_format.BinaryDataFile):
     value_string = u'0x{0:08x}'.format(entry.address_d)
     self._DebugPrintValue(u'Address D', value_string)
 
-    # TODO: add dtfabric byte array support.
-    self._DebugPrintData(u'Unknown1', bytes(bytearray(entry.unknown1)))
+    self._DebugPrintData(u'Unknown1', entry.unknown1)
 
   def _ReadEntries(self, file_object):
     """Reads entries.

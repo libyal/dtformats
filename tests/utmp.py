@@ -11,14 +11,49 @@ from tests import test_lib
 class UTMPFileTest(test_lib.BaseTestCase):
   """UTMP file tests."""
 
-  # TODO: add tests for _DebugPrintEntry.
-  # TODO: add tests for _ReadEntries.
+  # pylint: disable=protected-access
+
+  def testDebugPrintEntry(self):
+    """Tests the _DebugPrintEntry function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = utmp.UTMPFile(output_writer=output_writer)
+
+    data_type_map = test_file._UTMP_ENTRY
+    entry = data_type_map.CreateStructureValues(
+        address_a=9,
+        address_b=10,
+        address_c=11,
+        address_d=12,
+        exit=5,
+        hostname=b'host',
+        micro_seconds=8,
+        pid=2,
+        session=6,
+        terminal=b'vty',
+        terminal_identifier=3,
+        termination=4,
+        timestamp=7,
+        type=1,
+        unknown1=b'unknown',
+        username=b'user')
+
+    test_file._DebugPrintEntry(entry)
+
+  @test_lib.skipUnlessHasTestFile([u'utmp'])
+  def testReadEntries(self):
+    """Tests the _ReadEntries function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = utmp.UTMPFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([u'utmp'])
+    with open(test_file_path, 'rb') as file_object:
+      test_file._ReadEntries(file_object)
 
   @test_lib.skipUnlessHasTestFile([u'utmp'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = utmp.UTMPFile(output_writer=output_writer)
+    test_file = utmp.UTMPFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([u'utmp'])
     test_file.Open(test_file_path)

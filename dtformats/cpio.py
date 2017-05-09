@@ -3,7 +3,6 @@
 
 import os
 
-from dtfabric import errors as dtfabric_errors
 from dtfabric import fabric as dtfabric_fabric
 
 from dtformats import data_format
@@ -376,12 +375,6 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file entry cannot be read.
     """
-    if self._debug:
-      self._DebugPrintText(
-          u'Seeking file entry at offset: 0x{0:08x}\n'.format(file_offset))
-
-    file_object.seek(file_offset, os.SEEK_SET)
-
     if self.file_format == u'bin-big-endian':
       data_type_map = self._CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY
       file_entry_data_size = self._CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY_SIZE
@@ -395,18 +388,11 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       data_type_map = self._CPIO_NEW_ASCII_FILE_ENTRY
       file_entry_data_size = self._CPIO_NEW_ASCII_FILE_ENTRY_SIZE
 
-    file_entry_data = file_object.read(file_entry_data_size)
+    file_entry = self._ReadStructure(
+        file_object, file_offset, file_entry_data_size, data_type_map,
+        u'file entry')
+
     file_offset += file_entry_data_size
-
-    if self._debug:
-      self._DebugPrintData(u'File entry data', file_entry_data)
-
-    try:
-      file_entry = data_type_map.MapByteStream(file_entry_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          u'Unable to map file entry data section with error: '
-          u'{0:s}').file_format(exception))
 
     if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
       file_entry.modification_time = (
