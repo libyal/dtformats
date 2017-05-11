@@ -5,10 +5,10 @@
 import os
 import sys
 
-# Change PYTHONPATH to include dtformats.
+# Change PYTHONPATH to include dependencies.
 sys.path.insert(0, u'.')
 
-import dtformats.dependencies  # pylint: disable=wrong-import-position
+import utils.dependencies  # pylint: disable=wrong-import-position
 
 
 class AppveyorYmlWriter(object):
@@ -61,7 +61,7 @@ class AppveyorYmlWriter(object):
     file_content = []
     file_content.extend(self._FILE_HEADER)
 
-    dependencies = dtformats.dependencies.GetL2TBinaries()
+    dependencies = utils.dependencies.GetL2TBinaries()
     dependencies.extend([u'funcsigs', u'mock', u'pbr', u'six'])
     dependencies = u' '.join(dependencies)
 
@@ -116,7 +116,7 @@ class DPKGControlWriter(object):
     file_content.extend(self._FILE_HEADER)
     file_content.extend(self._PYTHON2_PACKAGE_HEADER)
 
-    dependencies = dtformats.dependencies.GetDPKGDepends()
+    dependencies = utils.dependencies.GetDPKGDepends()
     dependencies.extend([u'${python:Depends}', u'${misc:Depends}'])
     dependencies = u', '.join(dependencies)
 
@@ -153,7 +153,7 @@ class RequirementsWriter(object):
     file_content = []
     file_content.extend(self._FILE_HEADER)
 
-    dependencies = dtformats.dependencies.GetInstallRequires()
+    dependencies = utils.dependencies.GetInstallRequires()
     for dependency in dependencies:
       file_content.append(u'{0:s}'.format(dependency))
 
@@ -186,7 +186,7 @@ class SetupCfgWriter(object):
     file_content = []
     file_content.extend(self._FILE_HEADER)
 
-    dependencies = dtformats.dependencies.GetRPMRequires()
+    dependencies = utils.dependencies.GetRPMRequires()
     for index, dependency in enumerate(dependencies):
       if index == 0:
         file_content.append(u'requires = {0:s}'.format(dependency))
@@ -245,7 +245,7 @@ class TravisBeforeInstallScriptWriter(object):
     file_content = []
     file_content.extend(self._FILE_HEADER)
 
-    dependencies = dtformats.dependencies.GetL2TBinaries()
+    dependencies = utils.dependencies.GetL2TBinaries()
     dependencies = u' '.join(dependencies)
     file_content.append(u'L2TBINARIES_DEPENDENCIES="{0:s}";'.format(
         dependencies))
@@ -256,7 +256,7 @@ class TravisBeforeInstallScriptWriter(object):
 
     file_content.append(u'')
 
-    dependencies = dtformats.dependencies.GetDPKGDepends(exclude_version=True)
+    dependencies = utils.dependencies.GetDPKGDepends(exclude_version=True)
     dependencies = u' '.join(dependencies)
     file_content.append(u'PYTHON2_DEPENDENCIES="{0:s}";'.format(dependencies))
 
@@ -265,7 +265,7 @@ class TravisBeforeInstallScriptWriter(object):
 
     file_content.append(u'')
 
-    dependencies = dtformats.dependencies.GetDPKGDepends(exclude_version=True)
+    dependencies = utils.dependencies.GetDPKGDepends(exclude_version=True)
     dependencies = u' '.join(dependencies)
     dependencies = dependencies.replace(u'python', u'python3')
     file_content.append(u'PYTHON3_DEPENDENCIES="{0:s}";'.format(dependencies))

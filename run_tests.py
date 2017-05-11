@@ -5,10 +5,10 @@
 import sys
 import unittest
 
-# Change PYTHONPATH to include dtFormats.
+# Change PYTHONPATH to include dependencies.
 sys.path.insert(0, u'.')
 
-import dtformats.dependencies  # pylint: disable=wrong-import-position
+import utils.dependencies  # pylint: disable=wrong-import-position
 
 
 if __name__ == '__main__':
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # the argparse tests.
     sys.argv.remove('--fail-unless-has-test-file')
 
-  if not dtformats.dependencies.CheckTestDependencies():
+  if not utils.dependencies.CheckTestDependencies():
     sys.exit(1)
 
   test_suite = unittest.TestLoader().discover('tests', pattern='*.py')
