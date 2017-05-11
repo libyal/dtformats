@@ -1,0 +1,14 @@
+name: uuid
+aliases: [guid, GUID, UUID]
+type: structure
+description: Globally or Universal unique identifier (GUID or UUID)
+members:
+- name: data1
+  data_type: uint32
+- name: data2
+  data_type: uint16
+- name: data3
+  data_type: uint16
+- name: data4
+  data_type: byte
+  sequence: 8

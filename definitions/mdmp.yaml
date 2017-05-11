@@ -1,0 +1,592 @@
+name: mdmp
+type: format
+description: Minidump file format
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680369(v=vs.85).aspx']
+layout:
+- file_header
+- TODO
+---
+name: directory_descriptor
+aliases: [MINIDUMP_DIRECTORY]
+type: structure
+description: Minidump file header
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680365(v=vs.85).aspx']
+members:
+- name: stream_type
+  aliases: [StreamType]
+  data_type: uint32
+- name: location
+  aliases: [Location]
+  data_type: uint32
+---
+name: exception
+aliases: [MINIDUMP_EXCEPTION]
+type: structure
+description: Minidump exception
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680367(v=vs.85).aspx']
+members:
+- name: code
+  aliases: [ExceptionCode]
+  data_type: uint32
+- name: flags
+  aliases: [ExceptionFlags]
+  data_type: uint32
+- name: record
+  aliases: [ExceptionRecord]
+  data_type: uint64
+- name: address
+  aliases: [ExceptionAddress]
+  data_type: uint64
+- name: number_of_parameters
+  aliases: [NumberParameters]
+  data_type: uint32
+- name: alignment_padding
+  aliases: [__unusedAlignment]
+  data_type: uint32
+- sequence:
+    name: parameters
+    aliases: [ExceptionInformation]
+    data_type: uint64
+    number_of_items: number_of_parameters
+---
+name: exception_stream
+aliases: [MINIDUMP_EXCEPTION_STREAM]
+type: structure
+description: Minidump exception stream
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680368(v=vs.85).aspx']
+members:
+- name: thread_identifier
+  aliases: [ThreadId]
+  data_type: uint32
+- name: alignment_padding
+  aliases: [__alignment]
+  data_type: uint32
+- name: exception_data
+  aliases: [ExceptionRecord]
+  data_type: exception
+- name: thread_context
+  aliases: [ThreadContext]
+  data_type: location_descriptor_32bit
+---
+name: file_flags
+aliases: [MINIDUMP_TYPE]
+type: enumeration
+description: Minidump file flags
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680519(v=vs.85).aspx']
+values:
+- name: MiniDumpNormal
+  value: 0x00000000
+  description: Operation list information stream
+- name: MiniDumpWithDataSegs
+  value: 0x00000001
+- name: MiniDumpWithFullMemory
+  value: 0x00000002
+- name: MiniDumpWithHandleData
+  value: 0x00000004
+- name: MiniDumpFilterMemory
+  value: 0x00000008
+- name: MiniDumpScanMemory
+  value: 0x00000010
+- name: MiniDumpWithUnloadedModules
+  value: 0x00000020
+- name: MiniDumpWithIndirectlyReferencedMemory
+  value: 0x00000040
+- name: MiniDumpFilterModulePaths
+  value: 0x00000080
+- name: MiniDumpWithProcessThreadData
+  value: 0x00000100
+- name: MiniDumpWithPrivateReadWriteMemory
+  value: 0x00000200
+- name: MiniDumpWithoutOptionalData
+  value: 0x00000400
+- name: MiniDumpWithFullMemoryInfo
+  value: 0x00000800
+- name: MiniDumpWithThreadInfo
+  value: 0x00001000
+- name: MiniDumpWithCodeSegs
+  value: 0x00002000
+- name: MiniDumpWithoutAuxiliaryState
+  value: 0x00004000
+- name: MiniDumpWithFullAuxiliaryState
+  value: 0x00008000
+- name: MiniDumpWithPrivateWriteCopyMemory
+  value: 0x00010000
+- name: MiniDumpIgnoreInaccessibleMemory
+  value: 0x00020000
+- name: MiniDumpWithTokenInformation
+  value: 0x00040000
+- name: MiniDumpWithModuleHeaders
+  value: 0x00080000
+- name: MiniDumpFilterTriage
+  value: 0x00100000
+- name: MiniDumpValidTypeFlags
+  value: 0x001fffff
+---
+name: file_header
+aliases: [MINIDUMP_HEADER]
+type: structure
+description: Minidump file header
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680378(v=vs.85).aspx']
+members:
+- sequence:
+    name: signature
+    aliases: [Signature]
+    data_type: byte
+    data_size: 4
+    data: 'MDMP'
+- name: format_version
+  aliases: [Version]
+  data_type: uint32
+- name: number_of_streams
+  aliases: [NumberOfStreams]
+  data_type: uint32
+- name: stream_directory_rva
+  aliases: [StreamDirectoryRva]
+  data_type: TODO (uint32 or uint64)
+- name: checksum
+  aliases: [CheckSum]
+  data_type: uint32
+- union:
+    members:
+    - name: unknown1
+      aliases: [Reserved]
+      data_type: uint32
+    - name: time_date_stamp
+      aliases: [TimeDateStamp]
+      data_type: uint32
+- name: flags
+  aliases: [Flags]
+  data_type: uint64
+---
+name: function_table
+type: structure
+description: Minidump function table
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680370(v=vs.85).aspx']
+members:
+- name: descriptor
+  data_type: function_table_descriptor
+- sequence:
+    name: native_descriptor
+    data_type: byte
+    data_size: parent.native_descriptor_size
+- sequence:
+    name: function_entries
+    data_type: function_entry
+    number_of_items: descriptor.number_of_function_entries
+---
+name: function_table_descriptor
+aliases: [MINIDUMP_FUNCTION_TABLE_DESCRIPTOR]
+type: structure
+description: Minidump function table descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680370(v=vs.85).aspx']
+members:
+- name: minimum_address
+  aliases: [MinimumAddress]
+  data_type: uint64
+- name: maximum_address
+  aliases: [MaximumAddress]
+  data_type: uint64
+- name: base_address
+  aliases: [BaseAddress]
+  data_type: uint64
+- name: number_of_function_entries
+  aliases: [EntryCount]
+  data_type: uint32
+- name: alignment_padding_size
+  aliases: [SizeOfAlignPad]
+  data_type: uint32
+---
+name: function_table_stream
+type: structure
+description: Minidump function table stream
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680371(v=vs.85).aspx']
+members:
+- name: header
+  data_type: function_table_stream_header
+- sequence:
+    name: function_tables
+    data_type: function_table
+    number_of_items: header.number_of_function_tables
+---
+name: function_table_stream_header
+aliases: [MINIDUMP_FUNCTION_TABLE_STREAM]
+type: structure
+description: Minidump function table stream
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680371(v=vs.85).aspx']
+members:
+- name: header_size
+  aliases: [SizeOfHeader]
+  data_type: uint32
+  data: 24
+- name: descriptor_size
+  aliases: [SizeOfDescriptor]
+  data_type: uint32
+  data: SIZEOF( function_table_descriptor )
+- name: native_descriptor_size
+  aliases: [SizeOfNativeDescriptor]
+  data_type: uint32
+- name: function_entry_size
+  aliases: [SizeOfNativeDescriptor]
+  data_type: uint32
+- name: number_of_function_tables
+  aliases: [NumberOfDescriptors]
+  data_type: uint32
+- name: alignment_padding_size
+  aliases: [SizeOfAlignPad]
+  data_type: uint32
+---
+name: handle_data_descriptor
+type: structure
+aliases: [MINIDUMP_HANDLE_DESCRIPTOR]
+description: Minidump handle descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680374(v=vs.85).aspx']
+members:
+- name: handle
+  aliases: [Handle]
+  data_type: uint64
+- name: type_name_rva
+  aliases: [TypeNameRva]
+  data_type: TODO (uint32 or uint64)
+- name: object_name_rva
+  aliases: [ObjectNameRva]
+  data_type: TODO (uint32 or uint64)
+- name: attributes
+  aliases: [Attributes]
+  data_type: uint32
+- name: granted_access
+  aliases: [GrantedAccess]
+  data_type: uint32
+- name: number_of_handles
+  aliases: [HandleCount]
+  data_type: uint32
+- name: number_of_pointers
+  aliases: [PointerCount]
+  data_type: uint32
+---
+name: handle_data_descriptor_v2
+type: structure
+aliases: [MINIDUMP_HANDLE_DESCRIPTOR_2]
+description: Minidump handle descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680373(v=vs.85).aspx']
+members:
+- name: handle
+  aliases: [Handle]
+  data_type: uint64
+- name: type_name_rva
+  aliases: [TypeNameRva]
+  data_type: TODO (uint32 or uint64)
+- name: object_name_rva
+  aliases: [ObjectNameRva]
+  data_type: TODO (uint32 or uint64)
+- name: attributes
+  aliases: [Attributes]
+  data_type: uint32
+- name: granted_access
+  aliases: [GrantedAccess]
+  data_type: uint32
+- name: number_of_handles
+  aliases: [HandleCount]
+  data_type: uint32
+- name: number_of_pointers
+  aliases: [PointerCount]
+  data_type: uint32
+- name: object_information_rva
+  aliases: [ObjectInfoRva]
+  data_type: TODO (uint32 or uint64)
+- name: unknown1
+  aliases: [Reserved0]
+  data_type: uint32
+---
+name: handle_data_stream
+type: structure
+description: Minidump handle data stream
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680372(v=vs.85).aspx']
+members:
+- name: header
+  data_type: handle_data_stream_header
+- sequence:
+    name: handles
+    rule: header.descriptor_size == SIZEOF( handle_data_descriptor )
+    data_type: handle_data_descriptor
+    number_of_items: header.number_of_descriptors
+- sequence:
+    name: handles
+    rule: header.descriptor_size == SIZEOF( handle_data_descriptor_v2 )
+    data_type: handle_data_descriptor_v2
+    number_of_items: header.number_of_descriptors
+---
+name: handle_data_stream_header
+aliases: [MINIDUMP_HANDLE_DATA_STREAM]
+type: structure
+description: Minidump handle data stream header
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680372(v=vs.85).aspx']
+members:
+- name: header_size
+  aliases: [SizeOfHeader]
+  data_type: uint32
+- name: descriptor_size
+  aliases: [SizeOfDescriptor]
+  data_type: uint32
+- name: number_of_descriptors
+  aliases: [NumberOfDescriptors]
+  data_type: uint32
+- name: unknown1
+  aliases: [Reserved]
+  data_type: uint32
+---
+name: handle_object_information
+aliases: [MINIDUMP_HANDLE_OBJECT_INFORMATION]
+type: structure
+description: Minidump handle object information
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680375(v=vs.85).aspx']
+members:
+- name: next_rva
+  aliases: [NextInfoRva]
+  data_type: TODO (uint32 or uint64)
+- name: type
+  aliases: [InfoType]
+  data_type: uint32
+  description: TODO instead of using uint32 directly reference object_information_type and give it a size?
+- name: data_size
+  aliases: [SizeOfInfo]
+  data_type: uint32
+---
+name: handle_operation_list
+type: structure
+description: Minidump handle operation list
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680377(v=vs.85).aspx']
+members:
+- name: header_size
+  data_type: handle_operation_list_header
+- sequence:
+    name: handle_operations
+    data_type: avrf:handle_operation
+---
+name: handle_operation_list_header
+aliases: [MINIDUMP_HANDLE_OPERATION_LIST]
+type: structure
+description: Minidump handle operation list header
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680377(v=vs.85).aspx']
+members:
+- name: header_size
+  aliases: [SizeOfHeader]
+  data_type: uint32
+- name: handle_operation_size
+  aliases: [SizeOfEntry]
+  data_type: uint32
+  data: SIZEOF( handle_operation_list_header )
+- name: number_of_handle_operations
+  aliases: [NumberOfEntries]
+  data_type: uint32
+- name: unknown1
+  aliases: [Reserved]
+  data_type: uint32
+---
+name: object_information_type
+aliases: [MINIDUMP_HANDLE_OBJECT_INFORMATION_TYPE]
+type: enumeration
+description: Minidump object information type
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680376(v=vs.85).aspx']
+values:
+- name: MiniHandleObjectInformationNone
+  value: 0
+  description: No object-specific information available
+- name: MiniThreadInformation1
+  value: 1
+  description: Thread object information
+- name: MiniMutantInformation1
+  value: 2
+  description: Mutant object information
+- name: MiniMutantInformation2
+  value: 3
+  description: Mutant object information
+- name: MiniProcessInformation1
+  value: 4
+  description: Process object information
+- name: MiniProcessInformation2
+  value: 5
+  description: Process object information
+---
+name: location_descriptor_32bit
+aliases: [MINIDUMP_LOCATION_DESCRIPTOR]
+type: structure
+description: Minidump 32-bit location descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680383(v=vs.85).aspx']
+members:
+- name: data_size
+  aliases: [DataSize]
+  data_type: uint32
+- name: rva_32bit
+  aliases: [Rva]
+  data_type: uint32
+  description: |
+    32-bit Relative Virtual Address (RVA)
+
+    Contains a byte offset relative to the start of the minidump file.
+---
+name: location_descriptor_64bit
+aliases: [MINIDUMP_LOCATION_DESCRIPTOR64]
+type: structure
+description: Minidump 64-bit location descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680383(v=vs.85).aspx']
+members:
+- name: data_size
+  aliases: [DataSize]
+  data_type: uint64
+- name: rva_64bit
+  aliases: [Rva]
+  data_type: uint64
+  description: |
+    64-bit Relative Virtual Address (RVA)
+
+    Contains a byte offset relative to the start of the minidump file.
+---
+name: memory_descriptor_32bit
+aliases: [MINIDUMP_MEMORY_DESCRIPTOR]
+type: structure
+description: Minidump 32-bit memory descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680384(v=vs.85).aspx']
+members:
+- name: range_start
+  aliases: [StartOfMemoryRange]
+  data_type: uint64
+- name: range_data
+  aliases: [Memory]
+  data_type: location_descriptor_32bit
+---
+name: memory_descriptor_64bit
+aliases: [MINIDUMP_MEMORY_DESCRIPTOR64]
+type: structure
+description: Minidump 64-bit memory descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680384(v=vs.85).aspx']
+members:
+- name: range_start
+  aliases: [StartOfMemoryRange]
+  data_type: uint64
+- name: range_size
+  aliases: [DataSize]
+  data_type: uint64
+---
+name: stream_type
+aliases: [MINIDUMP_STREAM_TYPE]
+type: enumeration
+description: Minidump stream type
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680394(v=vs.85).aspx']
+values:
+- name: UnusedStream
+  value: 0
+  description: Reserved
+- name: ReservedStream0
+  value: 1
+  description: Reserved
+- name: ReservedStream1
+  value: 2
+  description: Reserved
+- name: ThreadListStream
+  value: 3
+  description: Thread information stream
+- name: ModuleListStream
+  value: 4
+  description: Module information stream
+- name: MemoryListStream
+  value: 5
+  description: 32-bit memory allocation stream
+- name: ExceptionStream
+  value: 6
+  description: Exception stream
+- name: SystemInfoStream
+  value: 7
+  description: System information stream
+- name: ThreadExListStream
+  value: 8
+  description: Extended thread information
+- name: Memory64ListStream
+  value: 9
+  description: 64-bit memory allocation stream
+- name: CommentStreamA
+  value: 10
+  description: Comment stream in extended ASCII
+- name: CommentStreamW
+  value: 11
+  description: Comment stream in Unicode
+- name: HandleDataStream
+  value: 12
+  description: Active operating system handle stream
+- name: FunctionTableStream
+  value: 13
+  description: Function table information
+- name: UnloadedModuleListStream
+  value: 14
+  description: Unloaded module information stream
+- name: MiscInfoStream
+  value: 15
+  description: Miscellaneous information stream
+- name: MemoryInfoListStream
+  value: 16
+  description: Memory region description information stream
+- name: ThreadInfoListStream
+  value: 17
+  description: Thread state information stream
+- name: HandleOperationListStream
+  value: 18
+  description: Operation list information stream
+- name: LastReservedStream
+  value: 0xffff
+---
+name: string
+aliases: [MINIDUMP_STRING]
+type: structure
+description: Minidump 64-bit memory descriptor
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680384(v=vs.85).aspx']
+members:
+- name: data_size
+  aliases: [Length]
+  data_type: uint32
+- sequence:
+    name: data
+    aliases: [Buffer]
+    data_type: uint16
+    data_size: data_size
+---
+name: thread
+aliases: [MINIDUMP_THREAD]
+type: structure
+description: Minidump thread
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680517(v=vs.85).aspx']
+members:
+- name: identifier
+  aliases: [ThreadId]
+  data_type: uint32
+- name: suspend_count
+  aliases: [SuspendCount]
+  data_type: uint32
+- name: priority_class
+  aliases: [PriorityClass]
+  data_type: uint32
+- name: priority
+  data_type: uint32
+  aliases: [Priority]
+- name: thread_environment_block
+  aliases: [Teb]
+  data_type: uint64
+- name: stack
+  aliases: [Stack]
+  data_type: memory_descriptor_32bit
+- name: context
+  aliases: [ThreadContext]
+  data_type: location_descriptor_32bit
+---
+name: thread_list
+aliases: [MINIDUMP_THREAD_LIST]
+type: structure
+description: Minidump thread list
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680515(v=vs.85).aspx']
+members:
+- name: number_of_threads
+  aliases: [NumberOfThreads]
+  data_type: uint32
+- sequence:
+    name: threads
+    aliases: [Threads]
+    data_type: thread
+    number_of_items: number_of_threads

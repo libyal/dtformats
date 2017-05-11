@@ -147,6 +147,8 @@ setup(
         'dtformats': 'dtformats'
     },
     data_files=[
+        ('share/dtfabric/definitions', glob.glob(
+            os.path.join('definitions', '*.yaml'))),
         ('share/doc/dtformats', [
             'ACKNOWLEDGEMENTS', 'LICENSE', 'README']),
     ],
