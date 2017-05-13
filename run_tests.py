@@ -19,7 +19,9 @@ if __name__ == '__main__':
     # the argparse tests.
     sys.argv.remove('--fail-unless-has-test-file')
 
-  if not utils.dependencies.CheckTestDependencies():
+  dependency_helper = utils.dependencies.DependencyHelper()
+
+  if not dependency_helper.CheckTestDependencies():
     sys.exit(1)
 
   test_suite = unittest.TestLoader().discover('tests', pattern='*.py')
