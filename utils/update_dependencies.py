@@ -122,10 +122,12 @@ class DPKGControlWriter(DependencyFileWriter):
 
   _PATH = os.path.join(u'config', u'dpkg', u'control')
 
+  _PROJECT_NAME = u'dtformats'
+
   _MAINTAINER = u'Joachim Metz <joachim.metz@gmail.com>'
 
   _FILE_HEADER = [
-      u'Source: dtformats',
+      u'Source: {0:s}'.format(_PROJECT_NAME),
       u'Section: python',
       u'Priority: extra',
       u'Maintainer: {0:s}'.format(_MAINTAINER),
@@ -138,11 +140,11 @@ class DPKGControlWriter(DependencyFileWriter):
       u'']
 
   _PYTHON2_PACKAGE_HEADER = [
-      u'Package: python-dtformats',
+      u'Package: python-{0:s}'.format(_PROJECT_NAME),
       u'Architecture: all']
 
   _PYTHON3_PACKAGE_HEADER = [
-      u'Package: python3-dtformats',
+      u'Package: python3-{0:s}'.format(_PROJECT_NAME),
       u'Architecture: all']
 
   _PYTHON_PACKAGE_FOOTER = [
@@ -323,10 +325,10 @@ class TravisBeforeInstallScriptWriter(DependencyFileWriter):
 
 
 if __name__ == u'__main__':
-  dependency_helper = utils.dependencies.DependencyHelper()
+  helper = utils.dependencies.DependencyHelper()
 
   for writer_class in (
       AppveyorYmlWriter, DPKGControlWriter, RequirementsWriter, SetupCfgWriter,
       TravisBeforeInstallScriptWriter):
-    writer = writer_class(dependency_helper)
+    writer = writer_class(helper)
     writer.Write()

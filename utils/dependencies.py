@@ -69,7 +69,7 @@ class DependencyDefinitionReader(object):
       object: value or None if the value does not exists.
     """
     try:
-      return config_parser.get(section_name, value_name).decode('utf-8')
+      return config_parser.get(section_name, value_name)
     except configparser.NoOptionError:
       return
 
@@ -107,7 +107,7 @@ class DependencyHelper(object):
 
     dependency_reader = DependencyDefinitionReader()
 
-    with open(u'dependencies.ini', 'rb') as file_object:
+    with open(u'dependencies.ini', 'r') as file_object:
       for dependency in dependency_reader.Read(file_object):
         self._dependencies[dependency.name] = dependency
 
@@ -131,25 +131,48 @@ class DependencyHelper(object):
     """
     module_object = self._ImportPythonModule(dependency.name)
     if not module_object:
-      status_message = u'missing: {0:s}.'.format(dependency.name)
+      status_message = u'missing: {0:s}'.format(dependency.name)
       return dependency.is_optional, status_message
 
     if not dependency.version_property or not dependency.minimum_version:
       return True, dependency.name
 
+    return self._CheckPythonModuleVersion(
+        dependency.name, module_object, dependency.version_property,
+        dependency.minimum_version, dependency.maximum_version)
+
+  def _CheckPythonModuleVersion(
+      self, module_name, module_object, version_property, minimum_version,
+      maximum_version):
+    """Checks the version of a Python module.
+
+    Args:
+      module_object (module): Python module.
+      module_name (str): name of the Python module.
+      version_property (str): version attribute or function.
+      minimum_version (str): minimum version.
+      maximum_version (str): maximum version.
+
+    Returns:
+      tuple: consists:
+
+        bool: True if the Python module is available and conforms to
+            the minimum required version, False otherwise.
+        str: status message.
+    """
     module_version = None
-    if not dependency.version_property.endswith(u'()'):
-      module_version = getattr(module_object, dependency.version_property, None)
+    if not version_property.endswith(u'()'):
+      module_version = getattr(module_object, version_property, None)
     else:
       version_method = getattr(
-          module_object, dependency.version_property[:-2], None)
+          module_object, version_property[:-2], None)
       if version_method:
         module_version = version_method()
 
     if not module_version:
       status_message = (
           u'unable to determine version information for: {0:s}').format(
-              dependency.name)
+              module_name)
       return False, status_message
 
     # Make sure the module version is a string.
@@ -160,26 +183,24 @@ class DependencyHelper(object):
     module_version_map = list(
         map(int, self._VERSION_SPLIT_REGEX.split(module_version)))
     minimum_version_map = list(
-        map(int, self._VERSION_SPLIT_REGEX.split(dependency.minimum_version)))
+        map(int, self._VERSION_SPLIT_REGEX.split(minimum_version)))
 
     if module_version_map < minimum_version_map:
       status_message = (
-          u'{0:s} version: {1!s} is too old, {2!s} or later required.').format(
-              dependency.name, module_version, dependency.minimum_version)
+          u'{0:s} version: {1!s} is too old, {2!s} or later required').format(
+              module_name, module_version, minimum_version)
       return False, status_message
 
-    if dependency.maximum_version:
+    if maximum_version:
       maximum_version_map = list(
-          map(int, self._VERSION_SPLIT_REGEX.split(dependency.maximum_version)))
+          map(int, self._VERSION_SPLIT_REGEX.split(maximum_version)))
       if module_version_map > maximum_version_map:
         status_message = (
             u'{0:s} version: {1!s} is too recent, {2!s} or earlier '
-            u'required.').format(
-                dependency.name, module_version, dependency.maximum_version)
+            u'required').format(module_name, module_version, maximum_version)
         return False, status_message
 
-    status_message = u'{0:s} version: {1!s}'.format(
-        dependency.name, module_version)
+    status_message = u'{0:s} version: {1!s}'.format(module_name, module_version)
     return True, status_message
 
   def _ImportPythonModule(self, module_name):
@@ -236,7 +257,8 @@ class DependencyHelper(object):
     print(u'Checking availability and versions of dependencies.')
     check_result = True
 
-    for module_name, dependency in sorted(self._dependencies.items()):
+    for dependency in sorted(
+        self._dependencies.values(), key=lambda dependency: dependency.name):
       result, status_message = self._CheckPythonModule(dependency)
       if not result:
         check_result = False
@@ -265,7 +287,9 @@ class DependencyHelper(object):
     print(u'Checking availability and versions of test dependencies.')
     check_result = True
 
-    for module_name, dependency in sorted(self._test_dependencies.items()):
+    for dependency in sorted(
+        self._test_dependencies.values(),
+        key=lambda dependency: dependency.name):
       result, status_message = self._CheckPythonModule(dependency)
       if not result:
         check_result = False
@@ -290,7 +314,8 @@ class DependencyHelper(object):
       list[str]: dependency definitions for requires for DPKG control file.
     """
     requires = []
-    for dependency in sorted(self._dependencies.values()):
+    for dependency in sorted(
+        self._dependencies.values(), key=lambda dependency: dependency.name):
       module_name = dependency.dpkg_name or dependency.name
 
       if exclude_version or not dependency.minimum_version:
@@ -310,7 +335,8 @@ class DependencyHelper(object):
       list[str]: dependency definitions for l2tbinaries.
     """
     requires = []
-    for dependency in sorted(self._dependencies.values()):
+    for dependency in sorted(
+        self._dependencies.values(), key=lambda dependency: dependency.name):
       module_name = dependency.l2tbinaries_name or dependency.name
 
       requires.append(module_name)
@@ -324,7 +350,8 @@ class DependencyHelper(object):
       list[str]: dependency definitions for install_requires for setup.py.
     """
     install_requires = []
-    for dependency in sorted(self._dependencies.values()):
+    for dependency in sorted(
+        self._dependencies.values(), key=lambda dependency: dependency.name):
       module_name = dependency.pypi_name or dependency.name
 
       if not dependency.minimum_version:
@@ -351,7 +378,8 @@ class DependencyHelper(object):
       list[str]: dependency definitions for requires for setup.cfg.
     """
     requires = []
-    for dependency in sorted(self._dependencies.values()):
+    for dependency in sorted(
+        self._dependencies.values(), key=lambda dependency: dependency.name):
       module_name = dependency.rpm_name or dependency.name
 
       if exclude_version or not dependency.minimum_version:

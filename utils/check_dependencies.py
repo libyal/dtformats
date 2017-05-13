@@ -7,7 +7,7 @@ import sys
 # Change PYTHONPATH to include dependencies.
 sys.path.insert(0, u'.')
 
-import utils.dependencies
+import utils.dependencies  # pylint: disable=wrong-import-position
 
 
 if __name__ == u'__main__':
