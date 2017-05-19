@@ -64,11 +64,11 @@ members:
 - name: data_size
   aliases: [IDListSize]
   data_type: uint16
-- sequence:
-    name: data
-    aliases: [IDList]
-    data_type: byte
-    data_size: link_target_identifier.data_size
+- name: data
+  aliases: [IDList]
+  type: stream
+  element_data_type: byte
+  elements_data_size: link_target_identifier.data_size
 ---
 name: location_information
 aliases: [LinkInfo]

@@ -22,12 +22,12 @@ members:
 - name: index
   aliases: [Index]
   data_type: uint32
-- sequence:
-    name: return_addresses
-    aliases: [ReturnAddresses]
-    data_type: uint64
-    number_of_items: maximum_number_of_back_traces
-    note: AVRF_MAX_TRACES is this an upper bound or a constant?
+- name: return_addresses
+  aliases: [ReturnAddresses]
+  type: sequence
+  element_data_type: uint64
+  number_of_elements: back_trace_information.maximum_number_of_back_traces
+  TODO: AVRF_MAX_TRACES is this an upper bound or a constant?
 ---
 name: handle_operation
 aliases: [AVRF_HANDLE_OPERATION]
@@ -62,14 +62,14 @@ description: Application verifier resource enumeration handle trace operation ty
 urls: ['https://msdn.microsoft.com/en-us/library/bb432251(v=vs.85).aspx']
 values:
 - name: OperationDbUnused
-  value: 0
+  number: 0
   description: Unused
 - name: OperationDbOPEN
-  value: 1
+  number: 1
   description: Open (create) handle operation
 - name: OperationDbCLOSE
-  value: 2
+  number: 2
   description: Close handle operation
 - name: OperationDbBADREF
-  value: 3
+  number: 3
   description: Invalid handle operation

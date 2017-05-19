@@ -101,7 +101,7 @@ attributes:
   units: bytes
 ---
 name: uint8
-aliases: [BYTE]
+aliases: [byte, BYTE]
 type: integer
 description: 8-bit unsigned integer type
 attributes:
@@ -146,8 +146,3 @@ members:
   data_type: uint32
 - name: upper_part
   data_type: uint32
----
-name: uuid
-aliases: [guid, GUID, UUID]
-type: uuid
-description: Globally or Universal unique identifier (GUID or UUID) type
