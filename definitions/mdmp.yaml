@@ -176,7 +176,7 @@ members:
   data_type: uint32
 - name: stream_directory_rva
   aliases: [StreamDirectoryRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: checksum
   aliases: [CheckSum]
   data_type: uint32
@@ -280,10 +280,10 @@ members:
   data_type: uint64
 - name: type_name_rva
   aliases: [TypeNameRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: object_name_rva
   aliases: [ObjectNameRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: attributes
   aliases: [Attributes]
   data_type: uint32
@@ -308,10 +308,10 @@ members:
   data_type: uint64
 - name: type_name_rva
   aliases: [TypeNameRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: object_name_rva
   aliases: [ObjectNameRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: attributes
   aliases: [Attributes]
   data_type: uint32
@@ -326,7 +326,7 @@ members:
   data_type: uint32
 - name: object_information_rva
   aliases: [ObjectInfoRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: unknown1
   aliases: [Reserved0]
   data_type: uint32
@@ -376,7 +376,7 @@ urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680375(v=vs.8
 members:
 - name: next_rva
   aliases: [NextInfoRva]
-  data_type: TODO (uint32 or uint64)
+  data_type: uint
 - name: type
   aliases: [InfoType]
   data_type: uint32

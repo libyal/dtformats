@@ -66,6 +66,12 @@ attributes:
   size: 8
   units: bytes
 ---
+name: int
+type: integer
+description: signed integer type
+attributes:
+  format: signed
+---
 name: int8
 type: integer
 description: 8-bit signed integer type
@@ -99,6 +105,12 @@ attributes:
   format: signed
   size: 8
   units: bytes
+---
+name: uint
+type: integer
+description: unsigned integer type
+attributes:
+  format: unsigned
 ---
 name: uint8
 aliases: [byte, BYTE]
