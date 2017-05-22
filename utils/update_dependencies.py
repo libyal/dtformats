@@ -131,7 +131,7 @@ class DPKGControlWriter(DependencyFileWriter):
       u'Section: python',
       u'Priority: extra',
       u'Maintainer: {0:s}'.format(_MAINTAINER),
-      (u'Build-Depends: debhelper (>= 7), python-all (>= 2.7~), '
+      (u'Build-Depends: debhelper (>= 9), python-all (>= 2.7~), '
        u'python-setuptools, python3-all (>= 3.4~), python3-setuptools'),
       u'Standards-Version: 3.9.5',
       u'X-Python-Version: >= 2.7',
@@ -143,12 +143,17 @@ class DPKGControlWriter(DependencyFileWriter):
       u'Package: python-{0:s}'.format(_PROJECT_NAME),
       u'Architecture: all']
 
+  _PYTHON2_PACKAGE_FOOTER = [
+      u'Description: Python 2 module for data formats (dtformats)',
+      u' dtFormats is a collection of various file formats.',
+      u'']
+
   _PYTHON3_PACKAGE_HEADER = [
       u'Package: python3-{0:s}'.format(_PROJECT_NAME),
       u'Architecture: all']
 
-  _PYTHON_PACKAGE_FOOTER = [
-      u'Description: Data formats (dtformats)',
+  _PYTHON3_PACKAGE_FOOTER = [
+      u'Description: Python 3 module for data formats (dtformats)',
       u' dtFormats is a collection of various file formats.',
       u'']
 
@@ -164,14 +169,14 @@ class DPKGControlWriter(DependencyFileWriter):
 
     file_content.append(u'Depends: {0:s}'.format(dependencies))
 
-    file_content.extend(self._PYTHON_PACKAGE_FOOTER)
+    file_content.extend(self._PYTHON2_PACKAGE_FOOTER)
     file_content.extend(self._PYTHON3_PACKAGE_HEADER)
 
     dependencies = dependencies.replace(u'python', u'python3')
 
     file_content.append(u'Depends: {0:s}'.format(dependencies))
 
-    file_content.extend(self._PYTHON_PACKAGE_FOOTER)
+    file_content.extend(self._PYTHON3_PACKAGE_FOOTER)
 
     file_content = u'\n'.join(file_content)
     file_content = file_content.encode(u'utf-8')

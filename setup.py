@@ -113,7 +113,7 @@ setup(
     description=dtformats_description,
     long_description=dtformats_long_description,
     license='Apache License, Version 2.0',
-    url='https://github.com/libyal/dtformatsb',
+    url='https://github.com/libyal/dtformats',
     maintainer='Joachim Metz',
     maintainer_email='joachim.metz@gmail.com',
     classifiers=[
@@ -130,8 +130,8 @@ setup(
         'dtformats': 'dtformats'
     },
     data_files=[
-        ('share/dtfabric/definitions', glob.glob(
-            os.path.join('definitions', '*.yaml'))),
+        ('share/dtfabric/data', glob.glob(
+            os.path.join('data', '*'))),
         ('share/doc/dtformats', [
             'ACKNOWLEDGEMENTS', 'LICENSE', 'README']),
     ],

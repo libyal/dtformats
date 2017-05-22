@@ -3,6 +3,7 @@ include dependencies.ini run_tests.py utils/dependencies.py
 exclude .gitignore
 exclude *.pyc
 recursive-include config *
+recursive-include data *
 recursive-exclude dtformats *.pyc
 recursive-include scripts *.py
 recursive-exclude scripts *.pyc
