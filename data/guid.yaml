@@ -1,3 +1,27 @@
+name: byte
+type: integer
+description: 8-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+description: 16-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+description: 32-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
 name: uuid
 aliases: [guid, GUID, UUID]
 type: uuid

@@ -6,6 +6,36 @@ layout:
 - file_header
 - TODO
 ---
+name: byte
+type: integer
+description: 8-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint32
+type: integer
+description: 32-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint64
+type: integer
+description: 64-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: uint
+type: integer
+description: unsigned integer type
+attributes:
+  format: unsigned
+---
 name: directory_descriptor
 aliases: [MINIDUMP_DIRECTORY]
 type: structure
@@ -180,33 +210,33 @@ members:
 - name: checksum
   aliases: [CheckSum]
   data_type: uint32
-- union:
-    members:
-    - name: unknown1
-      aliases: [Reserved]
-      data_type: uint32
-    - name: time_date_stamp
-      aliases: [TimeDateStamp]
-      data_type: uint32
+- type: union
+  members:
+  - name: unknown1
+    aliases: [Reserved]
+    data_type: uint32
+  - name: time_date_stamp
+    aliases: [TimeDateStamp]
+    data_type: uint32
 - name: flags
   aliases: [Flags]
   data_type: uint64
 ---
-name: function_table
+name: function_entry
+aliases: [_IMAGE_RUNTIME_FUNCTION_ENTRY]
 type: structure
-description: Minidump function table
-urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680370(v=vs.85).aspx']
+description: Minidump function entry
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms681678(v=vs.85).aspx']
 members:
-- name: descriptor
-  data_type: function_table_descriptor
-- name: native_descriptor
-  type: stream
-  element_data_type: byte
-  elements_data_size: parent.native_descriptor_size
-- name: function_entries
-  type: sequence
-  element_data_type: function_entry
-  number_of_elements: descriptor.number_of_function_entries
+- name: start_address
+  aliases: [BeginAddress]
+  data_type: uint32
+- name: end_address
+  aliases: [EndAddress]
+  data_type: uint32
+- name: unwind_information_address
+  aliases: [UnwindInfoAddress]
+  data_type: uint32
 ---
 name: function_table_descriptor
 aliases: [MINIDUMP_FUNCTION_TABLE_DESCRIPTOR]
@@ -229,18 +259,6 @@ members:
 - name: alignment_padding_size
   aliases: [SizeOfAlignPad]
   data_type: uint32
----
-name: function_table_stream
-type: structure
-description: Minidump function table stream
-urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680371(v=vs.85).aspx']
-members:
-- name: header
-  data_type: function_table_stream_header
-- name: function_tables
-  type: sequence
-  elmement_data_type: function_table
-  number_of_elements: header.number_of_function_tables
 ---
 name: function_table_stream_header
 aliases: [MINIDUMP_FUNCTION_TABLE_STREAM]
@@ -268,6 +286,34 @@ members:
 - name: alignment_padding_size
   aliases: [SizeOfAlignPad]
   data_type: uint32
+---
+name: function_table
+type: structure
+description: Minidump function table
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680370(v=vs.85).aspx']
+members:
+- name: descriptor
+  data_type: function_table_descriptor
+- name: native_descriptor
+  type: stream
+  element_data_type: byte
+  elements_data_size: function_table_stream_header.native_descriptor_size
+- name: function_entries
+  type: sequence
+  element_data_type: function_entry
+  number_of_elements: descriptor.number_of_function_entries
+---
+name: function_table_stream
+type: structure
+description: Minidump function table stream
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680371(v=vs.85).aspx']
+members:
+- name: header
+  data_type: function_table_stream_header
+- name: function_tables
+  type: sequence
+  element_data_type: function_table
+  number_of_elements: header.number_of_function_tables
 ---
 name: handle_data_descriptor
 type: structure
@@ -331,24 +377,6 @@ members:
   aliases: [Reserved0]
   data_type: uint32
 ---
-name: handle_data_stream
-type: structure
-description: Minidump handle data stream
-urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680372(v=vs.85).aspx']
-members:
-- name: header
-  data_type: handle_data_stream_header
-- name: handles
-  type: sequence
-  data_type: handle_data_descriptor
-  number_of_elements: header.number_of_descriptors
-  rule: header.descriptor_size == SIZEOF( handle_data_descriptor )
-- name: handles
-  type: sequence
-  data_type: handle_data_descriptor_v2
-  number_of_elements: header.number_of_descriptors
-  rule: header.descriptor_size == SIZEOF( handle_data_descriptor_v2 )
----
 name: handle_data_stream_header
 aliases: [MINIDUMP_HANDLE_DATA_STREAM]
 type: structure
@@ -368,6 +396,24 @@ members:
   aliases: [Reserved]
   data_type: uint32
 ---
+name: handle_data_stream
+type: structure
+description: Minidump handle data stream
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680372(v=vs.85).aspx']
+members:
+- name: header
+  data_type: handle_data_stream_header
+- name: handles
+  type: sequence
+  element_data_type: handle_data_descriptor
+  number_of_elements: header.number_of_descriptors
+  rule: header.descriptor_size == SIZEOF( handle_data_descriptor )
+- name: handles
+  type: sequence
+  element_data_type: handle_data_descriptor_v2
+  number_of_elements: header.number_of_descriptors
+  rule: header.descriptor_size == SIZEOF( handle_data_descriptor_v2 )
+---
 name: handle_object_information
 aliases: [MINIDUMP_HANDLE_OBJECT_INFORMATION]
 type: structure
@@ -384,17 +430,6 @@ members:
 - name: data_size
   aliases: [SizeOfInfo]
   data_type: uint32
----
-name: handle_operation_list
-type: structure
-description: Minidump handle operation list
-urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680377(v=vs.85).aspx']
-members:
-- name: header_size
-  data_type: handle_operation_list_header
-- sequence:
-    name: handle_operations
-    data_type: avrf:handle_operation
 ---
 name: handle_operation_list_header
 aliases: [MINIDUMP_HANDLE_OPERATION_LIST]
@@ -415,6 +450,18 @@ members:
 - name: unknown1
   aliases: [Reserved]
   data_type: uint32
+---
+name: handle_operation_list
+type: structure
+description: Minidump handle operation list
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms680377(v=vs.85).aspx']
+members:
+- name: header
+  data_type: handle_operation_list_header
+- name: handle_operations
+  type: sequence
+  element_data_type: avrf:handle_operation
+  number_of_elements: header.number_of_handle_operations
 ---
 name: object_information_type
 aliases: [MINIDUMP_HANDLE_OBJECT_INFORMATION_TYPE]

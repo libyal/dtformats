@@ -6,6 +6,49 @@ layout:
 - file_header
 - TODO
 ---
+name: byte
+type: integer
+description: 8-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+description: 16-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: int32
+type: integer
+description: 32-bit signed integer type
+attributes:
+  format: signed
+  size: 4
+  units: bytes
+---
+name: uint32
+type: integer
+description: 32-bit unsigned integer type
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: filetime
+aliases: [FILETIME]
+type: structure
+description: FILETIME structure
+urls: ['https://msdn.microsoft.com/en-us/library/windows/desktop/ms724284(v=vs.85).aspx']
+members:
+- name: lower_part
+  data_type: uint32
+- name: upper_part
+  data_type: uint32
+---
 name: file_header
 aliases: [ShellLinkHeader]
 type: structure
@@ -17,7 +60,7 @@ members:
   data: 76
 - name: class_identifier
   aliases: [LinkCLSID]
-  data_type: guid
+  type: uuid
   data: '00021401-0000-0000-c000-000000000046'
 - name: file_attributes
   aliases: [FileAttributes]
