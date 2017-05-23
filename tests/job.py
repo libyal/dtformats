@@ -60,13 +60,15 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
     test_file = job.WindowsTaskSchedularJobFile(
         output_writer=output_writer)
 
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(u'date')
+    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
+        u'job_trigger_date')
     date = data_type_map.CreateStructureValues(
         day_of_month=9,
         month=5,
         year=2017)
 
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(u'time')
+    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
+        u'job_trigger_time')
     time = data_type_map.CreateStructureValues(
         hours=8,
         minutes=1)
