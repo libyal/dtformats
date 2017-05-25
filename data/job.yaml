@@ -47,8 +47,15 @@ members:
 ---
 name: job
 type: format
-description: Windows TaskScheduler .job file format
+description: Windows TaskScheduler job file (.job) format
 urls: ['https://msdn.microsoft.com/en-us/library/cc248285.aspx']
+metadata:
+  summary: |
+    The job file format is used by the Windows Task Scheduler to specify
+    the configuration of a task.
+  authors: ['Joachim Metz <joachim.metz@gmail.com>']
+  keywords: ['Windows TaskScheduler', 'job file', '.job']
+  year: 2016
 attributes:
   byte_order: little-endian
 layout:

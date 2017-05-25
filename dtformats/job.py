@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Windows Task Scheduler job files."""
 
-from dtfabric import fabric as dtfabric_fabric
+from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 

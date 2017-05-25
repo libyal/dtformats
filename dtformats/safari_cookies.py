@@ -4,8 +4,8 @@
 import datetime
 
 from dtfabric import errors as dtfabric_errors
-from dtfabric import fabric as dtfabric_fabric
-from dtfabric import data_maps as dtfabric_data_maps
+from dtfabric.runtime import data_maps as dtfabric_data_maps
+from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors

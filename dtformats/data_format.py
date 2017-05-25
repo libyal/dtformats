@@ -5,7 +5,7 @@ import abc
 import os
 
 from dtfabric import errors as dtfabric_errors
-from dtfabric import data_maps as dtfabric_data_maps
+from dtfabric.runtime import data_maps as dtfabric_data_maps
 
 from dtformats import errors
 

@@ -8,9 +8,9 @@ import os
 import sys
 
 try:
-  from setuptools import find_packages, setup, Command
+  from setuptools import find_packages, setup
 except ImportError:
-  from distutils.core import find_packages, setup, Command
+  from distutils.core import find_packages, setup
 
 try:
   from setuptools.commands.bdist_rpm import bdist_rpm
@@ -25,7 +25,7 @@ if sys.version < '2.7':
 # Change PYTHONPATH to include dtformats so that we can get the version.
 sys.path.insert(0, '.')
 
-import dtformats
+import dtformats  # pylint: disable=wrong-import-position
 
 
 class BdistRPMCommand(bdist_rpm):
@@ -53,7 +53,7 @@ class BdistRPMCommand(bdist_rpm):
     in_description = False
 
     python_spec_file = []
-    for index, line in enumerate(spec_file):
+    for line in iter(spec_file):
       if line.startswith('Summary: '):
         summary = line
 
@@ -69,7 +69,7 @@ class BdistRPMCommand(bdist_rpm):
 
       elif line.startswith('%files'):
         line = '%files -f INSTALLED_FILES -n {0:s}-%{{name}}'.format(
-           python_package)
+            python_package)
 
       elif line.startswith('%prep'):
         in_description = False
@@ -130,7 +130,7 @@ setup(
         'dtformats': 'dtformats'
     },
     data_files=[
-        ('share/dtfabric/data', glob.glob(
+        ('share/dtformats/data', glob.glob(
             os.path.join('data', '*'))),
         ('share/doc/dtformats', [
             'ACKNOWLEDGEMENTS', 'LICENSE', 'README']),

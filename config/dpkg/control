@@ -10,12 +10,12 @@ Homepage: https://github.com/libyal/dtformats
 
 Package: python-dtformats
 Architecture: all
-Depends: libfwsi-python (>= 20150606), liblnk-python (>= 20150830), libolecf-python (>= 20151223), python-dtfabric (>= 20170507), python-yaml (>= 3.10), ${python:Depends}, ${misc:Depends}
+Depends: libfwsi-python (>= 20150606), liblnk-python (>= 20150830), libolecf-python (>= 20151223), python-dtfabric (>= 20170524), python-yaml (>= 3.10), ${python:Depends}, ${misc:Depends}
 Description: Python 2 module for data formats (dtformats)
  dtFormats is a collection of various file formats.
 
 Package: python3-dtformats
 Architecture: all
-Depends: libfwsi-python3 (>= 20150606), liblnk-python3 (>= 20150830), libolecf-python3 (>= 20151223), python3-dtfabric (>= 20170507), python3-yaml (>= 3.10), ${python3:Depends}, ${misc:Depends}
+Depends: libfwsi-python3 (>= 20150606), liblnk-python3 (>= 20150830), libolecf-python3 (>= 20151223), python3-dtfabric (>= 20170524), python3-yaml (>= 3.10), ${python3:Depends}, ${misc:Depends}
 Description: Python 3 module for data formats (dtformats)
  dtFormats is a collection of various file formats.

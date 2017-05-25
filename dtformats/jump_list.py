@@ -13,7 +13,7 @@ import pylnk
 import pyolecf
 
 from dtfabric import errors as dtfabric_errors
-from dtfabric import fabric as dtfabric_fabric
+from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import data_range
