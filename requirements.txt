@@ -1,6 +1,4 @@
 pip >= 7.0.0
-pytest
-mock
 PyYAML >= 3.10
 dtfabric >= 20170524
 libfwsi-python >= 20150606

@@ -10,27 +10,27 @@ L2TBINARIES_TEST_DEPENDENCIES="funcsigs mock pbr six";
 
 PYTHON2_DEPENDENCIES="libfwsi-python liblnk-python libolecf-python python-dtfabric python-yaml";
 
-PYTHON2_TEST_DEPENDENCIES="python-mock";
-
-PYTHON3_DEPENDENCIES="libfwsi-python3 liblnk-python3 libolecf-python3 python3-dtfabric python3-yaml";
-
-PYTHON3_TEST_DEPENDENCIES="python3-mock";
+PYTHON2_TEST_DEPENDENCIES="python-mock python-tox";
 
 # Exit on error.
 set -e;
 
-if test `uname -s` = "Darwin";
+if test ${TRAVIS_OS_NAME} = "osx";
 then
 	git clone https://github.com/log2timeline/l2tdevtools.git;
 
 	mv l2tdevtools ../;
 	mkdir dependencies;
 
-	PYTHONPATH=../l2tdevtools ../l2tdevtools/tools/update.py --download-directory=dependencies ${L2TBINARIES_DEPENDENCIES} ${L2TBINARIES_TEST_DEPENDENCIES};
+	PYTHONPATH=../l2tdevtools ../l2tdevtools/tools/update.py --download-directory dependencies --track dev ${L2TBINARIES_DEPENDENCIES} ${L2TBINARIES_TEST_DEPENDENCIES};
 
-elif test `uname -s` = "Linux";
+elif test ${TRAVIS_OS_NAME} = "linux";
 then
+	sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list;
+
 	sudo add-apt-repository ppa:gift/dev -y;
 	sudo apt-get update -q;
-	sudo apt-get install -y ${COVERALL_DEPENDENCIES} ${PYTHON2_DEPENDENCIES} ${PYTHON2_TEST_DEPENDENCIES} ${PYTHON3_DEPENDENCIES} ${PYTHON3_TEST_DEPENDENCIES};
+	# Only install the Python 2 dependencies.
+	# Also see: https://docs.travis-ci.com/user/languages/python/#Travis-CI-Uses-Isolated-virtualenvs
+	sudo apt-get install -y ${COVERALL_DEPENDENCIES} ${PYTHON2_DEPENDENCIES} ${PYTHON2_TEST_DEPENDENCIES};
 fi

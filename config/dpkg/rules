@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --buildsystem=python_distutils --with=python2,python3 
+	dh $@ --buildsystem=python_distutils --with=python2,python3
 
 .PHONY: override_dh_auto_clean
 override_dh_auto_clean:
