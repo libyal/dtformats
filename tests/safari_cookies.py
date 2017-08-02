@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for Safari Cookies (Cookies.binarycookies) files."""
 
+from __future__ import unicode_literals
+
 import unittest
 
 from dtformats import safari_cookies
@@ -32,13 +34,13 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadPages.
   # TODO: add tests for _ReadRecord.
 
-  @test_lib.skipUnlessHasTestFile([u'Cookies.binarycookies'])
+  @test_lib.skipUnlessHasTestFile(['Cookies.binarycookies'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
     test_file = safari_cookies.BinaryCookiesFile(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([u'Cookies.binarycookies'])
+    test_file_path = self._GetTestFilePath(['Cookies.binarycookies'])
     test_file.Open(test_file_path)
 
 

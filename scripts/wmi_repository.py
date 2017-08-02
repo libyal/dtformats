@@ -3,6 +3,8 @@
 """Script to parse WMI Common Information Model (CIM) repository files."""
 
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import argparse
 import logging
 import os
@@ -19,38 +21,38 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      u'Extracts information from WMI Common Information Model (CIM) '
-      u'repository files.'))
+      'Extracts information from WMI Common Information Model (CIM) '
+      'repository files.'))
 
   argument_parser.add_argument(
-      u'-d', u'--debug', dest=u'debug', action=u'store_true', default=False,
-      help=u'enable debug output.')
+      '-d', '--debug', dest='debug', action='store_true', default=False,
+      help='enable debug output.')
 
   argument_parser.add_argument(
-      u'source', nargs=u'?', action=u'store', metavar=u'PATH',
+      'source', nargs='?', action='store', metavar='PATH',
       default=None, help=(
-          u'path of the directory containing the WMI Common Information '
-          u'Model (CIM) repository files.'))
+          'path of the directory containing the WMI Common Information '
+          'Model (CIM) repository files.'))
 
   options = argument_parser.parse_args()
 
   if not options.source:
-    print(u'Source file missing.')
-    print(u'')
+    print('Source file missing.')
+    print('')
     argument_parser.print_help()
-    print(u'')
+    print('')
     return False
 
   logging.basicConfig(
-      level=logging.INFO, format=u'[%(levelname)s] %(message)s')
+      level=logging.INFO, format='[%(levelname)s] %(message)s')
 
   output_writer = output_writers.StdoutWriter()
 
   try:
     output_writer.Open()
   except IOError as exception:
-    print(u'Unable to open output writer with error: {0!s}'.format(exception))
-    print(u'')
+    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print('')
     return False
 
   source_basename = os.path.basename(options.source)
@@ -59,7 +61,7 @@ def Main():
   cim_repository = wmi_repository.CIMRepository(
       debug=options.debug, output_writer=output_writer)
 
-  if source_basename == u'INDEX.BTR':
+  if source_basename == 'INDEX.BTR':
     source = os.path.dirname(options.source)
     cim_repository.OpenIndexBinaryTree(source)
 
@@ -68,11 +70,11 @@ def Main():
 
     object_record_keys = {}
     for key in cim_repository.GetKeys():
-      if u'.' not in key:
+      if '.' not in key:
         continue
 
-      _, _, key_name = key.rpartition(u'\\')
-      key_name, _, _ = key_name.partition(u'.')
+      _, _, key_name = key.rpartition('\\')
+      key_name, _, _ = key_name.partition('.')
 
       if key_name not in object_record_keys:
         object_record_keys[key_name] = []

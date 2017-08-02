@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for output writers."""
 
+from __future__ import unicode_literals
+
 import unittest
 
 from dtformats import output_writers
@@ -27,7 +29,7 @@ class StdoutWriterTest(test_lib.BaseTestCase):
     """Tests the WriteText function."""
     test_writer = output_writers.StdoutWriter()
 
-    test_writer.WriteText(u'')
+    test_writer.WriteText('')
 
 
 if __name__ == '__main__':

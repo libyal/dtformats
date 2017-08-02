@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for the data range file-like object."""
 
+from __future__ import unicode_literals
+
 import io
 import os
 import unittest

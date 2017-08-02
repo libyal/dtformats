@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for binary data format and file."""
 
+from __future__ import unicode_literals
+
 import io
 import unittest
 
@@ -32,7 +34,7 @@ class ErrorBytesIO(io.BytesIO):
     Raises:
       IOError: for testing.
     """
-    raise IOError(u'Unable to read for testing purposes.')
+    raise IOError('Unable to read for testing purposes.')
 
 
 class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
@@ -52,7 +54,7 @@ class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
           the byte stream.
     """
     raise dtfabric_errors.FoldingError(
-        u'Unable to fold to byte stream for testing purposes.')
+        'Unable to fold to byte stream for testing purposes.')
 
   def MapByteStream(self, byte_stream, **unused_kwargs):
     """Maps the data type on a byte stream.
@@ -68,7 +70,7 @@ class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
           the byte stream.
     """
     raise dtfabric_errors.MappingError(
-        u'Unable to map byte stream for testing purposes.')
+        'Unable to map byte stream for testing purposes.')
 
 
 class BinaryDataFormatTest(test_lib.BaseTestCase):
@@ -99,7 +101,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _POINT3D = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'point3d')
+  _POINT3D = _DATA_TYPE_FABRIC.CreateDataTypeMap('point3d')
 
   _POINT3D_SIZE = _POINT3D.GetByteSize()
 
@@ -110,12 +112,12 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         output_writer=output_writer)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06'
-    test_format._DebugPrintData(u'Description', data)
+    test_format._DebugPrintData('Description', data)
 
     expected_output = [
-        u'Description:\n',
-        (u'0x00000000  00 01 02 03 04 05 06                              '
-         u'.......\n\n')]
+        'Description:\n',
+        ('0x00000000  00 01 02 03 04 05 06                              '
+         '.......\n\n')]
     self.assertEqual(output_writer.output, expected_output)
 
   def testDebugPrintValueDecimal(self):
@@ -124,9 +126,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format = data_format.BinaryDataFormat(
         output_writer=output_writer)
 
-    test_format._DebugPrintValueDecimal(u'Description', 1)
+    test_format._DebugPrintValueDecimal('Description', 1)
 
-    expected_output = [u'Description\t\t\t\t\t\t\t\t: 1\n']
+    expected_output = ['Description\t\t\t\t\t\t\t\t: 1\n']
     self.assertEqual(output_writer.output, expected_output)
 
   def testDebugPrintValue(self):
@@ -135,9 +137,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format = data_format.BinaryDataFormat(
         output_writer=output_writer)
 
-    test_format._DebugPrintValue(u'Description', u'Value')
+    test_format._DebugPrintValue('Description', 'Value')
 
-    expected_output = [u'Description\t\t\t\t\t\t\t\t: Value\n']
+    expected_output = ['Description\t\t\t\t\t\t\t\t: Value\n']
     self.assertEqual(output_writer.output, expected_output)
 
   def testDebugPrintText(self):
@@ -146,9 +148,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format = data_format.BinaryDataFormat(
         output_writer=output_writer)
 
-    test_format._DebugPrintText(u'Text')
+    test_format._DebugPrintText('Text')
 
-    expected_output = [u'Text']
+    expected_output = ['Text']
     self.assertEqual(output_writer.output, expected_output)
 
   def testFormatDataInHexadecimal(self):
@@ -157,25 +159,25 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
     data = b'\x00\x01\x02\x03\x04\x05\x06'
     expected_formatted_data = (
-        u'0x00000000  00 01 02 03 04 05 06                              '
-        u'.......\n'
-        u'\n')
+        '0x00000000  00 01 02 03 04 05 06                              '
+        '.......\n'
+        '\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09'
     expected_formatted_data = (
-        u'0x00000000  00 01 02 03 04 05 06 07  08 09                    '
-        u'..........\n'
-        u'\n')
+        '0x00000000  00 01 02 03 04 05 06 07  08 09                    '
+        '..........\n'
+        '\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
     expected_formatted_data = (
-        u'0x00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
-        u'................\n'
-        u'\n')
+        '0x00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
+        '................\n'
+        '\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
@@ -184,12 +186,12 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
         b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f')
     expected_formatted_data = (
-        u'0x00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
-        u'................\n'
-        u'...\n'
-        u'0x00000020  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
-        u'................\n'
-        u'\n')
+        '0x00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
+        '................\n'
+        '...\n'
+        '0x00000020  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
+        '................\n'
+        '\n')
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
@@ -202,25 +204,25 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
-    test_format._ReadData(file_object, 0, self._POINT3D_SIZE, u'point3d')
+    test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
 
     # Test with missing file-like object.
     with self.assertRaises(ValueError):
-      test_format._ReadData(None, 0, self._POINT3D_SIZE, u'point3d')
+      test_format._ReadData(None, 0, self._POINT3D_SIZE, 'point3d')
 
     # Test with file-like object with insufficient data.
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00')
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, u'point3d')
+      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
 
     # Test with file-like object that raises an IOError.
     file_object = ErrorBytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, u'point3d')
+      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
 
   def testReadStructure(self):
     """Tests the _ReadStructure function."""
@@ -232,7 +234,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     test_format._ReadStructure(
-        file_object, 0, self._POINT3D_SIZE, self._POINT3D, u'point3d')
+        file_object, 0, self._POINT3D_SIZE, self._POINT3D, 'point3d')
 
   # TODO: add tests for _ReadStructureWithSizeHint.
 
@@ -244,18 +246,18 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
     test_format._ReadStructureFromByteStream(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
-        self._POINT3D, u'point3d')
+        self._POINT3D, 'point3d')
 
     # Test with missing byte stream.
     with self.assertRaises(ValueError):
       test_format._ReadStructureFromByteStream(
-          None, 0, self._POINT3D, u'point3d')
+          None, 0, self._POINT3D, 'point3d')
 
     # Test with missing data map type.
     with self.assertRaises(ValueError):
       test_format._ReadStructureFromByteStream(
           b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0, None,
-          u'point3d')
+          'point3d')
 
     # Test with data type map that raises an dtfabric.MappingError.
     data_type_map = ErrorDataTypeMap(None)
@@ -263,18 +265,18 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     with self.assertRaises(errors.ParseError):
       test_format._ReadStructureFromByteStream(
           b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
-          data_type_map, u'point3d')
+          data_type_map, 'point3d')
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):
   """Binary data file tests."""
 
-  @test_lib.skipUnlessHasTestFile([u'cpio', u'syslog.bin.cpio'])
+  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testOpenClose(self):
     """Tests the Open and Close functions."""
     test_file = data_format.BinaryDataFile()
 
-    test_file_path = self._GetTestFilePath([u'cpio', u'syslog.bin.cpio'])
+    test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
     test_file.Open(test_file_path)
 
     with self.assertRaises(IOError):

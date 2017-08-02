@@ -3,6 +3,8 @@
 """Script to parse copy in and out (CPIO) archive files."""
 
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import argparse
 import bz2
 import gzip
@@ -68,34 +70,34 @@ class CPIOArchiveFileHasher(object):
                 self._CPIO_SIGNATURE_PORTABLE_ASCII,
                 self._CPIO_SIGNATURE_NEW_ASCII,
                 self._CPIO_SIGNATURE_NEW_ASCII_WITH_CHECKSUM)):
-          file_type = u'cpio'
+          file_type = 'cpio'
         elif signature_data[:2] == self._GZIP_SIGNATURE:
-          file_type = u'gzip'
+          file_type = 'gzip'
         elif signature_data[:2] == self._BZIP_SIGNATURE:
-          file_type = u'bzip'
+          file_type = 'bzip'
         elif signature_data == self._XZ_SIGNATURE:
-          file_type = u'xz'
+          file_type = 'xz'
 
       if not file_type:
         self._output_writer.WriteText(
-            u'Unsupported file type at offset: 0x{0:08x}.\n'.format(
+            'Unsupported file type at offset: 0x{0:08x}.\n'.format(
                 file_offset))
         return
 
-      if file_type == u'cpio':
+      if file_type == 'cpio':
         file_object.seek(file_offset, os.SEEK_SET)
         cpio_file_object = file_object
-      elif file_type in (u'bzip', u'gzip', u'xz'):
+      elif file_type in ('bzip', 'gzip', 'xz'):
         compressed_data_size = file_size - file_offset
         compressed_data_file_object = data_range.DataRange(
             file_object, data_offset=file_offset,
             data_size=compressed_data_size)
 
-        if file_type == u'bzip':
+        if file_type == 'bzip':
           cpio_file_object = bz2.BZ2File(compressed_data_file_object)
-        elif file_type == u'gzip':
+        elif file_type == 'gzip':
           cpio_file_object = gzip.GzipFile(fileobj=compressed_data_file_object)
-        elif file_type == u'xz':
+        elif file_type == 'xz':
           cpio_file_object = lzma.LZMAFile(compressed_data_file_object)
 
       cpio_archive_file = cpio.CPIOArchiveFile(debug=self._debug)
@@ -111,7 +113,7 @@ class CPIOArchiveFileHasher(object):
           sha256_context.update(file_data)
           file_data = file_entry.read(4096)
 
-        self._output_writer.WriteText(u'{0:s}\t{1:s}\n'.format(
+        self._output_writer.WriteText('{0:s}\t{1:s}\n'.format(
             sha256_context.hexdigest(), file_entry.path))
 
       file_offset += cpio_archive_file.size
@@ -130,39 +132,39 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      u'Extracts information from CPIO archive files.'))
+      'Extracts information from CPIO archive files.'))
 
   argument_parser.add_argument(
-      u'-d', u'--debug', dest=u'debug', action=u'store_true', default=False,
-      help=u'enable debug output.')
+      '-d', '--debug', dest='debug', action='store_true', default=False,
+      help='enable debug output.')
 
   argument_parser.add_argument(
-      u'--hash', dest=u'hash', action=u'store_true', default=False,
-      help=u'calculate the SHA-256 sum of the file entries.')
+      '--hash', dest='hash', action='store_true', default=False,
+      help='calculate the SHA-256 sum of the file entries.')
 
   argument_parser.add_argument(
-      u'source', nargs=u'?', action=u'store', metavar=u'PATH',
-      default=None, help=u'path of the CPIO archive file.')
+      'source', nargs='?', action='store', metavar='PATH',
+      default=None, help='path of the CPIO archive file.')
 
   options = argument_parser.parse_args()
 
   if not options.source:
-    print(u'Source file missing.')
-    print(u'')
+    print('Source file missing.')
+    print('')
     argument_parser.print_help()
-    print(u'')
+    print('')
     return False
 
   logging.basicConfig(
-      level=logging.INFO, format=u'[%(levelname)s] %(message)s')
+      level=logging.INFO, format='[%(levelname)s] %(message)s')
 
   output_writer = output_writers.StdoutWriter()
 
   try:
     output_writer.Open()
   except IOError as exception:
-    print(u'Unable to open output writer with error: {0!s}'.format(exception))
-    print(u'')
+    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print('')
     return False
 
   if options.hash:
@@ -177,15 +179,15 @@ def Main():
         debug=options.debug, output_writer=output_writer)
     cpio_archive_file.Open(options.source)
 
-    output_writer.WriteText(u'CPIO archive information:\n')
-    output_writer.WriteText(u'\tFormat\t\t: {0:s}\n'.format(
+    output_writer.WriteText('CPIO archive information:\n')
+    output_writer.WriteText('\tFormat\t\t: {0:s}\n'.format(
         cpio_archive_file.file_format))
-    output_writer.WriteText(u'\tSize\t\t: {0:d} bytes\n'.format(
+    output_writer.WriteText('\tSize\t\t: {0:d} bytes\n'.format(
         cpio_archive_file.size))
 
     cpio_archive_file.Close()
 
-  output_writer.WriteText(u'\n')
+  output_writer.WriteText('\n')
   output_writer.Close()
 
   return True

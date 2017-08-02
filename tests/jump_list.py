@@ -4,6 +4,8 @@
 * .customDestinations-ms
 """
 
+from __future__ import unicode_literals
+
 import unittest
 import uuid
 
@@ -27,7 +29,7 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
     test_file._format_version = 3
 
-    uuid_value = uuid.UUID(u'{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
+    uuid_value = uuid.UUID('{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
     data_type_map = test_file._DEST_LIST_ENTRY_V3
     dest_list_entry = data_type_map.CreateStructureValues(
         unknown1=1,
@@ -35,7 +37,7 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
         droid_file_identifier=uuid_value,
         birth_droid_volume_identifier=uuid_value,
         birth_droid_file_identifier=uuid_value,
-        hostname=u'myhost',
+        hostname='myhost',
         entry_number=2,
         unknown2=3,
         unknown3=4.0,
@@ -45,7 +47,7 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
         unknown5=8,
         unknown6=9,
         path_size=6,
-        path=u'mypath',
+        path='mypath',
         unknown7=10)
 
     test_file._DebugPrintDestListEntry(dest_list_entry)
@@ -76,25 +78,25 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadLNKFiles.
 
   @test_lib.skipUnlessHasTestFile([
-      u'1b4dd67f29cb1962.automaticDestinations-ms'])
+      '1b4dd67f29cb1962.automaticDestinations-ms'])
   def testReadFileObjectOnV1File(self):
     """Tests the ReadFileObject on a format version 1 file."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        u'1b4dd67f29cb1962.automaticDestinations-ms'])
+        '1b4dd67f29cb1962.automaticDestinations-ms'])
     test_file.Open(test_file_path)
 
   @test_lib.skipUnlessHasTestFile([
-      u'9d1f905ce5044aee.automaticDestinations-ms'])
+      '9d1f905ce5044aee.automaticDestinations-ms'])
   def testReadFileObjectOnV3File(self):
     """Tests the ReadFileObject on a format version 3 file."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        u'9d1f905ce5044aee.automaticDestinations-ms'])
+        '9d1f905ce5044aee.automaticDestinations-ms'])
     test_file.Open(test_file_path)
 
 
@@ -110,14 +112,14 @@ class CustomDestinationsFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadLNKFile.
   # TODO: add tests for _ReadLNKFiles.
 
-  @test_lib.skipUnlessHasTestFile([u'5afe4de1b92fc382.customDestinations-ms'])
+  @test_lib.skipUnlessHasTestFile(['5afe4de1b92fc382.customDestinations-ms'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.CustomDestinationsFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        u'5afe4de1b92fc382.customDestinations-ms'])
+        '5afe4de1b92fc382.customDestinations-ms'])
     test_file.Open(test_file_path)
 
 

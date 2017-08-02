@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for Windows Task Scheduler job files."""
 
+from __future__ import unicode_literals
+
 import os
 import unittest
 import uuid
@@ -22,7 +24,7 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
         output_writer=output_writer)
 
     data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        u'system_time')
+        'system_time')
     system_time = data_type_map.CreateStructureValues(
         day_of_month=7,
         hours=17,
@@ -33,7 +35,7 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
         weekday=0,
         year=2017)
 
-    uuid_value = uuid.UUID(u'{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
+    uuid_value = uuid.UUID('{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
     data_type_map = test_file._FIXED_LENGTH_DATA_SECTION
     data_section = data_type_map.CreateStructureValues(
         application_name_offset=3,
@@ -61,20 +63,20 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
         output_writer=output_writer)
 
     data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        u'job_trigger_date')
+        'job_trigger_date')
     date = data_type_map.CreateStructureValues(
         day_of_month=9,
         month=5,
         year=2017)
 
     data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        u'job_trigger_time')
+        'job_trigger_time')
     time = data_type_map.CreateStructureValues(
         hours=8,
         minutes=1)
 
     data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        u'job_trigger')
+        'job_trigger')
     trigger = data_type_map.CreateStructureValues(
         duration=6,
         end_date=date,
@@ -96,18 +98,18 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
 
   # TODO: add tests for _DebugPrintVariableLengthDataSection.
 
-  @test_lib.skipUnlessHasTestFile([u'wintask.job'])
+  @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadFixedLengthDataSection(self):
     """Tests the _ReadFixedLengthDataSection function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = job.WindowsTaskSchedularJobFile(
         output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([u'wintask.job'])
+    test_file_path = self._GetTestFilePath(['wintask.job'])
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFixedLengthDataSection(file_object)
 
-  @test_lib.skipUnlessHasTestFile([u'wintask.job'])
+  @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadVariableLengthDataSection(self):
     """Tests the _ReadVariableLengthDataSection function."""
     output_writer = test_lib.TestOutputWriter()
@@ -115,13 +117,13 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
         output_writer=output_writer)
     test_file._file_size = 896
 
-    test_file_path = self._GetTestFilePath([u'wintask.job'])
+    test_file_path = self._GetTestFilePath(['wintask.job'])
     with open(test_file_path, 'rb') as file_object:
       file_object.seek(test_file._FIXED_LENGTH_DATA_SECTION_SIZE, os.SEEK_SET)
 
       test_file._ReadVariableLengthDataSection(file_object)
 
-  @test_lib.skipUnlessHasTestFile([u'wintask.job'])
+  @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
@@ -129,7 +131,7 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
     test_file = job.WindowsTaskSchedularJobFile(
         output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([u'wintask.job'])
+    test_file_path = self._GetTestFilePath(['wintask.job'])
     test_file.Open(test_file_path)
 
 
