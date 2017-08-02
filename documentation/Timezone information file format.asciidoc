@@ -45,19 +45,16 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
-* File header
-* Transition times
-
-              Four-byte value section
-              (header version 0x00 or 0x32)
-                      Header record
-                      Four-byte transition times
-                      Transition time index
-                      ttinfo structures
-                      Timezone abbreviation array
-                      Leap second records
-                      Standard/Wall array
-                      UTC/Local array
+* 32-bit timezone information
+** File header
+** Transition times
+** Transition time index
+** Local time types table
+** Timezone abbreviation strings
+** Leap second records
+** Standard/wall time indicators
+** UTC/local time indicators
+* Optional 64-bit timezone information (format version "2" and later)
 
               Eight-byte value section
               (only if first header version is 0x32,
@@ -71,7 +68,7 @@ in the section entitled "GNU Free Documentation License".
                       Standard/Wall array
                       UTC/Local array
 
-* Optional timezone string section (only in format version "2")
+* Optional timezone string section (format version "2" and later)
 
 [cols="1,5",options="header"]
 |===
@@ -111,8 +108,67 @@ times (tzh_timecnt) in the file header, and consist of:
 | 0 | tzh_timecnt x 4 | | Transition time array +
 Contains a POSIX timestamp +
 Indicates at which date and time the rules for computing local time change
-| ... | tzh_timecnt x 1 | | Types of local time
 |===
+
+=== Transition time index
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_timecnt x 1 | | Local time type index +
+Contains an index value into the local time types table
+|===
+
+=== Local time types table
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_timecnt x 6 | | ttinfo
+|===
+
+....
+struct ttinfo {
+    long         tt_gmtoff;
+    int          tt_isdst;
+    unsigned int tt_abbrind;
+};
+....
+
+=== Timezone abbreviation strings
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_charcnt x 1 | | time zone abbreviations +
+An individual time zone abbreviation is terminated by an end-of-string character
+|===
+
+=== Leap second records
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_leapcnt x 8 | | Leap second records
+|===
+
+=== Standard/wall time indicators
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_ttisstdcnt x 1 | | 
+|===
+
+=== UTC/local time indicators
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_ttisgmtcnt x 1 | | 
+|===
+
+=== TODO
 
 === Timezone string section
 
@@ -128,7 +184,13 @@ Indicates at which date and time the rules for computing local time change
 [appendix]
 == References
 
-`[REFERENCE]`
+`[IETF]`
+
+[cols="1,5",options="header"]
+|===
+| Title: | TZFILE_H
+| URL: | https://www.ietf.org/timezones/data/tzfile.h
+|===
 
 [appendix]
 == GNU Free Documentation License
