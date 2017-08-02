@@ -2,6 +2,8 @@
 """Output writer."""
 
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import abc
 
 
@@ -50,4 +52,4 @@ class StdoutWriter(OutputWriter):
     Args:
       text (str): text to write.
     """
-    print(text, end=u'')
+    print(text, end='')

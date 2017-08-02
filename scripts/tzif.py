@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
-import os
 import sys
 
 from dtformats import output_writers

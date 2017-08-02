@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """UTMP files."""
 
+from __future__ import unicode_literals
+
 import datetime
 
 from dtfabric.runtime import fabric as dtfabric_fabric
@@ -83,7 +85,7 @@ class UTMPFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _UTMP_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'utmp_entry_linux')
+  _UTMP_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap('utmp_entry_linux')
 
   _UTMP_ENTRY_SIZE = _UTMP_ENTRY.GetByteSize()
 
@@ -93,58 +95,58 @@ class UTMPFile(data_format.BinaryDataFile):
     Args:
       entry (utmp_entry_linux): entry.
     """
-    value_string = u'0x{0:08x}'.format(entry.type)
-    self._DebugPrintValue(u'Type', value_string)
+    value_string = '0x{0:08x}'.format(entry.type)
+    self._DebugPrintValue('Type', value_string)
 
-    value_string = u'{0:d}'.format(entry.pid)
-    self._DebugPrintValue(u'PID', value_string)
+    value_string = '{0:d}'.format(entry.pid)
+    self._DebugPrintValue('PID', value_string)
 
     value_string = entry.terminal.replace(b'\0', b'')
-    value_string = value_string.decode(u'utf-8')
-    self._DebugPrintValue(u'Terminal', value_string)
+    value_string = value_string.decode('utf-8')
+    self._DebugPrintValue('Terminal', value_string)
 
-    value_string = u'{0:d}'.format(entry.terminal_identifier)
-    self._DebugPrintValue(u'Terminal ID', value_string)
+    value_string = '{0:d}'.format(entry.terminal_identifier)
+    self._DebugPrintValue('Terminal ID', value_string)
 
     value_string = entry.username.replace(b'\0', b'')
-    value_string = value_string.decode(u'utf-8')
-    self._DebugPrintValue(u'Username', value_string)
+    value_string = value_string.decode('utf-8')
+    self._DebugPrintValue('Username', value_string)
 
     value_string = entry.hostname.replace(b'\0', b'')
-    value_string = value_string.decode(u'utf-8')
-    self._DebugPrintValue(u'Hostname', value_string)
+    value_string = value_string.decode('utf-8')
+    self._DebugPrintValue('Hostname', value_string)
 
-    value_string = u'0x{0:04x}'.format(entry.termination)
-    self._DebugPrintValue(u'Termination', value_string)
+    value_string = '0x{0:04x}'.format(entry.termination)
+    self._DebugPrintValue('Termination', value_string)
 
-    value_string = u'0x{0:04x}'.format(entry.exit)
-    self._DebugPrintValue(u'Exit', value_string)
+    value_string = '0x{0:04x}'.format(entry.exit)
+    self._DebugPrintValue('Exit', value_string)
 
-    value_string = u'{0:d}'.format(entry.session)
-    self._DebugPrintValue(u'Session', value_string)
+    value_string = '{0:d}'.format(entry.session)
+    self._DebugPrintValue('Session', value_string)
 
     date_time = (datetime.datetime(1970, 1, 1) + datetime.timedelta(
         seconds=int(entry.timestamp)))
 
-    value_string = u'{0!s} ({1:d})'.format(date_time, entry.timestamp)
-    self._DebugPrintValue(u'Timestamp', value_string)
+    value_string = '{0!s} ({1:d})'.format(date_time, entry.timestamp)
+    self._DebugPrintValue('Timestamp', value_string)
 
-    value_string = u'{0:d}'.format(entry.micro_seconds)
-    self._DebugPrintValue(u'Micro seconds', value_string)
+    value_string = '{0:d}'.format(entry.micro_seconds)
+    self._DebugPrintValue('Micro seconds', value_string)
 
-    value_string = u'0x{0:08x}'.format(entry.address_a)
-    self._DebugPrintValue(u'Address A', value_string)
+    value_string = '0x{0:08x}'.format(entry.address_a)
+    self._DebugPrintValue('Address A', value_string)
 
-    value_string = u'0x{0:08x}'.format(entry.address_b)
-    self._DebugPrintValue(u'Address B', value_string)
+    value_string = '0x{0:08x}'.format(entry.address_b)
+    self._DebugPrintValue('Address B', value_string)
 
-    value_string = u'0x{0:08x}'.format(entry.address_c)
-    self._DebugPrintValue(u'Address C', value_string)
+    value_string = '0x{0:08x}'.format(entry.address_c)
+    self._DebugPrintValue('Address C', value_string)
 
-    value_string = u'0x{0:08x}'.format(entry.address_d)
-    self._DebugPrintValue(u'Address D', value_string)
+    value_string = '0x{0:08x}'.format(entry.address_d)
+    self._DebugPrintValue('Address D', value_string)
 
-    self._DebugPrintData(u'Unknown1', entry.unknown1)
+    self._DebugPrintData('Unknown1', entry.unknown1)
 
   def _ReadEntries(self, file_object):
     """Reads entries.
@@ -156,7 +158,7 @@ class UTMPFile(data_format.BinaryDataFile):
     while file_offset < self._file_size:
       entry = self._ReadStructure(
           file_object, file_offset, self._UTMP_ENTRY_SIZE, self._UTMP_ENTRY,
-          u'entry')
+          'entry')
 
       if self._debug:
         self._DebugPrintEntry(entry)

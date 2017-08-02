@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Binary data format."""
 
+from __future__ import unicode_literals
+
 import abc
 import os
 
@@ -35,7 +37,7 @@ class BinaryDataFormat(object):
       data (bytes): data.
     """
     if self._output_writer:
-      self._output_writer.WriteText(u'{0:s}:\n'.format(description))
+      self._output_writer.WriteText('{0:s}:\n'.format(description))
       self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
 
   def _DebugPrintValueDecimal(self, description, value):
@@ -45,7 +47,7 @@ class BinaryDataFormat(object):
       description (str): description.
       value (int): value.
     """
-    value_string = u'{0:d}'.format(value)
+    value_string = '{0:d}'.format(value)
     self._DebugPrintValue(description, value_string)
 
   def _DebugPrintValue(self, description, value):
@@ -58,8 +60,8 @@ class BinaryDataFormat(object):
     if self._output_writer:
       alignment, _ = divmod(len(description), 8)
       alignment = 8 - alignment + 1
-      text = u'{0:s}{1:s}: {2!s}\n'.format(
-          description, u'\t' * alignment, value)
+      text = '{0:s}{1:s}: {2!s}\n'.format(
+          description, '\t' * alignment, value)
       self._output_writer.WriteText(text)
 
   def _DebugPrintText(self, text):
@@ -85,29 +87,29 @@ class BinaryDataFormat(object):
 
     lines = []
     data_size = len(data)
-    for block_index in xrange(0, data_size, 16):
+    for block_index in range(0, data_size, 16):
       data_string = data[block_index:block_index + 16]
 
       hexadecimal_string1 = ' '.join([
-          u'{0:02x}'.format(ord(byte_value))
+          '{0:02x}'.format(ord(byte_value))
           for byte_value in data_string[0:8]])
       hexadecimal_string2 = ' '.join([
-          u'{0:02x}'.format(ord(byte_value))
+          '{0:02x}'.format(ord(byte_value))
           for byte_value in data_string[8:16]])
 
-      printable_string = u''.join([
+      printable_string = ''.join([
           self._HEXDUMP_CHARACTER_MAP[
               ord(byte_value)] for byte_value in data_string])
 
       remaining_size = 16 - len(data_string)
       if remaining_size == 0:
-        whitespace = u''
+        whitespace = ''
       elif remaining_size >= 8:
         whitespace = ' ' * ((3 * remaining_size) - 1)
       else:
         whitespace = ' ' * (3 * remaining_size)
 
-      hexadecimal_string = u'{0:s}  {1:s}{2:s}'.format(
+      hexadecimal_string = '{0:s}  {1:s}{2:s}'.format(
           hexadecimal_string1, hexadecimal_string2, whitespace)
 
       if (previous_hexadecimal_string is not None and
@@ -120,14 +122,14 @@ class BinaryDataFormat(object):
           lines.append('...')
 
       else:
-        lines.append(u'0x{0:08x}  {1:s}  {2:s}'.format(
+        lines.append('0x{0:08x}  {1:s}  {2:s}'.format(
             block_index, hexadecimal_string, printable_string))
 
         in_group = False
         previous_hexadecimal_string = hexadecimal_string
 
-    lines.extend([u'', u''])
-    return u'\n'.join(lines)
+    lines.extend(['', ''])
+    return '\n'.join(lines)
 
   def _ReadData(self, file_object, file_offset, data_size, description):
     """Reads data.
@@ -147,29 +149,29 @@ class BinaryDataFormat(object):
       ValueError: if file-like object or date type map are invalid.
     """
     if not file_object:
-      raise ValueError(u'Invalid file-like object.')
+      raise ValueError('Invalid file-like object.')
 
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}\n'.format(
+      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
           description, file_offset))
 
-    read_error = u''
+    read_error = ''
 
     try:
       data = file_object.read(data_size)
 
       if len(data) != data_size:
-        read_error = u'missing data'
+        read_error = 'missing data'
 
     except IOError as exception:
-      read_error = u'{0!s}'.format(exception)
+      read_error = '{0!s}'.format(exception)
 
     if read_error:
       raise errors.ParseError((
-          u'Unable to read {0:s} data at offset: 0x{1:08x} with error: '
-          u'{2:s}').format(description, file_offset, read_error))
+          'Unable to read {0:s} data at offset: 0x{1:08x} with error: '
+          '{2:s}').format(description, file_offset, read_error))
 
     return data
 
@@ -235,7 +237,7 @@ class BinaryDataFormat(object):
       last_size_hint = size_hint
       size_hint = data_type_map.GetSizeHint(context=context)
 
-    raise errors.ParseError(u'Unable to read {0:s}'.format(description))
+    raise errors.ParseError('Unable to read {0:s}'.format(description))
 
   def _ReadStructureFromByteStream(
       self, byte_stream, file_offset, data_type_map, description, context=None):
@@ -257,21 +259,21 @@ class BinaryDataFormat(object):
       ValueError: if file-like object or date type map are invalid.
     """
     if not byte_stream:
-      raise ValueError(u'Invalid byte stream.')
+      raise ValueError('Invalid byte stream.')
 
     if not data_type_map:
-      raise ValueError(u'Invalid data type map.')
+      raise ValueError('Invalid data type map.')
 
     if self._debug:
-      data_description = u'{0:s} data'.format(description.title())
+      data_description = '{0:s} data'.format(description.title())
       self._DebugPrintData(data_description, byte_stream)
 
     try:
       return data_type_map.MapByteStream(byte_stream, context=context)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to map {0:s} data at offset: 0x{1:08x} with error: '
-          u'{2!s}').format(description, file_offset, exception))
+          'Unable to map {0:s} data at offset: 0x{1:08x} with error: '
+          '{2!s}').format(description, file_offset, exception))
 
 
 class BinaryDataFile(BinaryDataFormat):
@@ -297,7 +299,7 @@ class BinaryDataFile(BinaryDataFormat):
       IOError: if the file is not opened.
     """
     if not self._file_object:
-      raise IOError(u'File not opened')
+      raise IOError('File not opened')
 
     if self._file_object_opened_in_object:
       self._file_object.close()
@@ -314,7 +316,7 @@ class BinaryDataFile(BinaryDataFormat):
       IOError: if the file is already opened.
     """
     if self._file_object:
-      raise IOError(u'File already opened')
+      raise IOError('File already opened')
 
     stat_object = os.stat(path)
 

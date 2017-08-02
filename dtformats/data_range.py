@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Data range file-like object."""
 
+from __future__ import unicode_literals
+
 import os
 
 
@@ -46,11 +48,11 @@ class DataRange(object):
       IOError: if the read failed.
     """
     if self.data_offset < 0:
-      raise IOError(u'Invalid data offset: {0:d} value out of bounds.'.format(
+      raise IOError('Invalid data offset: {0:d} value out of bounds.'.format(
           self.data_offset))
 
     if self.data_size < 0:
-      raise IOError(u'Invalid data size: {0:d} value out of bounds.'.format(
+      raise IOError('Invalid data size: {0:d} value out of bounds.'.format(
           self.data_size))
 
     if self._current_offset >= self.data_size:
@@ -82,7 +84,7 @@ class DataRange(object):
       IOError: if the seek failed.
     """
     if self.data_size < 0:
-      raise IOError(u'Invalid data size: {0:d} value out of bounds.'.format(
+      raise IOError('Invalid data size: {0:d} value out of bounds.'.format(
           self.data_size))
 
     if whence == os.SEEK_CUR:
@@ -90,10 +92,10 @@ class DataRange(object):
     elif whence == os.SEEK_END:
       offset += self.data_size
     elif whence != os.SEEK_SET:
-      raise IOError(u'Unsupported whence.')
+      raise IOError('Unsupported whence.')
 
     if offset < 0:
-      raise IOError(u'Invalid offset value less than zero.')
+      raise IOError('Invalid offset value less than zero.')
 
     self._current_offset = offset
 

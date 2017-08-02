@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Copy in and out (CPIO) archive format files."""
 
+from __future__ import unicode_literals
+
 import os
 
 from dtfabric.runtime import fabric as dtfabric_fabric
@@ -257,25 +259,25 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
   _CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'cpio_binary_big_endian_file_entry')
+      'cpio_binary_big_endian_file_entry')
 
   _CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY_SIZE = (
       _CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY.GetByteSize())
 
   _CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'cpio_binary_little_endian_file_entry')
+      'cpio_binary_little_endian_file_entry')
 
   _CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY_SIZE = (
       _CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY.GetByteSize())
 
   _CPIO_PORTABLE_ASCII_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'cpio_portable_ascii_file_entry')
+      'cpio_portable_ascii_file_entry')
 
   _CPIO_PORTABLE_ASCII_FILE_ENTRY_SIZE = (
       _CPIO_PORTABLE_ASCII_FILE_ENTRY.GetByteSize())
 
   _CPIO_NEW_ASCII_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'cpio_new_ascii_file_entry')
+      'cpio_new_ascii_file_entry')
 
   _CPIO_NEW_ASCII_FILE_ENTRY_SIZE = _CPIO_NEW_ASCII_FILE_ENTRY.GetByteSize()
 
@@ -305,64 +307,64 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Args:
       file_entry (cpio_new_file_entry): file entry.
     """
-    if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
-      value_string = u'0x{0:04x}'.format(file_entry.signature)
+    if self.file_format in ('bin-big-endian', 'bin-little-endian'):
+      value_string = '0x{0:04x}'.format(file_entry.signature)
     else:
-      value_string = u'{0!s}'.format(file_entry.signature)
+      value_string = '{0!s}'.format(file_entry.signature)
 
-    self._DebugPrintValue(u'Signature', value_string)
+    self._DebugPrintValue('Signature', value_string)
 
-    if self.file_format not in (u'crc', u'newc'):
-      value_string = u'{0:d}'.format(file_entry.device_number)
-      self._DebugPrintValue(u'Device number', value_string)
+    if self.file_format not in ('crc', 'newc'):
+      value_string = '{0:d}'.format(file_entry.device_number)
+      self._DebugPrintValue('Device number', value_string)
 
-    value_string = u'{0:d}'.format(file_entry.inode_number)
-    self._DebugPrintValue(u'Inode number', value_string)
+    value_string = '{0:d}'.format(file_entry.inode_number)
+    self._DebugPrintValue('Inode number', value_string)
 
-    value_string = u'{0:o}'.format(file_entry.mode)
-    self._DebugPrintValue(u'Mode', value_string)
+    value_string = '{0:o}'.format(file_entry.mode)
+    self._DebugPrintValue('Mode', value_string)
 
-    value_string = u'{0:d}'.format(file_entry.user_identifier)
-    self._DebugPrintValue(u'User identifier (UID)', value_string)
+    value_string = '{0:d}'.format(file_entry.user_identifier)
+    self._DebugPrintValue('User identifier (UID)', value_string)
 
-    value_string = u'{0:d}'.format(file_entry.group_identifier)
-    self._DebugPrintValue(u'Group identifier (GID)', value_string)
+    value_string = '{0:d}'.format(file_entry.group_identifier)
+    self._DebugPrintValue('Group identifier (GID)', value_string)
 
-    value_string = u'{0:d}'.format(file_entry.number_of_links)
-    self._DebugPrintValue(u'Number of links', value_string)
+    value_string = '{0:d}'.format(file_entry.number_of_links)
+    self._DebugPrintValue('Number of links', value_string)
 
-    if self.file_format not in (u'crc', u'newc'):
-      value_string = u'{0:d}'.format(file_entry.special_device_number)
-      self._DebugPrintValue(u'Special device number', value_string)
+    if self.file_format not in ('crc', 'newc'):
+      value_string = '{0:d}'.format(file_entry.special_device_number)
+      self._DebugPrintValue('Special device number', value_string)
 
-    value_string = u'{0:d}'.format(file_entry.modification_time)
-    self._DebugPrintValue(u'Modification time', value_string)
+    value_string = '{0:d}'.format(file_entry.modification_time)
+    self._DebugPrintValue('Modification time', value_string)
 
-    if self.file_format not in (u'crc', u'newc'):
-      value_string = u'{0:d}'.format(file_entry.path_size)
-      self._DebugPrintValue(u'Path size', value_string)
+    if self.file_format not in ('crc', 'newc'):
+      value_string = '{0:d}'.format(file_entry.path_size)
+      self._DebugPrintValue('Path size', value_string)
 
-    value_string = u'{0:d}'.format(file_entry.file_size)
-    self._DebugPrintValue(u'File size', value_string)
+    value_string = '{0:d}'.format(file_entry.file_size)
+    self._DebugPrintValue('File size', value_string)
 
-    if self.file_format in (u'crc', u'newc'):
-      value_string = u'{0:d}'.format(file_entry.device_major_number)
-      self._DebugPrintValue(u'Device major number', value_string)
+    if self.file_format in ('crc', 'newc'):
+      value_string = '{0:d}'.format(file_entry.device_major_number)
+      self._DebugPrintValue('Device major number', value_string)
 
-      value_string = u'{0:d}'.format(file_entry.device_minor_number)
-      self._DebugPrintValue(u'Device minor number', value_string)
+      value_string = '{0:d}'.format(file_entry.device_minor_number)
+      self._DebugPrintValue('Device minor number', value_string)
 
-      value_string = u'{0:d}'.format(file_entry.special_device_major_number)
-      self._DebugPrintValue(u'Special device major number', value_string)
+      value_string = '{0:d}'.format(file_entry.special_device_major_number)
+      self._DebugPrintValue('Special device major number', value_string)
 
-      value_string = u'{0:d}'.format(file_entry.special_device_minor_number)
-      self._DebugPrintValue(u'Special device minor number', value_string)
+      value_string = '{0:d}'.format(file_entry.special_device_minor_number)
+      self._DebugPrintValue('Special device minor number', value_string)
 
-      value_string = u'{0:d}'.format(file_entry.path_size)
-      self._DebugPrintValue(u'Path size', value_string)
+      value_string = '{0:d}'.format(file_entry.path_size)
+      self._DebugPrintValue('Path size', value_string)
 
-      value_string = u'0x{0:08x}'.format(file_entry.checksum)
-      self._DebugPrintValue(u'Checksum', value_string)
+      value_string = '0x{0:08x}'.format(file_entry.checksum)
+      self._DebugPrintValue('Checksum', value_string)
 
   def _ReadFileEntry(self, file_object, file_offset):
     """Reads a file entry.
@@ -375,26 +377,26 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file entry cannot be read.
     """
-    if self.file_format == u'bin-big-endian':
+    if self.file_format == 'bin-big-endian':
       data_type_map = self._CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY
       file_entry_data_size = self._CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY_SIZE
-    elif self.file_format == u'bin-little-endian':
+    elif self.file_format == 'bin-little-endian':
       data_type_map = self._CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY
       file_entry_data_size = self._CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY_SIZE
-    elif self.file_format == u'odc':
+    elif self.file_format == 'odc':
       data_type_map = self._CPIO_PORTABLE_ASCII_FILE_ENTRY
       file_entry_data_size = self._CPIO_PORTABLE_ASCII_FILE_ENTRY_SIZE
-    elif self.file_format in (u'crc', u'newc'):
+    elif self.file_format in ('crc', 'newc'):
       data_type_map = self._CPIO_NEW_ASCII_FILE_ENTRY
       file_entry_data_size = self._CPIO_NEW_ASCII_FILE_ENTRY_SIZE
 
     file_entry = self._ReadStructure(
         file_object, file_offset, file_entry_data_size, data_type_map,
-        u'file entry')
+        'file entry')
 
     file_offset += file_entry_data_size
 
-    if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
+    if self.file_format in ('bin-big-endian', 'bin-little-endian'):
       file_entry.modification_time = (
           (file_entry.modification_time.upper << 16) |
           file_entry.modification_time.lower)
@@ -402,36 +404,36 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       file_entry.file_size = (
           (file_entry.file_size.upper << 16) | file_entry.file_size.lower)
 
-    if self.file_format == u'odc':
+    if self.file_format == 'odc':
       for attribute_name in (
-          u'device_number', u'inode_number', u'mode', u'user_identifier',
-          u'group_identifier', u'number_of_links', u'special_device_number',
-          u'modification_time', u'path_size', u'file_size'):
+          'device_number', 'inode_number', 'mode', 'user_identifier',
+          'group_identifier', 'number_of_links', 'special_device_number',
+          'modification_time', 'path_size', 'file_size'):
 
         value = getattr(file_entry, attribute_name, None)
         try:
           value = int(value, 8)
         except ValueError:
           raise errors.ParseError(
-              u'Unable to convert attribute: {0:s} into an integer'.format(
+              'Unable to convert attribute: {0:s} into an integer'.format(
                   attribute_name))
 
         value = setattr(file_entry, attribute_name, value)
 
-    elif self.file_format in (u'crc', u'newc'):
+    elif self.file_format in ('crc', 'newc'):
       for attribute_name in (
-          u'inode_number', u'mode', u'user_identifier', u'group_identifier',
-          u'number_of_links', u'modification_time', u'path_size',
-          u'file_size', u'device_major_number', u'device_minor_number',
-          u'special_device_major_number', u'special_device_minor_number',
-          u'checksum'):
+          'inode_number', 'mode', 'user_identifier', 'group_identifier',
+          'number_of_links', 'modification_time', 'path_size',
+          'file_size', 'device_major_number', 'device_minor_number',
+          'special_device_major_number', 'special_device_minor_number',
+          'checksum'):
 
         value = getattr(file_entry, attribute_name, None)
         try:
           value = int(value, 16)
         except ValueError:
           raise errors.ParseError(
-              u'Unable to convert attribute: {0:s} into an integer'.format(
+              'Unable to convert attribute: {0:s} into an integer'.format(
                   attribute_name))
 
         value = setattr(file_entry, attribute_name, value)
@@ -442,33 +444,33 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     path_data = file_object.read(file_entry.path_size)
 
     if self._debug:
-      self._DebugPrintData(u'Path data', path_data)
+      self._DebugPrintData('Path data', path_data)
 
     file_offset += file_entry.path_size
 
     # TODO: should this be ASCII?
-    path = path_data.decode(u'ascii')
-    path, _, _ = path.partition(u'\x00')
+    path = path_data.decode('ascii')
+    path, _, _ = path.partition('\x00')
 
     if self._debug:
-      self._DebugPrintValue(u'Path', path)
+      self._DebugPrintValue('Path', path)
 
-    if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
+    if self.file_format in ('bin-big-endian', 'bin-little-endian'):
       padding_size = file_offset % 2
       if padding_size > 0:
         padding_size = 2 - padding_size
 
-    elif self.file_format == u'odc':
+    elif self.file_format == 'odc':
       padding_size = 0
 
-    elif self.file_format in (u'crc', u'newc'):
+    elif self.file_format in ('crc', 'newc'):
       padding_size = file_offset % 4
       if padding_size > 0:
         padding_size = 4 - padding_size
 
     if self._debug:
       padding_data = file_object.read(padding_size)
-      self._DebugPrintData(u'Path alignment padding', padding_data)
+      self._DebugPrintData('Path alignment padding', padding_data)
 
     file_offset += padding_size
 
@@ -488,15 +490,15 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
 
     file_offset += file_entry.file_size
 
-    if self.file_format in (u'bin-big-endian', u'bin-little-endian'):
+    if self.file_format in ('bin-big-endian', 'bin-little-endian'):
       padding_size = file_offset % 2
       if padding_size > 0:
         padding_size = 2 - padding_size
 
-    elif self.file_format == u'odc':
+    elif self.file_format == 'odc':
       padding_size = 0
 
-    elif self.file_format in (u'crc', u'newc'):
+    elif self.file_format in ('crc', 'newc'):
       padding_size = file_offset % 4
       if padding_size > 0:
         padding_size = 4 - padding_size
@@ -506,12 +508,12 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
         file_object.seek(file_offset, os.SEEK_SET)
         padding_data = file_object.read(padding_size)
 
-        self._DebugPrintData(u'File data alignment padding', padding_data)
+        self._DebugPrintData('File data alignment padding', padding_data)
 
       archive_file_entry.size += padding_size
 
     if self._debug:
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
     return archive_file_entry
 
@@ -527,7 +529,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     while file_offset < self._file_size or self._file_size == 0:
       file_entry = self._ReadFileEntry(file_object, file_offset)
       file_offset += file_entry.size
-      if file_entry.path == u'TRAILER!!!':
+      if file_entry.path == 'TRAILER!!!':
         break
 
       if file_entry.path in self._file_entries:
@@ -554,7 +556,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     if self._file_entries:
       return path in self._file_entries
 
-  def GetFileEntries(self, path_prefix=u''):
+  def GetFileEntries(self, path_prefix=''):
     """Retrieves the file entries.
 
     Args:
@@ -595,18 +597,18 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     self.file_format = None
     if len(signature_data) > 2:
       if signature_data[:2] == self._CPIO_SIGNATURE_BINARY_BIG_ENDIAN:
-        self.file_format = u'bin-big-endian'
+        self.file_format = 'bin-big-endian'
       elif signature_data[:2] == self._CPIO_SIGNATURE_BINARY_LITTLE_ENDIAN:
-        self.file_format = u'bin-little-endian'
+        self.file_format = 'bin-little-endian'
       elif signature_data == self._CPIO_SIGNATURE_PORTABLE_ASCII:
-        self.file_format = u'odc'
+        self.file_format = 'odc'
       elif signature_data == self._CPIO_SIGNATURE_NEW_ASCII:
-        self.file_format = u'newc'
+        self.file_format = 'newc'
       elif signature_data == self._CPIO_SIGNATURE_NEW_ASCII_WITH_CHECKSUM:
-        self.file_format = u'crc'
+        self.file_format = 'crc'
 
     if self.file_format is None:
-      raise errors.ParseError(u'Unsupported CPIO format.')
+      raise errors.ParseError('Unsupported CPIO format.')
 
     self._ReadFileEntries(file_object)
 

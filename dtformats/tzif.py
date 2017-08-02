@@ -3,14 +3,10 @@
 
 from __future__ import unicode_literals
 
-import os
-
-from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
-from dtformats import data_range
 from dtformats import errors
 
 
@@ -184,11 +180,11 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       self._DebugPrintFileHeader(file_header)
 
     if file_header.signature != self._FILE_SIGNATURE:
-        raise errors.ParseError('Unsupported file signature.')
+      raise errors.ParseError('Unsupported file signature.')
 
     if file_header.format_version not in (0x00, 0x32, 0x33):
-        raise errors.ParseError('Unsupported format version: {0:d}.'.format(
-            file_header.format_version))
+      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
+          file_header.format_version))
 
     self._ReadTransitionTimes(file_object, file_header)
     self._ReadTransitionTimeIndex(file_object, file_header)
@@ -208,8 +204,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the leap second records cannot be read.
     """
-    file_offset = file_object.tell()
-
     data_size = 8 * file_header.number_of_leap_seconds
 
     data = file_object.read(data_size)
@@ -227,8 +221,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the local time types table cannot be read.
     """
-    file_offset = file_object.tell()
-
     # ttinfo structure
     data_size = 6 * file_header.number_of_local_time_types
 
@@ -247,8 +239,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the standard time indicators cannot be read.
     """
-    file_offset = file_object.tell()
-
     data_size = 1 * file_header.number_of_standard_time_indicators
 
     data = file_object.read(data_size)
@@ -292,8 +282,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the timezone abbreviation strings cannot be read.
     """
-    file_offset = file_object.tell()
-
     data = file_object.read(file_header.timezone_abbreviation_strings_size)
 
     if self._debug:
@@ -335,8 +323,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the UTC time indicators cannot be read.
     """
-    file_offset = file_object.tell()
-
     data_size = 1 * file_header.number_of_utc_time_indicators
 
     data = file_object.read(data_size)

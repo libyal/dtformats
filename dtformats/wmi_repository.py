@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """WMI Common Information Model (CIM) repository files."""
 
+from __future__ import unicode_literals
+
 import datetime
 import glob
 import logging
@@ -414,30 +416,30 @@ class ObjectRecord(data_format.BinaryDataFormat):
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
   _CLASS_DEFINITION_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'class_definition_header')
+      'class_definition_header')
 
   _CLASS_DEFINITION_OBJECT_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'class_definition_object_record')
+      'class_definition_object_record')
 
   _CLASS_DEFINITION_METHODS = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'class_definition_methods')
+      'class_definition_methods')
 
   _SUPER_CLASS_NAME_BLOCK = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'super_class_name_block')
+      'super_class_name_block')
 
   _PROPERTY_NAME = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'property_name')
+      'property_name')
 
   _PROPERTY_DEFINITION = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'property_definition')
+      'property_definition')
 
   _INTERFACE_OBJECT_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'interface_object_record')
+      'interface_object_record')
 
   _REGISTRATION_OBJECT_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'registration_object_record')
+      'registration_object_record')
 
-  _PROPERTY_TYPES = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_property_types')
+  _PROPERTY_TYPES = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_property_types')
 
   # A size of 0 indicates variable of size.
   _PROPERTY_TYPE_VALUE_SIZES = {
@@ -459,7 +461,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
       0x00000067: 2,
   }
 
-  DATA_TYPE_CLASS_DEFINITION = u'CD'
+  DATA_TYPE_CLASS_DEFINITION = 'CD'
 
   def __init__(self, data_type, data, debug=False, output_writer=None):
     """Initializes an object record.
@@ -484,21 +486,21 @@ class ObjectRecord(data_format.BinaryDataFormat):
       ParseError: if the object record cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(u'Reading class definition object record.\n')
+      self._DebugPrintText('Reading class definition object record.\n')
 
     try:
       class_definition = self._CLASS_DEFINITION_OBJECT_RECORD.MapByteStream(
           object_record_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to parse class definition object record with '
-          u'error: {0:s}').format(exception))
+          'Unable to parse class definition object record with '
+          'error: {0:s}').format(exception))
 
     try:
       utf16_stream = class_definition.super_class_name
-      super_class_name = utf16_stream.decode(u'utf-16-le')
+      super_class_name = utf16_stream.decode('utf-16-le')
     except UnicodeDecodeError as exception:
-      super_class_name = u''
+      super_class_name = ''
 
     super_class_name_size = class_definition.super_class_name_size
     date_time = class_definition.date_time
@@ -506,23 +508,23 @@ class ObjectRecord(data_format.BinaryDataFormat):
 
     if self._debug:
       self._DebugPrintValueDecimal(
-          u'Super class name size', super_class_name_size)
+          'Super class name size', super_class_name_size)
 
-      self._DebugPrintValue(u'Super class name', super_class_name)
+      self._DebugPrintValue('Super class name', super_class_name)
 
-      value_string = u'{0!s}'.format(FromFiletime(date_time))
-      self._DebugPrintValue(u'Unknown date and time', value_string)
+      value_string = '{0!s}'.format(FromFiletime(date_time))
+      self._DebugPrintValue('Unknown date and time', value_string)
 
-      self._DebugPrintValueDecimal(u'Data size', data_size)
+      self._DebugPrintValueDecimal('Data size', data_size)
 
-      self._DebugPrintData(u'Data', class_definition.data)
+      self._DebugPrintData('Data', class_definition.data)
 
     self._ReadClassDefinitionHeader(class_definition.data)
 
     data_offset = 12 + (super_class_name_size * 2) + data_size
     if data_offset < len(object_record_data):
       if self._debug:
-        self._DebugPrintData(u'Methods data', object_record_data[data_offset:])
+        self._DebugPrintData('Methods data', object_record_data[data_offset:])
 
       self._ReadClassDefinitionMethods(object_record_data[data_offset:])
 
@@ -536,14 +538,14 @@ class ObjectRecord(data_format.BinaryDataFormat):
       ParseError: if the class definition cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(u'Reading class definition header.\n')
+      self._DebugPrintText('Reading class definition header.\n')
 
     try:
       class_definition_header = self._CLASS_DEFINITION_HEADER.MapByteStream(
           class_definition_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to parse class definition header with error: {0:s}').format(
+          'Unable to parse class definition header with error: {0:s}').format(
               exception))
 
     number_of_property_descriptors = (
@@ -562,56 +564,56 @@ class ObjectRecord(data_format.BinaryDataFormat):
 
     if self._debug:
       self._DebugPrintValueDecimal(
-          u'Unknown1', class_definition_header.unknown1)
+          'Unknown1', class_definition_header.unknown1)
 
-      value_string = u'0x{0:08x}'.format(
+      value_string = '0x{0:08x}'.format(
           class_definition_header.class_name_offset)
-      self._DebugPrintValue(u'Class name offset', value_string)
+      self._DebugPrintValue('Class name offset', value_string)
 
       self._DebugPrintValueDecimal(
-          u'Default value size',
+          'Default value size',
           class_definition_header.default_value_size)
 
       self._DebugPrintValue(
-          u'Super class name block size',
+          'Super class name block size',
           class_definition_header.super_class_name_block_size)
 
       super_class_name_block_data = (
           class_definition_header.super_class_name_block_data)
       self._DebugPrintData(
-          u'Super class name block data', super_class_name_block_data)
+          'Super class name block data', super_class_name_block_data)
 
       self._DebugPrintValueDecimal(
-          u'Qualifiers block size',
+          'Qualifiers block size',
           class_definition_header.qualifiers_block_size)
 
       qualifiers_block_data = (
           class_definition_header.qualifiers_block_data)
-      self._DebugPrintData(u'Qualifiers block data', qualifiers_block_data)
+      self._DebugPrintData('Qualifiers block data', qualifiers_block_data)
 
       self._DebugPrintValueDecimal(
-          u'Number of property descriptors', number_of_property_descriptors)
+          'Number of property descriptors', number_of_property_descriptors)
 
       for index, property_descriptor in enumerate(property_descriptors):
-        description = u'Property descriptor: {0:d} name offset'.format(index)
-        value_string = u'0x{0:08x}'.format(property_descriptor.name_offset)
+        description = 'Property descriptor: {0:d} name offset'.format(index)
+        value_string = '0x{0:08x}'.format(property_descriptor.name_offset)
         self._DebugPrintValue(description, value_string)
 
-        description = u'Property descriptor: {0:d} definition offset'.format(
+        description = 'Property descriptor: {0:d} definition offset'.format(
             index)
-        value_string = u'0x{0:08x}'.format(
+        value_string = '0x{0:08x}'.format(
             property_descriptor.definition_offset)
         self._DebugPrintValue(description, value_string)
 
       default_value_data = (
           class_definition_header.default_value_data)
-      self._DebugPrintData(u'Default value data', default_value_data)
+      self._DebugPrintData('Default value data', default_value_data)
 
       properties_block_size = (
           class_definition_header.properties_block_size)
-      value_string = u'{0:d} (0x{1:08x})'.format(
+      value_string = '{0:d} (0x{1:08x})'.format(
           properties_block_size & 0x7fffffff, properties_block_size)
-      self._DebugPrintValue(u'Properties block size', value_string)
+      self._DebugPrintValue('Properties block size', value_string)
 
       # TODO: refactor.
       if False:
@@ -619,19 +621,19 @@ class ObjectRecord(data_format.BinaryDataFormat):
           super_class_name_block = (
               class_definition_header.super_class_name_block)
 
-          value_string = u'0x{0:02x}'.format(
+          value_string = '0x{0:02x}'.format(
               super_class_name_block.super_class_name_flags)
-          self._DebugPrintValue(u'Super class name flags', value_string)
+          self._DebugPrintValue('Super class name flags', value_string)
 
-          value_string = u'{0:s}'.format(
+          value_string = '{0:s}'.format(
               super_class_name_block.uper_class_name_string)
-          self._DebugPrintValue(u'Super class name string', value_string)
+          self._DebugPrintValue('Super class name string', value_string)
 
           self._DebugPrintValueDecimal(
-              u'Super class name size',
+              'Super class name size',
               super_class_name_block.super_class_name_size)
 
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
     properties_block_data = (
         class_definition_header.properties_block_data)
@@ -648,25 +650,25 @@ class ObjectRecord(data_format.BinaryDataFormat):
       ParseError: if the class definition cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(u'Reading class definition methods.\n')
+      self._DebugPrintText('Reading class definition methods.\n')
 
     try:
       class_definition_methods = self._CLASS_DEFINITION_METHODS.MapByteStream(
           class_definition_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to parse class definition methods with error: {0:s}').format(
+          'Unable to parse class definition methods with error: {0:s}').format(
               exception))
 
     methods_block_size = class_definition_methods.methods_block_size
 
     if self._debug:
-      value_string = u'{0:d} (0x{1:08x})'.format(
+      value_string = '{0:d} (0x{1:08x})'.format(
           methods_block_size & 0x7fffffff, methods_block_size)
-      self._DebugPrintValue(u'Methods block size', value_string)
+      self._DebugPrintValue('Methods block size', value_string)
 
       self._DebugPrintData(
-          u'Methods block data',
+          'Methods block data',
           class_definition_methods.methods_block_data)
 
   def _ReadClassDefinitionProperties(
@@ -681,10 +683,10 @@ class ObjectRecord(data_format.BinaryDataFormat):
       ParseError: if the class definition properties cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(u'Reading class definition properties.\n')
+      self._DebugPrintText('Reading class definition properties.\n')
 
     if self._debug:
-      self._DebugPrintData(u'Properties data', properties_data)
+      self._DebugPrintData('Properties data', properties_data)
 
     for index, property_descriptor in enumerate(property_descriptors):
       name_offset = property_descriptor.name_offset & 0x7fffffff
@@ -694,21 +696,21 @@ class ObjectRecord(data_format.BinaryDataFormat):
         property_name = self._PROPERTY_NAME.MapByteStream(property_name_data)
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError(
-            u'Unable to parse property name with error: {0:s}'.format(
+            'Unable to parse property name with error: {0:s}'.format(
                 exception))
 
       string_flags = property_name.string_flags
 
       # TODO: check if string flags is 0
       if self._debug:
-        description = u'Property: {0:d} name string flags'.format(index)
-        value_string = u'0x{0:02x}'.format(string_flags)
+        description = 'Property: {0:d} name string flags'.format(index)
+        value_string = '0x{0:02x}'.format(string_flags)
         self._DebugPrintValue(description, value_string)
 
-        description = u'Property: {0:d} name string'.format(index)
+        description = 'Property: {0:d} name string'.format(index)
         self._DebugPrintValue(description, property_name.string)
 
-        self._DebugPrintText(u'\n')
+        self._DebugPrintText('\n')
 
       definition_offset = property_descriptor.definition_offset & 0x7fffffff
       property_definition_data = properties_data[definition_offset:]
@@ -718,35 +720,35 @@ class ObjectRecord(data_format.BinaryDataFormat):
             property_definition_data)
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError(
-            u'Unable to parse property definition with error: {0:s}'.format(
+            'Unable to parse property definition with error: {0:s}'.format(
                 exception))
 
       if self._debug:
-        property_type_string = self._RECORD_TYPE.GetName(
+        property_type_string = self._PROPERTY_TYPES.GetName(
             property_definition.type)
-        description = u'Property: {0:d} type'.format(index)
-        value_string = u'0x{0:08x} ({1:s})'.format(
-            property_definition.type, property_type_string or u'UNKNOWN')
+        description = 'Property: {0:d} type'.format(index)
+        value_string = '0x{0:08x} ({1:s})'.format(
+            property_definition.type, property_type_string or 'UNKNOWN')
         self._DebugPrintValue(description, value_string)
 
-        description = u'Property: {0:d} index'.format(index)
+        description = 'Property: {0:d} index'.format(index)
         self._DebugPrintValueDecimal(
             description, property_definition.index)
 
-        description = u'Property: {0:d} offset'.format(index)
-        value_string = u'0x{0:08x}'.format(
+        description = 'Property: {0:d} offset'.format(index)
+        value_string = '0x{0:08x}'.format(
             property_definition.offset)
         self._DebugPrintValue(description, value_string)
 
-        description = u'Property: {0:d} level'.format(index)
+        description = 'Property: {0:d} level'.format(index)
         self._DebugPrintValueDecimal(
             description, property_definition.level)
 
-        description = u'Property: {0:d} qualifiers block size'.format(index)
+        description = 'Property: {0:d} qualifiers block size'.format(index)
         self._DebugPrintValueDecimal(
             description, property_definition.qualifiers_block_size)
 
-        description = u'Property: {0:d} qualifiers block data:'.format(index)
+        description = 'Property: {0:d} qualifiers block data:'.format(index)
         self._DebugPrintData(
             description, property_definition.qualifiers_block_data)
 
@@ -757,12 +759,12 @@ class ObjectRecord(data_format.BinaryDataFormat):
 
       if property_value_size is not None:
         if self._debug:
-          description = u'Property: {0:d} value size'.format(index)
+          description = 'Property: {0:d} value size'.format(index)
           self._DebugPrintValueDecimal(description, property_value_size)
 
           # TODO: handle variable size value data.
           # TODO: handle array.
-          description = u'Property: {0:d} value data:'.format(index)
+          description = 'Property: {0:d} value data:'.format(index)
           self._DebugPrintData(
               description, property_value_data[:property_value_size])
 
@@ -776,36 +778,36 @@ class ObjectRecord(data_format.BinaryDataFormat):
       ParseError: if the object record cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(u'Reading interface object record.\n')
+      self._DebugPrintText('Reading interface object record.\n')
 
     try:
       interface = self._INTERFACE_OBJECT_RECORD.MapByteStream(
           object_record_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError(
-          u'Unable to parse interace object record with error: {0:s}'.format(
+          'Unable to parse interace object record with error: {0:s}'.format(
               exception))
 
     try:
       utf16_stream = interface.string_digest_hash
-      string_digest_hash = utf16_stream.decode(u'utf-16-le')
+      string_digest_hash = utf16_stream.decode('utf-16-le')
     except UnicodeDecodeError as exception:
-      string_digest_hash = u''
+      string_digest_hash = ''
 
     if self._debug:
-      self._DebugPrintValue(u'String digest hash', string_digest_hash)
+      self._DebugPrintValue('String digest hash', string_digest_hash)
 
-      value_string = u'{0!s}'.format(FromFiletime(interface.date_time1))
-      self._DebugPrintValue(u'Unknown data and time1', value_string)
+      value_string = '{0!s}'.format(FromFiletime(interface.date_time1))
+      self._DebugPrintValue('Unknown data and time1', value_string)
 
-      value_string = u'{0!s}'.format(FromFiletime(interface.date_time2))
-      self._DebugPrintValue(u'Unknown data and time2', value_string)
+      value_string = '{0!s}'.format(FromFiletime(interface.date_time2))
+      self._DebugPrintValue('Unknown data and time2', value_string)
 
-      self._DebugPrintValueDecimal(u'Data size', interface.data_size)
+      self._DebugPrintValueDecimal('Data size', interface.data_size)
 
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
-      self._DebugPrintData(u'Data', interface.data)
+      self._DebugPrintData('Data', interface.data)
 
   def _ReadRegistration(self, object_record_data):
     """Reads a registration object record.
@@ -817,76 +819,76 @@ class ObjectRecord(data_format.BinaryDataFormat):
       ParseError: if the object record cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(u'Reading registration object record.\n')
+      self._DebugPrintText('Reading registration object record.\n')
 
     try:
       registration = self._REGISTRATION_OBJECT_RECORD.MapByteStream(
           object_record_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to parse registration object record with '
-          u'error: {0:s}').format(exception))
+          'Unable to parse registration object record with '
+          'error: {0:s}').format(exception))
 
     try:
       utf16_stream = registration.name_space_string
-      name_space_string = utf16_stream.decode(u'utf-16-le')
+      name_space_string = utf16_stream.decode('utf-16-le')
     except UnicodeDecodeError as exception:
-      name_space_string = u''
+      name_space_string = ''
 
     try:
       utf16_stream = registration.class_name_string
-      class_name_string = utf16_stream.decode(u'utf-16-le')
+      class_name_string = utf16_stream.decode('utf-16-le')
     except UnicodeDecodeError as exception:
-      class_name_string = u''
+      class_name_string = ''
 
     try:
       utf16_stream = registration.attribute_name_string
-      attribute_name_string = utf16_stream.decode(u'utf-16-le')
+      attribute_name_string = utf16_stream.decode('utf-16-le')
     except UnicodeDecodeError as exception:
-      attribute_name_string = u''
+      attribute_name_string = ''
 
     try:
       utf16_stream = registration.attribute_value_string
-      attribute_value_string = utf16_stream.decode(u'utf-16-le')
+      attribute_value_string = utf16_stream.decode('utf-16-le')
     except UnicodeDecodeError as exception:
-      attribute_value_string = u''
+      attribute_value_string = ''
 
     if self._debug:
       self._DebugPrintValueDecimal(
-          u'Name space string size', registration.name_space_string_size)
+          'Name space string size', registration.name_space_string_size)
 
-      self._DebugPrintValue(u'Name space string', name_space_string)
-
-      self._DebugPrintValueDecimal(
-          u'Class name string size', registration.class_name_string_size)
-
-      self._DebugPrintValue(u'Class name string', class_name_string)
+      self._DebugPrintValue('Name space string', name_space_string)
 
       self._DebugPrintValueDecimal(
-          u'Attribute name string size',
+          'Class name string size', registration.class_name_string_size)
+
+      self._DebugPrintValue('Class name string', class_name_string)
+
+      self._DebugPrintValueDecimal(
+          'Attribute name string size',
           registration.attribute_name_string_size)
 
-      self._DebugPrintValue(u'Attribute name string', attribute_name_string)
+      self._DebugPrintValue('Attribute name string', attribute_name_string)
 
       self._DebugPrintValueDecimal(
-          u'Attribute value string size',
+          'Attribute value string size',
           registration.attribute_value_string_size)
 
-      self._DebugPrintValue(u'Attribute value string', attribute_value_string)
+      self._DebugPrintValue('Attribute value string', attribute_value_string)
 
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
   def Read(self):
     """Reads an object record."""
     if self._debug:
-      self._DebugPrintData(u'Object record data', self.data)
+      self._DebugPrintData('Object record data', self.data)
 
     if self._debug:
       if self.data_type == self.DATA_TYPE_CLASS_DEFINITION:
         self._ReadClassDefinition(self.data)
-      elif self.data_type in (u'I', u'IL'):
+      elif self.data_type in ('I', 'IL'):
         self._ReadInterface(self.data)
-      elif self.data_type == u'R':
+      elif self.data_type == 'R':
         self._ReadRegistration(self.data)
 
 
@@ -924,7 +926,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
   _OBJECT_DESCRIPTOR = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'cim_object_descriptor')
+      'cim_object_descriptor')
 
   _OBJECT_DESCRIPTOR_SIZE = _OBJECT_DESCRIPTOR.GetByteSize()
 
@@ -960,13 +962,13 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
     file_offset = file_object.tell()
     if self._debug:
       self._DebugPrintText(
-          u'Reading object descriptor at offset: 0x{0:08x}\n'.format(
+          'Reading object descriptor at offset: 0x{0:08x}\n'.format(
               file_offset))
 
     object_descriptor_data = file_object.read(self._OBJECT_DESCRIPTOR_SIZE)
 
     if self._debug:
-      self._DebugPrintData(u'Object descriptor data', object_descriptor_data)
+      self._DebugPrintData('Object descriptor data', object_descriptor_data)
 
     # The last object descriptor (terminator) is filled with 0-byte values.
     if object_descriptor_data == self._EMPTY_OBJECT_DESCRIPTOR:
@@ -977,24 +979,24 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
           object_descriptor_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError(
-          u'Unable to parse object descriptor with error: {0:s}'.format(
+          'Unable to parse object descriptor with error: {0:s}'.format(
               exception))
 
     if self._debug:
-      value_string = u'0x{0:08x}'.format(object_descriptor.identifier)
-      self._DebugPrintValue(u'Identifier', value_string)
+      value_string = '0x{0:08x}'.format(object_descriptor.identifier)
+      self._DebugPrintValue('Identifier', value_string)
 
-      value_string = u'0x{0:08x} (0x{1:08x})'.format(
+      value_string = '0x{0:08x} (0x{1:08x})'.format(
           object_descriptor.data_offset,
           file_offset + object_descriptor.data_offset)
-      self._DebugPrintValue(u'Data offset', value_string)
+      self._DebugPrintValue('Data offset', value_string)
 
-      self._DebugPrintValueDecimal(u'Data size', object_descriptor.data_size)
+      self._DebugPrintValueDecimal('Data size', object_descriptor.data_size)
 
-      value_string = u'0x{0:08x}'.format(object_descriptor.data_checksum)
-      self._DebugPrintValue(u'Checksum', value_string)
+      value_string = '0x{0:08x}'.format(object_descriptor.data_checksum)
+      self._DebugPrintValue('Checksum', value_string)
 
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
     return object_descriptor
 
@@ -1031,11 +1033,11 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
         break
 
     if not object_descriptor_match:
-      logging.warning(u'Object record data not found.')
+      logging.warning('Object record data not found.')
       return
 
     if object_descriptor_match.data_size != data_size:
-      logging.warning(u'Object record data size mismatch.')
+      logging.warning('Object record data size mismatch.')
       return
 
     return object_descriptor_match
@@ -1055,7 +1057,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     if self._debug:
       self._DebugPrintText(
-          u'Reading objects data page at offset: 0x{0:08x}\n'.format(
+          'Reading objects data page at offset: 0x{0:08x}\n'.format(
               file_offset))
 
     self.page_offset = file_offset
@@ -1085,7 +1087,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     if self._debug:
       self._DebugPrintText(
-          u'Reading object record at offset: 0x{0:08x}\n'.format(file_offset))
+          'Reading object record at offset: 0x{0:08x}\n'.format(file_offset))
 
     available_page_size = self.PAGE_SIZE - data_offset
 
@@ -1212,29 +1214,29 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'uint16le')
+  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint16le')
 
   _UINT16LE_SIZE = _UINT16LE.GetByteSize()
 
   _PAGE_SIZE = 8192
 
-  _PAGE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_header')
+  _PAGE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_page_header')
 
   _PAGE_HEADER_SIZE = _PAGE_HEADER.GetByteSize()
 
-  _PAGE_BODY = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_body')
+  _PAGE_BODY = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_page_body')
 
-  _PAGE_KEY = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_page_key')
+  _PAGE_KEY = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_page_key')
 
-  _STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'string')
+  _STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('string')
 
   _PAGE_TYPES = {
-      0xaccc: u'Is active',
-      0xaddd: u'Is administrative',
-      0xbadd: u'Is deleted',
+      0xaccc: 'Is active',
+      0xaddd: 'Is administrative',
+      0xbadd: 'Is deleted',
   }
 
-  _KEY_SEGMENT_SEPARATOR = u'\\'
+  _KEY_SEGMENT_SEPARATOR = '\\'
 
   def __init__(self, index_mapping_file, debug=False, output_writer=None):
     """Initializes an index binary-tree file.
@@ -1256,42 +1258,42 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     Args:
       page_body (cim_page_body): page body.
     """
-    self._DebugPrintValueDecimal(u'Number of keys', page_header.number_of_keys)
+    self._DebugPrintValueDecimal('Number of keys', page_header.number_of_keys)
 
     for index, value in enumerate(page_header.unknown2):
-      description = u'Unknown2: {0:d}'.format(index)
+      description = 'Unknown2: {0:d}'.format(index)
       self._DebugPrintValueDecimal(description, value)
 
     for index, page_number in enumerate(page_header.sub_pages):
-      description = u'Sub page: {0:d} mapped page number'.format(index)
+      description = 'Sub page: {0:d} mapped page number'.format(index)
       self._DebugPrintPageNumber(
           description, page_number,
           unavailable_page_numbers=set([0, 0xffffffff]))
 
     for index, key_offset in enumerate(page_header.key_offsets):
-      description = u'Key: {0:d} offset'.format(index)
-      value_string = u'0x{0:04x}'.format(key_offset)
+      description = 'Key: {0:d} offset'.format(index)
+      value_string = '0x{0:04x}'.format(key_offset)
       self._DebugPrintValue(description, value_string)
 
-    value_string = u'{0:d} ({1:d} bytes)'.format(
+    value_string = '{0:d} ({1:d} bytes)'.format(
         page_header.key_data_size, page_header.key_data_size * 2)
-    self._DebugPrintValue(u'Key data size', value_string)
+    self._DebugPrintValue('Key data size', value_string)
 
-    self._DebugPrintData(u'Key data', page_header.key_data)
+    self._DebugPrintData('Key data', page_header.key_data)
 
     self._DebugPrintValueDecimal(
-        u'Number of values', page_header.number_of_values)
+        'Number of values', page_header.number_of_values)
 
     for index, offset in enumerate(page_header.value_offsets):
-      description = u'Value: {0:d} offset'.format(index)
-      value_string = u'0x{0:04x}'.format(offset)
+      description = 'Value: {0:d} offset'.format(index)
+      value_string = '0x{0:04x}'.format(offset)
       self._DebugPrintValue(description, value_string)
 
-    value_string = u'{0:d} ({1:d} bytes)'.format(
+    value_string = '{0:d} ({1:d} bytes)'.format(
         page_header.value_data_size, page_header.value_data_size * 2)
-    self._DebugPrintValue(u'Value data size', value_string)
+    self._DebugPrintValue('Value data size', value_string)
 
-    self._DebugPrintData(u'Value data', page_header.value_data)
+    self._DebugPrintData('Value data', page_header.value_data)
 
   def _DebugPrintPageHeader(self, page_header):
     """Prints page header debug information.
@@ -1299,21 +1301,21 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     Args:
       page_header (cim_page_header): page header.
     """
-    page_type_string = self._PAGE_TYPES.get(page_header.page_type, u'Unknown')
-    value_string = u'0x{0:04x} ({1:s})'.format(
+    page_type_string = self._PAGE_TYPES.get(page_header.page_type, 'Unknown')
+    value_string = '0x{0:04x} ({1:s})'.format(
         page_header.page_type, page_type_string)
-    self._DebugPrintValue(u'Page type', value_string)
+    self._DebugPrintValue('Page type', value_string)
 
     self._DebugPrintValueDecimal(
-        u'Mapped page number', page_header.mapped_page_number)
+        'Mapped page number', page_header.mapped_page_number)
 
-    value_string = u'0x{0:08x}'.format(page_header.unknown1)
-    self._DebugPrintValue(u'Unknown1', value_string)
+    value_string = '0x{0:08x}'.format(page_header.unknown1)
+    self._DebugPrintValue('Unknown1', value_string)
 
     self._DebugPrintValueDecimal(
-        u'Root page number', page_header.root_page_number)
+        'Root page number', page_header.root_page_number)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _DebugPrintPageNumber(
       self, description, page_number, unavailable_page_numbers=None):
@@ -1328,9 +1330,9 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       unavailable_page_numbers = set()
 
     if page_number in unavailable_page_numbers:
-      value_string = u'0x{0:08x} (unavailable)'.format(page_number)
+      value_string = '0x{0:08x} (unavailable)'.format(page_number)
     else:
-      value_string = u'{0:d}'.format(page_number)
+      value_string = '{0:d}'.format(page_number)
 
     self._DebugPrintValue(description, value_string)
 
@@ -1364,18 +1366,18 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       ParseError: if the page cannot be read.
     """
     page_data = self._ReadData(
-        file_object, file_offset, self._PAGE_SIZE, u'index binary-tree page')
+        file_object, file_offset, self._PAGE_SIZE, 'index binary-tree page')
 
     if self._debug:
       self._DebugPrintData(
-          u'Page header data', page_data[:self._PAGE_HEADER_SIZE])
+          'Page header data', page_data[:self._PAGE_HEADER_SIZE])
 
     try:
       page_header = self._PAGE_HEADER.MapByteStream(page_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to map page header data at offset: 0x{0:08x} with error: '
-          u'{1!s}').format(file_offset, exception))
+          'Unable to map page header data at offset: 0x{0:08x} with error: '
+          '{1!s}').format(file_offset, exception))
 
     if self._debug:
       self._DebugPrintPageHeader(page_header)
@@ -1393,14 +1395,14 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             page_data[self._PAGE_HEADER_SIZE:], context=context)
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            u'Unable to map page body data at offset: 0x{0:08x} with error: '
-            u'{1!s}').format(file_offset, exception))
+            'Unable to map page body data at offset: 0x{0:08x} with error: '
+            '{1!s}').format(file_offset, exception))
 
       page_data_size += context.byte_size
 
       if self._debug:
         self._DebugPrintData(
-            u'Page body data', page_data[self._PAGE_HEADER_SIZE:page_data_size])
+            'Page body data', page_data[self._PAGE_HEADER_SIZE:page_data_size])
 
       if self._debug:
         self._DebugPrintPageBody(page_body)
@@ -1408,7 +1410,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     if self._debug:
       trailing_data_size = self._PAGE_SIZE - page_data_size
       if trailing_data_size > 0:
-        self._DebugPrintData(u'Trailing data', page_data[page_data_size:])
+        self._DebugPrintData('Trailing data', page_data[page_data_size:])
 
     if page_header.page_type == 0xaccc:
       index_binary_tree_page.number_of_keys = page_body.number_of_keys
@@ -1429,7 +1431,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         for segment_index in page_key_segments:
           key_segments.append(index_binary_tree_page.page_values[segment_index])
 
-        key_path = u'{0:s}{1:s}'.format(
+        key_path = '{0:s}{1:s}'.format(
             self._KEY_SEGMENT_SEPARATOR,
             self._KEY_SEGMENT_SEPARATOR.join(key_segments))
 
@@ -1453,37 +1455,37 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       page_key_offset = key_offset * 2
 
       if self._debug:
-        description = u'Page key: {0:d} offset'.format(index)
-        value_string = u'{0:d} (0x{0:08x})'.format(page_key_offset)
+        description = 'Page key: {0:d} offset'.format(index)
+        value_string = '{0:d} (0x{0:08x})'.format(page_key_offset)
         self._DebugPrintValue(description, value_string)
 
       try:
         page_key = self._PAGE_KEY.MapByteStream(key_data[page_key_offset:])
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError(
-            u'Unable to parse page key: {0:d} with error: {1:s}'.format(
+            'Unable to parse page key: {0:d} with error: {1:s}'.format(
                 index, exception))
 
       page_key_size = page_key_offset + 2 + (page_key.number_of_segments * 2)
 
       if self._debug:
-        description = u'Page key: {0:d} data:'.format(index)
+        description = 'Page key: {0:d} data:'.format(index)
         self._DebugPrintData(
             description, key_data[page_key_offset:page_key_size])
 
       index_binary_tree_page.page_key_segments.append(page_key.segments)
 
       if self._debug:
-        description = u'Page key: {0:d} number of segments'.format(index)
+        description = 'Page key: {0:d} number of segments'.format(index)
         self._DebugPrintValueDecimal(description, page_key.number_of_segments)
 
-        description = u'Page key: {0:d} segments'.format(index)
-        value_string = u', '.join([
-            u'{0:d}'.format(segment_index)
+        description = 'Page key: {0:d} segments'.format(index)
+        value_string = ', '.join([
+            '{0:d}'.format(segment_index)
             for segment_index in page_key.segments])
         self._DebugPrintValue(description, value_string)
 
-        self._DebugPrintText(u'\n')
+        self._DebugPrintText('\n')
 
   def _ReadPageValueData(self, index_binary_tree_page, page_body):
     """Reads page value data.
@@ -1506,17 +1508,17 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             value_data[page_value_offset:])
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            u'Unable to parse page value: {0:d} string with error: '
-            u'{1!s}').format(index, exception))
+            'Unable to parse page value: {0:d} string with error: '
+            '{1!s}').format(index, exception))
 
       if self._debug:
-        description = u'Page value: {0:d} data'.format(index)
+        description = 'Page value: {0:d} data'.format(index)
         self._DebugPrintValue(description, value_string[:-1])
 
       index_binary_tree_page.page_values.append(value_string)
 
     if self._debug and index_binary_tree_page.page_value_offsets:
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
   def GetFirstMappedPage(self):
     """Retrieves the first mapped page.
@@ -1530,12 +1532,12 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       index_page = self._GetPage(page_number)
       if not index_page:
         logging.warning((
-            u'Unable to read first mapped index binary-tree page: '
-            u'{0:d}.').format(page_number))
+            'Unable to read first mapped index binary-tree page: '
+            '{0:d}.').format(page_number))
         return
 
       if index_page.page_type != 0xaddd:
-        logging.warning(u'First mapped index binary-tree page type mismatch.')
+        logging.warning('First mapped index binary-tree page type mismatch.')
         return
 
       self._first_mapped_page = index_page
@@ -1556,7 +1558,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     index_page = self._GetPage(mapped_page_number)
     if not index_page:
       logging.warning(
-          u'Unable to read index binary-tree mapped page: {0:d}.'.format(
+          'Unable to read index binary-tree mapped page: {0:d}.'.format(
               page_number))
       return
 
@@ -1579,7 +1581,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       index_page = self._GetPage(page_number)
       if not index_page:
         logging.warning(
-            u'Unable to read index binary-tree root page: {0:d}.'.format(
+            'Unable to read index binary-tree root page: {0:d}.'.format(
                 page_number))
         return
 
@@ -1657,23 +1659,23 @@ class MappingFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _UINT32LE = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'uint32le')
+  _UINT32LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
 
   _UINT32LE_SIZE = _UINT32LE.GetByteSize()
 
   _FILE_HEADER_SIGNATURE = 0x0000abcd
 
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_map_header')
+  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_map_header')
 
   _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
 
   _FILE_FOOTER_SIGNATURE = 0x0000dcba
 
-  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_map_footer')
+  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_map_footer')
 
   _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
 
-  _PAGE_NUMBERS = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'cim_map_page_numbers')
+  _PAGE_NUMBERS = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_map_page_numbers')
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a mappings file.
@@ -1693,10 +1695,10 @@ class MappingFile(data_format.BinaryDataFile):
     Args:
       file_footer (cim_map_footer): file footer.
     """
-    value_string = u'0x{0:08x}'.format(file_footer.signature)
-    self._DebugPrintValue(u'Signature', value_string)
+    value_string = '0x{0:08x}'.format(file_footer.signature)
+    self._DebugPrintValue('Signature', value_string)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _DebugPrintFileHeader(self, file_header):
     """Prints file header debug information.
@@ -1704,16 +1706,16 @@ class MappingFile(data_format.BinaryDataFile):
     Args:
       file_header (cim_map_header): file header.
     """
-    value_string = u'0x{0:08x}'.format(file_header.signature)
-    self._DebugPrintValue(u'Signature', value_string)
+    value_string = '0x{0:08x}'.format(file_header.signature)
+    self._DebugPrintValue('Signature', value_string)
 
-    value_string = u'0x{0:08x}'.format(file_header.format_version)
-    self._DebugPrintValue(u'Format version', value_string)
+    value_string = '0x{0:08x}'.format(file_header.format_version)
+    self._DebugPrintValue('Format version', value_string)
 
     self._DebugPrintValueDecimal(
-        u'Number of pages', file_header.number_of_pages)
+        'Number of pages', file_header.number_of_pages)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _DebugPrintPageNumber(
       self, description, page_number, unavailable_page_numbers=None):
@@ -1728,9 +1730,9 @@ class MappingFile(data_format.BinaryDataFile):
       unavailable_page_numbers = set()
 
     if page_number in unavailable_page_numbers:
-      value_string = u'0x{0:08x} (unavailable)'.format(page_number)
+      value_string = '0x{0:08x} (unavailable)'.format(page_number)
     else:
-      value_string = u'{0:d}'.format(page_number)
+      value_string = '{0:d}'.format(page_number)
 
     self._DebugPrintValue(description, value_string)
 
@@ -1744,12 +1746,12 @@ class MappingFile(data_format.BinaryDataFile):
       unavailable_page_numbers (Optional[set[int]]): unavailable page numbers.
     """
     for index, page_number in enumerate(page_number_table):
-      sub_description = u'{0:s}: {1:d} page number'.format(description, index)
+      sub_description = '{0:s}: {1:d} page number'.format(description, index)
       self._DebugPrintPageNumber(
           sub_description, page_number,
           unavailable_page_numbers=unavailable_page_numbers)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
@@ -1764,14 +1766,14 @@ class MappingFile(data_format.BinaryDataFile):
 
     file_footer = self._ReadStructure(
         file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        u'file footer')
+        'file footer')
 
     if self._debug:
       self._DebugPrintFileFooter(file_footer)
 
     if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
       raise errors.ParseError(
-          u'Unsupported file footer signature: 0x{0:08x}'.format(
+          'Unsupported file footer signature: 0x{0:08x}'.format(
               file_footer.signature))
 
   def _ReadFileHeader(self, file_object, file_offset=0):
@@ -1787,14 +1789,14 @@ class MappingFile(data_format.BinaryDataFile):
     """
     file_header = self._ReadStructure(
         file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        u'file header')
+        'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
     if file_header.signature != self._FILE_HEADER_SIGNATURE:
       raise errors.ParseError(
-          u'Unsupported file header signature: 0x{0:08x}'.format(
+          'Unsupported file header signature: 0x{0:08x}'.format(
               file_header.signature))
 
   def _ReadMappings(self, file_object):
@@ -1808,11 +1810,11 @@ class MappingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
     mappings_array = self._ReadPageNumbersTable(
-        file_object, file_offset, u'mappings')
+        file_object, file_offset, 'mappings')
 
     if self._debug:
       self._DebugPrintPageNumbersTable(
-          u'Mapping entry', mappings_array,
+          'Mapping entry', mappings_array,
           unavailable_page_numbers=set([0xffffffff]))
 
     self.mappings = mappings_array
@@ -1835,27 +1837,27 @@ class MappingFile(data_format.BinaryDataFile):
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      self._DebugPrintText(u'Reading {0:s} at offset: 0x{1:08x}\n'.format(
+      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
           description, file_offset))
 
     try:
       number_of_entries_data = file_object.read(self._UINT32LE_SIZE)
     except IOError as exception:
       raise errors.ParseError((
-          u'Unable to read number of entries data at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
+          'Unable to read number of entries data at offset: 0x{0:08x} '
+          'with error: {1:s}').format(file_offset, exception))
 
     if len(number_of_entries_data) != self._UINT32LE_SIZE:
       raise errors.ParseError((
-          u'Unable to read number of entries data at offset: 0x{0:08x} '
-          u'with error: missing data').format(file_offset))
+          'Unable to read number of entries data at offset: 0x{0:08x} '
+          'with error: missing data').format(file_offset))
 
     try:
       number_of_entries = self._UINT32LE.MapByteStream(number_of_entries_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          u'Unable to parse number of entries at offset: 0x{0:08x} with error '
-          u'error: {1:s}').format(file_offset, exception))
+          'Unable to parse number of entries at offset: 0x{0:08x} with error '
+          'error: {1:s}').format(file_offset, exception))
 
     if number_of_entries == 0:
       entries_data = b''
@@ -1866,26 +1868,26 @@ class MappingFile(data_format.BinaryDataFile):
         entries_data = file_object.read(entries_data_size)
       except IOError as exception:
         raise errors.ParseError((
-            u'Unable to read entries data at offset: 0x{0:08x} with error: '
-            u'{1:s}').format(file_offset, exception))
+            'Unable to read entries data at offset: 0x{0:08x} with error: '
+            '{1:s}').format(file_offset, exception))
 
       if len(entries_data) != entries_data_size:
         raise errors.ParseError((
-            u'Unable to read entries data at offset: 0x{0:08x} with error: '
-            u'missing data').format(file_offset))
+            'Unable to read entries data at offset: 0x{0:08x} with error: '
+            'missing data').format(file_offset))
 
     if self._debug:
-      data_description = u'{0:s} data'.format(description.title())
+      data_description = '{0:s} data'.format(description.title())
       self._DebugPrintData(data_description, b''.join([
           number_of_entries_data, entries_data]))
 
-      self._DebugPrintValueDecimal(u'Number of entries', number_of_entries)
+      self._DebugPrintValueDecimal('Number of entries', number_of_entries)
 
     if not entries_data:
       page_numbers = tuple()
     else:
       context = dtfabric_data_maps.DataTypeMapContext(values={
-          u'number_of_entries': number_of_entries})
+          'number_of_entries': number_of_entries})
 
       try:
         page_numbers = self._PAGE_NUMBERS.MapByteStream(
@@ -1893,8 +1895,8 @@ class MappingFile(data_format.BinaryDataFile):
 
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            u'Unable to parse entries data at offset: 0x{0:08x} with error: '
-            u'{1:s}').format(file_offset, exception))
+            'Unable to parse entries data at offset: 0x{0:08x} with error: '
+            '{1:s}').format(file_offset, exception))
 
     return page_numbers
 
@@ -1909,14 +1911,14 @@ class MappingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
     unknown_entries_array = self._ReadPageNumbersTable(
-        file_object, file_offset, u'unknown entries')
+        file_object, file_offset, 'unknown entries')
 
     if self._debug:
       self._DebugPrintPageNumbersTable(
-          u'Unknown entry', unknown_entries_array,
+          'Unknown entry', unknown_entries_array,
           unavailable_page_numbers=set([0xffffffff]))
 
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
   def ReadFileObject(self, file_object):
     """Reads a mappings file-like object.
@@ -1940,8 +1942,8 @@ class MappingFile(data_format.BinaryDataFile):
 class ObjectsDataFile(data_format.BinaryDataFile):
   """An objects data (Objects.data) file."""
 
-  _KEY_SEGMENT_SEPARATOR = u'\\'
-  _KEY_VALUE_SEPARATOR = u'.'
+  _KEY_SEGMENT_SEPARATOR = '\\'
+  _KEY_VALUE_SEPARATOR = '.'
 
   _KEY_VALUE_PAGE_NUMBER_INDEX = 1
   _KEY_VALUE_RECORD_IDENTIFIER_INDEX = 2
@@ -1976,26 +1978,26 @@ class ObjectsDataFile(data_format.BinaryDataFile):
 
     key_values = key.split(self._KEY_VALUE_SEPARATOR)
     if not len(key_values) == 4:
-      logging.warning(u'Unsupported number of key values.')
+      logging.warning('Unsupported number of key values.')
       return
 
     try:
       page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
     except ValueError:
-      logging.warning(u'Unsupported key value page number.')
+      logging.warning('Unsupported key value page number.')
       return
 
     try:
       record_identifier = int(
           key_values[self._KEY_VALUE_RECORD_IDENTIFIER_INDEX], 10)
     except ValueError:
-      logging.warning(u'Unsupported key value record identifier.')
+      logging.warning('Unsupported key value record identifier.')
       return
 
     try:
       data_size = int(key_values[self._KEY_VALUE_DATA_SIZE_INDEX], 10)
     except ValueError:
-      logging.warning(u'Unsupported key value data size.')
+      logging.warning('Unsupported key value data size.')
       return
 
     return key_values[0], page_number, record_identifier, data_size
@@ -2050,7 +2052,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     objects_page = self._GetPage(mapped_page_number, data_page=data_page)
     if not objects_page:
       logging.warning(
-          u'Unable to read objects data mapped page: {0:d}.'.format(
+          'Unable to read objects data mapped page: {0:d}.'.format(
               page_number))
       return
 
@@ -2077,7 +2079,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
       object_page = self.GetMappedPage(page_number, data_page=data_page)
       if not object_page:
         errors.ParseError(
-            u'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
+            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
                 record_identifier, data_segment_index))
 
       if not data_page:
@@ -2093,7 +2095,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
           self._file_object, data_offset, data_size)
       if not data_segment:
         errors.ParseError(
-            u'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
+            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
                 record_identifier, data_segment_index))
 
       data_segments.append(data_segment)
@@ -2101,7 +2103,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
       data_segment_index += 1
       page_number += 1
 
-    data_type, _, _ = key.partition(u'_')
+    data_type, _, _ = key.partition('_')
     object_record_data = b''.join(data_segments)
 
     return ObjectRecord(
@@ -2120,7 +2122,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     self._file_object = file_object
 
 
-class CIMRepository(object):
+class CIMRepository(data_format.BinaryDataFormat):
   """A CIM repository."""
 
   _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
@@ -2136,7 +2138,7 @@ class CIMRepository(object):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _MAPPING_VER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'uint32le')
+  _MAPPING_VER = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
 
   _MAPPING_VER_SIZE = _MAPPING_VER.GetByteSize()
 
@@ -2174,31 +2176,31 @@ class CIMRepository(object):
       ParseError: if the current mapping file cannot be read.
     """
     mapping_file_glob = glob.glob(
-        os.path.join(path, u'[Mm][Aa][Pp][Pp][Ii][Nn][Gg].[Vv][Ee][Rr]'))
+        os.path.join(path, '[Mm][Aa][Pp][Pp][Ii][Nn][Gg].[Vv][Ee][Rr]'))
 
     active_mapping_file = 0
     if mapping_file_glob:
       with open(mapping_file_glob[0], 'rb') as file_object:
         active_mapping_file = self._ReadStructure(
             file_object, 0, self._MAPPING_VER_SIZE, self._MAPPING_VER,
-            u'Mapping.ver')
+            'Mapping.ver')
 
       if self._debug:
-        self._DebugPrintText(u'Active mapping file: {0:d}'.format(
+        self._DebugPrintText('Active mapping file: {0:d}'.format(
             active_mapping_file))
 
     if mapping_file_glob:
       mapping_file_glob = glob.glob(os.path.join(
-          path, u'[Mm][Aa][Pp][Pp][Ii][Nn][Gg]{0:d}.[Mm][Aa][Pp]'.format(
+          path, '[Mm][Aa][Pp][Pp][Ii][Nn][Gg]{0:d}.[Mm][Aa][Pp]'.format(
               active_mapping_file)))
     else:
       mapping_file_glob = glob.glob(os.path.join(
-          path, u'[Mm][Aa][Pp][Pp][Ii][Nn][Gg][1-3].[Mm][Aa][Pp]'))
+          path, '[Mm][Aa][Pp][Pp][Ii][Nn][Gg][1-3].[Mm][Aa][Pp]'))
 
     # TODO: determine active mapping file for Windows Vista and later.
     for mapping_file_path in mapping_file_glob:
       if self._debug:
-        self._DebugPrintText(u'Reading: {0:s}'.format(mapping_file_path))
+        self._DebugPrintText('Reading: {0:s}'.format(mapping_file_path))
 
       objects_mapping_file = MappingFile(
           debug=self._debug, output_writer=self._output_writer)
@@ -2288,11 +2290,11 @@ class CIMRepository(object):
     """
     # Index mappings file.
     index_mapping_file_glob = os.path.join(
-        path, u'[Ii][Nn][Dd][Ee][Xx].[Mm][Aa][Pp]')
+        path, '[Ii][Nn][Dd][Ee][Xx].[Mm][Aa][Pp]')
     index_mapping_file_path = glob.glob(index_mapping_file_glob)[0]
 
     if self._debug:
-      self._DebugPrintText(u'Reading: {0:s}\n'.format(index_mapping_file_path))
+      self._DebugPrintText('Reading: {0:s}\n'.format(index_mapping_file_path))
 
     self._index_mapping_file = MappingFile(
         debug=self._debug, output_writer=self._output_writer)
@@ -2300,11 +2302,11 @@ class CIMRepository(object):
 
     # Index binary tree file.
     index_binary_tree_file_glob = os.path.join(
-        path, u'[Ii][Nn][Dd][Ee][Xx].[Bb][Tt][Rr]')
+        path, '[Ii][Nn][Dd][Ee][Xx].[Bb][Tt][Rr]')
     index_binary_tree_file_path = glob.glob(index_binary_tree_file_glob)[0]
 
     if self._debug:
-      self._DebugPrintText(u'Reading: {0:s}\n'.format(
+      self._DebugPrintText('Reading: {0:s}\n'.format(
           index_binary_tree_file_path))
 
     self._index_binary_tree_file = IndexBinaryTreeFile(
@@ -2320,11 +2322,11 @@ class CIMRepository(object):
     """
     # Objects mappings file.
     objects_mapping_file_glob = os.path.join(
-        path, u'[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Mm][Aa][Pp]')
+        path, '[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Mm][Aa][Pp]')
     objects_mapping_file_path = glob.glob(objects_mapping_file_glob)[0]
 
     if self._debug:
-      self._DebugPrintText(u'Reading: {0:s}\n'.format(
+      self._DebugPrintText('Reading: {0:s}\n'.format(
           objects_mapping_file_path))
 
     self._objects_mapping_file = MappingFile(
@@ -2333,11 +2335,11 @@ class CIMRepository(object):
 
     # Objects data file.
     objects_data_file_glob = os.path.join(
-        path, u'[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Da][Aa][Tt][Aa]')
+        path, '[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Da][Aa][Tt][Aa]')
     objects_data_file_path = glob.glob(objects_data_file_glob)[0]
 
     if self._debug:
-      self._DebugPrintText(u'Reading: {0:s}\n'.format(objects_data_file_path))
+      self._DebugPrintText('Reading: {0:s}\n'.format(objects_data_file_path))
 
     self._objects_data_file = ObjectsDataFile(
         self._objects_mapping_file, debug=self._debug,

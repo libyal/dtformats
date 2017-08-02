@@ -4,6 +4,8 @@
 * .customDestinations-ms
 """
 
+from __future__ import unicode_literals
+
 import datetime
 import logging
 import os
@@ -263,15 +265,15 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _DEST_LIST_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'dest_list_header')
+  _DEST_LIST_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('dest_list_header')
 
   _DEST_LIST_HEADER_SIZE = _DEST_LIST_HEADER.GetByteSize()
 
   _DEST_LIST_ENTRY_V1 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'dest_list_entry_v1')
+      'dest_list_entry_v1')
 
   _DEST_LIST_ENTRY_V3 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'dest_list_entry_v3')
+      'dest_list_entry_v3')
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes an Automatic Destinations Jump List file.
@@ -292,63 +294,63 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     Args:
       dest_list_entry (dest_list_entry_v1|dest_list_entry_v3): DestList entry.
     """
-    value_string = u'0x{0:08x}'.format(dest_list_entry.unknown1)
-    self._DebugPrintValue(u'Unknown1', value_string)
+    value_string = '0x{0:08x}'.format(dest_list_entry.unknown1)
+    self._DebugPrintValue('Unknown1', value_string)
 
-    value_string = u'{0!s}'.format(dest_list_entry.droid_volume_identifier)
-    self._DebugPrintValue(u'Droid volume identifier', value_string)
+    value_string = '{0!s}'.format(dest_list_entry.droid_volume_identifier)
+    self._DebugPrintValue('Droid volume identifier', value_string)
 
-    value_string = u'{0!s}'.format(dest_list_entry.droid_file_identifier)
-    self._DebugPrintValue(u'Droid file identifier', value_string)
+    value_string = '{0!s}'.format(dest_list_entry.droid_file_identifier)
+    self._DebugPrintValue('Droid file identifier', value_string)
 
-    value_string = u'{0!s}'.format(
+    value_string = '{0!s}'.format(
         dest_list_entry.birth_droid_volume_identifier)
-    self._DebugPrintValue(u'Birth droid volume identifier', value_string)
+    self._DebugPrintValue('Birth droid volume identifier', value_string)
 
-    value_string = u'{0!s}'.format(dest_list_entry.birth_droid_file_identifier)
-    self._DebugPrintValue(u'Birth droid file identifier', value_string)
+    value_string = '{0!s}'.format(dest_list_entry.birth_droid_file_identifier)
+    self._DebugPrintValue('Birth droid file identifier', value_string)
 
-    value_string, _, _ = dest_list_entry.hostname.partition(u'\x00')
-    self._DebugPrintValue(u'Hostname', value_string)
+    value_string, _, _ = dest_list_entry.hostname.partition('\x00')
+    self._DebugPrintValue('Hostname', value_string)
 
-    value_string = u'{0:d}'.format(dest_list_entry.entry_number)
-    self._DebugPrintValue(u'Entry number', value_string)
+    value_string = '{0:d}'.format(dest_list_entry.entry_number)
+    self._DebugPrintValue('Entry number', value_string)
 
-    value_string = u'0x{0:08x}'.format(dest_list_entry.unknown2)
-    self._DebugPrintValue(u'Unknown2', value_string)
+    value_string = '0x{0:08x}'.format(dest_list_entry.unknown2)
+    self._DebugPrintValue('Unknown2', value_string)
 
-    value_string = u'{0:f}'.format(dest_list_entry.unknown3)
-    self._DebugPrintValue(u'Unknown3', value_string)
+    value_string = '{0:f}'.format(dest_list_entry.unknown3)
+    self._DebugPrintValue('Unknown3', value_string)
 
     value_string = FromFiletime(dest_list_entry.last_modification_time)
-    value_string = u'{0!s}'.format(value_string)
-    self._DebugPrintValue(u'Last modification time', value_string)
+    value_string = '{0!s}'.format(value_string)
+    self._DebugPrintValue('Last modification time', value_string)
 
     # TODO: debug print pin status.
-    value_string = u'{0:d}'.format(dest_list_entry.pin_status)
-    self._DebugPrintValue(u'Pin status', value_string)
+    value_string = '{0:d}'.format(dest_list_entry.pin_status)
+    self._DebugPrintValue('Pin status', value_string)
 
     if self._format_version >= 3:
-      value_string = u'{0:d}'.format(dest_list_entry.unknown4)
-      self._DebugPrintValue(u'Unknown4', value_string)
+      value_string = '{0:d}'.format(dest_list_entry.unknown4)
+      self._DebugPrintValue('Unknown4', value_string)
 
-      value_string = u'0x{0:08x}'.format(dest_list_entry.unknown5)
-      self._DebugPrintValue(u'Unknown5', value_string)
+      value_string = '0x{0:08x}'.format(dest_list_entry.unknown5)
+      self._DebugPrintValue('Unknown5', value_string)
 
-      value_string = u'0x{0:08x}'.format(dest_list_entry.unknown6)
-      self._DebugPrintValue(u'Unknown6', value_string)
+      value_string = '0x{0:08x}'.format(dest_list_entry.unknown6)
+      self._DebugPrintValue('Unknown6', value_string)
 
-    value_string = u'{0:d} characters ({1:d} bytes)'.format(
+    value_string = '{0:d} characters ({1:d} bytes)'.format(
         dest_list_entry.path_size, dest_list_entry.path_size * 2)
-    self._DebugPrintValue(u'Path size', value_string)
+    self._DebugPrintValue('Path size', value_string)
 
-    self._DebugPrintValue(u'Path string', dest_list_entry.path)
+    self._DebugPrintValue('Path string', dest_list_entry.path)
 
     if self._format_version >= 3:
-      value_string = u'0x{0:08x}'.format(dest_list_entry.unknown7)
-      self._DebugPrintValue(u'Unknown7', value_string)
+      value_string = '0x{0:08x}'.format(dest_list_entry.unknown7)
+      self._DebugPrintValue('Unknown7', value_string)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _DebugPrintDestListHeader(self, dest_list_header):
     """Prints DestList header debug information.
@@ -356,31 +358,31 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     Args:
       dest_list_header (dest_list_header): DestList header.
     """
-    value_string = u'{0:d}'.format(dest_list_header.format_version)
-    self._DebugPrintValue(u'Format version', value_string)
+    value_string = '{0:d}'.format(dest_list_header.format_version)
+    self._DebugPrintValue('Format version', value_string)
 
-    value_string = u'{0:d}'.format(dest_list_header.number_of_entries)
-    self._DebugPrintValue(u'Number of entries', value_string)
+    value_string = '{0:d}'.format(dest_list_header.number_of_entries)
+    self._DebugPrintValue('Number of entries', value_string)
 
-    value_string = u'{0:d}'.format(dest_list_header.number_of_pinned_entries)
-    self._DebugPrintValue(u'Number of pinned entries', value_string)
+    value_string = '{0:d}'.format(dest_list_header.number_of_pinned_entries)
+    self._DebugPrintValue('Number of pinned entries', value_string)
 
-    value_string = u'{0:f}'.format(dest_list_header.unknown1)
-    self._DebugPrintValue(u'Unknown1', value_string)
+    value_string = '{0:f}'.format(dest_list_header.unknown1)
+    self._DebugPrintValue('Unknown1', value_string)
 
-    value_string = u'{0:d}'.format(dest_list_header.last_entry_number)
-    self._DebugPrintValue(u'Last entry number', value_string)
+    value_string = '{0:d}'.format(dest_list_header.last_entry_number)
+    self._DebugPrintValue('Last entry number', value_string)
 
-    value_string = u'0x{0:08x}'.format(dest_list_header.unknown2)
-    self._DebugPrintValue(u'Unknown2', value_string)
+    value_string = '0x{0:08x}'.format(dest_list_header.unknown2)
+    self._DebugPrintValue('Unknown2', value_string)
 
-    value_string = u'{0:d}'.format(dest_list_header.last_revision_number)
-    self._DebugPrintValue(u'Last revision number', value_string)
+    value_string = '{0:d}'.format(dest_list_header.last_revision_number)
+    self._DebugPrintValue('Last revision number', value_string)
 
-    value_string = u'0x{0:08x}'.format(dest_list_header.unknown3)
-    self._DebugPrintValue(u'Unknown3', value_string)
+    value_string = '0x{0:08x}'.format(dest_list_header.unknown3)
+    self._DebugPrintValue('Unknown3', value_string)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _ReadDestList(self, olecf_file):
     """Reads the DestList stream.
@@ -388,7 +390,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     Args:
       olecf_file (pyolecf.file): OLECF file.
     """
-    olecf_item = olecf_file.root_item.get_sub_item_by_name(u'DestList')
+    olecf_item = olecf_file.root_item.get_sub_item_by_name('DestList')
 
     self._ReadDestListHeader(olecf_item)
 
@@ -410,11 +412,11 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     """
     if self._format_version == 1:
       data_type_map = self._DEST_LIST_ENTRY_V1
-      description = u'dest list entry v1'
+      description = 'dest list entry v1'
 
     elif self._format_version >= 3:
       data_type_map = self._DEST_LIST_ENTRY_V3
-      description = u'dest list entry v3'
+      description = 'dest list entry v3'
 
     dest_list_entry, entry_data_size = self._ReadStructureWithSizeHint(
         olecf_item, stream_offset, data_type_map, description)
@@ -436,13 +438,13 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     stream_offset = olecf_item.tell()
     dest_list_header = self._ReadStructure(
         olecf_item, stream_offset, self._DEST_LIST_HEADER_SIZE,
-        self._DEST_LIST_HEADER, u'dest list header')
+        self._DEST_LIST_HEADER, 'dest list header')
 
     if self._debug:
       self._DebugPrintDestListHeader(dest_list_header)
 
     if dest_list_header.format_version not in (1, 3, 4):
-      raise errors.ParseError(u'Unsupported format version: {0:d}'.format(
+      raise errors.ParseError('Unsupported format version: {0:d}'.format(
           dest_list_header.format_version))
 
     self._format_version = dest_list_header.format_version
@@ -460,7 +462,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the LNK file cannot be read.
     """
     if self._debug:
-      text = u'Reading LNK file from stream: {0:s}'.format(olecf_item.name)
+      text = 'Reading LNK file from stream: {0:s}'.format(olecf_item.name)
       self._DebugPrintText(text)
 
     lnk_file_entry = LNKFileEntry(olecf_item.name)
@@ -469,11 +471,11 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       lnk_file_entry.Open(olecf_item)
     except IOError as exception:
       raise errors.ParseError((
-          u'Unable to parse LNK file from stream: {0:s} '
-          u'with error: {1:s}').format(olecf_item.name, exception))
+          'Unable to parse LNK file from stream: {0:s} '
+          'with error: {1:s}').format(olecf_item.name, exception))
 
     if self._debug:
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
     return lnk_file_entry
 
@@ -484,7 +486,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       olecf_file (pyolecf.file): OLECF file.
     """
     for olecf_item in olecf_file.root_item.sub_items:
-      if olecf_item.name == u'DestList':
+      if olecf_item.name == 'DestList':
         continue
 
       lnk_file_entry = self._ReadLNKFile(olecf_item)
@@ -605,23 +607,23 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'file_header')
+  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('file_header')
 
   _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
 
   _HEADER_VALUE_TYPE_0 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'file_header_value_type_0')
+      'file_header_value_type_0')
 
   _HEADER_VALUE_TYPE_1_OR_2 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      u'file_header_value_type_1_or_2')
+      'file_header_value_type_1_or_2')
 
-  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'file_footer')
+  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap('file_footer')
 
   _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
 
   _FILE_FOOTER_SIGNATURE = 0xbabffbab
 
-  _ENTRY_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(u'entry_header')
+  _ENTRY_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('entry_header')
 
   _ENTRY_HEADER_SIZE = _ENTRY_HEADER.GetByteSize()
 
@@ -646,10 +648,10 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     Args:
       file_footer (file_footer): file footer.
     """
-    value_string = u'0x{0:08x}'.format(file_footer.signature)
-    self._DebugPrintValue(u'Signature', value_string)
+    value_string = '0x{0:08x}'.format(file_footer.signature)
+    self._DebugPrintValue('Signature', value_string)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _DebugPrintFileHeader(self, file_header):
     """Prints file header debug information.
@@ -657,19 +659,19 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     Args:
       file_header (file_header): file header.
     """
-    value_string = u'0x{0:08x}'.format(file_header.unknown1)
-    self._DebugPrintValue(u'Unknown1', value_string)
+    value_string = '0x{0:08x}'.format(file_header.unknown1)
+    self._DebugPrintValue('Unknown1', value_string)
 
-    value_string = u'0x{0:08x}'.format(file_header.unknown2)
-    self._DebugPrintValue(u'Unknown2', value_string)
+    value_string = '0x{0:08x}'.format(file_header.unknown2)
+    self._DebugPrintValue('Unknown2', value_string)
 
-    value_string = u'0x{0:08x}'.format(file_header.unknown3)
-    self._DebugPrintValue(u'Unknown3', value_string)
+    value_string = '0x{0:08x}'.format(file_header.unknown3)
+    self._DebugPrintValue('Unknown3', value_string)
 
-    value_string = u'{0:d}'.format(file_header.header_values_type)
-    self._DebugPrintValue(u'Header value type', value_string)
+    value_string = '{0:d}'.format(file_header.header_values_type)
+    self._DebugPrintValue('Header value type', value_string)
 
-    self._DebugPrintText(u'\n')
+    self._DebugPrintText('\n')
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
@@ -683,14 +685,14 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
     file_footer = self._ReadStructure(
         file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        u'file footer')
+        'file footer')
 
     if self._debug:
       self._DebugPrintFileFooter(file_footer)
 
     if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
       raise errors.ParseError(
-          u'Invalid footer signature at offset: 0x{0:08x}.'.format(file_offset))
+          'Invalid footer signature at offset: 0x{0:08x}.'.format(file_offset))
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -704,17 +706,17 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
     file_header = self._ReadStructure(
         file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        u'file header')
+        'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
     if file_header.unknown1 != 2:
-      raise errors.ParseError(u'Unsupported unknown1: {0:d}.'.format(
+      raise errors.ParseError('Unsupported unknown1: {0:d}.'.format(
           file_header.unknown1))
 
     if file_header.header_values_type > 2:
-      raise errors.ParseError(u'Unsupported header value type: {0:d}.'.format(
+      raise errors.ParseError('Unsupported header value type: {0:d}.'.format(
           file_header.header_values_type))
 
     if file_header.header_values_type == 0:
@@ -730,20 +732,20 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       file_header_value = data_type_map.MapByteStream(file_header_value_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError(
-          u'Unable to parse file header value with error: {0:s}'.format(
+          'Unable to parse file header value with error: {0:s}'.format(
               exception))
 
     if self._debug:
       if file_header.header_values_type == 0:
-        value_string = u'{0:d}'.format(file_header_value.number_of_characters)
-        self._DebugPrintValue(u'Number of characters', value_string)
+        value_string = '{0:d}'.format(file_header_value.number_of_characters)
+        self._DebugPrintValue('Number of characters', value_string)
 
         # TODO: print string.
 
-      value_string = u'{0:d}'.format(file_header_value.number_of_entries)
-      self._DebugPrintValue(u'Number of entries', value_string)
+      value_string = '{0:d}'.format(file_header_value.number_of_entries)
+      self._DebugPrintValue('Number of entries', value_string)
 
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
   def _ReadLNKFile(self, file_object):
     """Reads a LNK file.
@@ -760,20 +762,20 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
     if self._debug:
       self._DebugPrintText(
-          u'Reading LNK file at offset: 0x{0:08x}\n'.format(file_offset))
+          'Reading LNK file at offset: 0x{0:08x}\n'.format(file_offset))
 
-    identifier = u'0x{0:08x}'.format(file_offset)
+    identifier = '0x{0:08x}'.format(file_offset)
     lnk_file_entry = LNKFileEntry(identifier)
 
     try:
       lnk_file_entry.Open(file_object)
     except IOError as exception:
       raise errors.ParseError((
-          u'Unable to parse LNK file at offset: 0x{0:08x} '
-          u'with error: {1:s}').format(file_offset, exception))
+          'Unable to parse LNK file at offset: 0x{0:08x} '
+          'with error: {1:s}').format(file_offset, exception))
 
     if self._debug:
-      self._DebugPrintText(u'\n')
+      self._DebugPrintText('\n')
 
     return lnk_file_entry
 
@@ -797,12 +799,12 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       try:
         entry_header = self._ReadStructure(
             file_object, file_offset, self._ENTRY_HEADER_SIZE,
-            self._ENTRY_HEADER, u'entry header')
+            self._ENTRY_HEADER, 'entry header')
 
       except errors.ParseError as exception:
         error_message = (
-            u'Unable to parse file entry header at offset: 0x{0:08x} '
-            u'with error: {1:s}').format(file_offset, exception)
+            'Unable to parse file entry header at offset: 0x{0:08x} '
+            'with error: {1:s}').format(file_offset, exception)
 
         if not first_guid_checked:
           raise errors.ParseError(error_message)
@@ -811,7 +813,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         break
 
       if entry_header.guid != self._LNK_GUID:
-        error_message = u'Invalid entry header at offset: 0x{0:08x}.'.format(
+        error_message = 'Invalid entry header at offset: 0x{0:08x}.'.format(
             file_offset)
 
         if not first_guid_checked:
@@ -856,7 +858,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       # TODO: recover LNK files
       # * scan for LNK GUID and run _ReadLNKFiles on remaining data.
       if self._debug:
-        self._DebugPrintText(u'Detected trailing data\n')
-        self._DebugPrintText(u'\n')
+        self._DebugPrintText('Detected trailing data\n')
+        self._DebugPrintText('\n')
 
     self._ReadFileFooter(file_object)
