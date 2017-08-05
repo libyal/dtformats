@@ -47,7 +47,7 @@ in the section entitled "GNU Free Documentation License".
 
 * 32-bit timezone information
 ** File header
-** Transition times
+** 32-bit transition times
 ** Transition time index
 ** Local time types table
 ** Timezone abbreviation strings
@@ -55,19 +55,14 @@ in the section entitled "GNU Free Documentation License".
 ** Standard/wall time indicators
 ** UTC/local time indicators
 * Optional 64-bit timezone information (format version "2" and later)
-
-              Eight-byte value section
-              (only if first header version is 0x32,
-              the second header's version is also 0x32)
-                      Header record
-                      Eight-byte transition times
-                      Transition time index
-                      ttinfo structures
-                      Timezone abbreviation array
-                      Leap second records
-                      Standard/Wall array
-                      UTC/Local array
-
+** File header
+** 64-bit transition times
+** Transition time index
+** Local time types table
+** Timezone abbreviation strings
+** Leap second records
+** Standard/wall time indicators
+** UTC/local time indicators
 * Optional timezone string section (format version "2" and later)
 
 [cols="1,5",options="header"]
@@ -100,12 +95,24 @@ Must not be 0
 === Transition times
 
 The transition times are variable of size, depending on the number of transition
-times (tzh_timecnt) in the file header, and consist of:
+times (tzh_timecnt) in the file header.
+
+=== 32-bit transition times
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | tzh_timecnt x 4 | | Transition time array +
+Contains a POSIX timestamp +
+Indicates at which date and time the rules for computing local time change
+|===
+
+=== 64-bit transition times
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | tzh_timecnt x 8 | | Transition time array +
 Contains a POSIX timestamp +
 Indicates at which date and time the rules for computing local time change
 |===

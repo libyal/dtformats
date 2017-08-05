@@ -32,6 +32,22 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       b'  size: 4',
       b'  units: bytes',
       b'---',
+      b'name: int32be',
+      b'type: integer',
+      b'attributes:',
+      b'  byte_order: big-endian',
+      b'  format: signed',
+      b'  size: 4',
+      b'  units: bytes',
+      b'---',
+      b'name: int64be',
+      b'type: integer',
+      b'attributes:',
+      b'  byte_order: big-endian',
+      b'  format: signed',
+      b'  size: 8',
+      b'  units: bytes',
+      b'---',
       b'name: tzif_file_header',
       b'type: structure',
       b'description: file header.',
@@ -61,9 +77,14 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       b'- name: timezone_abbreviation_strings_size',
       b'  data_type: uint32',
       b'---',
-      b'name: tzif_transition_times',
+      b'name: tzif_transition_times_32bit',
       b'type: sequence',
-      b'element_data_type: uint32',
+      b'element_data_type: int32be',
+      b'number_of_elements: tzif_file_header.number_of_transition_times',
+      b'---',
+      b'name: tzif_transition_times_64bit',
+      b'type: sequence',
+      b'element_data_type: int64be',
       b'number_of_elements: tzif_file_header.number_of_transition_times',
       b'---',
       b'name: tzif_transition_time_index',
@@ -81,8 +102,11 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
 
   _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
 
-  _TRANSITION_TIMES = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'tzif_transition_times')
+  _TRANSITION_TIMES_32BIT = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+      'tzif_transition_times_32bit')
+
+  _TRANSITION_TIMES_64BIT = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+      'tzif_transition_times_64bit')
 
   _TRANSITION_TIME_INDEX = _DATA_TYPE_FABRIC.CreateDataTypeMap(
       'tzif_transition_time_index')
@@ -186,13 +210,7 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       raise errors.ParseError('Unsupported format version: {0:d}.'.format(
           file_header.format_version))
 
-    self._ReadTransitionTimes(file_object, file_header)
-    self._ReadTransitionTimeIndex(file_object, file_header)
-    self._ReadLocalTimeTypesTable(file_object, file_header)
-    self._ReadTimezoneAbbreviationStrings(file_object, file_header)
-    self._ReadLeapSecondRecords(file_object, file_header)
-    self._ReadStandardTimeIndicators(file_object, file_header)
-    self._ReadUTCTimeIndicators(file_object, file_header)
+    return file_header
 
   def _ReadLeapSecondRecords(self, file_object, file_header):
     """Reads the lead second records.
@@ -287,15 +305,61 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintData('Timezeone abbreviation strings data', data)
 
-  def _ReadTransitionTimes(self, file_object, file_header):
-    """Reads transition times.
+  def _ReadTimezoneInformation32bit(self, file_object):
+    """Reads 32-bit timezone information.
+
+    Args:
+      file_object (file): file-like object.
+
+    Returns:
+      tzif_file_header: file header.
+
+    Raises:
+      ParseError: if the 32-bit timezone information cannot be read.
+    """
+    file_header = self._ReadFileHeader(file_object)
+
+    self.format_version = file_header.format_version
+
+    self._ReadTransitionTimes32bit(file_object, file_header)
+    self._ReadTransitionTimeIndex(file_object, file_header)
+    self._ReadLocalTimeTypesTable(file_object, file_header)
+    self._ReadTimezoneAbbreviationStrings(file_object, file_header)
+    self._ReadLeapSecondRecords(file_object, file_header)
+    self._ReadStandardTimeIndicators(file_object, file_header)
+    self._ReadUTCTimeIndicators(file_object, file_header)
+
+  def _ReadTimezoneInformation64bit(self, file_object):
+    """Reads 64-bit timezone information.
+
+    Args:
+      file_object (file): file-like object.
+
+    Returns:
+      tzif_file_header: file header.
+
+    Raises:
+      ParseError: if the 64-bit timezone information cannot be read.
+    """
+    file_header = self._ReadFileHeader(file_object)
+
+    self._ReadTransitionTimes64bit(file_object, file_header)
+    self._ReadTransitionTimeIndex(file_object, file_header)
+    self._ReadLocalTimeTypesTable(file_object, file_header)
+    self._ReadTimezoneAbbreviationStrings(file_object, file_header)
+    self._ReadLeapSecondRecords(file_object, file_header)
+    self._ReadStandardTimeIndicators(file_object, file_header)
+    self._ReadUTCTimeIndicators(file_object, file_header)
+
+  def _ReadTransitionTimes32bit(self, file_object, file_header):
+    """Reads 32-bit transition times.
 
     Args:
       file_object (file): file-like object.
       file_header (tzif_file_header): file header.
 
     Raises:
-      ParseError: if the transition times cannot be read.
+      ParseError: if the 32-bit transition times cannot be read.
     """
     file_offset = file_object.tell()
 
@@ -307,8 +371,34 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     data = file_object.read(data_size)
 
     transition_times = self._ReadStructureFromByteStream(
-        data, file_offset, self._TRANSITION_TIMES, 'transition times',
-        context=context)
+        data, file_offset, self._TRANSITION_TIMES_32BIT,
+        '32-bit transition times', context=context)
+
+    if self._debug:
+      self._DebugPrintTransitionTimes(transition_times)
+
+  def _ReadTransitionTimes64bit(self, file_object, file_header):
+    """Reads 64-bit transition times.
+
+    Args:
+      file_object (file): file-like object.
+      file_header (tzif_file_header): file header.
+
+    Raises:
+      ParseError: if the 64-bit transition times cannot be read.
+    """
+    file_offset = file_object.tell()
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'tzif_file_header': file_header})
+
+    data_size = 8 * file_header.number_of_transition_times
+
+    data = file_object.read(data_size)
+
+    transition_times = self._ReadStructureFromByteStream(
+        data, file_offset, self._TRANSITION_TIMES_64BIT,
+        '64-bit transition times', context=context)
 
     if self._debug:
       self._DebugPrintTransitionTimes(transition_times)
@@ -339,4 +429,12 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    self._ReadFileHeader(file_object)
+    self._ReadTimezoneInformation32bit(file_object)
+
+    if self.format_version in (0x32, 0x33):
+      self._ReadTimezoneInformation64bit(file_object)
+
+      data = file_object.read()
+
+      if self._debug:
+        self._DebugPrintData('Timezone string', data)
