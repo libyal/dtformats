@@ -287,6 +287,18 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
   _CPIO_SIGNATURE_NEW_ASCII = b'070701'
   _CPIO_SIGNATURE_NEW_ASCII_WITH_CHECKSUM = b'070702'
 
+  _CPIO_ATTRIBUTE_NAMES_ODC = (
+      'device_number', 'inode_number', 'mode', 'user_identifier',
+      'group_identifier', 'number_of_links', 'special_device_number',
+      'modification_time', 'path_size', 'file_size')
+
+  _CPIO_ATTRIBUTE_NAMES_CRC = (
+      'inode_number', 'mode', 'user_identifier', 'group_identifier',
+      'number_of_links', 'modification_time', 'path_size',
+      'file_size', 'device_major_number', 'device_minor_number',
+      'special_device_major_number', 'special_device_minor_number',
+      'checksum')
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a CPIO archive file.
 
@@ -405,11 +417,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
           (file_entry.file_size.upper << 16) | file_entry.file_size.lower)
 
     if self.file_format == 'odc':
-      for attribute_name in (
-          'device_number', 'inode_number', 'mode', 'user_identifier',
-          'group_identifier', 'number_of_links', 'special_device_number',
-          'modification_time', 'path_size', 'file_size'):
-
+      for attribute_name in self._CPIO_ATTRIBUTE_NAMES_ODC:
         value = getattr(file_entry, attribute_name, None)
         try:
           value = int(value, 8)
@@ -421,13 +429,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
         value = setattr(file_entry, attribute_name, value)
 
     elif self.file_format in ('crc', 'newc'):
-      for attribute_name in (
-          'inode_number', 'mode', 'user_identifier', 'group_identifier',
-          'number_of_links', 'modification_time', 'path_size',
-          'file_size', 'device_major_number', 'device_minor_number',
-          'special_device_major_number', 'special_device_minor_number',
-          'checksum'):
-
+      for attribute_name in self._CPIO_ATTRIBUTE_NAMES_CRC:
         value = getattr(file_entry, attribute_name, None)
         try:
           value = int(value, 16)
@@ -533,6 +535,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
         break
 
       if file_entry.path in self._file_entries:
+        # TODO: alert on file entries with duplicate paths?
         continue
 
       self._file_entries[file_entry.path] = file_entry

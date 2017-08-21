@@ -389,8 +389,13 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
 
     Args:
       olecf_file (pyolecf.file): OLECF file.
+
+    Raises:
+      ParseError: if the DestList stream is missing.
     """
     olecf_item = olecf_file.root_item.get_sub_item_by_name('DestList')
+    if not olecf_item:
+      raise errors.ParseError('Missing DestList stream.')
 
     self._ReadDestListHeader(olecf_item)
 
