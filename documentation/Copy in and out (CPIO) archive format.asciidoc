@@ -10,8 +10,7 @@ The copy in and out (CPIO) archive format is an archive format that predates
 TAR but is still being used e.g. in initramfs or rpm.
 
 This document is intended as a working document for the CPIO format 
-specification. Which should allow existing Open Source forensic tooling to be 
-able to process this file type.
+specification.
 
 [preface]
 == Document information
