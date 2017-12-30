@@ -38,7 +38,8 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
-| 0.0.1 | J.B. Metz | | Initial version.
+| 0.0.1 | J.B. Metz | November 2017 | Initial version.
+| 0.0.2 | J.B. Metz | December 2017 | Initial version.
 |===
 
 :numbered:
@@ -46,14 +47,15 @@ in the section entitled "GNU Free Documentation License".
 
 A GZIP compressed stream file (.gz) format consists of:
 
-* a file header
-* optional headers
-* extra fields
-* original file name
-* comment
-* header checksum
-* compressed data (commonly used compression method DEFLATE, without zlib header)
-* a file footer
+* one or more members
+** a member header
+** optional headers
+** extra fields
+** original file name
+** comment
+** header checksum
+** compressed data (commonly used compression method DEFLATE, without zlib header)
+** a member footer
 
 [cols="1,5",options="header"]
 |===
@@ -64,7 +66,7 @@ Number of seconds since January 1, 1970 00:00:00 UTC
 | Character strings | ISO 8859-1 (LATIN-1)
 |===
 
-== File header
+== Member header
 The file header is 10 bytes in size and contains:
 
 [cols="1,1,1,5",options="header"]
@@ -98,10 +100,10 @@ Value that indicates on which operating system the gzip file was created.
 | Value | Identifier | Description
 | 0x01 | FTEXT | If set the uncompressed data needs to be treated as text instead of binary data. +
 This flag hints end-of-line conversion for cross-platform text files but does not enforce it.
-| 0x02 | FHCRC | The file contains a header checksum (CRC-16)
-| 0x04 | FEXTRA | The file contains extra fields
-| 0x08 | FNAME | The file contains an original file name string
-| 0x10 | FCOMMENT | The file contains comment
+| 0x02 | FHCRC | The member contains a header checksum (CRC-16)
+| 0x04 | FEXTRA | The member contains extra fields
+| 0x08 | FNAME | The member contains an original file name string
+| 0x10 | FCOMMENT | The member contains comment
 | 0x20 | | Reserved
 | 0x40 | | Reserved
 | 0x80 | | Reserved
@@ -152,7 +154,7 @@ If compression method value is 8 (deflate) the following compression flags can b
 == Optional headers
 
 === Extra fields
-This value is present in the file if the FEXTRA flag is set in the file header flags.
+This value is present in the member if the FEXTRA flag is set in the member header flags.
 
 The extra field are variable of size and contains:
 
@@ -165,7 +167,7 @@ Value in bytes.
 |===
 
 === Original file name
-This value is present in the file if the FNAME flag is set in the file header
+This value is present in the member if the FNAME flag is set in the member header
 flags.
 
 This is the original name of the file being compressed, with any directory
@@ -175,7 +177,7 @@ case insensitive names, forced to lower case.
 Contains an ISO 8859-1 (LATIN-1) string with end-of-string character.
 
 === Comment
-This value is present in the file if the FCOMMENT flag is set in the file
+This value is present in the member if the FCOMMENT flag is set in the member
 header flags.
 
 Contains an ISO 8859-1 (LATIN-1) string with end-of-string character. Line
@@ -186,8 +188,8 @@ The header checksum contain a CRC-16 that consists of the two least significant
 bytes of the CRC-32 for all bytes of the gzip header up to and not including
 the CRC-16.
 
-== File footer
-The file footer is 8 bytes in size and contains:
+== Member footer
+The member footer is 8 bytes in size and contains:
 
 [cols="1,1,1,5",options="header"]
 |===

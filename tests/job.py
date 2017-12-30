@@ -12,7 +12,7 @@ from dtformats import job
 from tests import test_lib
 
 
-class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
+class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
   """Windows Task Scheduler job file tests."""
 
   # pylint: disable=protected-access
