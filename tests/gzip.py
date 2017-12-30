@@ -30,7 +30,7 @@ class GZipFileTest(test_lib.BaseTestCase):
         flags=0x08,
         modification_time=1343493847,
         operating_system=3,
-        signature=0x1f8b)
+        signature=0x8b1f)
 
     test_file._DebugPrintMemberHeader(data_section)
 

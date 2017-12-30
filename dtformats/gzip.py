@@ -11,6 +11,7 @@ import construct
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
+from dtformats import errors
 
 
 class GZipFile(data_format.BinaryDataFile):
@@ -150,7 +151,7 @@ members:
       file_object (file): file-like object.
 
     Raises:
-      IOError: if the member header cannot be read.
+      ParseError: if the member header cannot be read.
     """
     file_offset = file_object.tell()
     member_header = self._ReadStructure(
@@ -159,6 +160,9 @@ members:
 
     if self._debug:
       self._DebugPrintMemberHeader(member_header)
+
+    if member_header.signature != 0x8b1f:
+      raise errors.ParseError('Unsupported signature')
 
     if member_header.flags & self._FLAG_FEXTRA:
       extra_field_data_size = construct.ULInt16(
@@ -189,7 +193,7 @@ members:
       file_object (file): file-like object.
 
     Raises:
-      IOError: if the member footer cannot be read.
+      ParseError: if the member footer cannot be read.
     """
     file_offset = file_object.tell()
     member_footer = self._ReadStructure(
@@ -199,27 +203,38 @@ members:
     if self._debug:
       self._DebugPrintMemberFooter(member_footer)
 
+  def _ReadCompressedData(self, zlib_decompressor, compressed_data):
+    """Reads compressed data.
+
+    Args:
+      zlib_decompressor (zlib.Decompress): zlib decompressor.
+      compressed_data (bytes): compressed data.
+
+    Returns:
+      tuple[bytes, bytes]: decompressed data and remaining data.
+    """
+    data_segments = []
+    while compressed_data:
+      data = zlib_decompressor.decompress(compressed_data)
+      if not data:
+        break
+
+      data_segments.append(data)
+      compressed_data = getattr(zlib_decompressor, 'unused_data', b'')
+
+    return b''.join(data_segments), compressed_data
+
   def _ReadMemberCompressedData(self, file_object):
     """Reads a member compressed data.
 
     Args:
       file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the member compressed data cannot be read.
     """
     zlib_decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
-
     compressed_data = file_object.read(self._BUFFER_SIZE)
     while compressed_data:
-      data = b''
-      while compressed_data:
-        data = zlib_decompressor.decompress(compressed_data)
-        if not data:
-          break
-
-        compressed_data = getattr(zlib_decompressor, 'unused_data', b'')
-
+      data, compressed_data = self._ReadCompressedData(
+          zlib_decompressor, compressed_data)
       if compressed_data:
         file_object.seek(-len(compressed_data), os.SEEK_CUR)
 
@@ -237,6 +252,10 @@ members:
     Raises:
       ParseError: if the file cannot be read.
     """
-    self._ReadMemberHeader(file_object)
-    self._ReadMemberCompressedData(file_object)
-    self._ReadMemberFooter(file_object)
+    file_offset = 0
+    while file_offset < self._file_size:
+      self._ReadMemberHeader(file_object)
+      self._ReadMemberCompressedData(file_object)
+      self._ReadMemberFooter(file_object)
+
+      file_offset = file_object.tell()
