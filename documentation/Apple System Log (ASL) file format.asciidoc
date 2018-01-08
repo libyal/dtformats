@@ -73,27 +73,28 @@ The file header is variable in size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| ... | ... | | [yellow-background]*Unknown*
-| ... | 2 | 0x0000 | [yellow-background]*Unknown*
-| ... | 4 | | [yellow-background]*Unknown*
-| ... | 8 | | Next log entry offset +
+| 0 | 2 | 0x0000 | [yellow-background]*Unknown*
+| 2 | 4 | | [yellow-background]*Unknown*
+| 6 | 8 | | Next log entry offset +
 The offset is specified in bytes and relative from the start of the file
-| ... | 8 | | [yellow-background]*Unknown (Message identifier)*
-| ... | 12 | | [yellow-background]*Unknown (timestamp)*
-| ... | 2 | | Alert level +
+| 14 | 8 | | [yellow-background]*Unknown (Message identifier)*
+| 22 | 8 | | Written time +
+Contains a POSIX timestamp
+| 30 | 4 | | Written time nanoseconds
+| 34 | 2 | | Alert level +
 See section: <<alert_levels,Alert levels>>
-| ... | 2 | | [yellow-background]*Unknown (Flags)*
-| ... | 4 | | Process identifier (PID)
-| ... | 4 | | User identifier (UID)
-| ... | 4 | | Group identifier (GID)
-| ... | 4 | | Real user identifier (UID)
-| ... | 4 | | Real group identifier (GID)
-| ... | 8 | | [yellow-background]*Unknown (Reference PID)*
-| ... | 8 | | Hostname string offset
-| ... | 8 | | Sender string offset
-| ... | 8 | | Facility string offset
-| ... | 8 | | Message string offset
-| ... | ... | | [yellow-background]*Unknown*
+| 36 | 2 | | [yellow-background]*Unknown (Flags)*
+| 38 | 4 | | Process identifier (PID)
+| 42 | 4 | | User identifier (UID)
+| 46 | 4 | | Group identifier (GID)
+| 50 | 4 | | Real user identifier (UID)
+| 54 | 4 | | Real group identifier (GID)
+| 58 | 8 | | [yellow-background]*Unknown (Reference PID)*
+| 66 | 8 | | Hostname string offset
+| 74 | 8 | | Sender string offset
+| 82 | 8 | | Facility string offset
+| 90 | 8 | | Message string offset
+| 98 | ... | | [yellow-background]*Unknown*
 | ... | 8 | | Previous log entry offset +
 The offset is specified in bytes and relative from the start of the file
 |===
