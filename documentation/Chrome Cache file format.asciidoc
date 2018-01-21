@@ -12,8 +12,7 @@ persistent cached data. This specification is based on the source code and
 documentation.
 
 This document is intended as a working document for the Chrome Cache file 
-format specification. Which should allow existing Open Source forensic tooling 
-to be able to process this file type.
+format specification.
 
 [preface]
 == Document information

@@ -1,4 +1,4 @@
-= Apple System Log (ASL) file format
+= MacOS File System Events Disk Log Stream format
 
 :toc:
 :toclevels: 4
@@ -6,26 +6,27 @@
 :numbered!:
 [abstract]
 == Summary
-The Apple System Log (ASL) file format is used to store system logs. This
-specification is based on the source code and documentation.
+The MacOS File System Events Disk Log Stream format is use by fsevents on
+MacOS to store file system events. This specification is based on the
+source code and documentation.
 
-This document is intended as a working document for the Apple System Log (ASL)
-file format specification.
+This document is intended as a working document for the MacOS File System
+Events Disk Log Stream format file format specification.
 
 [preface]
 == Document information
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | Apple System Log (ASL) file format
+| Abstract: | MacOS File System Events Disk Log Stream format
 | Classification: | Public
-| Keywords: | ASL, Apple System Log
+| Keywords: | fseventsd
 |===
 
 [preface]
 == License
 ....
-Copyright (C) 2016-2018, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2018, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -38,143 +39,131 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
-| 0.0.1 | J.B. Metz | December 2016 | Initial version with thanks to J. Moreno Garijo
-| 0.0.2 | J.B. Metz | January 2018 | Additional information
+| 0.0.1 | J.B. Metz | January 2018 | Initial version.
 |===
 
 :numbered:
 == Overview
-[yellow-background]*TODO: complete documentation*
+
+An fsevents file System Events Disk Log Stream file is a multi-member GZIP
+file that consists of:
+
+* one or more Disk Log Streams
 
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | big-endian
-| Date and time values |
-| Character strings |
+| Byte order | little-endian
+| Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string stored with a codepage. +
+Though technically maybe incorrect, this document will use term (extended) ASCII string.
 |===
 
-=== File header
-The file header is 80 bytes in size and consists of:
+== Disk log stream
 
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 12 | "ASL DB\x00\x00\x00\x00\x00\x00" | Signature
-| 12 | 4 | 2 | Format version
-| 16 | 8 | | First log entry offset +
-The offset is specified in bytes and relative from the start of the file
-| 24 | 8 | | Creation time +
-Contains a POSIX timestamp
-| 32 | 4 | | [yellow-background]*Unknown (cache size)*
-| 36 | 8 | | Last log entry offset +
-The offset is specified in bytes and relative from the start of the file
-| 44 | 36 | | [yellow-background]*Unknown*
-|===
+A disk log stream consists of:
 
-=== Log entry
-The file header is variable in size and consists of:
+* a stream header
+* one or more event records
+
+=== Stream header
+
+The stream header is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | 0x0000 | [yellow-background]*Unknown*
-| 2 | 4 | | [yellow-background]*Unknown*
-| 6 | 8 | | Next log entry offset +
-The offset is specified in bytes and relative from the start of the file
-| 14 | 8 | | [yellow-background]*Unknown (Message identifier)*
-| 22 | 8 | | Written time +
-Contains a POSIX timestamp
-| 30 | 4 | | Written time nanoseconds
-| 34 | 2 | | Alert level +
-See section: <<alert_levels,Alert levels>>
-| 36 | 2 | | [yellow-background]*Unknown (Flags)*
-| 38 | 4 | | Process identifier (PID)
-| 42 | 4 | | User identifier (UID)
-| 46 | 4 | | Group identifier (GID)
-| 50 | 4 | | Real user identifier (UID)
-| 54 | 4 | | Real group identifier (GID)
-| 58 | 8 | | [yellow-background]*Unknown (Reference PID)*
-| 66 | 8 | | Hostname string offset
-| 74 | 8 | | Sender string offset
-| 82 | 8 | | Facility string offset
-| 90 | 8 | | Message string offset
-| 98 | ... | | [yellow-background]*Unknown*
-| ... | 8 | | Previous log entry offset +
-The offset is specified in bytes and relative from the start of the file
+| 0 | 4 | "1SLD" +
+"2SLD" | Signature
+| 4 | 4 | | [yellow-background]*Unknown*
+| 8 | 4 | | stream size
 |===
 
-=== [[alert_levels]]Alert levels
+[NOTE]
+The signature in little-endian is "DLS1", which presumably represents Disk
+Log(ger) Stream version 1 and version 2 for "DLS2". Format version 1 is used
+in Mac OS X Leopard (10.5) through macOS Sierra (10.12) and format version 2
+in MacOS High Sierra (10.13).
+
+=== Event record version 1
+
+The event record version 1 is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | Path +
+Contains an extended ASCII string with end-of-string character
+| ... | 8 | | Event identifier
+| ... | 4 | | Event flags +
+See section: <<event_flags,Event flags>>
+|===
+
+=== Record version 2
+
+The event record version 2 is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | Path +
+Contains an extended ASCII string with end-of-string character
+| ... | 8 | | Event identifier
+| ... | 4 | | Event flags +
+See section: <<event_flags,Event flags>>
+| ... | 8 | | Node identifier
+|===
+
+=== [[event_flags]]Event flags
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0 | EMERGENCY |
-| 1 | ALERT |
-| 2 | CRITICAL |
-| 3 | ERROR |
-| 4 | WARNING |
-| 5 | NOTICE |
-| 6 | INFO |
-| 7 | DEBUG |
+| 0x00000000 | kFSEventStreamEventFlagNone | Change in the directory at the specific path
+| 0x00000001 | kFSEventStreamEventFlagMustScanSubDirs | Must scan sub directories recursively
+| 0x00000002 | kFSEventStreamEventFlagUserDropped |
+| 0x00000004 | kFSEventStreamEventFlagKernelDropped |
+| 0x00000008 | kFSEventStreamEventFlagEventIdsWrapped |
+| 0x00000010 | kFSEventStreamEventFlagHistoryDone |
+| 0x00000020 | kFSEventStreamEventFlagRootChanged |
+| 0x00000040 | kFSEventStreamEventFlagMount |
+| 0x00000080 | kFSEventStreamEventFlagUnmount |
+| 0x00000100 | kFSEventStreamEventFlagItemCreated |
+| 0x00000200 | kFSEventStreamEventFlagItemRemoved |
+| 0x00000400 | kFSEventStreamEventFlagItemInodeMetaMod |
+| 0x00000800 | kFSEventStreamEventFlagItemRenamed |
+| 0x00001000 | kFSEventStreamEventFlagItemModified |
+| 0x00002000 | kFSEventStreamEventFlagItemFinderInfoMod |
+| 0x00004000 | kFSEventStreamEventFlagItemChangeOwner |
+| 0x00008000 | kFSEventStreamEventFlagItemXattrMod |
+| 0x00010000 | kFSEventStreamEventFlagItemIsFile |
+| 0x00020000 | kFSEventStreamEventFlagItemIsDir |
+| 0x00040000 | kFSEventStreamEventFlagItemIsSymlink |
+| 0x00080000 | kFSEventStreamEventFlagOwnEvent |
+| 0x00100000 | kFSEventStreamEventFlagItemIsHardlink |
+| 0x00200000 | kFSEventStreamEventFlagItemIsLastHardlink |
+| 0x00400000 | kFSEventStreamEventFlagItemCloned |
 |===
-
-== Notes
-....
-Pointers are a 8 bytes field that stores an integer that identify the file offset starting in position 0.
-
-Log Entry:
-(Text entries)*		None or one or more "Text entries"
-(ASL entry pointer points to this position)
-2 bytes			0x00
-4 bytes 		Integer with the number of bytes until the end of the entry. 6 previous bytes are not counted.
-8 bytes			Pointer to the next entry
-8 bytes			ASL Message ID
-12 bytes		TimeStamp (8 first bytes is an integer with the Epoch timestamp + 4 bytes for microseconds)
-2 bytes			Alert Level, Integer
-2 bytes			Flag, Integer
-4 bytes			PID, Integer
-4 bytes			UID, Integer
-4 bytes			GID, Integer
-4 bytes			Real UID, Integer
-4 bytes			Real GID, Integer
-8 bytes			Reference PID, Integer
-Text pointer		Hostname
-Text pointer		Sender
-Text pointer		Facility
-Text pointer		Message
-(2xText pointer)*	None, one or more extra fields. For each extra fields we have two text pointers, the first text pointer contains the name of the fields whereas the second one contains the value of the field.
-8 bytes				Pointer to the previous ASL entry
-
-		------
-
-Text pointer:
-- Size: 8 bytes
-- If string is bigger than 6 characters it is a pointer to a Text entry.
-- If string is smaller or equal than 6 characters:
-	1 nibble 	The value will be 0x1000 identifying that the string is <= 6 characters.
-	1 nibble	Integer that identifies the number of characters
-	7 bytes		UTF8 strings, one byte per character. If String is smaller than 6 characters it is padded with 0x00
-
-		------
-
-Text entry:
-2 bytes		Integer that contains the size of the string (number of characters)
--		String in UTF8
-....
 
 :numbered!:
 [appendix]
 == References
 
-`[REFERENCE]`
+[cols="1,5",options="header"]
+|===
+| Title: | Using the File System Events API
+| URL: | https://developer.apple.com/library/content/documentation/Darwin/Conceptual/FSEvents_ProgGuide/UsingtheFSEventsFramework/UsingtheFSEventsFramework.html
+|===
 
 [cols="1,5",options="header"]
 |===
-| Title: |
-| Author(s): |
-| Date: |
-| URL: |
+| Title: | FSEventStreamEventFlags
+| URL: | https://developer.apple.com/documentation/coreservices/1455361-fseventstreameventflags
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | FSEvents.h
+| URL: | file:///System/Library/Frameworks//CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Headers/FSEvents.h
 |===
 
 [appendix]
