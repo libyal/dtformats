@@ -30,7 +30,7 @@ class DependencyDefinition(object):
   """
 
   def __init__(self, name):
-    """Initializes a dependency configuation.
+    """Initializes a dependency configuration.
 
     Args:
       name (str): name of the dependency.
@@ -102,7 +102,11 @@ class DependencyDefinitionReader(object):
 
 
 class DependencyHelper(object):
-  """Dependency helper."""
+  """Dependency helper.
+
+  Attributes:
+    dependencies (dict[str, DependencyDefinition]): dependencies.
+  """
 
   _VERSION_NUMBERS_REGEX = re.compile(r'[0-9.]+')
   _VERSION_SPLIT_REGEX = re.compile(r'\.|\-')
@@ -115,14 +119,14 @@ class DependencyHelper(object):
           configuration file.
     """
     super(DependencyHelper, self).__init__()
-    self._dependencies = {}
     self._test_dependencies = {}
+    self.dependencies = {}
 
     dependency_reader = DependencyDefinitionReader()
 
     with open(configuration_file, 'r') as file_object:
       for dependency in dependency_reader.Read(file_object):
-        self._dependencies[dependency.name] = dependency
+        self.dependencies[dependency.name] = dependency
 
     dependency = DependencyDefinition('mock')
     dependency.minimum_version = '0.7.1'
@@ -145,9 +149,9 @@ class DependencyHelper(object):
     module_object = self._ImportPythonModule(dependency.name)
     if not module_object:
       status_message = 'missing: {0:s}'.format(dependency.name)
-      return dependency.is_optional, status_message
+      return False, status_message
 
-    if not dependency.version_property or not dependency.minimum_version:
+    if not dependency.version_property:
       return True, dependency.name
 
     return self._CheckPythonModuleVersion(
@@ -208,19 +212,20 @@ class DependencyHelper(object):
           module_name, module_version)
       return False, status_message
 
-    try:
-      minimum_version_map = list(
-          map(int, self._VERSION_SPLIT_REGEX.split(minimum_version)))
-    except ValueError:
-      status_message = 'unable to parse minimum version: {0:s} {1:s}'.format(
-          module_name, minimum_version)
-      return False, status_message
+    if minimum_version:
+      try:
+        minimum_version_map = list(
+            map(int, self._VERSION_SPLIT_REGEX.split(minimum_version)))
+      except ValueError:
+        status_message = 'unable to parse minimum version: {0:s} {1:s}'.format(
+            module_name, minimum_version)
+        return False, status_message
 
-    if module_version_map < minimum_version_map:
-      status_message = (
-          '{0:s} version: {1!s} is too old, {2!s} or later required').format(
-              module_name, module_version, minimum_version)
-      return False, status_message
+      if module_version_map < minimum_version_map:
+        status_message = (
+            '{0:s} version: {1!s} is too old, {2!s} or later required').format(
+                module_name, module_version, minimum_version)
+        return False, status_message
 
     if maximum_version:
       try:
@@ -307,7 +312,7 @@ class DependencyHelper(object):
       else:
         status_indicator = '[FAILURE]'
 
-      print('{0:s}\t{1:s}.'.format(status_indicator, status_message))
+      print('{0:s}\t{1:s}'.format(status_indicator, status_message))
 
     elif verbose_output:
       print('[OK]\t\t{0:s}'.format(status_message))
@@ -324,13 +329,17 @@ class DependencyHelper(object):
     print('Checking availability and versions of dependencies.')
     check_result = True
 
-    for module_name, dependency in sorted(self._dependencies.items()):
+    for module_name, dependency in sorted(self.dependencies.items()):
       if module_name == 'sqlite3':
         result, status_message = self._CheckSQLite3()
       else:
         result, status_message = self._CheckPythonModule(dependency)
 
-      if not result:
+      if not result and module_name == 'lzma':
+        dependency.name = 'backports.lzma'
+        result, status_message = self._CheckPythonModule(dependency)
+
+      if not result and not dependency.is_optional:
         check_result = False
 
       self._PrintCheckDependencyStatus(
