@@ -30,6 +30,7 @@ class DataRange(object):
     self.data_size = data_size
 
   # The following methods are part of the file-like object interface.
+  # pylint: disable=invalid-name
 
   def read(self, size=None):
     """Reads a byte string from the file-like object at the current offset.

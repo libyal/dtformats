@@ -616,7 +616,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
       self._DebugPrintValue('Properties block size', value_string)
 
       # TODO: refactor.
-      if False:
+      if False:  # pylint: disable=using-constant-test
         if class_definition_header.super_class_name_block_size > 4:
           super_class_name_block = (
               class_definition_header.super_class_name_block)

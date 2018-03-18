@@ -1,5 +1,6 @@
 pip >= 7.0.0
 PyYAML >= 3.10
+construct >= 2.5.2,<= 2.5.3
 dtfabric >= 20170524
 libfwsi-python >= 20150606
 liblnk-python >= 20150830

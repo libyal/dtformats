@@ -6,15 +6,15 @@
 
 COVERALLS_DEPENDENCIES="python-coverage python-coveralls python-docopt";
 
-L2TBINARIES_DEPENDENCIES="PyYAML dtfabric libfwsi liblnk libolecf";
+L2TBINARIES_DEPENDENCIES="PyYAML construct dtfabric libfwsi liblnk libolecf";
 
 L2TBINARIES_TEST_DEPENDENCIES="funcsigs mock pbr six";
 
-PYTHON2_DEPENDENCIES="libfwsi-python liblnk-python libolecf-python python-dtfabric python-yaml";
+PYTHON2_DEPENDENCIES="libfwsi-python liblnk-python libolecf-python python-construct python-dtfabric python-yaml";
 
 PYTHON2_TEST_DEPENDENCIES="python-mock python-tox";
 
-PYTHON3_DEPENDENCIES="libfwsi-python3 liblnk-python3 libolecf-python3 python3-dtfabric python3-yaml";
+PYTHON3_DEPENDENCIES="libfwsi-python3 liblnk-python3 libolecf-python3 python3-construct python3-dtfabric python3-yaml";
 
 PYTHON3_TEST_DEPENDENCIES="python3-mock python3-setuptools python3-tox";
 

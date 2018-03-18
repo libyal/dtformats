@@ -96,7 +96,7 @@ class CPIOArchiveFileHasher(object):
         if file_type == 'bzip':
           cpio_file_object = bz2.BZ2File(compressed_data_file_object)
         elif file_type == 'gzip':
-          cpio_file_object = gzip.GzipFile(fileobj=compressed_data_file_object)
+          cpio_file_object = gzip.GzipFile(fileobj=compressed_data_file_object)  # pylint: disable=no-member
         elif file_type == 'xz':
           cpio_file_object = lzma.LZMAFile(compressed_data_file_object)
 
