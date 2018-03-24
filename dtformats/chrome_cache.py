@@ -13,6 +13,7 @@ from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
+from dtformats import py2to3
 
 
 def SuperFastHash(key):
@@ -32,12 +33,13 @@ def SuperFastHash(key):
   remainder = key_length & 0x00000003
   key_length -= remainder
 
+  if isinstance(key[0], py2to3.STRING_TYPES):
+    key = [ord(byte_value) for byte_value in key]
+
   for key_index in range(0, key_length, 4):
     hash_value = (
-        (hash_value + ord(key[key_index]) + (ord(key[key_index + 1]) << 8)) &
-        0xffffffff)
-
-    temp_value = ord(key[key_index + 2]) + (ord(key[key_index + 3]) << 8)
+        (hash_value + key[key_index] + (key[key_index + 1] << 8)) & 0xffffffff)
+    temp_value = key[key_index + 2] + (key[key_index + 3] << 8)
 
     temp_value = ((temp_value << 11) & 0xffffffff) ^ hash_value
     hash_value = ((hash_value << 16) & 0xffffffff) ^ temp_value
@@ -48,21 +50,19 @@ def SuperFastHash(key):
 
   if remainder == 3:
     hash_value = (
-        (hash_value + ord(key[key_index]) + (ord(key[key_index + 1]) << 8)) &
-        0xffffffff)
+        (hash_value + key[key_index] + (key[key_index + 1] << 8)) & 0xffffffff)
     hash_value ^= (hash_value << 16) & 0xffffffff
-    hash_value ^= (ord(key[key_index + 2]) << 18) & 0xffffffff
+    hash_value ^= (key[key_index + 2] << 18) & 0xffffffff
     hash_value = (hash_value + (hash_value >> 11)) & 0xffffffff
 
   elif remainder == 2:
     hash_value = (
-        (hash_value + ord(key[key_index]) + (ord(key[key_index + 1]) << 8)) &
-        0xffffffff)
+        (hash_value + key[key_index] + (key[key_index + 1] << 8)) & 0xffffffff)
     hash_value ^= (hash_value << 11) & 0xffffffff
     hash_value = (hash_value + (hash_value >> 17)) & 0xffffffff
 
   elif remainder == 1:
-    hash_value = (hash_value + ord(key[key_index])) & 0xffffffff
+    hash_value = (hash_value + key[key_index]) & 0xffffffff
     hash_value ^= (hash_value << 10) & 0xffffffff
     hash_value = (hash_value + (hash_value >> 1)) & 0xffffffff
 

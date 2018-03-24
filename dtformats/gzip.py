@@ -6,8 +6,6 @@ from __future__ import unicode_literals
 import os
 import zlib
 
-import construct
-
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
@@ -81,6 +79,27 @@ members:
   data_type: uint32
 - name: uncompressed_data_size
   data_type: uint32
+---
+name: uint16le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: char
+type: character
+attributes:
+  byte_order: little-endian
+  size: 1
+  units: bytes
+---
+name: cstring
+type: string
+encoding: iso-8859-1
+element_data_type: char
+elements_terminator: "\\x00"
 """
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
@@ -95,6 +114,12 @@ members:
       'gzip_member_footer')
 
   _MEMBER_FOOTER_SIZE = _MEMBER_FOOTER.GetByteSize()
+
+  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint16le')
+
+  _UINT16LE_SIZE = _UINT16LE.GetByteSize()
+
+  _CSTRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('cstring')
 
   _FLAG_FTEXT = 0x01
   _FLAG_FHCRC = 0x02
@@ -165,23 +190,46 @@ members:
       raise errors.ParseError('Unsupported signature')
 
     if member_header.flags & self._FLAG_FEXTRA:
-      extra_field_data_size = construct.ULInt16(
-          'extra_field_data_size').parse_stream(file_object)
+      file_offset = file_object.tell()
+      extra_field_data_size = self._ReadStructure(
+          file_object, file_offset, self._UINT16LE_SIZE,
+          self._UINT16LE, 'extra field data size')
+
       file_object.seek(extra_field_data_size, os.SEEK_CUR)
 
     if member_header.flags & self._FLAG_FNAME:
-      # Since encoding is set construct will convert the C string to Unicode.
-      # Note that construct 2 does not support the encoding to be a Unicode
-      # string.
-      struct = construct.CString('original_filename', encoding=b'iso-8859-1')
-      struct.parse_stream(file_object)
+      file_offset = file_object.tell()
+      byte_stream = []
+
+      byte_value = file_object.read(1)
+      byte_stream.append(byte_value)
+      while byte_value and byte_value != b'\x00':
+        byte_value = file_object.read(1)
+        byte_stream.append(byte_value)
+
+      byte_stream = b''.join(byte_stream)
+      value_string = self._ReadStructureFromByteStream(
+          byte_stream, file_offset, self._CSTRING, 'original filename')
+
+      if self._debug:
+        self._DebugPrintValue('Original filename', value_string)
 
     if member_header.flags & self._FLAG_FCOMMENT:
-      # Since encoding is set construct will convert the C string to Unicode.
-      # Note that construct 2 does not support the encoding to be a Unicode
-      # string.
-      struct = construct.CString('comment', encoding=b'iso-8859-1')
-      struct.parse_stream(file_object)
+      file_offset = file_object.tell()
+      byte_stream = []
+
+      byte_value = file_object.read(1)
+      byte_stream.append(byte_value)
+      while byte_value and byte_value != b'\x00':
+        byte_value = file_object.read(1)
+        byte_stream.append(byte_value)
+
+      byte_stream = b''.join(byte_stream)
+      value_string = self._ReadStructureFromByteStream(
+          byte_stream, file_offset, self._CSTRING, 'comment')
+
+      if self._debug:
+        self._DebugPrintValue('Comment', value_string)
 
     if member_header.flags & self._FLAG_FHCRC:
       file_object.read(2)

@@ -96,318 +96,310 @@ class ObjectRecord(data_format.BinaryDataFormat):
     data_type (str): object record data type.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: byte',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 1',
-      b'  units: bytes',
-      b'---',
-      b'name: uint16',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: uint64',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 8',
-      b'  units: bytes',
-      b'---',
-      b'name: wchar16',
-      b'type: character',
-      b'attributes:',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: cim_property_types',
-      b'type: enumeration',
-      b'values:',
-      b'- name: CIM-TYPE-SINT16',
-      b'  number: 0x00000002',
-      b'- name: CIM-TYPE-SINT32',
-      b'  number: 0x00000003',
-      b'- name: CIM-TYPE-REAL32',
-      b'  number: 0x00000004',
-      b'- name: CIM-TYPE-REAL64',
-      b'  number: 0x00000005',
-      b'- name: CIM-TYPE-STRING',
-      b'  number: 0x00000008',
-      b'- name: CIM-TYPE-BOOLEAN',
-      b'  number: 0x0000000b',
-      b'- name: CIM-TYPE-OBJECT',
-      b'  number: 0x0000000d',
-      b'- name: CIM-TYPE-SINT8',
-      b'  number: 0x00000010',
-      b'- name: CIM-TYPE-UINT8',
-      b'  number: 0x00000011',
-      b'- name: CIM-TYPE-UINT16',
-      b'  number: 0x00000012',
-      b'- name: CIM-TYPE-UINT32',
-      b'  number: 0x00000013',
-      b'- name: CIM-TYPE-SINT64',
-      b'  number: 0x00000014',
-      b'- name: CIM-TYPE-UINT64',
-      b'  number: 0x00000015',
-      b'- name: CIM-TYPE-DATETIME',
-      b'  number: 0x00000065',
-      b'- name: CIM-TYPE-REFERENCE',
-      b'  number: 0x00000066',
-      b'- name: CIM-TYPE-CHAR16',
-      b'  number: 0x00000067',
-      b'- name: CIM-ARRAY-SINT16',
-      b'  number: 0x00002002',
-      b'- name: CIM-ARRAY-SINT32',
-      b'  number: 0x00002003',
-      b'- name: CIM-ARRAY-REAL32',
-      b'  number: 0x00002004',
-      b'- name: CIM-ARRAY-REAL64',
-      b'  number: 0x00002005',
-      b'- name: CIM-ARRAY-STRING',
-      b'  number: 0x00002008',
-      b'- name: CIM-ARRAY-BOOLEAN',
-      b'  number: 0x0000200b',
-      b'- name: CIM-ARRAY-OBJECT',
-      b'  number: 0x0000200d',
-      b'- name: CIM-ARRAY-SINT8',
-      b'  number: 0x00002010',
-      b'- name: CIM-ARRAY-UINT8',
-      b'  number: 0x00002011',
-      b'- name: CIM-ARRAY-UINT16',
-      b'  number: 0x00002012',
-      b'- name: CIM-ARRAY-UINT32',
-      b'  number: 0x00002013',
-      b'- name: CIM-ARRAY-SINT64',
-      b'  number: 0x00002014',
-      b'- name: CIM-ARRAY-UINT64',
-      b'  number: 0x00002015',
-      b'- name: CIM-ARRAY-DATETIME',
-      b'  number: 0x00002065',
-      b'- name: CIM-ARRAY-REFERENCE',
-      b'  number: 0x00002066',
-      b'- name: CIM-ARRAY-CHAR16',
-      b'  number: 0x00002067',
-      b'---',
-      b'name: property_descriptor',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: name_offset',
-      b'  data_type: uint32',
-      b'- name: data_offset',
-      b'  data_type: uint32',
-      b'---',
-      b'name: block',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: size',
-      b'  data_type: uint32',
-      b'- name: data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: block.size - 4 if block.size else 0',
-      b'---',
-      b'name: class_definition_header',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: unknown1',
-      b'  data_type: byte',
-      b'- name: class_name_offset',
-      b'  data_type: uint32',
-      b'- name: default_value_size',
-      b'  data_type: uint32',
-      b'- name: super_class_name_block_size',
-      b'  data_type: uint32',
-      b'- name: super_class_name_block_data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      (b'  elements_data_size: '
-       b'class_definition_header.super_class_name_block_size - 4'),
-      b'- name: qualifiers_block_size',
-      b'  data_type: uint32',
-      b'- name: qualifiers_block_data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      (b'  elements_data_size: '
-       b'class_definition_header.qualifiers_block_size - 4'),
-      b'- name: number_of_property_descriptors',
-      b'  data_type: uint32',
-      b'- name: property_descriptors',
-      b'  type: sequence',
-      b'  element_data_type: property_descriptor',
-      (b'  number_of_elements: '
-       b'class_definition_header.number_of_property_descriptors'),
-      b'- name: default_value_data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: class_definition_header.default_value_size',
-      b'- name: properties_block_size',
-      b'  data_type: uint32',
-      b'- name: properties_block_data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      (b'  elements_data_size: '
-       b'class_definition_header.properties_block_size - & 0x7ffffff'),
-      b'---',
-      b'name: class_definition_object_record',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: super_class_name_size',
-      b'  data_type: uint32',
-      b'- name: super_class_name',
-      b'  type: string',
-      b'  encoding: utf-16-le',
-      b'  element_data_type: wchar16',
-      b'  number_of_elements: super_class_name_size',
-      b'- name: date_time',
-      b'  data_type: uint64',
-      b'- name: data_size',
-      b'  data_type: uint32',
-      b'- name: data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: class_definition_object_record.data_size - 4',
-      b'---',
-      b'name: class_definition_methods',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: methods_block_size',
-      b'  data_type: uint32',
-      b'- name: data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: class_definition_methods.methods_block_size - 4',
-      b'---',
-      b'name: super_class_name_block',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: super_class_name_flags',
-      b'  data_type: byte',
-      b'- name: super_class_name',
-      b'  type: string',
-      b'  encoding: ascii',
-      b'  element_data_type: byte',
-      b'  elements_terminator: "\\x00"',
-      b'- name: super_class_name_size',
-      b'  data_type: uint32',
-      b'---',
-      b'name: property_name',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: string_flags',
-      b'  data_type: byte',
-      b'- name: string',
-      b'  type: string',
-      b'  encoding: ascii',
-      b'  element_data_type: byte',
-      b'  elements_terminator: "\\x00"',
-      b'---',
-      b'name: property_definition',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: type',
-      b'  data_type: uint32',
-      b'- name: index',
-      b'  data_type: uint16',
-      b'- name: offset',
-      b'  data_type: uint32',
-      b'- name: level',
-      b'  data_type: uint32',
-      b'- name: qualifiers_block_size',
-      b'  data_type: uint32',
-      b'- name: qualifiers_block_data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: property_definition.qualifiers_block_size - 4',
-      b'---',
-      b'name: interface_object_record',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: string_digest_hash',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: 64',
-      b'- name: date_time1',
-      b'  data_type: uint64',
-      b'- name: date_time2',
-      b'  data_type: uint64',
-      b'- name: data_size',
-      b'  data_type: uint32',
-      b'- name: data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: interface_object_record.data_size - 4',
-      b'---',
-      b'name: registration_object_record',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: name_space_string_size',
-      b'  data_type: uint32',
-      b'- name: name_space_string',
-      b'  type: string',
-      b'  encoding: utf-16-le',
-      b'  element_data_type: wchar16',
-      (b'  number_of_elements: '
-       b'registration_object_record.name_space_string_size'),
-      b'- name: class_name_string_size',
-      b'  data_type: uint32',
-      b'- name: class_name_string',
-      b'  type: string',
-      b'  encoding: utf-16-le',
-      b'  element_data_type: wchar16',
-      (b'  number_of_elements: '
-       b'registration_object_record.class_name_string_size'),
-      b'- name: attribute_name_string_size',
-      b'  data_type: uint32',
-      b'- name: attribute_name_string',
-      b'  type: string',
-      b'  encoding: utf-16-le',
-      b'  element_data_type: wchar16',
-      (b'  number_of_elements: '
-       b'registration_object_record.attribute_name_string_size'),
-      b'- name: attribute_value_string_size',
-      b'  data_type: uint32',
-      b'- name: attribute_value_string',
-      b'  type: string',
-      b'  encoding: utf-16-le',
-      b'  element_data_type: wchar16',
-      (b'  number_of_elements: '
-       b'registration_object_record.attribute_value_string_size'),
-      b'- name: unknown1',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: 8',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION = b"""\
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint64
+type: integer
+attributes:
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: wchar16
+type: character
+attributes:
+  size: 2
+  units: bytes
+---
+name: cim_property_types
+type: enumeration
+values:
+- name: CIM-TYPE-SINT16
+  number: 0x00000002
+- name: CIM-TYPE-SINT32
+  number: 0x00000003
+- name: CIM-TYPE-REAL32
+  number: 0x00000004
+- name: CIM-TYPE-REAL64
+  number: 0x00000005
+- name: CIM-TYPE-STRING
+  number: 0x00000008
+- name: CIM-TYPE-BOOLEAN
+  number: 0x0000000b
+- name: CIM-TYPE-OBJECT
+  number: 0x0000000d
+- name: CIM-TYPE-SINT8
+  number: 0x00000010
+- name: CIM-TYPE-UINT8
+  number: 0x00000011
+- name: CIM-TYPE-UINT16
+  number: 0x00000012
+- name: CIM-TYPE-UINT32
+  number: 0x00000013
+- name: CIM-TYPE-SINT64
+  number: 0x00000014
+- name: CIM-TYPE-UINT64
+  number: 0x00000015
+- name: CIM-TYPE-DATETIME
+  number: 0x00000065
+- name: CIM-TYPE-REFERENCE
+  number: 0x00000066
+- name: CIM-TYPE-CHAR16
+  number: 0x00000067
+- name: CIM-ARRAY-SINT16
+  number: 0x00002002
+- name: CIM-ARRAY-SINT32
+  number: 0x00002003
+- name: CIM-ARRAY-REAL32
+  number: 0x00002004
+- name: CIM-ARRAY-REAL64
+  number: 0x00002005
+- name: CIM-ARRAY-STRING
+  number: 0x00002008
+- name: CIM-ARRAY-BOOLEAN
+  number: 0x0000200b
+- name: CIM-ARRAY-OBJECT
+  number: 0x0000200d
+- name: CIM-ARRAY-SINT8
+  number: 0x00002010
+- name: CIM-ARRAY-UINT8
+  number: 0x00002011
+- name: CIM-ARRAY-UINT16
+  number: 0x00002012
+- name: CIM-ARRAY-UINT32
+  number: 0x00002013
+- name: CIM-ARRAY-SINT64
+  number: 0x00002014
+- name: CIM-ARRAY-UINT64
+  number: 0x00002015
+- name: CIM-ARRAY-DATETIME
+  number: 0x00002065
+- name: CIM-ARRAY-REFERENCE
+  number: 0x00002066
+- name: CIM-ARRAY-CHAR16
+  number: 0x00002067
+---
+name: property_descriptor
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: data_offset
+  data_type: uint32
+---
+name: block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: block.size - 4 if block.size else 0
+---
+name: class_definition_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: unknown1
+  data_type: byte
+- name: class_name_offset
+  data_type: uint32
+- name: default_value_size
+  data_type: uint32
+- name: super_class_name_block_size
+  data_type: uint32
+- name: super_class_name_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.super_class_name_block_size - 4
+- name: qualifiers_block_size
+  data_type: uint32
+- name: qualifiers_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.qualifiers_block_size - 4
+- name: number_of_property_descriptors
+  data_type: uint32
+- name: property_descriptors
+  type: sequence
+  element_data_type: property_descriptor
+  number_of_elements: class_definition_header.number_of_property_descriptors
+- name: default_value_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.default_value_size
+- name: properties_block_size
+  data_type: uint32
+- name: properties_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.properties_block_size - & 0x7ffffff
+---
+name: class_definition_object_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: super_class_name_size
+  data_type: uint32
+- name: super_class_name
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: super_class_name_size
+- name: date_time
+  data_type: uint64
+- name: data_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_object_record.data_size - 4
+---
+name: class_definition_methods
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: methods_block_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_methods.methods_block_size - 4
+---
+name: super_class_name_block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: super_class_name_flags
+  data_type: byte
+- name: super_class_name
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_terminator: "\\x00"
+- name: super_class_name_size
+  data_type: uint32
+---
+name: property_name
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: string_flags
+  data_type: byte
+- name: string
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_terminator: "\\x00"
+---
+name: property_definition
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: type
+  data_type: uint32
+- name: index
+  data_type: uint16
+- name: offset
+  data_type: uint32
+- name: level
+  data_type: uint32
+- name: qualifiers_block_size
+  data_type: uint32
+- name: qualifiers_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: property_definition.qualifiers_block_size - 4
+---
+name: interface_object_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: string_digest_hash
+  type: stream
+  element_data_type: byte
+  elements_data_size: 64
+- name: date_time1
+  data_type: uint64
+- name: date_time2
+  data_type: uint64
+- name: data_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: interface_object_record.data_size - 4
+---
+name: registration_object_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_space_string_size
+  data_type: uint32
+- name: name_space_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.name_space_string_size
+- name: class_name_string_size
+  data_type: uint32
+- name: class_name_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.class_name_string_size
+- name: attribute_name_string_size
+  data_type: uint32
+- name: attribute_name_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.attribute_name_string_size
+- name: attribute_value_string_size
+  data_type: uint32
+- name: attribute_value_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.attribute_value_string_size
+- name: unknown1
+  type: stream
+  element_data_type: byte
+  elements_data_size: 8
+"""
 
   # TODO: replace streams by block type
   # TODO: add more values.
@@ -2208,8 +2200,8 @@ class CIMRepository(data_format.BinaryDataFormat):
 
       index_mapping_file = MappingFile(
           debug=self._debug, output_writer=self._output_writer)
-      index_mapping_file.Open(
-          mapping_file_path, file_offset=objects_mapping_file.data_size)
+      index_mapping_file.Open(mapping_file_path)
+      # TODO: pass file_offset=objects_mapping_file.data_size) ?
 
   def _GetKeysFromIndexPage(self, index_page):
     """Retrieves the keys from an index page.
