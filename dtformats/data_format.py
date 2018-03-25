@@ -181,6 +181,43 @@ class BinaryDataFormat(object):
 
     return data
 
+  def _ReadString(
+      self, file_object, file_offset, data_type_map, description):
+    """Reads a string.
+
+    Args:
+      file_object (file): a file-like object.
+      file_offset (int): offset of the data relative from the start of
+          the file-like object.
+      data_type_map (dtfabric.StringMap): data type map of the string.
+      description (str): description of the string.
+
+    Returns:
+      object: structure values object.
+
+    Raises:
+      ParseError: if the string cannot be read.
+      ValueError: if file-like object or date type map are invalid.
+    """
+    # pylint: disable=protected-access
+    element_data_size = (
+        data_type_map._element_data_type_definition.GetByteSize())
+    elements_terminator = (
+        data_type_map._data_type_definition.elements_terminator)
+
+    byte_stream = []
+
+    element_data = file_object.read(element_data_size)
+    byte_stream.append(element_data)
+    while element_data and element_data != elements_terminator:
+      element_data = file_object.read(element_data_size)
+      byte_stream.append(element_data)
+
+    byte_stream = b''.join(byte_stream)
+
+    return self._ReadStructureFromByteStream(
+        byte_stream, file_offset, data_type_map, description)
+
   def _ReadStructure(
       self, file_object, file_offset, data_size, data_type_map, description):
     """Reads a structure.

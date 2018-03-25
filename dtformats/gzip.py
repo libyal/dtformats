@@ -40,6 +40,10 @@ class GZipFile(data_format.BinaryDataFile):
 
   _CSTRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('cstring')
 
+  _GZIP_SIGNATURE = 0x8b1f
+
+  _COMPRESSION_METHOD_DEFLATE = 8
+
   _FLAG_FTEXT = 0x01
   _FLAG_FHCRC = 0x02
   _FLAG_FEXTRA = 0x04
@@ -105,8 +109,14 @@ class GZipFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintMemberHeader(member_header)
 
-    if member_header.signature != 0x8b1f:
-      raise errors.ParseError('Unsupported signature')
+    if member_header.signature != self._GZIP_SIGNATURE:
+      raise errors.ParseError(
+          'Unsupported signature: 0x{0:04x}.'.format(member_header.signature))
+
+    if member_header.compression_method != self._COMPRESSION_METHOD_DEFLATE:
+      raise errors.ParseError(
+          'Unsupported compression method: {0:d}.'.format(
+              member_header.compression_method))
 
     if member_header.flags & self._FLAG_FEXTRA:
       file_offset = file_object.tell()
@@ -118,34 +128,16 @@ class GZipFile(data_format.BinaryDataFile):
 
     if member_header.flags & self._FLAG_FNAME:
       file_offset = file_object.tell()
-      byte_stream = []
-
-      byte_value = file_object.read(1)
-      byte_stream.append(byte_value)
-      while byte_value and byte_value != b'\x00':
-        byte_value = file_object.read(1)
-        byte_stream.append(byte_value)
-
-      byte_stream = b''.join(byte_stream)
-      value_string = self._ReadStructureFromByteStream(
-          byte_stream, file_offset, self._CSTRING, 'original filename')
+      value_string = self._ReadString(
+          file_object, file_offset, self._CSTRING, 'original filename')
 
       if self._debug:
         self._DebugPrintValue('Original filename', value_string)
 
     if member_header.flags & self._FLAG_FCOMMENT:
       file_offset = file_object.tell()
-      byte_stream = []
-
-      byte_value = file_object.read(1)
-      byte_stream.append(byte_value)
-      while byte_value and byte_value != b'\x00':
-        byte_value = file_object.read(1)
-        byte_stream.append(byte_value)
-
-      byte_stream = b''.join(byte_stream)
-      value_string = self._ReadStructureFromByteStream(
-          byte_stream, file_offset, self._CSTRING, 'comment')
+      value_string = self._ReadString(
+          file_object, file_offset, self._CSTRING, 'comment')
 
       if self._debug:
         self._DebugPrintValue('Comment', value_string)

@@ -1,15 +1,13 @@
+name: gzip
+type: format
+description: GZIP compressed stream format
+urls: ["http://www.gzip.org/format.txt"]
+---
 name: int8
 type: integer
 attributes:
   format: signed
   size: 1
-  units: bytes
----
-name: int32
-type: integer
-attributes:
-  format: signed
-  size: 4
   units: bytes
 ---
 name: uint8
@@ -26,6 +24,13 @@ attributes:
   size: 2
   units: bytes
 ---
+name: int32
+type: integer
+attributes:
+  format: signed
+  size: 4
+  units: bytes
+---
 name: uint32
 type: integer
 attributes:
@@ -35,7 +40,6 @@ attributes:
 ---
 name: gzip_member_header
 type: structure
-urls: ["http://www.gzip.org/format.txt"]
 attributes:
   byte_order: little-endian
 members:
