@@ -13,7 +13,13 @@ import logging
 import os
 import sys
 
-import lzma
+try:
+  import lzma
+except ImportError:
+  try:
+    from backports import lzma
+  except ImportError:
+    lzma = None
 
 from dtformats import cpio
 from dtformats import data_range
@@ -97,7 +103,7 @@ class CPIOArchiveFileHasher(object):
           cpio_file_object = bz2.BZ2File(compressed_data_file_object)
         elif file_type == 'gzip':
           cpio_file_object = gzip.GzipFile(fileobj=compressed_data_file_object)  # pylint: disable=no-member
-        elif file_type == 'xz':
+        elif file_type == 'xz' and lzma:
           cpio_file_object = lzma.LZMAFile(compressed_data_file_object)
 
       cpio_archive_file = cpio.CPIOArchiveFile(debug=self._debug)

@@ -24,7 +24,6 @@ attributes:
 ---
 name: uuid
 aliases: [guid, GUID, UUID]
-type: uuid
 type: structure
 description: Globally or Universal unique identifier (GUID or UUID)
 members:
