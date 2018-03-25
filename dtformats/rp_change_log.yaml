@@ -1,0 +1,198 @@
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint64
+type: integer
+attributes:
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: uint32le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: wchar16
+type: character
+attributes:
+  size: 2
+  units: bytes
+---
+name: utf16le_string
+type: string
+encoding: utf-16-le
+element_data_type: wchar16
+elements_terminator: "\x00\x00"
+---
+name: rp_change_log_record_type
+type: enumeration
+values:
+- name: RecordTypeLogHeader
+  number: 0
+- name: RecordTypeLogEntry
+  number: 1
+- name: RecordTypeVolumePath
+  number: 2
+- name: RecordTypeFirstPath
+  number: 3
+- name: RecordTypeSecondPath
+  number: 4
+- name: RecordTypeTempPath
+  number: 5
+- name: RecordTypeAclInline
+  number: 6
+- name: RecordTypeAclFile
+  number: 7
+- name: RecordTypeDebugInfo
+  number: 8
+- name: RecordTypeShortName
+  number: 9
+---
+name: rp_change_log_entry_flags
+type: enumeration
+values:
+- name: CHANGE_LOG_ENTRYFLAGS_TEMPPATH
+  number: 0x00000001
+- name: CHANGE_LOG_ENTRYFLAGS_SECONDPATH
+  number: 0x00000002
+- name: CHANGE_LOG_ENTRYFLAGS_ACLINFO
+  number: 0x00000004
+- name: CHANGE_LOG_ENTRYFLAGS_DEBUGINFO
+  number: 0x00000008
+- name: CHANGE_LOG_ENTRYFLAGS_SHORTNAME
+  number: 0x00000010
+---
+name: rp_change_log_entry_types
+type: enumeration
+values:
+- name: CHANGE_LOG_ENTRYTYPES_STREAMCHANGE
+  number: 0x00000001
+- name: CHANGE_LOG_ENTRYTYPES_ACLCHANGE
+  number: 0x00000002
+- name: CHANGE_LOG_ENTRYTYPES_ATTRCHANGE
+  number: 0x00000004
+- name: CHANGE_LOG_ENTRYTYPES_STREAMOVERWRITE
+  number: 0x00000008
+- name: CHANGE_LOG_ENTRYTYPES_FILEDELETE
+  number: 0x00000010
+- name: CHANGE_LOG_ENTRYTYPES_FILECREATE
+  number: 0x00000020
+- name: CHANGE_LOG_ENTRYTYPES_FILERENAME
+  number: 0x00000040
+- name: CHANGE_LOG_ENTRYTYPES_DIRCREATE
+  number: 0x00000080
+- name: CHANGE_LOG_ENTRYTYPES_DIRRENAME
+  number: 0x00000100
+- name: CHANGE_LOG_ENTRYTYPES_DIRDELETE
+  number: 0x00000200
+- name: CHANGE_LOG_ENTRYTYPES_MOUNTCREATE
+  number: 0x00000400
+- name: CHANGE_LOG_ENTRYTYPES_MOUNTDELETE
+  number: 0x00000800
+- name: CHANGE_LOG_ENTRYTYPES_VOLUMEERROR
+  number: 0x00001000
+- name: CHANGE_LOG_ENTRYTYPES_STREAMCREATE
+  number: 0x00002000
+- name: CHANGE_LOG_ENTRYTYPES_NOOPTIMIZE
+  number: 0x00010000
+- name: CHANGE_LOG_ENTRYTYPES_ISDIR
+  number: 0x00020000
+- name: CHANGE_LOG_ENTRYTYPES_ISNOTDIR
+  number: 0x00040000
+- name: CHANGE_LOG_ENTRYTYPES_SIMULATEDELETE
+  number: 0x00080000
+- name: CHANGE_LOG_ENTRYTYPES_INPRECREATE
+  number: 0x00100000
+- name: CHANGE_LOG_ENTRYTYPES_OPENBYID
+  number: 0x00200000
+---
+name: rp_change_log_entry
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_size
+  data_type: uint32
+- name: record_type
+  data_type: uint32
+- name: signature
+  data_type: uint32
+- name: entry_type
+  data_type: uint32
+- name: entry_flags
+  data_type: uint32
+- name: file_attribute_flags
+  data_type: uint32
+- name: sequence_number
+  data_type: uint64
+- name: unknown1
+  type: stream
+  element_data_type: byte
+  number_of_elements: 32
+- name: process_name_size
+  data_type: uint32
+- name: unknown2
+  data_type: uint32
+---
+name: rp_change_log_entry2
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: process_name
+  data_type: utf16le_string
+# TODO: add sub_record_data anchor.
+---
+name: rp_change_log_file_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_size
+  data_type: uint32
+- name: record_type
+  data_type: uint32
+- name: signature
+  data_type: uint32
+- name: format_version
+  data_type: uint32
+---
+name: rp_change_log_record_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_size
+  data_type: uint32
+- name: record_type
+  data_type: uint32
+---
+name: rp_change_log_volume_path_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_size
+  data_type: uint32
+- name: record_type
+  data_type: uint32
+- name: volume_path
+  type: string
+  encoding: utf-16-le
+  element_data_type: byte
+  elements_data_size: rp_change_log_volume_path_record.record_size - 8

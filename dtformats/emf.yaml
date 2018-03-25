@@ -1,0 +1,389 @@
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: emf_record_type
+type: enumeration
+urls: ["https://msdn.microsoft.com/en-us/library/cc230533.aspx"]
+values:
+- name: EMR_HEADER
+  number: 0x00000001
+- name: EMR_POLYBEZIER
+  number: 0x00000002
+- name: EMR_POLYGON
+  number: 0x00000003
+- name: EMR_POLYLINE
+  number: 0x00000004
+- name: EMR_POLYBEZIERTO
+  number: 0x00000005
+- name: EMR_POLYLINETO
+  number: 0x00000006
+- name: EMR_POLYPOLYLINE
+  number: 0x00000007
+- name: EMR_POLYPOLYGON
+  number: 0x00000008
+- name: EMR_SETWINDOWEXTEX
+  number: 0x00000009
+- name: EMR_SETWINDOWORGEX
+  number: 0x0000000a
+- name: EMR_SETVIEWPORTEXTEX
+  number: 0x0000000b
+- name: EMR_SETVIEWPORTORGEX
+  number: 0x0000000c
+- name: EMR_SETBRUSHORGEX
+  number: 0x0000000d
+- name: EMR_EOF
+  number: 0x0000000e
+- name: EMR_SETPIXELV
+  number: 0x0000000f
+- name: EMR_SETMAPPERFLAGS
+  number: 0x00000010
+- name: EMR_SETMAPMODE
+  number: 0x00000011
+- name: EMR_SETBKMODE
+  number: 0x00000012
+- name: EMR_SETPOLYFILLMODE
+  number: 0x00000013
+- name: EMR_SETROP2
+  number: 0x00000014
+- name: EMR_SETSTRETCHBLTMODE
+  number: 0x00000015
+- name: EMR_SETTEXTALIGN
+  number: 0x00000016
+- name: EMR_SETCOLORADJUSTMENT
+  number: 0x00000017
+- name: EMR_SETTEXTCOLOR
+  number: 0x00000018
+- name: EMR_SETBKCOLOR
+  number: 0x00000019
+- name: EMR_OFFSETCLIPRGN
+  number: 0x0000001a
+- name: EMR_MOVETOEX
+  number: 0x0000001b
+- name: EMR_SETMETARGN
+  number: 0x0000001c
+- name: EMR_EXCLUDECLIPRECT
+  number: 0x0000001d
+- name: EMR_INTERSECTCLIPRECT
+  number: 0x0000001e
+- name: EMR_SCALEVIEWPORTEXTEX
+  number: 0x0000001f
+- name: EMR_SCALEWINDOWEXTEX
+  number: 0x00000020
+- name: EMR_SAVEDC
+  number: 0x00000021
+- name: EMR_RESTOREDC
+  number: 0x00000022
+- name: EMR_SETWORLDTRANSFORM
+  number: 0x00000023
+- name: EMR_MODIFYWORLDTRANSFORM
+  number: 0x00000024
+- name: EMR_SELECTOBJECT
+  number: 0x00000025
+- name: EMR_CREATEPEN
+  number: 0x00000026
+- name: EMR_CREATEBRUSHINDIRECT
+  number: 0x00000027
+- name: EMR_DELETEOBJECT
+  number: 0x00000028
+- name: EMR_ANGLEARC
+  number: 0x00000029
+- name: EMR_ELLIPSE
+  number: 0x0000002a
+- name: EMR_RECTANGLE
+  number: 0x0000002b
+- name: EMR_ROUNDRECT
+  number: 0x0000002c
+- name: EMR_ARC
+  number: 0x0000002d
+- name: EMR_CHORD
+  number: 0x0000002e
+- name: EMR_PIE
+  number: 0x0000002f
+- name: EMR_SELECTPALETTE
+  number: 0x00000030
+- name: EMR_CREATEPALETTE
+  number: 0x00000031
+- name: EMR_SETPALETTEENTRIES
+  number: 0x00000032
+- name: EMR_RESIZEPALETTE
+  number: 0x00000033
+- name: EMR_REALIZEPALETTE
+  number: 0x00000034
+- name: EMR_EXTFLOODFILL
+  number: 0x00000035
+- name: EMR_LINETO
+  number: 0x00000036
+- name: EMR_ARCTO
+  number: 0x00000037
+- name: EMR_POLYDRAW
+  number: 0x00000038
+- name: EMR_SETARCDIRECTION
+  number: 0x00000039
+- name: EMR_SETMITERLIMIT
+  number: 0x0000003a
+- name: EMR_BEGINPATH
+  number: 0x0000003b
+- name: EMR_ENDPATH
+  number: 0x0000003c
+- name: EMR_CLOSEFIGURE
+  number: 0x0000003d
+- name: EMR_FILLPATH
+  number: 0x0000003e
+- name: EMR_STROKEANDFILLPATH
+  number: 0x0000003f
+- name: EMR_STROKEPATH
+  number: 0x00000040
+- name: EMR_FLATTENPATH
+  number: 0x00000041
+- name: EMR_WIDENPATH
+  number: 0x00000042
+- name: EMR_SELECTCLIPPATH
+  number: 0x00000043
+- name: EMR_ABORTPATH
+  number: 0x00000044
+- name: EMR_COMMENT
+  number: 0x00000046
+- name: EMR_FILLRGN
+  number: 0x00000047
+- name: EMR_FRAMERGN
+  number: 0x00000048
+- name: EMR_INVERTRGN
+  number: 0x00000049
+- name: EMR_PAINTRGN
+  number: 0x0000004a
+- name: EMR_EXTSELECTCLIPRGN
+  number: 0x0000004b
+- name: EMR_BITBLT
+  number: 0x0000004c
+- name: EMR_STRETCHBLT
+  number: 0x0000004d
+- name: EMR_MASKBLT
+  number: 0x0000004e
+- name: EMR_PLGBLT
+  number: 0x0000004f
+- name: EMR_SETDIBITSTODEVICE
+  number: 0x00000050
+- name: EMR_STRETCHDIBITS
+  number: 0x00000051
+- name: EMR_EXTCREATEFONTINDIRECTW
+  number: 0x00000052
+- name: EMR_EXTTEXTOUTA
+  number: 0x00000053
+- name: EMR_EXTTEXTOUTW
+  number: 0x00000054
+- name: EMR_POLYBEZIER16
+  number: 0x00000055
+- name: EMR_POLYGON16
+  number: 0x00000056
+- name: EMR_POLYLINE16
+  number: 0x00000057
+- name: EMR_POLYBEZIERTO16
+  number: 0x00000058
+- name: EMR_POLYLINETO16
+  number: 0x00000059
+- name: EMR_POLYPOLYLINE16
+  number: 0x0000005a
+- name: EMR_POLYPOLYGON16
+  number: 0x0000005b
+- name: EMR_POLYDRAW16
+  number: 0x0000005c
+- name: EMR_CREATEMONOBRUSH
+  number: 0x0000005d
+- name: EMR_CREATEDIBPATTERNBRUSHPT
+  number: 0x0000005e
+- name: EMR_EXTCREATEPEN
+  number: 0x0000005f
+- name: EMR_POLYTEXTOUTA
+  number: 0x00000060
+- name: EMR_POLYTEXTOUTW
+  number: 0x00000061
+- name: EMR_SETICMMODE
+  number: 0x00000062
+- name: EMR_CREATECOLORSPACE
+  number: 0x00000063
+- name: EMR_SETCOLORSPACE
+  number: 0x00000064
+- name: EMR_DELETECOLORSPACE
+  number: 0x00000065
+- name: EMR_GLSRECORD
+  number: 0x00000066
+- name: EMR_GLSBOUNDEDRECORD
+  number: 0x00000067
+- name: EMR_PIXELFORMAT
+  number: 0x00000068
+- name: EMR_DRAWESCAPE
+  number: 0x00000069
+- name: EMR_EXTESCAPE
+  number: 0x0000006a
+- name: EMR_SMALLTEXTOUT
+  number: 0x0000006c
+- name: EMR_FORCEUFIMAPPING
+  number: 0x0000006d
+- name: EMR_NAMEDESCAPE
+  number: 0x0000006e
+- name: EMR_COLORCORRECTPALETTE
+  number: 0x0000006f
+- name: EMR_SETICMPROFILEA
+  number: 0x00000070
+- name: EMR_SETICMPROFILEW
+  number: 0x00000071
+- name: EMR_ALPHABLEND
+  number: 0x00000072
+- name: EMR_SETLAYOUT
+  number: 0x00000073
+- name: EMR_TRANSPARENTBLT
+  number: 0x00000074
+- name: EMR_GRADIENTFILL
+  number: 0x00000076
+- name: EMR_SETLINKEDUFIS
+  number: 0x00000077
+- name: EMR_SETTEXTJUSTIFICATION
+  number: 0x00000078
+- name: EMR_COLORMATCHTOTARGETW
+  number: 0x00000079
+- name: EMR_CREATECOLORSPACEW
+  number: 0x0000007a
+---
+name: emf_stock_object
+type: enumeration
+urls: ["https://msdn.microsoft.com/en-us/library/cc231191.aspx"]
+values:
+- name: WHITE_BRUSH
+  number: 0x80000000
+- name: LTGRAY_BRUSH
+  number: 0x80000001
+- name: GRAY_BRUSH
+  number: 0x80000002
+- name: DKGRAY_BRUSH
+  number: 0x80000003
+- name: BLACK_BRUSH
+  number: 0x80000004
+- name: NULL_BRUSH
+  number: 0x80000005
+- name: WHITE_PEN
+  number: 0x80000006
+- name: BLACK_PEN
+  number: 0x80000007
+- name: NULL_PEN
+  number: 0x80000008
+- name: OEM_FIXED_FONT
+  number: 0x8000000A
+- name: ANSI_FIXED_FONT
+  number: 0x8000000B
+- name: ANSI_VAR_FONT
+  number: 0x8000000C
+- name: SYSTEM_FONT
+  number: 0x8000000D
+- name: DEVICE_DEFAULT_FONT
+  number: 0x8000000E
+- name: DEFAULT_PALETTE
+  number: 0x8000000F
+- name: SYSTEM_FIXED_FONT
+  number: 0x80000010
+- name: DEFAULT_GUI_FONT
+  number: 0x80000011
+- name: DC_BRUSH
+  number: 0x80000012
+- name: DC_PEN
+  number: 0x80000013
+---
+name: emf_file_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_type
+  data_type: uint32
+      # TODO: link to emf_record_type
+- name: record_size
+  data_type: uint32
+- name: bounds_rectangle
+  type: stream
+  element_data_type: byte
+  number_of_elements: 16
+- name: frame_rectangle
+  type: stream
+  element_data_type: byte
+  number_of_elements: 16
+- name: signature
+  data_type: uint32
+- name: format_version
+  data_type: uint32
+- name: file_size
+  data_type: uint32
+- name: number_of_records
+  data_type: uint32
+- name: number_of_handles
+  data_type: uint16
+- name: unknown1
+  data_type: uint16
+- name: description_string_size
+  data_type: uint32
+- name: description_string_offset
+  data_type: uint32
+- name: number_of_palette_entries
+  data_type: uint32
+- name: reference_device_resolution_pixels
+  type: stream
+  element_data_type: byte
+  number_of_elements: 8
+- name: reference_device_resolution_millimeters
+  type: stream
+  element_data_type: byte
+  number_of_elements: 8
+- name: pixel_format_descriptor_size
+  data_type: uint32
+- name: pixel_format_descriptor_offset
+  data_type: uint32
+- name: has_opengl
+  data_type: uint32
+- name: reference_device_resolution_micrometers
+  type: stream
+  element_data_type: byte
+  number_of_elements: 8
+---
+name: emf_record_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_type
+  data_type: uint32
+      # TODO: link to emf_record_type
+- name: record_size
+  data_type: uint32
+---
+name: emf_settextcolor
+type: structure
+urls: ["https://msdn.microsoft.com/en-us/library/cc250420.aspx"]
+attributes:
+  byte_order: little-endian
+members:
+- name: color
+  data_type: uint32
+---
+name: emf_selectobject
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: object_identifier
+  data_type: uint32

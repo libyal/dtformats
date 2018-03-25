@@ -15,92 +15,11 @@ from dtformats import errors
 class GZipFile(data_format.BinaryDataFile):
   """GZip (.gz) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION = b"""\
-name: int8
-type: integer
-attributes:
-  format: signed
-  size: 1
-  units: bytes
----
-name: int32
-type: integer
-attributes:
-  format: signed
-  size: 4
-  units: bytes
----
-name: uint8
-type: integer
-attributes:
-  format: unsigned
-  size: 1
-  units: bytes
----
-name: uint16
-type: integer
-attributes:
-  format: unsigned
-  size: 2
-  units: bytes
----
-name: uint32
-type: integer
-attributes:
-  format: unsigned
-  size: 4
-  units: bytes
----
-name: gzip_member_header
-type: structure
-urls: ["http://www.gzip.org/format.txt"]
-attributes:
-  byte_order: little-endian
-members:
-- name: signature
-  data_type: uint16
-- name: compression_method
-  data_type: int8
-- name: flags
-  data_type: uint8
-- name: modification_time
-  data_type: int32
-- name: compression_flags
-  data_type: uint8
-- name: operating_system
-  data_type: uint8
----
-name: gzip_member_footer
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: checksum
-  data_type: uint32
-- name: uncompressed_data_size
-  data_type: uint32
----
-name: uint16le
-type: integer
-attributes:
-  byte_order: little-endian
-  format: unsigned
-  size: 2
-  units: bytes
----
-name: char
-type: character
-attributes:
-  byte_order: little-endian
-  size: 1
-  units: bytes
----
-name: cstring
-type: string
-encoding: iso-8859-1
-element_data_type: char
-elements_terminator: "\\x00"
-"""
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'gzip.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)

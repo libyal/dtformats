@@ -1,0 +1,427 @@
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint16le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint32le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint64
+type: integer
+attributes:
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: wchar16
+type: character
+attributes:
+  size: 2
+  units: bytes
+---
+name: string
+type: string
+encoding: ascii
+element_data_type: byte
+elements_terminator: "\x00"
+---
+name: cim_property_types
+type: enumeration
+values:
+- name: CIM-TYPE-SINT16
+  number: 0x00000002
+- name: CIM-TYPE-SINT32
+  number: 0x00000003
+- name: CIM-TYPE-REAL32
+  number: 0x00000004
+- name: CIM-TYPE-REAL64
+  number: 0x00000005
+- name: CIM-TYPE-STRING
+  number: 0x00000008
+- name: CIM-TYPE-BOOLEAN
+  number: 0x0000000b
+- name: CIM-TYPE-OBJECT
+  number: 0x0000000d
+- name: CIM-TYPE-SINT8
+  number: 0x00000010
+- name: CIM-TYPE-UINT8
+  number: 0x00000011
+- name: CIM-TYPE-UINT16
+  number: 0x00000012
+- name: CIM-TYPE-UINT32
+  number: 0x00000013
+- name: CIM-TYPE-SINT64
+  number: 0x00000014
+- name: CIM-TYPE-UINT64
+  number: 0x00000015
+- name: CIM-TYPE-DATETIME
+  number: 0x00000065
+- name: CIM-TYPE-REFERENCE
+  number: 0x00000066
+- name: CIM-TYPE-CHAR16
+  number: 0x00000067
+- name: CIM-ARRAY-SINT16
+  number: 0x00002002
+- name: CIM-ARRAY-SINT32
+  number: 0x00002003
+- name: CIM-ARRAY-REAL32
+  number: 0x00002004
+- name: CIM-ARRAY-REAL64
+  number: 0x00002005
+- name: CIM-ARRAY-STRING
+  number: 0x00002008
+- name: CIM-ARRAY-BOOLEAN
+  number: 0x0000200b
+- name: CIM-ARRAY-OBJECT
+  number: 0x0000200d
+- name: CIM-ARRAY-SINT8
+  number: 0x00002010
+- name: CIM-ARRAY-UINT8
+  number: 0x00002011
+- name: CIM-ARRAY-UINT16
+  number: 0x00002012
+- name: CIM-ARRAY-UINT32
+  number: 0x00002013
+- name: CIM-ARRAY-SINT64
+  number: 0x00002014
+- name: CIM-ARRAY-UINT64
+  number: 0x00002015
+- name: CIM-ARRAY-DATETIME
+  number: 0x00002065
+- name: CIM-ARRAY-REFERENCE
+  number: 0x00002066
+- name: CIM-ARRAY-CHAR16
+  number: 0x00002067
+---
+name: property_descriptor
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: data_offset
+  data_type: uint32
+---
+name: block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: block.size - 4 if block.size else 0
+---
+name: class_definition_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: unknown1
+  data_type: byte
+- name: class_name_offset
+  data_type: uint32
+- name: default_value_size
+  data_type: uint32
+- name: super_class_name_block_size
+  data_type: uint32
+- name: super_class_name_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.super_class_name_block_size - 4
+- name: qualifiers_block_size
+  data_type: uint32
+- name: qualifiers_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.qualifiers_block_size - 4
+- name: number_of_property_descriptors
+  data_type: uint32
+- name: property_descriptors
+  type: sequence
+  element_data_type: property_descriptor
+  number_of_elements: class_definition_header.number_of_property_descriptors
+- name: default_value_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.default_value_size
+- name: properties_block_size
+  data_type: uint32
+- name: properties_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_header.properties_block_size - & 0x7ffffff
+---
+name: class_definition_object_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: super_class_name_size
+  data_type: uint32
+- name: super_class_name
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: super_class_name_size
+- name: date_time
+  data_type: uint64
+- name: data_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_object_record.data_size - 4
+---
+name: class_definition_methods
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: methods_block_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_methods.methods_block_size - 4
+---
+name: super_class_name_block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: super_class_name_flags
+  data_type: byte
+- name: super_class_name
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_terminator: "\x00"
+- name: super_class_name_size
+  data_type: uint32
+---
+name: property_name
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: string_flags
+  data_type: byte
+- name: string
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_terminator: "\x00"
+---
+name: property_definition
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: type
+  data_type: uint32
+- name: index
+  data_type: uint16
+- name: offset
+  data_type: uint32
+- name: level
+  data_type: uint32
+- name: qualifiers_block_size
+  data_type: uint32
+- name: qualifiers_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: property_definition.qualifiers_block_size - 4
+---
+name: interface_object_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: string_digest_hash
+  type: stream
+  element_data_type: byte
+  elements_data_size: 64
+- name: date_time1
+  data_type: uint64
+- name: date_time2
+  data_type: uint64
+- name: data_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: interface_object_record.data_size - 4
+---
+name: registration_object_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_space_string_size
+  data_type: uint32
+- name: name_space_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.name_space_string_size
+- name: class_name_string_size
+  data_type: uint32
+- name: class_name_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.class_name_string_size
+- name: attribute_name_string_size
+  data_type: uint32
+- name: attribute_name_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.attribute_name_string_size
+- name: attribute_value_string_size
+  data_type: uint32
+- name: attribute_value_string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: registration_object_record.attribute_value_string_size
+- name: unknown1
+  type: stream
+  element_data_type: byte
+  elements_data_size: 8
+---
+name: cim_object_descriptor
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: identifier
+  data_type: uint32
+- name: data_offset
+  data_type: uint32
+- name: data_size
+  data_type: uint32
+- name: data_checksum
+  data_type: uint32
+---
+name: cim_page_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: page_type
+  data_type: uint32
+- name: mapped_page_number
+  data_type: uint32
+- name: unknown1
+  data_type: uint32
+- name: root_page_number
+  data_type: uint32
+---
+name: cim_page_body
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_keys
+  data_type: uint32
+- name: unknown2
+  type: sequence
+  element_data_type: uint32
+  number_of_elements: cim_page_body.number_of_keys
+- name: sub_pages
+  type: sequence
+  element_data_type: uint32
+  number_of_elements: cim_page_body.number_of_keys + 1
+- name: key_offsets
+  type: sequence
+  element_data_type: uint16
+  number_of_elements: cim_page_body.number_of_keys
+- name: key_data_size
+  data_type: uint16
+- name: key_data
+  type: stream
+  element_data_type: uint16
+  number_of_elements: cim_page_body.key_data_size
+- name: number_of_values
+  data_type: uint16
+- name: value_offsets
+  type: sequence
+  element_data_type: uint16
+  number_of_elements: cim_page_body.number_of_values
+- name: value_data_size
+  data_type: uint16
+- name: value_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: cim_page_body.value_data_size
+---
+name: cim_page_key
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_segments
+  data_type: uint16
+- name: segments
+  type: sequence
+  element_data_type: uint16
+  number_of_elements: cim_page_key.number_of_segments
+---
+name: cim_map_footer
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: signature
+  data_type: uint32
+---
+name: cim_map_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: signature
+  data_type: uint32
+- name: format_version
+  data_type: uint32
+- name: number_of_pages
+  data_type: uint32
+---
+name: cim_map_page_numbers
+type: sequence
+element_data_type: uint32le
+number_of_elements: number_of_entries

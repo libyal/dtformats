@@ -3,6 +3,8 @@
 
 from __future__ import unicode_literals
 
+import os
+
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
@@ -11,108 +13,11 @@ from dtformats import data_format
 class AppleSystemLogFile(data_format.BinaryDataFile):
   """Apple System Log (.asl) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION = b"""\
-name: byte
-type: integer
-attributes:
-  format: unsigned
-  size: 1
-  units: bytes
----
-name: uint16
-type: integer
-attributes:
-  format: unsigned
-  size: 2
-  units: bytes
----
-name: int32
-type: integer
-attributes:
-  format: signed
-  size: 4
-  units: bytes
----
-name: uint32
-type: integer
-attributes:
-  format: unsigned
-  size: 4
-  units: bytes
----
-name: uint64
-type: integer
-attributes:
-  format: unsigned
-  size: 8
-  units: bytes
----
-name: asl_header
-type: structure
-attributes:
-  byte_order: big-endian
-members:
-- name: signature
-  type: stream
-  element_data_type: byte
-  elements_data_size: 12
-- name: format_version
-  data_type: uint32
-- name: first_log_entry_offset
-  data_type: uint64
-- name: creation_time
-  data_type: uint64
-- name: cache_size
-  data_type: uint32
-- name: last_log_entry_offset
-  data_type: uint64
-- name: unknown1
-  type: stream
-  element_data_type: byte
-  elements_data_size: 36
----
-name: asl_record
-type: structure
-attributes:
-  byte_order: big-endian
-members:
-- name: unknown1
-  data_type: uint16
-- name: record_data_size
-  data_type: uint32
-- name: next_record_offset
-  data_type: uint64
-- name: message_identifier
-  data_type: uint64
-- name: written_time
-  data_type: uint64
-- name: written_time_nanoseconds
-  data_type: uint32
-- name: alert_level
-  data_type: uint16
-- name: flags
-  data_type: uint16
-- name: process_identifier
-  data_type: uint32
-- name: user_identifier
-  data_type: int32
-- name: group_identifier
-  data_type: int32
-- name: real_user_identifier
-  data_type: int32
-- name: real_group_identifier
-  data_type: int32
-- name: reference_process_identifier
-  data_type: uint64
-- name: hostname_string_offset
-  data_type: uint64
-- name: sender_string_offset
-  data_type: uint64
-- name: facility_string_offset
-  data_type: uint64
-- name: message_string_offset
-  data_type: uint64
-"""
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'asl.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)

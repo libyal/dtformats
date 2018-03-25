@@ -1,0 +1,73 @@
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: int32be
+type: integer
+attributes:
+  byte_order: big-endian
+  format: signed
+  size: 4
+  units: bytes
+---
+name: int64be
+type: integer
+attributes:
+  byte_order: big-endian
+  format: signed
+  size: 8
+  units: bytes
+---
+name: tzif_file_header
+type: structure
+description: file header.
+attributes:
+  byte_order: big-endian
+members:
+- name: signature
+  type: stream
+  element_data_type: byte
+  number_of_elements: 4
+- name: format_version
+  data_type: byte
+- name: unknown1
+  type: stream
+  element_data_type: byte
+  number_of_elements: 15
+- name: number_of_utc_time_indicators
+  data_type: uint32
+- name: number_of_standard_time_indicators
+  data_type: uint32
+- name: number_of_leap_seconds
+  data_type: uint32
+- name: number_of_transition_times
+  data_type: uint32
+- name: number_of_local_time_types
+  data_type: uint32
+- name: timezone_abbreviation_strings_size
+  data_type: uint32
+---
+name: tzif_transition_times_32bit
+type: sequence
+element_data_type: int32be
+number_of_elements: tzif_file_header.number_of_transition_times
+---
+name: tzif_transition_times_64bit
+type: sequence
+element_data_type: int64be
+number_of_elements: tzif_file_header.number_of_transition_times
+---
+name: tzif_transition_time_index
+type: sequence
+element_data_type: byte
+number_of_elements: tzif_file_header.number_of_transition_times

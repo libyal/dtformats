@@ -1,0 +1,66 @@
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: utmp_entry_linux
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: type
+  data_type: uint32
+- name: pid
+  data_type: uint32
+- name: terminal
+  type: stream
+  element_data_type: byte
+  number_of_elements: 32
+- name: terminal_identifier
+  data_type: uint32
+- name: username
+  type: stream
+  element_data_type: byte
+  number_of_elements: 32
+- name: hostname
+  type: stream
+  element_data_type: byte
+  number_of_elements: 256
+- name: termination
+  data_type: uint16
+- name: exit
+  data_type: uint16
+- name: session
+  data_type: uint32
+- name: timestamp
+  data_type: uint32
+- name: micro_seconds
+  data_type: uint32
+- name: address_a
+  data_type: uint32
+- name: address_b
+  data_type: uint32
+- name: address_c
+  data_type: uint32
+- name: address_d
+  data_type: uint32
+- name: unknown1
+  type: stream
+  element_data_type: byte
+  number_of_elements: 20

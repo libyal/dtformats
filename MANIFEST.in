@@ -4,6 +4,7 @@ exclude .gitignore
 exclude *.pyc
 recursive-include config *
 recursive-include data *
+recursive-include dtformats *.yaml
 recursive-exclude dtformats *.pyc
 recursive-include scripts *.py
 recursive-exclude scripts *.pyc

@@ -3,6 +3,8 @@
 
 from __future__ import unicode_literals
 
+import os
+
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 from dtfabric.runtime import fabric as dtfabric_fabric
 
@@ -17,81 +19,11 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     format_version (int): format version.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: byte',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 1',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: int32be',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: big-endian',
-      b'  format: signed',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: int64be',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: big-endian',
-      b'  format: signed',
-      b'  size: 8',
-      b'  units: bytes',
-      b'---',
-      b'name: tzif_file_header',
-      b'type: structure',
-      b'description: file header.',
-      b'attributes:',
-      b'  byte_order: big-endian',
-      b'members:',
-      b'- name: signature',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  number_of_elements: 4',
-      b'- name: format_version',
-      b'  data_type: byte',
-      b'- name: unknown1',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  number_of_elements: 15',
-      b'- name: number_of_utc_time_indicators',
-      b'  data_type: uint32',
-      b'- name: number_of_standard_time_indicators',
-      b'  data_type: uint32',
-      b'- name: number_of_leap_seconds',
-      b'  data_type: uint32',
-      b'- name: number_of_transition_times',
-      b'  data_type: uint32',
-      b'- name: number_of_local_time_types',
-      b'  data_type: uint32',
-      b'- name: timezone_abbreviation_strings_size',
-      b'  data_type: uint32',
-      b'---',
-      b'name: tzif_transition_times_32bit',
-      b'type: sequence',
-      b'element_data_type: int32be',
-      b'number_of_elements: tzif_file_header.number_of_transition_times',
-      b'---',
-      b'name: tzif_transition_times_64bit',
-      b'type: sequence',
-      b'element_data_type: int64be',
-      b'number_of_elements: tzif_file_header.number_of_transition_times',
-      b'---',
-      b'name: tzif_transition_time_index',
-      b'type: sequence',
-      b'element_data_type: byte',
-      b'number_of_elements: tzif_file_header.number_of_transition_times',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'tzif.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   # TODO: move path into structure.
 

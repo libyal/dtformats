@@ -96,310 +96,11 @@ class ObjectRecord(data_format.BinaryDataFormat):
     data_type (str): object record data type.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION = b"""\
-name: byte
-type: integer
-attributes:
-  format: unsigned
-  size: 1
-  units: bytes
----
-name: uint16
-type: integer
-attributes:
-  format: unsigned
-  size: 2
-  units: bytes
----
-name: uint32
-type: integer
-attributes:
-  format: unsigned
-  size: 4
-  units: bytes
----
-name: uint64
-type: integer
-attributes:
-  format: unsigned
-  size: 8
-  units: bytes
----
-name: wchar16
-type: character
-attributes:
-  size: 2
-  units: bytes
----
-name: cim_property_types
-type: enumeration
-values:
-- name: CIM-TYPE-SINT16
-  number: 0x00000002
-- name: CIM-TYPE-SINT32
-  number: 0x00000003
-- name: CIM-TYPE-REAL32
-  number: 0x00000004
-- name: CIM-TYPE-REAL64
-  number: 0x00000005
-- name: CIM-TYPE-STRING
-  number: 0x00000008
-- name: CIM-TYPE-BOOLEAN
-  number: 0x0000000b
-- name: CIM-TYPE-OBJECT
-  number: 0x0000000d
-- name: CIM-TYPE-SINT8
-  number: 0x00000010
-- name: CIM-TYPE-UINT8
-  number: 0x00000011
-- name: CIM-TYPE-UINT16
-  number: 0x00000012
-- name: CIM-TYPE-UINT32
-  number: 0x00000013
-- name: CIM-TYPE-SINT64
-  number: 0x00000014
-- name: CIM-TYPE-UINT64
-  number: 0x00000015
-- name: CIM-TYPE-DATETIME
-  number: 0x00000065
-- name: CIM-TYPE-REFERENCE
-  number: 0x00000066
-- name: CIM-TYPE-CHAR16
-  number: 0x00000067
-- name: CIM-ARRAY-SINT16
-  number: 0x00002002
-- name: CIM-ARRAY-SINT32
-  number: 0x00002003
-- name: CIM-ARRAY-REAL32
-  number: 0x00002004
-- name: CIM-ARRAY-REAL64
-  number: 0x00002005
-- name: CIM-ARRAY-STRING
-  number: 0x00002008
-- name: CIM-ARRAY-BOOLEAN
-  number: 0x0000200b
-- name: CIM-ARRAY-OBJECT
-  number: 0x0000200d
-- name: CIM-ARRAY-SINT8
-  number: 0x00002010
-- name: CIM-ARRAY-UINT8
-  number: 0x00002011
-- name: CIM-ARRAY-UINT16
-  number: 0x00002012
-- name: CIM-ARRAY-UINT32
-  number: 0x00002013
-- name: CIM-ARRAY-SINT64
-  number: 0x00002014
-- name: CIM-ARRAY-UINT64
-  number: 0x00002015
-- name: CIM-ARRAY-DATETIME
-  number: 0x00002065
-- name: CIM-ARRAY-REFERENCE
-  number: 0x00002066
-- name: CIM-ARRAY-CHAR16
-  number: 0x00002067
----
-name: property_descriptor
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: name_offset
-  data_type: uint32
-- name: data_offset
-  data_type: uint32
----
-name: block
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: size
-  data_type: uint32
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: block.size - 4 if block.size else 0
----
-name: class_definition_header
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: unknown1
-  data_type: byte
-- name: class_name_offset
-  data_type: uint32
-- name: default_value_size
-  data_type: uint32
-- name: super_class_name_block_size
-  data_type: uint32
-- name: super_class_name_block_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_header.super_class_name_block_size - 4
-- name: qualifiers_block_size
-  data_type: uint32
-- name: qualifiers_block_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_header.qualifiers_block_size - 4
-- name: number_of_property_descriptors
-  data_type: uint32
-- name: property_descriptors
-  type: sequence
-  element_data_type: property_descriptor
-  number_of_elements: class_definition_header.number_of_property_descriptors
-- name: default_value_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_header.default_value_size
-- name: properties_block_size
-  data_type: uint32
-- name: properties_block_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_header.properties_block_size - & 0x7ffffff
----
-name: class_definition_object_record
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: super_class_name_size
-  data_type: uint32
-- name: super_class_name
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: super_class_name_size
-- name: date_time
-  data_type: uint64
-- name: data_size
-  data_type: uint32
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_object_record.data_size - 4
----
-name: class_definition_methods
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: methods_block_size
-  data_type: uint32
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_methods.methods_block_size - 4
----
-name: super_class_name_block
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: super_class_name_flags
-  data_type: byte
-- name: super_class_name
-  type: string
-  encoding: ascii
-  element_data_type: byte
-  elements_terminator: "\\x00"
-- name: super_class_name_size
-  data_type: uint32
----
-name: property_name
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: string_flags
-  data_type: byte
-- name: string
-  type: string
-  encoding: ascii
-  element_data_type: byte
-  elements_terminator: "\\x00"
----
-name: property_definition
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: type
-  data_type: uint32
-- name: index
-  data_type: uint16
-- name: offset
-  data_type: uint32
-- name: level
-  data_type: uint32
-- name: qualifiers_block_size
-  data_type: uint32
-- name: qualifiers_block_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: property_definition.qualifiers_block_size - 4
----
-name: interface_object_record
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: string_digest_hash
-  type: stream
-  element_data_type: byte
-  elements_data_size: 64
-- name: date_time1
-  data_type: uint64
-- name: date_time2
-  data_type: uint64
-- name: data_size
-  data_type: uint32
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: interface_object_record.data_size - 4
----
-name: registration_object_record
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: name_space_string_size
-  data_type: uint32
-- name: name_space_string
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: registration_object_record.name_space_string_size
-- name: class_name_string_size
-  data_type: uint32
-- name: class_name_string
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: registration_object_record.class_name_string_size
-- name: attribute_name_string_size
-  data_type: uint32
-- name: attribute_name_string
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: registration_object_record.attribute_name_string_size
-- name: attribute_value_string_size
-  data_type: uint32
-- name: attribute_value_string
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: registration_object_record.attribute_value_string_size
-- name: unknown1
-  type: stream
-  element_data_type: byte
-  elements_data_size: 8
-"""
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'wmi_repository.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   # TODO: replace streams by block type
   # TODO: add more values.
@@ -891,28 +592,11 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
     page_offset (int): page offset or None.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: cim_object_descriptor',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: identifier',
-      b'  data_type: uint32',
-      b'- name: data_offset',
-      b'  data_type: uint32',
-      b'- name: data_size',
-      b'  data_type: uint32',
-      b'- name: data_checksum',
-      b'  data_type: uint32',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'wmi_repository.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
@@ -1094,114 +778,11 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 class IndexBinaryTreeFile(data_format.BinaryDataFile):
   """Index binary-tree (Index.btr) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: byte',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 1',
-      b'  units: bytes',
-      b'---',
-      b'name: uint16',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: uint16le',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'  format: unsigned',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32le',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: cim_page_header',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: page_type',
-      b'  data_type: uint32',
-      b'- name: mapped_page_number',
-      b'  data_type: uint32',
-      b'- name: unknown1',
-      b'  data_type: uint32',
-      b'- name: root_page_number',
-      b'  data_type: uint32',
-      b'---',
-      b'name: cim_page_body',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: number_of_keys',
-      b'  data_type: uint32',
-      b'- name: unknown2',
-      b'  type: sequence',
-      b'  element_data_type: uint32',
-      b'  number_of_elements: cim_page_body.number_of_keys',
-      b'- name: sub_pages',
-      b'  type: sequence',
-      b'  element_data_type: uint32',
-      b'  number_of_elements: cim_page_body.number_of_keys + 1',
-      b'- name: key_offsets',
-      b'  type: sequence',
-      b'  element_data_type: uint16',
-      b'  number_of_elements: cim_page_body.number_of_keys',
-      b'- name: key_data_size',
-      b'  data_type: uint16',
-      b'- name: key_data',
-      b'  type: stream',
-      b'  element_data_type: uint16',
-      b'  number_of_elements: cim_page_body.key_data_size',
-      b'- name: number_of_values',
-      b'  data_type: uint16',
-      b'- name: value_offsets',
-      b'  type: sequence',
-      b'  element_data_type: uint16',
-      b'  number_of_elements: cim_page_body.number_of_values',
-      b'- name: value_data_size',
-      b'  data_type: uint16',
-      b'- name: value_data',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  elements_data_size: cim_page_body.value_data_size',
-      b'---',
-      b'name: cim_page_key',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: number_of_segments',
-      b'  data_type: uint16',
-      b'- name: segments',
-      b'  type: sequence',
-      b'  element_data_type: uint16',
-      b'  number_of_elements: cim_page_key.number_of_segments',
-      b'---',
-      b'name: string',
-      b'type: string',
-      b'encoding: ascii',
-      b'element_data_type: byte',
-      b'elements_terminator: "\\x00"',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'wmi_repository.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
@@ -1606,47 +1187,11 @@ class MappingFile(data_format.BinaryDataFile):
         or objects data file.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32le',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: cim_map_footer',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: signature',
-      b'  data_type: uint32',
-      b'---',
-      b'name: cim_map_header',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: signature',
-      b'  data_type: uint32',
-      b'- name: format_version',
-      b'  data_type: uint32',
-      b'- name: number_of_pages',
-      b'  data_type: uint32',
-      b'---',
-      b'name: cim_map_page_numbers',
-      b'type: sequence',
-      b'element_data_type: uint32le',
-      b'number_of_elements: number_of_entries',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'wmi_repository.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
@@ -2117,15 +1662,11 @@ class ObjectsDataFile(data_format.BinaryDataFile):
 class CIMRepository(data_format.BinaryDataFormat):
   """A CIM repository."""
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: uint32le',
-      b'type: integer',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'wmi_repository.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)

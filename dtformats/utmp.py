@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 
 import datetime
+import os
 
 from dtfabric.runtime import fabric as dtfabric_fabric
 
@@ -13,74 +14,11 @@ from dtformats import data_format
 class UTMPFile(data_format.BinaryDataFile):
   """An UTMP file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION = b'\n'.join([
-      b'name: byte',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 1',
-      b'  units: bytes',
-      b'---',
-      b'name: uint16',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 2',
-      b'  units: bytes',
-      b'---',
-      b'name: uint32',
-      b'type: integer',
-      b'attributes:',
-      b'  format: unsigned',
-      b'  size: 4',
-      b'  units: bytes',
-      b'---',
-      b'name: utmp_entry_linux',
-      b'type: structure',
-      b'attributes:',
-      b'  byte_order: little-endian',
-      b'members:',
-      b'- name: type',
-      b'  data_type: uint32',
-      b'- name: pid',
-      b'  data_type: uint32',
-      b'- name: terminal',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  number_of_elements: 32',
-      b'- name: terminal_identifier',
-      b'  data_type: uint32',
-      b'- name: username',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  number_of_elements: 32',
-      b'- name: hostname',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  number_of_elements: 256',
-      b'- name: termination',
-      b'  data_type: uint16',
-      b'- name: exit',
-      b'  data_type: uint16',
-      b'- name: session',
-      b'  data_type: uint32',
-      b'- name: timestamp',
-      b'  data_type: uint32',
-      b'- name: micro_seconds',
-      b'  data_type: uint32',
-      b'- name: address_a',
-      b'  data_type: uint32',
-      b'- name: address_b',
-      b'  data_type: uint32',
-      b'- name: address_c',
-      b'  data_type: uint32',
-      b'- name: address_d',
-      b'  data_type: uint32',
-      b'- name: unknown1',
-      b'  type: stream',
-      b'  element_data_type: byte',
-      b'  number_of_elements: 20',
-  ])
+  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
+      os.path.dirname(__file__), 'utmp.yaml')
+
+  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
+    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
 
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)

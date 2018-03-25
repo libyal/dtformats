@@ -1,0 +1,867 @@
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: wmf_map_mode
+type: enumeration
+urls: ["https://msdn.microsoft.com/en-us/library/cc250397.aspx"]
+values:
+- name: MM_TEXT
+  number: 0x0001
+- name: MM_LOMETRIC
+  number: 0x0002
+- name: MM_HIMETRIC
+  number: 0x0003
+- name: MM_LOENGLISH
+  number: 0x0004
+- name: MM_HIENGLISH
+  number: 0x0005
+- name: MM_TWIPS
+  number: 0x0006
+- name: MM_ISOTROPIC
+  number: 0x0007
+- name: MM_ANISOTROPIC
+  number: 0x0008
+---
+name: wmf_raster_operation_code
+aliases: [TernaryRasterOperation]
+type: enumeration
+urls: ["https://msdn.microsoft.com/en-us/library/cc250408.aspx"]
+values:
+- name: BLACKNESS
+  number: 0x00
+- name: DPSOON
+  number: 0x01
+- name: DPSONA
+  number: 0x02
+- name: PSON
+  number: 0x03
+- name: SDPONA
+  number: 0x04
+- name: DPON
+  number: 0x05
+- name: PDSXNON
+  number: 0x06
+- name: PDSAON
+  number: 0x07
+- name: SDPNAA
+  number: 0x08
+- name: PDSXON
+  number: 0x09
+- name: DPNA
+  number: 0x0a
+- name: PSDNAON
+  number: 0x0b
+- name: SPNA
+  number: 0x0c
+- name: PDSNAON
+  number: 0x0d
+- name: PDSONON
+  number: 0x0e
+- name: PN
+  number: 0x0f
+- name: PDSONA
+  number: 0x10
+- name: NOTSRCERASE
+  number: 0x11
+- name: SDPXNON
+  number: 0x12
+- name: SDPAON
+  number: 0x13
+- name: DPSXNON
+  number: 0x14
+- name: DPSAON
+  number: 0x15
+- name: PSDPSANAXX
+  number: 0x16
+- name: SSPXDSXAXN
+  number: 0x17
+- name: SPXPDXA
+  number: 0x18
+- name: SDPSANAXN
+  number: 0x19
+- name: PDSPAOX
+  number: 0x1a
+- name: SDPSXAXN
+  number: 0x1b
+- name: PSDPAOX
+  number: 0x1c
+- name: DSPDXAXN
+  number: 0x1d
+- name: PDSOX
+  number: 0x1e
+- name: PDSOAN
+  number: 0x1f
+- name: DPSNAA
+  number: 0x20
+- name: SDPXON
+  number: 0x21
+- name: DSNA
+  number: 0x22
+- name: SPDNAON
+  number: 0x23
+- name: SPXDSXA
+  number: 0x24
+- name: PDSPANAXN
+  number: 0x25
+- name: SDPSAOX
+  number: 0x26
+- name: SDPSXNOX
+  number: 0x27
+- name: DPSXA
+  number: 0x28
+- name: PSDPSAOXXN
+  number: 0x29
+- name: DPSANA
+  number: 0x2a
+- name: SSPXPDXAXN
+  number: 0x2b
+- name: SPDSOAX
+  number: 0x2c
+- name: PSDNOX
+  number: 0x2d
+- name: PSDPXOX
+  number: 0x2e
+- name: PSDNOAN
+  number: 0x2f
+- name: PSNA
+  number: 0x30
+- name: SDPNAON
+  number: 0x31
+- name: SDPSOOX
+  number: 0x32
+- name: NOTSRCCOPY
+  number: 0x33
+- name: SPDSAOX
+  number: 0x34
+- name: SPDSXNOX
+  number: 0x35
+- name: SDPOX
+  number: 0x36
+- name: SDPOAN
+  number: 0x37
+- name: PSDPOAX
+  number: 0x38
+- name: SPDNOX
+  number: 0x39
+- name: SPDSXOX
+  number: 0x3a
+- name: SPDNOAN
+  number: 0x3b
+- name: PSX
+  number: 0x3c
+- name: SPDSONOX
+  number: 0x3d
+- name: SPDSNAOX
+  number: 0x3e
+- name: PSAN
+  number: 0x3f
+- name: PSDNAA
+  number: 0x40
+- name: DPSXON
+  number: 0x41
+- name: SDXPDXA
+  number: 0x42
+- name: SPDSANAXN
+  number: 0x43
+- name: SRCERASE
+  number: 0x44
+- name: DPSNAON
+  number: 0x45
+- name: DSPDAOX
+  number: 0x46
+- name: PSDPXAXN
+  number: 0x47
+- name: SDPXA
+  number: 0x48
+- name: PDSPDAOXXN
+  number: 0x49
+- name: DPSDOAX
+  number: 0x4a
+- name: PDSNOX
+  number: 0x4b
+- name: SDPANA
+  number: 0x4c
+- name: SSPXDSXOXN
+  number: 0x4d
+- name: PDSPXOX
+  number: 0x4e
+- name: PDSNOAN
+  number: 0x4f
+- name: PDNA
+  number: 0x50
+- name: DSPNAON
+  number: 0x51
+- name: DPSDAOX
+  number: 0x52
+- name: SPDSXAXN
+  number: 0x53
+- name: DPSONON
+  number: 0x54
+- name: DSTINVERT
+  number: 0x55
+- name: DPSOX
+  number: 0x56
+- name: DPSOAN
+  number: 0x57
+- name: PDSPOAX
+  number: 0x58
+- name: DPSNOX
+  number: 0x59
+- name: PATINVERT
+  number: 0x5a
+- name: DPSDONOX
+  number: 0x5b
+- name: DPSDXOX
+  number: 0x5c
+- name: DPSNOAN
+  number: 0x5d
+- name: DPSDNAOX
+  number: 0x5e
+- name: DPAN
+  number: 0x5f
+- name: PDSXA
+  number: 0x60
+- name: DSPDSAOXXN
+  number: 0x61
+- name: DSPDOAX
+  number: 0x62
+- name: SDPNOX
+  number: 0x63
+- name: SDPSOAX
+  number: 0x64
+- name: DSPNOX
+  number: 0x65
+- name: SRCINVERT
+  number: 0x66
+- name: SDPSONOX
+  number: 0x67
+- name: DSPDSONOXXN
+  number: 0x68
+- name: PDSXXN
+  number: 0x69
+- name: DPSAX
+  number: 0x6a
+- name: PSDPSOAXXN
+  number: 0x6b
+- name: SDPAX
+  number: 0x6c
+- name: PDSPDOAXXN
+  number: 0x6d
+- name: SDPSNOAX
+  number: 0x6e
+- name: PDXNAN
+  number: 0x6f
+- name: PDSANA
+  number: 0x70
+- name: SSDXPDXAXN
+  number: 0x71
+- name: SDPSXOX
+  number: 0x72
+- name: SDPNOAN
+  number: 0x73
+- name: DSPDXOX
+  number: 0x74
+- name: DSPNOAN
+  number: 0x75
+- name: SDPSNAOX
+  number: 0x76
+- name: DSAN
+  number: 0x77
+- name: PDSAX
+  number: 0x78
+- name: DSPDSOAXXN
+  number: 0x79
+- name: DPSDNOAX
+  number: 0x7a
+- name: SDPXNAN
+  number: 0x7b
+- name: SPDSNOAX
+  number: 0x7c
+- name: DPSXNAN
+  number: 0x7d
+- name: SPXDSXO
+  number: 0x7e
+- name: DPSAAN
+  number: 0x7f
+- name: DPSAA
+  number: 0x80
+- name: SPXDSXON
+  number: 0x81
+- name: DPSXNA
+  number: 0x82
+- name: SPDSNOAXN
+  number: 0x83
+- name: SDPXNA
+  number: 0x84
+- name: PDSPNOAXN
+  number: 0x85
+- name: DSPDSOAXX
+  number: 0x86
+- name: PDSAXN
+  number: 0x87
+- name: SRCAND
+  number: 0x88
+- name: SDPSNAOXN
+  number: 0x89
+- name: DSPNOA
+  number: 0x8a
+- name: DSPDXOXN
+  number: 0x8b
+- name: SDPNOA
+  number: 0x8c
+- name: SDPSXOXN
+  number: 0x8d
+- name: SSDXPDXAX
+  number: 0x8e
+- name: PDSANAN
+  number: 0x8f
+- name: PDSXNA
+  number: 0x90
+- name: SDPSNOAXN
+  number: 0x91
+- name: DPSDPOAXX
+  number: 0x92
+- name: SPDAXN
+  number: 0x93
+- name: PSDPSOAXX
+  number: 0x94
+- name: DPSAXN
+  number: 0x95
+- name: DPSXX
+  number: 0x96
+- name: PSDPSONOXX
+  number: 0x97
+- name: SDPSONOXN
+  number: 0x98
+- name: DSXN
+  number: 0x99
+- name: DPSNAX
+  number: 0x9a
+- name: SDPSOAXN
+  number: 0x9b
+- name: SPDNAX
+  number: 0x9c
+- name: DSPDOAXN
+  number: 0x9d
+- name: DSPDSAOXX
+  number: 0x9e
+- name: PDSXAN
+  number: 0x9f
+- name: DPA
+  number: 0xa0
+- name: PDSPNAOXN
+  number: 0xa1
+- name: DPSNOA
+  number: 0xa2
+- name: DPSDXOXN
+  number: 0xa3
+- name: PDSPONOXN
+  number: 0xa4
+- name: PDXN
+  number: 0xa5
+- name: DSPNAX
+  number: 0xa6
+- name: PDSPOAXN
+  number: 0xa7
+- name: DPSOA
+  number: 0xa8
+- name: DPSOXN
+  number: 0xa9
+- name: D
+  number: 0xaa
+- name: DPSONO
+  number: 0xab
+- name: SPDSXAX
+  number: 0xac
+- name: DPSDAOXN
+  number: 0xad
+- name: DSPNAO
+  number: 0xae
+- name: DPNO
+  number: 0xaf
+- name: PDSNOA
+  number: 0xb0
+- name: PDSPXOXN
+  number: 0xb1
+- name: SSPXDSXOX
+  number: 0xb2
+- name: SDPANAN
+  number: 0xb3
+- name: PSDNAX
+  number: 0xb4
+- name: DPSDOAXN
+  number: 0xb5
+- name: DPSDPAOXX
+  number: 0xb6
+- name: SDPXAN
+  number: 0xb7
+- name: PSDPXAX
+  number: 0xb8
+- name: DSPDAOXN
+  number: 0xb9
+- name: DPSNAO
+  number: 0xba
+- name: MERGEPAINT
+  number: 0xbb
+- name: SPDSANAX
+  number: 0xbc
+- name: SDXPDXAN
+  number: 0xbd
+- name: DPSXO
+  number: 0xbe
+- name: DPSANO
+  number: 0xbf
+- name: MERGECOPY
+  number: 0xc0
+- name: SPDSNAOXN
+  number: 0xc1
+- name: SPDSONOXN
+  number: 0xc2
+- name: PSXN
+  number: 0xc3
+- name: SPDNOA
+  number: 0xc4
+- name: SPDSXOXN
+  number: 0xc5
+- name: SDPNAX
+  number: 0xc6
+- name: PSDPOAXN
+  number: 0xc7
+- name: SDPOA
+  number: 0xc8
+- name: SPDOXN
+  number: 0xc9
+- name: DPSDXAX
+  number: 0xca
+- name: SPDSAOXN
+  number: 0xcb
+- name: SRCCOPY
+  number: 0xcc
+- name: SDPONO
+  number: 0xcd
+- name: SDPNAO
+  number: 0xce
+- name: SPNO
+  number: 0xcf
+- name: PSDNOA
+  number: 0xd0
+- name: PSDPXOXN
+  number: 0xd1
+- name: PDSNAX
+  number: 0xd2
+- name: SPDSOAXN
+  number: 0xd3
+- name: SSPXPDXAX
+  number: 0xd4
+- name: DPSANAN
+  number: 0xd5
+- name: PSDPSAOXX
+  number: 0xd6
+- name: DPSXAN
+  number: 0xd7
+- name: PDSPXAX
+  number: 0xd8
+- name: SDPSAOXN
+  number: 0xd9
+- name: DPSDANAX
+  number: 0xda
+- name: SPXDSXAN
+  number: 0xdb
+- name: SPDNAO
+  number: 0xdc
+- name: SDNO
+  number: 0xdd
+- name: SDPXO
+  number: 0xde
+- name: SDPANO
+  number: 0xdf
+- name: PDSOA
+  number: 0xe0
+- name: PDSOXN
+  number: 0xe1
+- name: DSPDXAX
+  number: 0xe2
+- name: PSDPAOXN
+  number: 0xe3
+- name: SDPSXAX
+  number: 0xe4
+- name: PDSPAOXN
+  number: 0xe5
+- name: SDPSANAX
+  number: 0xe6
+- name: SPXPDXAN
+  number: 0xe7
+- name: SSPXDSXAX
+  number: 0xe8
+- name: DSPDSANAXXN
+  number: 0xe9
+- name: DPSAO
+  number: 0xea
+- name: DPSXNO
+  number: 0xeb
+- name: SDPAO
+  number: 0xec
+- name: SDPXNO
+  number: 0xed
+- name: SRCPAINT
+  number: 0xee
+- name: SDPNOO
+  number: 0xef
+- name: PATCOPY
+  number: 0xf0
+- name: PDSONO
+  number: 0xf1
+- name: PDSNAO
+  number: 0xf2
+- name: PSNO
+  number: 0xf3
+- name: PSDNAO
+  number: 0xf4
+- name: PDNO
+  number: 0xf5
+- name: PDSXO
+  number: 0xf6
+- name: PDSANO
+  number: 0xf7
+- name: PDSAO
+  number: 0xf8
+- name: PDSXNO
+  number: 0xf9
+- name: DPO
+  number: 0xfa
+- name: PATPAINT
+  number: 0xfb
+- name: PSO
+  number: 0xfc
+- name: PSDNOO
+  number: 0xfd
+- name: DPSOO
+  number: 0xfe
+- name: WHITENESS
+  number: 0xff
+---
+name: wmf_record_type
+aliases: [RecordType]
+type: enumeration
+urls: ["https://msdn.microsoft.com/en-us/library/cc250589.aspx"]
+values:
+- name: META_EOF
+  number: 0x0000
+- name: META_SAVEDC
+  number: 0x001e
+- name: META_REALIZEPALETTE
+  number: 0x0035
+- name: META_SETPALENTRIES
+  number: 0x0037
+- name: META_CREATEPALETTE
+  number: 0x00f7
+- name: META_SETBKMODE
+  number: 0x0102
+- name: META_SETMAPMODE
+  number: 0x0103
+- name: META_SETROP2
+  number: 0x0104
+- name: META_SETRELABS
+  number: 0x0105
+- name: META_SETPOLYFILLMODE
+  number: 0x0106
+- name: META_SETSTRETCHBLTMODE
+  number: 0x0107
+- name: META_SETTEXTCHAREXTRA
+  number: 0x0108
+- name: META_RESTOREDC
+  number: 0x0127
+- name: META_INVERTREGION
+  number: 0x012a
+- name: META_PAINTREGION
+  number: 0x012b
+- name: META_SELECTCLIPREGION
+  number: 0x012c
+- name: META_SELECTOBJECT
+  number: 0x012d
+- name: META_SETTEXTALIGN
+  number: 0x012e
+- name: META_RESIZEPALETTE
+  number: 0x0139
+- name: META_DIBCREATEPATTERNBRUSH
+  number: 0x0142
+- name: META_SETLAYOUT
+  number: 0x0149
+- name: META_DELETEOBJECT
+  number: 0x01f0
+- name: META_CREATEPATTERNBRUSH
+  number: 0x01f9
+- name: META_SETBKCOLOR
+  number: 0x0201
+- name: META_SETTEXTCOLOR
+  number: 0x0209
+- name: META_SETTEXTJUSTIFICATION
+  number: 0x020a
+- name: META_SETWINDOWORG
+  number: 0x020b
+- name: META_SETWINDOWEXT
+  number: 0x020c
+- name: META_SETVIEWPORTORG
+  number: 0x020d
+- name: META_SETVIEWPORTEXT
+  number: 0x020e
+- name: META_OFFSETWINDOWORG
+  number: 0x020f
+- name: META_OFFSETVIEWPORTORG
+  number: 0x0211
+- name: META_LINETO
+  number: 0x0213
+- name: META_MOVETO
+  number: 0x0214
+- name: META_OFFSETCLIPRGN
+  number: 0x0220
+- name: META_FILLREGION
+  number: 0x0228
+- name: META_SETMAPPERFLAGS
+  number: 0x0231
+- name: META_SELECTPALETTE
+  number: 0x0234
+- name: META_CREATEPENINDIRECT
+  number: 0x02fa
+- name: META_CREATEFONTINDIRECT
+  number: 0x02fb
+- name: META_CREATEBRUSHINDIRECT
+  number: 0x02fc
+- name: META_POLYGON
+  number: 0x0324
+- name: META_POLYLINE
+  number: 0x0325
+- name: META_SCALEWINDOWEXT
+  number: 0x0410
+- name: META_SCALEVIEWPORTEXT
+  number: 0x0412
+- name: META_EXCLUDECLIPRECT
+  number: 0x0415
+- name: META_INTERSECTCLIPRECT
+  number: 0x0416
+- name: META_ELLIPSE
+  number: 0x0418
+- name: META_FLOODFILL
+  number: 0x0419
+- name: META_RECTANGLE
+  number: 0x041B
+- name: META_SETPIXEL
+  number: 0x041F
+- name: META_FRAMEREGION
+  number: 0x0429
+- name: META_ANIMATEPALETTE
+  number: 0x0436
+- name: META_TEXTOUT
+  number: 0x0521
+- name: META_POLYPOLYGON
+  number: 0x0538
+- name: META_EXTFLOODFILL
+  number: 0x0548
+- name: META_ROUNDRECT
+  number: 0x061C
+- name: META_PATBLT
+  number: 0x061d
+- name: META_ESCAPE
+  number: 0x0626
+- name: META_CREATEREGION
+  number: 0x06ff
+- name: META_ARC
+  number: 0x0817
+- name: META_PIE
+  number: 0x081a
+- name: META_CHORD
+  number: 0x0830
+- name: META_BITBLT
+  number: 0x0922
+- name: META_DIBBITBLT
+  number: 0x0940
+- name: META_EXTTEXTOUT
+  number: 0x0a32
+- name: META_STRETCHBLT
+  number: 0x0b23
+- name: META_DIBSTRETCHBLT
+  number: 0x0b41
+- name: META_SETDIBTODEV
+  number: 0x0d33
+- name: META_STRETCHDIB
+  number: 0x0f43
+---
+name: wmf_stretch_mode
+aliases: [StretchMode]
+type: enumeration
+urls: ["https://msdn.microsoft.com/en-us/library/cc250407.aspx"]
+values:
+- name: BLACKONWHITE
+  number: 0x0001
+- name: WHITEONBLACK
+  number: 0x0002
+- name: COLORONCOLOR
+  number: 0x0003
+- name: HALFTONE
+  number: 0x0004
+---
+name: wmf_header
+aliases: [META_HEADER]
+type: structure
+urls: ["https://msdn.microsoft.com/en-us/library/cc250418.aspx"]
+attributes:
+  byte_order: little-endian
+members:
+- name: file_type
+  aliases: [Type]
+  data_type: uint16
+- name: record_size
+  aliases: [HeaderSize]
+  data_type: uint16
+- name: format_version
+  aliases: [Version]
+  data_type: uint16
+- name: file_size_lower
+  aliases: [SizeLow]
+  data_type: uint16
+- name: file_size_upper
+  aliases: [SizeHigh]
+  data_type: uint16
+- name: maximum_number_of_objects
+  aliases: [NumberOfObjects]
+  data_type: uint16
+- name: largest_record_size
+  aliases: [MaxRecord]
+  data_type: uint32
+- name: number_of_records
+  aliases: [NumberOfMembers]
+  data_type: uint16
+---
+name: wmf_placeable
+aliases: [META_PLACEABLE]
+urls: ["https://msdn.microsoft.com/en-us/library/cc669452.aspx"]
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: signature
+  aliases: [Key]
+  data_type: uint32
+- name: resource_handle
+  aliases: [HWmf]
+  data_type: uint16
+- name: bounding_box
+  aliases: [BoundingBox]
+  type: stream
+  element_data_type: byte
+  number_of_elements: 8
+- name: number_of_units_per_inch
+  aliases: [Inch]
+  data_type: uint16
+- name: unknown1
+  aliases: [Reserved]
+  data_type: uint32
+- name: checksum
+  aliases: [Checksum]
+  data_type: uint16
+---
+# TODO: deprecate wmf_record_header in favor of wmf_record
+name: wmf_record_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: record_size
+  data_type: uint32
+- name: record_type
+  data_type: uint16
+# TODO: link to wmf_record_type
+---
+name: wmf_restoredc
+type: structure
+description: Restores the playback device context
+urls: ["https://msdn.microsoft.com/en-us/library/cc250469.aspx"]
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_saved_device_context
+  data_type: uint16
+---
+name: wmf_setmapmode
+type: structure
+description: Defines the mapping mode
+urls: ["https://msdn.microsoft.com/en-us/library/cc250483.aspx"]
+attributes:
+  byte_order: little-endian
+members:
+- name: map_mode
+  data_type: uint16
+# TODO: map to wmf_map_mode
+---
+name: wmf_setstretchbltmode
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: stretch_mode
+  data_type: uint16
+# TODO: map to wmf_stretch_mode
+# TODO: documentation indicates there should be 16-bit reserved field.
+---
+name: wmf_setwindowext
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: x_coordinate
+  data_type: uint16
+- name: y_coordinate
+  data_type: uint16
+---
+name: wmf_setwindoworg
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: x_coordinate
+  data_type: uint16
+- name: y_coordinate
+  data_type: uint16
+---
+name: wmf_dibstretchblt
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: raster_operation
+  data_type: uint32
+- name: source_height
+  data_type: uint16
+- name: source_width
+  data_type: uint16
+- name: source_x_coordinate
+  data_type: uint16
+- name: source_y_coordinate
+  data_type: uint16
+- name: destination_height
+  data_type: uint16
+- name: destination_width
+  data_type: uint16
+- name: destination_x_coordinate
+  data_type: uint16
+- name: destination_y_coordinate
+  data_type: uint16
+# TODO: add device_indepent_bitmap stream.
