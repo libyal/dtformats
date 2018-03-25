@@ -40,7 +40,7 @@ def FromFiletime(filetime):
     datetime: date and time or None.
   """
   if filetime < 0:
-    return
+    return None
 
   timestamp, _ = divmod(filetime, 10)
 

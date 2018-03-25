@@ -364,8 +364,10 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Returns:
       bool: True if the file entry exists.
     """
-    if self._file_entries:
-      return path in self._file_entries
+    if not self._file_entries:
+      return False
+
+    return path in self._file_entries
 
   def GetFileEntries(self, path_prefix=''):
     """Retrieves the file entries.
@@ -390,8 +392,10 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     Returns:
       CPIOArchiveFileEntry: CPIO archive file entry or None.
     """
-    if self._file_entries:
-      return self._file_entries.get(path, None)
+    if not self._file_entries:
+      return False
+
+    return self._file_entries.get(path, None)
 
   def ReadFileObject(self, file_object):
     """Reads binary data from a file-like object.

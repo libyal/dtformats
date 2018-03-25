@@ -648,7 +648,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     # The last object descriptor (terminator) is filled with 0-byte values.
     if object_descriptor_data == self._EMPTY_OBJECT_DESCRIPTOR:
-      return
+      return None
 
     try:
       object_descriptor = self._OBJECT_DESCRIPTOR.MapByteStream(
@@ -710,11 +710,11 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     if not object_descriptor_match:
       logging.warning('Object record data not found.')
-      return
+      return None
 
     if object_descriptor_match.data_size != data_size:
       logging.warning('Object record data size mismatch.')
-      return
+      return None
 
     return object_descriptor_match
 
@@ -920,7 +920,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     """
     file_offset = page_number * self._PAGE_SIZE
     if file_offset >= self._file_size:
-      return
+      return None
 
     # TODO: cache pages.
     return self._ReadPage(self._file_object, file_offset)
@@ -1107,11 +1107,11 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         logging.warning((
             'Unable to read first mapped index binary-tree page: '
             '{0:d}.').format(page_number))
-        return
+        return None
 
       if index_page.page_type != 0xaddd:
         logging.warning('First mapped index binary-tree page type mismatch.')
-        return
+        return None
 
       self._first_mapped_page = index_page
 
@@ -1133,7 +1133,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       logging.warning(
           'Unable to read index binary-tree mapped page: {0:d}.'.format(
               page_number))
-      return
+      return None
 
     return index_page
 
@@ -1146,7 +1146,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     if not self._root_page:
       first_mapped_page = self.GetFirstMappedPage()
       if not first_mapped_page:
-        return
+        return None
 
       page_number = self._index_mapping_file.mappings[
           first_mapped_page.root_page_number]
@@ -1156,7 +1156,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         logging.warning(
             'Unable to read index binary-tree root page: {0:d}.'.format(
                 page_number))
-        return
+        return None
 
       self._root_page = index_page
 
@@ -1511,31 +1511,31 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     _, _, key = key.rpartition(self._KEY_SEGMENT_SEPARATOR)
 
     if self._KEY_VALUE_SEPARATOR not in key:
-      return
+      return None
 
     key_values = key.split(self._KEY_VALUE_SEPARATOR)
     if not len(key_values) == 4:
       logging.warning('Unsupported number of key values.')
-      return
+      return None
 
     try:
       page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
     except ValueError:
       logging.warning('Unsupported key value page number.')
-      return
+      return None
 
     try:
       record_identifier = int(
           key_values[self._KEY_VALUE_RECORD_IDENTIFIER_INDEX], 10)
     except ValueError:
       logging.warning('Unsupported key value record identifier.')
-      return
+      return None
 
     try:
       data_size = int(key_values[self._KEY_VALUE_DATA_SIZE_INDEX], 10)
     except ValueError:
       logging.warning('Unsupported key value data size.')
-      return
+      return None
 
     return key_values[0], page_number, record_identifier, data_size
 
@@ -1551,7 +1551,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     """
     file_offset = page_number * ObjectsDataPage.PAGE_SIZE
     if file_offset >= self._file_size:
-      return
+      return None
 
     # TODO: cache pages.
     return self._ReadPage(file_offset, data_page=data_page)
@@ -1591,7 +1591,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
       logging.warning(
           'Unable to read objects data mapped page: {0:d}.'.format(
               page_number))
-      return
+      return None
 
     return objects_page
 
@@ -1783,12 +1783,10 @@ class CIMRepository(data_format.BinaryDataFormat):
     Yields:
       str: a CIM key.
     """
-    if not self._index_binary_tree_file:
-      return
-
-    index_page = self._index_binary_tree_file.GetRootPage()
-    for key in self._GetKeysFromIndexPage(index_page):
-      yield key
+    if self._index_binary_tree_file:
+      index_page = self._index_binary_tree_file.GetRootPage()
+      for key in self._GetKeysFromIndexPage(index_page):
+        yield key
 
   def GetObjectRecordByKey(self, key):
     """Retrieves a specific object record.
@@ -1800,7 +1798,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       ObjectRecord: an object record or None.
     """
     if not self._objects_data_file:
-      return
+      return None
 
     return self._objects_data_file.GetObjectRecordByKey(key)
 
