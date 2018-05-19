@@ -16,7 +16,7 @@ class GZipFile(data_format.BinaryDataFile):
   """GZip (.gz) file."""
 
   _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'gzip.yaml')
+      os.path.dirname(__file__), 'gzip_file.yaml')
 
   with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
     _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
