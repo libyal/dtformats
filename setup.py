@@ -3,6 +3,7 @@
 """Installation and deployment script."""
 
 from __future__ import print_function
+
 import glob
 import os
 import sys
@@ -96,15 +97,14 @@ else:
               '%files -n {0:s}-%{{name}}'.format(python_package),
               '%defattr(644,root,root,755)',
               '%doc ACKNOWLEDGEMENTS AUTHORS LICENSE README',
-              '%{_prefix}/lib/python*/site-packages/dtformats/*.py',
-              '%{_prefix}/lib/python*/site-packages/dtformats/*.yaml',
+              '%{_prefix}/lib/python*/site-packages/**/*.py',
+              '%{_prefix}/lib/python*/site-packages/**/*.yaml',
               '%{_prefix}/lib/python*/site-packages/dtformats*.egg-info/*',
               '',
               '%exclude %{_prefix}/share/doc/*',
-              '%exclude %{_prefix}/lib/python*/site-packages/dtformats/*.pyc',
-              '%exclude %{_prefix}/lib/python*/site-packages/dtformats/*.pyo',
-              ('%exclude %{_prefix}/lib/python*/site-packages/dtformats/'
-               '__pycache__/*')]
+              '%exclude %{_prefix}/lib/python*/site-packages/**/*.pyc',
+              '%exclude %{_prefix}/lib/python*/site-packages/**/*.pyo',
+              '%exclude %{_prefix}/lib/python*/site-packages/**/__pycache__/*']
 
           python_spec_file.extend(lines)
           break
@@ -133,7 +133,7 @@ else:
 
 
 dtformats_description = (
-    'Data formats (dtFormats).')
+    'Data formats (dtformats)')
 
 dtformats_long_description = (
     'dtFormats is a collection of various file formats.')
@@ -147,17 +147,17 @@ setup(
     url='https://github.com/libyal/dtformats',
     maintainer='Joachim Metz',
     maintainer_email='joachim.metz@gmail.com',
+    cmdclass={
+        'bdist_msi': BdistMSICommand,
+        'bdist_rpm': BdistRPMCommand},
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
-    cmdclass={
-        'bdist_msi': BdistMSICommand,
-        'bdist_rpm': BdistRPMCommand},
     packages=find_packages('.', exclude=[
-        'tests', 'tests.*', 'utils']),
+        'scripts', 'tests', 'tests.*', 'utils']),
     package_dir={
         'dtformats': 'dtformats'
     },
@@ -165,6 +165,7 @@ setup(
     package_data={
         'dtformats': ['*.yaml'],
     },
+    scripts=glob.glob(os.path.join('scripts', '*.py')),
     data_files=[
         ('share/dtformats/data', glob.glob(
             os.path.join('data', '*'))),
