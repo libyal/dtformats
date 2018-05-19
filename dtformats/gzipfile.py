@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """GZip files."""
 
+# Note: do not rename file to gzip.py this can cause the exception:
+# AttributeError: 'module' object has no attribute 'GzipFile'
+# when using pip.
+
 from __future__ import unicode_literals
 
 import os
@@ -16,7 +20,7 @@ class GZipFile(data_format.BinaryDataFile):
   """GZip (.gz) file."""
 
   _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'gzip_file.yaml')
+      os.path.dirname(__file__), 'gzipfile.yaml')
 
   with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
     _DATA_TYPE_FABRIC_DEFINITION = file_object.read()

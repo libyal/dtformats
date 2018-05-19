@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script to parse GZIP compressed stream files."""
-
-# Note: do not rename file to gzip.py this can cause the exception:
-# AttributeError: 'module' object has no attribute 'GzipFile'
-# when using pip.
+"""Script to parse Windows Restore Point rp.log files."""
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -13,8 +9,8 @@ import argparse
 import logging
 import sys
 
-from dtformats import gzipfile
 from dtformats import output_writers
+from dtformats import rp_log
 
 
 def Main():
@@ -24,7 +20,7 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      'Extracts information from GZIP compressed stream files.'))
+      'Extracts information from Windows Restore Point rp.log files.'))
 
   argument_parser.add_argument(
       '-d', '--debug', dest='debug', action='store_true', default=False,
@@ -32,7 +28,7 @@ def Main():
 
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='PATH',
-      default=None, help='path of the GZIP compressed stream file.')
+      default=None, help='path of the Windows Restore Point rp.log file.')
 
   options = argument_parser.parse_args()
 
@@ -55,14 +51,15 @@ def Main():
     print('')
     return False
 
-  gzip_file = gzipfile.GZipFile(
+  log_file = rp_log.RestorePointLogFile(
       debug=options.debug, output_writer=output_writer)
-  gzip_file.Open(options.source)
 
-  output_writer.WriteText('GZip information:')
-  # TODO: print gzip information.
+  log_file.Open(options.source)
 
-  gzip_file.Close()
+  print('Windows Restore Point rp.log information:')
+  print('')
+
+  log_file.Close()
 
   output_writer.Close()
 
