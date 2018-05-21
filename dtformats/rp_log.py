@@ -56,8 +56,6 @@ class RestorePointLogFile(data_format.BinaryDataFile):
     """
     super(RestorePointLogFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self.entries = []
-    self.volume_path = None
 
   def _DebugPrintFileFooter(self, file_footer):
     """Prints file footer debug information.

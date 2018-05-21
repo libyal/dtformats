@@ -1,4 +1,4 @@
-= CUPS Internet Printing Protocol format
+= CUPS Internet Printing Protocol (IPP) format
 
 :toc:
 :toclevels: 4
@@ -57,10 +57,8 @@ A CUPS IPP file consists of:
 A CUPP IPP request or response consists of:
 
 * header
-* attributes tag
-* attributes sequence
-* end of attributes tag
-* data
+* an attribute group
+* optional data
 
 === Header
 
@@ -73,17 +71,43 @@ A CUPP IPP request or response consists of:
 | 4 | 4 | | Request identifier
 |===
 
+=== Attributes group
+
+The attributes group is variable of size and contains zero or more attribute
+sequences:
+
+* operation attribute sequence
+* job attribute sequence
+* printer attribute sequence
+* optional unsupported attribute sequence, should only be present when used
+* end-of-attributes-tag
+
++=== Attributes sequence
+
+An attribute squence starts with a delimiter tag.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Tag value +
+Contains a signed integer with a delimiter tag +
+Also see section: <<delimiter_tags,Delimer tags>>
+|===
+
 === Attribute
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | Value tag +
+| 0 | 1 | | Tag value +
+Contains a signed integer with a value tag +
 See section: <<value_tags,Value tags>>
-| 1 | 2 | | Name size
+| 1 | 2 | | Name size +
+Contains a signed integer
 | 2 | ... | | Name
-| ... | 2 | | Value size
-| ... | ... | | Value
+| ... | 2 | | Value data size +
+Contains a signed integer
+| ... | ... | | Value data
 |===
 
 Additional value.
@@ -91,72 +115,77 @@ Additional value.
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | Value tag +
-See section: <<value_tags,Value tags>>
+| 0 | 1 | | Tag value +
+See section: <<tag_values,Tag values>>
 | 1 | 2 | 0 | Name size
 | 2 | 2 | | Value size
 | 4 | ... | | Value
 |===
 
-=== Tags
+==== [[tag_values]]Tag values
 
-==== [[delimiter_tags]]Delimiter tags
+There are multiple kinds of attribute tags, namely:
+
+* <<delimiter_tags,Delimiter tags>>
+* <<value_tags,Value tags>>
+
+===== [[delimiter_tags]]Delimiter tags
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00 | | reserved
-| 0x01 | | operation-attributes-tag
-| 0x02 | | job-attributes-tag
-| 0x03 | | end-of-attributes-tag
-| 0x04 | | printer-attributes-tag
-| 0x05 | | unsupported-attributes-tag
-| 0x06 - 0x0e | | reserved for future delimiters
-| 0x0f | | reserved for future chunking-end-of-attributes- tag
+| 0x00 | | [yellow-background]*Unknown (reserved)*
+| 0x01 | operation-attributes-tag | Start of the operation attributes group
+| 0x02 | job-attributes-tag | Start of the job attributes group
+| 0x03 | end-of-attributes-tag | End of the attributes group
+| 0x04 | printer-attributes-tag | Start of the printer attributes group
+| 0x05 | unsupported-attributes-tag | Start of the unsupported attributes group
+| 0x06 - 0x0e | | [yellow-background]*Unknown (reserved)*
+| 0x0f | chunking-end-of-attributes-tag | [yellow-background]*Unknown (reserved)*
 |===
 
-==== [[value_tags]]Value tags
+===== [[value_tags]]Value tags
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
 | 0x10 | | unsupported
-| 0x11 | | reserved for future "default"
-| 0x12 | | [yellow-background]*unknown*
-| 0x13 | | no-value
-| 0x14 - 0x1f | | reserved for future "out-of-band" values
-| 0x20 | | reserved for "generic integer"
-| 0x21 | | integer
-| 0x22 | | boolean
-| 0x23 | | enum
-| 0x24 - 0x2f | | reserved for future integer types
-| 0x30 | | octetString with an unspecified format
-| 0x31 | | dateTime
-| 0x32 | | resolution
-| 0x33 | | rangeOfInteger
-| 0x34 | | reserved for collection (in the future)
-| 0x35 | | textWithLanguage
-| 0x36 | | nameWithLanguage
-| 0x37 - 0x3f | | reserved for future octetString types
-| 0x40 | | reserved for "generic character-string"
-| 0x41 | | textWithoutLanguage
-| 0x42 | | nameWithoutLanguage
-| 0x43 | | reserved
-| 0x44 | | keyword
-| 0x45 | | uri
-| 0x46 | | uriScheme
-| 0x47 | | charset
-| 0x48 | | naturalLanguage
-| 0x49 | | mimeMediaType
-| 0x4a - 0x5f | | reserved for future character string types
-| 0x60 - 0x7e | | reserved for future types
-| 0x7f | | reserved for extended types
-| 0x80 - 0xff | | reserved for future types
+| 0x11 | | [yellow-background]*Unknown (reserved for future "default")*
+| 0x12 | | [yellow-background]*Unknown*
+| 0x13 | no-value | No value
+| 0x14 - 0x1f | | [yellow-background]*Unknown (reserved for future "out-of-band" values)*
+| 0x20 | | [yellow-background]*Unknown (reserved for "generic integer")*
+| 0x21 | integer | Integer value
+| 0x22 | boolean | Boolean value
+| 0x23 | enum | Enumeration value
+| 0x24 - 0x2f | | [yellow-background]*Unknown (reserved for future integer types)*
+| 0x30 | octetString | Value data with an unspecified format
+| 0x31 | dateTime | RFC2579 date-time value
+| 0x32 | resolution |
+| 0x33 | rangeOfInteger |
+| 0x34 | | [yellow-background]*Unknown (reserved for collection)*
+| 0x35 | textWithLanguage |
+| 0x36 | nameWithLanguage |
+| 0x37 - 0x3f | | [yellow-background]*Unknown (reserved for future octetString types)*
+| 0x40 | | [yellow-background]*Unknown (reserved for "generic character-string")*
+| 0x41 | textWithoutLanguage |
+| 0x42 | nameWithoutLanguage |
+| 0x43 | | [yellow-background]*Unknown (reserved)*
+| 0x44 | keyword |
+| 0x45 | uri |
+| 0x46 | uriScheme |
+| 0x47 | charset |
+| 0x48 | naturalLanguage |
+| 0x49 | mimeMediaType |
+| 0x4a - 0x5f | | [yellow-background]*Unknown (reserved for future character string types)*
+| 0x60 - 0x7e | | [yellow-background]*Unknown (reserved for future types)*
+| 0x7f | | [yellow-background]*Unknown (reserved for extended types)*
+| 0x80 - 0xff | | [yellow-background]*Unknown (reserved for future types)*
 |===
 
-=== Value types
+==== Value types
 
-==== Boolean value
+===== Boolean value
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -165,7 +194,7 @@ See section: <<value_tags,Value tags>>
 | 1 | 1 | | Boolean
 |===
 
-==== RFC2579 date-time value
+===== RFC2579 date-time value
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -184,7 +213,7 @@ Contains '+' or '-'
 | 11 | 1 | | Minutes from UTC
 |===
 
-==== Integer value
+===== Integer value
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -193,7 +222,7 @@ Contains '+' or '-'
 | 1 | 4 | | Integer
 |===
 
-==== String value
+===== String value
 
 [cols="1,1,1,5",options="header"]
 |===
