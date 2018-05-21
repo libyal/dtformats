@@ -3,12 +3,6 @@ type: format
 description: CUPS Internet Printing Protocol (IPP) format
 urls: ['https://github.com/libyal/dtformats/blob/master/documentation/CUPS%20Internet%20Printing%20Protocol%20format.asciidoc']
 ---
-name: bool
-type: boolean
-attributes:
-  size: 1
-  units: bytes
----
 name: char
 type: character
 attributes:
@@ -43,10 +37,18 @@ attributes:
   size: 2
   units: bytes
 ---
-name: uint32
+name: int32
 type: integer
 attributes:
-  format: unsigned
+  format: signed
+  size: 4
+  units: bytes
+---
+name: int32be
+type: integer
+attributes:
+  byte_order: big-endian
+  format: signed
   size: 4
   units: bytes
 ---
@@ -57,14 +59,14 @@ attributes:
   byte_order: big-endian
 members:
 - name: major_version
-  data_type: uint8
+  data_type: int8
 - name: minor_version
-  data_type: uint8
+  data_type: int8
 - name: operation_identifier
   aliases: [status_code]
-  data_type: uint16
+  data_type: int16
 - name: request_identifier
-  data_type: uint32
+  data_type: int32
 ---
 name: cups_ipp_attribute
 description: Attribute
@@ -88,25 +90,12 @@ members:
   element_data_type: uint8
   number_of_elements: cups_ipp_attribute.value_data_size
 ---
-name: cups_ipp_boolean_value
-description: Boolean value
-type: structure
-attributes:
-  byte_order: big-endian
-members:
-- name: padding
-  data_type: uint8
-- name: boolean
-  data_type: bool
----
 name: cups_ipp_datetime_value
 description: RFC2579 date-time value
 type: structure
 attributes:
   byte_order: big-endian
 members:
-- name: padding
-  data_type: uint8
 - name: year
   data_type: uint16
 - name: month
@@ -127,28 +116,3 @@ members:
   data_type: uint8
 - name: minutes_from_utc
   data_type: uint8
----
-name: cups_ipp_integer_value
-description: Integer value
-type: structure
-attributes:
-  byte_order: big-endian
-members:
-- name: padding
-  data_type: uint8
-- name: integer
-  data_type: uint32
----
-name: cups_ipp_string_value
-description: String value
-type: structure
-attributes:
-  byte_order: big-endian
-members:
-- name: size
-  data_type: uint8
-- name: string
-  type: string
-  encoding: utf8
-  element_data_type: char
-  number_of_elements: cups_ipp_string_value.size

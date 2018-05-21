@@ -65,11 +65,18 @@ A CUPP IPP request or response consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | 1 | Major version
-| 1 | 1 | 0 or 1 | Minor version
-| 2 | 2 | | Operation identifier (for a request) or status code (for a response)
-| 4 | 4 | | Request identifier
+| 0 | 1 | | Major version +
+Contains a signed integer
+| 1 | 1 | | Minor version +
+Contains a signed integer
+| 2 | 2 | | Operation identifier (for a request) or status code (for a response) +
+Contains a signed integer
+| 4 | 4 | | Request identifier +
+Contains a signed integer that should be > 0
 |===
+
+[NOTE]
+Known versions are 1.0, 1.1 and 2.0
 
 === Attributes group
 
@@ -82,7 +89,7 @@ sequences:
 * optional unsupported attribute sequence, should only be present when used
 * end-of-attributes-tag
 
-+=== Attributes sequence
+==== Attributes sequence
 
 An attribute squence starts with a delimiter tag.
 
@@ -91,7 +98,7 @@ An attribute squence starts with a delimiter tag.
 | Offset | Size | Value | Description
 | 0 | 1 | | Tag value +
 Contains a signed integer with a delimiter tag +
-Also see section: <<delimiter_tags,Delimer tags>>
+See section: <<delimiter_tags,Delimer tags>>
 |===
 
 === Attribute
@@ -155,28 +162,45 @@ There are multiple kinds of attribute tags, namely:
 | 0x13 | no-value | No value
 | 0x14 - 0x1f | | [yellow-background]*Unknown (reserved for future "out-of-band" values)*
 | 0x20 | | [yellow-background]*Unknown (reserved for "generic integer")*
-| 0x21 | integer | Integer value
-| 0x22 | boolean | Boolean value
-| 0x23 | enum | Enumeration value
+| 0x21 | integer | Integer value +
+Value data contains an <<integer_value,Integer value>>
+| 0x22 | boolean | Boolean value +
+Value data contains an <<boolean_value,Boolean value>>
+| 0x23 | enum | Enumeration value +
+Value data contains an <<integer_value,Integer value>>
 | 0x24 - 0x2f | | [yellow-background]*Unknown (reserved for future integer types)*
-| 0x30 | octetString | Value data with an unspecified format
-| 0x31 | dateTime | RFC2579 date-time value
-| 0x32 | resolution |
-| 0x33 | rangeOfInteger |
+| 0x30 | octetString | Value data with an unspecified format +
+Value data contains binary data
+| 0x31 | dateTime | RFC2579 date-time value +
+Value data contains a <<rfc2579_date_time_value,RFC2579 date-time value>>
+| 0x32 | resolution | Resolution +
+Value data contains an <<resolution_value,Resolution value>>
+| 0x33 | rangeOfInteger | rDrange of integers +
+Value data contains an <<range_of_integers_value,Range of integers value>>
 | 0x34 | | [yellow-background]*Unknown (reserved for collection)*
-| 0x35 | textWithLanguage |
-| 0x36 | nameWithLanguage |
+| 0x35 | textWithLanguage | Text with language +
+Value data contains a <<string_with_language_value,String with language value>> encoded with the character set defined by charset (0x47)
+| 0x36 | nameWithLanguage | Name with language +
+Value data contains a <<string_with_language_value,String with language value>> encoded with the character set defined by charset (0x47)
 | 0x37 - 0x3f | | [yellow-background]*Unknown (reserved for future octetString types)*
 | 0x40 | | [yellow-background]*Unknown (reserved for "generic character-string")*
-| 0x41 | textWithoutLanguage |
-| 0x42 | nameWithoutLanguage |
+| 0x41 | textWithoutLanguage | Text without language +
+Value data contains a <<string_value,String value>> encoded with the character set defined by charset (0x47)
+| 0x42 | nameWithoutLanguage | Name without language +
+Value data contains a <<string_value,String value>> encoded with the character set defined by charset (0x47)
 | 0x43 | | [yellow-background]*Unknown (reserved)*
-| 0x44 | keyword |
-| 0x45 | uri |
-| 0x46 | uriScheme |
-| 0x47 | charset |
-| 0x48 | naturalLanguage |
-| 0x49 | mimeMediaType |
+| 0x44 | keyword | Keyword +
+Value data contains an ASCII <<string_value,String value>>
+| 0x45 | uri | URI +
+Value data contains an ASCII <<string_value,String value>>
+| 0x46 | uriScheme | URI scheme +
+Value data contains an ASCII <<string_value,String value>>
+| 0x47 | charset | Character set +
+Value data contains an ASCII <<string_value,String value>>
+| 0x48 | naturalLanguage | Natural language +
+Value data contains an ASCII <<string_value,String value>>
+| 0x49 | mimeMediaType | MIME media type +
+Value data contains an ASCII <<string_value,String value>>
 | 0x4a - 0x5f | | [yellow-background]*Unknown (reserved for future character string types)*
 | 0x60 - 0x7e | | [yellow-background]*Unknown (reserved for future types)*
 | 0x7f | | [yellow-background]*Unknown (reserved for extended types)*
@@ -185,52 +209,88 @@ There are multiple kinds of attribute tags, namely:
 
 ==== Value types
 
-===== Boolean value
+===== [[boolean_value]]Boolean value
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (padding)*
-| 1 | 1 | | Boolean
+| 0 | 1 | | Boolean +
+Contains a signed integer where 0x00 is "false" and 0x01 is "true".
 |===
 
-===== RFC2579 date-time value
+===== [[rfc2579_date_time_value]]RFC2579 date-time value
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (padding)*
-| 1 | 2 | | Year
-| 3 | 1 | | Month
-| 4 | 1 | | Day of month
-| 5 | 1 | | Hours
-| 6 | 1 | | Minutes
-| 7 | 1 | | Seconds
-| 8 | 1 | | Deciseconds
-| 9 | 1 | | Direction from UTC +
+| 0 | 2 | | Year
+| 2 | 1 | | Month
+| 3 | 1 | | Day of month
+| 4 | 1 | | Hours
+| 5 | 1 | | Minutes
+| 6 | 1 | | Seconds
+| 7 | 1 | | Deciseconds
+| 8 | 1 | | Direction from UTC +
 Contains '+' or '-'
-| 10 | 1 | | Hours from UTC
-| 11 | 1 | | Minutes from UTC
+| 9 | 1 | | Hours from UTC
+| 10 | 1 | | Minutes from UTC
 |===
 
-===== Integer value
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (padding)*
-| 1 | 4 | | Integer
-|===
-
-===== String value
+===== [[integer_value]]Integer value
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (padding)*
-| 1 | 1 | | Size
-| 2 | ... | | String +
-Including the end-of-string character
+| 0 | 4 | | Integer +
+Contains a signed integer
+|===
+
+==== [[range_of_integers_value]]Range of integers value>>
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Range lower bound +
+Contains a signed integer
+| 4 | 4 | | Range upper bound +
+Contains a signed integer
+|===
+
+===== [[resolution_value]]Resolution value
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Cross feed direction resolution +
+Contains a signed integer
+| 4 | 4 | | Feed direction resolution +
+Contains a signed integer
+| 8 | 1 | | Units +
+Contains a signed integer
+|===
+
+===== [[string_value]]String value
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | String without end-of-string character +
+The string encoding is dependent on the <<value_tags,Value tag>>
+|===
+
+===== [[string_with_language_value]]String with language value
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Language size +
+Contains a signed integer
+| 2 | ... | | Language string without end-of-string character +
+The string encoding is dependent on the <<value_tags,Value tag>>
+| ... | 2 | | String size +
+Contains a signed integer
+| ... | ... | | String without end-of-string character +
+The string encoding is dependent on the <<value_tags,Value tag>>
 |===
 
 :numbered!:

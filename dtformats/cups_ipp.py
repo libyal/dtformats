@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 
 import os
 
+from dfdatetime import rfc2579_date_time as dfdatetime_rfc2579_date_time
+
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
@@ -31,6 +33,11 @@ class CupsIppFile(data_format.BinaryDataFile):
   _TAG_VALUE_SIZE = _TAG_VALUE.GetByteSize()
 
   _ATTRIBUTE = _DATA_TYPE_FABRIC.CreateDataTypeMap('cups_ipp_attribute')
+
+  _DATETIME_VALUE = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+      'cups_ipp_datetime_value')
+
+  _INTEGER_VALUE = _DATA_TYPE_FABRIC.CreateDataTypeMap('int32be')
 
   # TODO: add descriptive names.
   _DELIMITER_TAGS = (0x01, 0x02, 0x04, 0x05)
@@ -78,6 +85,7 @@ class CupsIppFile(data_format.BinaryDataFile):
     """
     super(CupsIppFile, self).__init__(
         debug=debug, output_writer=output_writer)
+    self._last_charset_attribute = 'ascii'
 
   def _DebugPrintAttribute(self, attribute):
     """Prints attribute debug information.
@@ -96,8 +104,6 @@ class CupsIppFile(data_format.BinaryDataFile):
     self._DebugPrintValue('Value data size', value_string)
 
     self._DebugPrintData('Value data', attribute.value_data)
-
-    self._DebugPrintText('\n')
 
   def _DebugPrintHeader(self, header):
     """Prints header debug information.
@@ -136,7 +142,7 @@ class CupsIppFile(data_format.BinaryDataFile):
       file_object (file): file-like object.
 
     Raises:
-      ParseError: if the attributes group cannot be read.
+      ParseError: if the attribute cannot be read.
     """
     file_offset = file_object.tell()
 
@@ -145,6 +151,62 @@ class CupsIppFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintAttribute(attribute)
+
+    value = None
+    if attribute.tag_value in (0x21, 0x23):
+      file_offset = file_object.tell()
+      try:
+        value = self._ReadStructureFromByteStream(
+            attribute.value_data, file_offset, self._INTEGER_VALUE,
+            'integer value')
+      except (ValueError, errors.ParseError) as exception:
+        raise errors.ParseError(
+            'Unable to parse integer value with error: {0!s}'.format(exception))
+
+      if self._debug:
+        value_string = '{0:d}'.format(value)
+        self._DebugPrintValue('Value', value_string)
+
+    elif attribute.tag_value == 0x22:
+      if attribute.value_data == b'\x00':
+        value = False
+      elif attribute.value_data == b'\x01':
+        value = True
+      else:
+        raise errors.ParseError('Unsupported boolean value.')
+
+      if self._debug:
+        value_string = '{0!s}'.format(value)
+        self._DebugPrintValue('Value', value_string)
+
+    elif attribute.tag_value == 0x31:
+      # TODO: correct file offset to point to the start of value_data.
+      value = self._ReadDateTimeValue(attribute.value_data, file_offset)
+
+      if self._debug:
+        self._DebugPrintValue('Value', value.CopyToDateTimeString())
+
+    elif attribute.tag_value == 0x32:
+      # TODO: add support for resolution
+      pass
+
+    elif attribute.tag_value in (0x41, 0x42):
+      value = attribute.value_data.decode(self._last_charset_attribute)
+
+      if self._debug:
+        self._DebugPrintValue('Value', value)
+
+    elif attribute.tag_value in (0x44, 0x45, 0x46, 0x47, 0x48, 0x49):
+      value = attribute.value_data.decode('ascii')
+
+      if self._debug:
+        self._DebugPrintValue('Value', value)
+
+      if attribute.tag_value == 0x47:
+        self._last_charset_attribute = value
+
+    if self._debug:
+      self._DebugPrintText('\n')
 
   def _ReadAttributesGroup(self, file_object):
     """Reads an attributes group.
@@ -176,6 +238,34 @@ class CupsIppFile(data_format.BinaryDataFile):
         file_object.seek(file_offset, os.SEEK_SET)
 
         self._ReadAttribute(file_object)
+
+  def _ReadDateTimeValue(self, byte_stream, file_offset):
+    """Reads a RFC2579 date-time value.
+
+    Args:
+      byte_stream (bytes): byte stream.
+      file_offset (int): offset of the data relative from the start of
+          the file-like object.
+
+    Returns:
+      dfdatetime.RFC2579DateTime: RFC2579 date-time stored in the value.
+
+    Raises:
+      ParseError: when the datetime value cannot be parsed.
+    """
+    try:
+      value = self._ReadStructureFromByteStream(
+          byte_stream, file_offset, self._DATETIME_VALUE, 'date-time value')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError(
+          'Unable to parse datetime value with error: {0!s}'.format(exception))
+
+    rfc2579_date_time_tuple = (
+        value.year, value.month, value.day,
+        value.hours, value.minutes, value.seconds, value.deciseconds,
+        value.direction_from_utc, value.hours_from_utc, value.minutes_from_utc)
+    return dfdatetime_rfc2579_date_time.RFC2579DateTime(
+        rfc2579_date_time_tuple=rfc2579_date_time_tuple)
 
   def _ReadHeader(self, file_object):
     """Reads the header.
