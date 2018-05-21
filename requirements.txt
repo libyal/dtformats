@@ -1,7 +1,8 @@
 pip >= 7.0.0
 PyYAML >= 3.10
 backports.lzma ; python_version < '3.0'
-dtfabric >= 20170524
+dfdatetime >= 20180510
+dtfabric >= 20180521
 libfwsi-python >= 20150606
 liblnk-python >= 20150830
 libolecf-python >= 20151223

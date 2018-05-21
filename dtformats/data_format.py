@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import abc
 import os
 
+from dfdatetime import filetime as dfdatetime_filetime
+
 from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 
@@ -50,6 +52,27 @@ class BinaryDataFormat(object):
     """
     value_string = '{0:d}'.format(value)
     self._DebugPrintValue(description, value_string)
+
+  def _DebugPrintFiletimeValue(self, description, value):
+    """Prints a FILETIME timestamp value for debugging.
+
+    Args:
+      description (str): description.
+      value (object): value.
+    """
+    if value == 0:
+      date_time_string = 'Not set (0)'
+    elif value == 0x7fffffffffffffff:
+      date_time_string = 'Never (0x7fffffffffffffff)'
+    else:
+      date_time = dfdatetime_filetime.Filetime(timestamp=value)
+      date_time_string = date_time.CopyToDateTimeString()
+      if date_time_string:
+        date_time_string = '{0:s} UTC'.format(date_time_string)
+      else:
+        date_time_string = '0x{08:x}'.format(value)
+
+    self._DebugPrintValue(description, date_time_string)
 
   def _DebugPrintValue(self, description, value):
     """Prints a value for debugging.

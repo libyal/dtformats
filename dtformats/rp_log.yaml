@@ -39,3 +39,11 @@ members:
   encoding: utf-16-le
   element_data_type: wchar16
   elements_terminator: "\x00\x00"
+---
+name: rp_log_file_footer
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: creation_time
+  data_type: uint64
