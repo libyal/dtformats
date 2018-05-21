@@ -175,7 +175,7 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the structure cannot be read.
-      ValueError: if file-like object or date type map are invalid.
+      ValueError: if file-like object or data type map are invalid.
     """
     if not file_object:
       raise ValueError('Invalid file-like object.')
@@ -220,7 +220,7 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the string cannot be read.
-      ValueError: if file-like object or date type map are invalid.
+      ValueError: if file-like object or data type map are invalid.
     """
     # pylint: disable=protected-access
     element_data_size = (
@@ -258,7 +258,7 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the structure cannot be read.
-      ValueError: if file-like object or date type map are invalid.
+      ValueError: if file-like object or data type map are invalid.
     """
     data = self._ReadData(file_object, file_offset, data_size, description)
 
@@ -282,7 +282,7 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the structure cannot be read.
-      ValueError: if file-like object or date type map are invalid.
+      ValueError: if file-like object or data type map are invalid.
     """
     context = None
     last_size_hint = 0
@@ -322,7 +322,7 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the structure cannot be read.
-      ValueError: if file-like object or date type map are invalid.
+      ValueError: if file-like object or data type map are invalid.
     """
     if not byte_stream:
       raise ValueError('Invalid byte stream.')
