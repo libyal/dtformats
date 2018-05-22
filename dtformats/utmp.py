@@ -3,8 +3,9 @@
 
 from __future__ import unicode_literals
 
-import datetime
 import os
+
+from dfdatetime import posix_time as dfdatetime_posix_time
 
 from dtfabric.runtime import fabric as dtfabric_fabric
 
@@ -23,7 +24,7 @@ class UTMPFile(data_format.BinaryDataFile):
   _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
       yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
 
-  _UTMP_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap('utmp_entry_linux')
+  _UTMP_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap('utmp_entry')
 
   _UTMP_ENTRY_SIZE = _UTMP_ENTRY.GetByteSize()
 
@@ -31,7 +32,7 @@ class UTMPFile(data_format.BinaryDataFile):
     """Prints entry debug information.
 
     Args:
-      entry (utmp_entry_linux): entry.
+      entry (utmp_entry): entry.
     """
     value_string = '0x{0:08x}'.format(entry.type)
     self._DebugPrintValue('Type', value_string)
@@ -63,11 +64,15 @@ class UTMPFile(data_format.BinaryDataFile):
     value_string = '{0:d}'.format(entry.session)
     self._DebugPrintValue('Session', value_string)
 
-    date_time = (datetime.datetime(1970, 1, 1) + datetime.timedelta(
-        seconds=int(entry.timestamp)))
+    date_time = dfdatetime_posix_time.PosixTime(
+        timestamp=entry.timestamp)
+    date_time_string = date_time.CopyToDateTimeString()
+    if date_time_string:
+      date_time_string = '{0:s} UTC'.format(date_time_string)
+    else:
+      date_time_string = '0x{08:x}'.format(entry.timestamp)
 
-    value_string = '{0!s} ({1:d})'.format(date_time, entry.timestamp)
-    self._DebugPrintValue('Timestamp', value_string)
+    self._DebugPrintValue('Timestamp', date_time_string)
 
     value_string = '{0:d}'.format(entry.micro_seconds)
     self._DebugPrintValue('Micro seconds', value_string)

@@ -1,3 +1,8 @@
+name: utmp
+type: format
+description: Utmp login records format
+urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Utmp%20login%20records%20format.asciidoc"]
+---
 name: byte
 type: integer
 attributes:
@@ -12,6 +17,13 @@ attributes:
   size: 2
   units: bytes
 ---
+name: int32
+type: integer
+attributes:
+  format: signed
+  size: 4
+  units: bytes
+---
 name: uint32
 type: integer
 attributes:
@@ -19,7 +31,7 @@ attributes:
   size: 4
   units: bytes
 ---
-name: utmp_entry_linux
+name: utmp_entry
 type: structure
 attributes:
   byte_order: little-endian
@@ -49,7 +61,7 @@ members:
 - name: session
   data_type: uint32
 - name: timestamp
-  data_type: uint32
+  data_type: int32
 - name: micro_seconds
   data_type: uint32
 - name: address_a

@@ -48,8 +48,8 @@ A CUPS IPP file consists of:
 |===
 | Characteristics | Description
 | Byte order | big-endian
-| Date and time values |
-| Character strings |
+| Date and time values | RFC2579 date-time value
+| Character strings | Strings are stored either as 7-bit ASCII or in a format defined encoding such as UTF-8
 |===
 
 == Request or reponse
