@@ -15,6 +15,9 @@ class UTMPFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
+  _EMPTY_IP_ADDRESS = (
+      b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
   def testDebugPrintEntry(self):
     """Tests the _DebugPrintEntry function."""
     output_writer = test_lib.TestOutputWriter()
@@ -22,18 +25,15 @@ class UTMPFileTest(test_lib.BaseTestCase):
 
     data_type_map = test_file._UTMP_ENTRY
     entry = data_type_map.CreateStructureValues(
-        address_a=9,
-        address_b=10,
-        address_c=11,
-        address_d=12,
-        exit=5,
+        ip_address=self._EMPTY_IP_ADDRESS,
+        exit_status=5,
         hostname=b'host',
         micro_seconds=8,
         pid=2,
         session=6,
         terminal=b'vty',
         terminal_identifier=3,
-        termination=4,
+        termination_status=4,
         timestamp=7,
         type=1,
         unknown1=b'unknown',

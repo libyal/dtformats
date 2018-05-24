@@ -10,10 +10,10 @@ attributes:
   size: 1
   units: bytes
 ---
-name: uint16
+name: int16
 type: integer
 attributes:
-  format: unsigned
+  format: signed
   size: 2
   units: bytes
 ---
@@ -37,7 +37,7 @@ attributes:
   byte_order: little-endian
 members:
 - name: type
-  data_type: uint32
+  data_type: int32
 - name: pid
   data_type: uint32
 - name: terminal
@@ -54,24 +54,20 @@ members:
   type: stream
   element_data_type: byte
   number_of_elements: 256
-- name: termination
-  data_type: uint16
-- name: exit
-  data_type: uint16
+- name: termination_status
+  data_type: int16
+- name: exit_status
+  data_type: int16
 - name: session
-  data_type: uint32
+  data_type: int32
 - name: timestamp
   data_type: int32
 - name: micro_seconds
-  data_type: uint32
-- name: address_a
-  data_type: uint32
-- name: address_b
-  data_type: uint32
-- name: address_c
-  data_type: uint32
-- name: address_d
-  data_type: uint32
+  data_type: int32
+- name: ip_address
+  type: stream
+  element_data_type: byte
+  number_of_elements: 16
 - name: unknown1
   type: stream
   element_data_type: byte

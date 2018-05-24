@@ -62,7 +62,8 @@ A utmp login records file consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Type
+| 0 | 4 | | Type of login +
+Contains a signed integer +
 See section: <<types,Types>>
 | 4 | 4 | | Process identifier (PID)
 | 8 | 32 | | Terminal +
@@ -72,17 +73,19 @@ Contains an encoded string
 Contains an encoded string
 | 76 | 256 | | Hostname +
 Contains an encoded string
-| 332 | 2 | | Termination
-| 334 | 2 | | Exit code
-| 336 | 4 | | Session
+| 332 | 2 | | Termination status +
+Contains a signed integer
+| 334 | 2 | | Exit status +
+Contains a signed integer
+| 336 | 4 | | Session +
+Contains a signed integer
 | 340 | 4 | | Timestamp +
 Contains a signed integer
-| 344 | 4 | | Microseconds
-| 348 | 4 | | Address a
-| 352 | 4 | | Address b
-| 356 | 4 | | Address c
-| 360 | 4 | | Address d
-| 364 | 20 | | [yellow-background]*Unknown*
+| 344 | 4 | | Microseconds +
+Contains a signed integer
+| 348 | 16 | | IP address +
+Contains a packed IPv4 or IPv6 address
+| 364 | 20 | | [yellow-background]*Unknown (reserved for future usage)*
 |===
 
 ==== [[types]]Types

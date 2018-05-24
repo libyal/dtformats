@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 
+import socket
 import os
 
 from dfdatetime import posix_time as dfdatetime_posix_time
@@ -27,6 +28,9 @@ class UTMPFile(data_format.BinaryDataFile):
   _UTMP_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap('utmp_entry')
 
   _UTMP_ENTRY_SIZE = _UTMP_ENTRY.GetByteSize()
+
+  _EMPTY_IP_ADDRESS = (
+      b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 
   def _DebugPrintEntry(self, entry):
     """Prints entry debug information.
@@ -55,11 +59,11 @@ class UTMPFile(data_format.BinaryDataFile):
     value_string = value_string.decode('utf-8')
     self._DebugPrintValue('Hostname', value_string)
 
-    value_string = '0x{0:04x}'.format(entry.termination)
-    self._DebugPrintValue('Termination', value_string)
+    value_string = '0x{0:04x}'.format(entry.termination_status)
+    self._DebugPrintValue('Termination status', value_string)
 
-    value_string = '0x{0:04x}'.format(entry.exit)
-    self._DebugPrintValue('Exit', value_string)
+    value_string = '0x{0:04x}'.format(entry.exit_status)
+    self._DebugPrintValue('Exit status', value_string)
 
     value_string = '{0:d}'.format(entry.session)
     self._DebugPrintValue('Session', value_string)
@@ -77,17 +81,12 @@ class UTMPFile(data_format.BinaryDataFile):
     value_string = '{0:d}'.format(entry.micro_seconds)
     self._DebugPrintValue('Micro seconds', value_string)
 
-    value_string = '0x{0:08x}'.format(entry.address_a)
-    self._DebugPrintValue('Address A', value_string)
+    if entry.ip_address[4:] == self._EMPTY_IP_ADDRESS[4:]:
+      value_string = socket.inet_ntop(socket.AF_INET, entry.ip_address[:4])
+    else:
+      value_string = socket.inet_ntop(socket.AF_INET6, entry.ip_address)
 
-    value_string = '0x{0:08x}'.format(entry.address_b)
-    self._DebugPrintValue('Address B', value_string)
-
-    value_string = '0x{0:08x}'.format(entry.address_c)
-    self._DebugPrintValue('Address C', value_string)
-
-    value_string = '0x{0:08x}'.format(entry.address_d)
-    self._DebugPrintValue('Address D', value_string)
+    self._DebugPrintValue('IP address', value_string)
 
     self._DebugPrintData('Unknown1', entry.unknown1)
 
