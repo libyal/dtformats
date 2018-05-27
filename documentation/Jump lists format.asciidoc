@@ -11,8 +11,7 @@ Jump lists are a Windows Taskbar feature, introduced in Windows 7, that gives
 the user quick access to recently accessed application files and actions.
 
 This document is intended as a working document for the Jump lists format
-specification. Which should allow existing Open Source forensic tooling to be
-able to process this file type.
+specification.
 
 [preface]
 == Document information

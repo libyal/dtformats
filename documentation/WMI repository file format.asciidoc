@@ -11,8 +11,7 @@ holds the schema, also called the object repository or class store, that models
 the managed environment and defines every piece of data exposed by WMI.
 
 This document is intended as a working document for the WMI repository file
-format specifications. Which should allow existing Open Source forensic
-tooling to be able to process these file types.
+format specifications.
 
 [preface]
 == Document information

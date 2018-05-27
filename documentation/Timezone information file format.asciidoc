@@ -10,8 +10,7 @@ The timezone information file format is used to store timezone information
 used by tzset on POSIX systems.
 
 This document is intended as a working document for the TZif format
-specification. Which should allow existing Open Source forensic tooling to be
-able to process this file type.
+specification.
 
 [preface]
 == Document information
