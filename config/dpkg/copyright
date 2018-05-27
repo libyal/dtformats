@@ -3,7 +3,7 @@ Upstream-Name: dtfabric
 Source: https://github.com/libyal/dtfabric
 
 Files: *
-Copyright: 2016-2017, Joachim Metz <joachim.metz@gmail.com>
+Copyright: 2016-2018, Joachim Metz <joachim.metz@gmail.com>
 License: Apache-2.0
 
 License: Apache-2.0

@@ -1,5 +1,4 @@
-= Safari cookies file format specification
-Analysis of the Cookies.binarycookies cookies format
+= The Windows Recycle.Bin file format
 
 :toc:
 :toclevels: 4
@@ -7,22 +6,21 @@ Analysis of the Cookies.binarycookies cookies format
 :numbered!:
 [abstract]
 == Summary
-The Safari cookies file, also known as the Safari binary cookies file
-(Cookies.binarycookies) format, holds the cookies use by the Safari browser.
-This specification is based on available documentation and was enhanced by
-analyzing test data.
+The Windows Recycle.Bin file format is used by Windows to keep track of the
+original location of soft deleted filed. This specification is based on
+available documentation and was enhanced by analyzing test data.
 
-This document is intended as a working document for the Safari binary Cookies
-file format specifications.
+This document is intended as a working document for the Windows Recycle.Bin
+file format specification.
 
 [preface]
 == Document information
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | Cookies.binarycookies file format specification
+| Abstract: | This document contains information about the Windows Recycle.Bin file format
 | Classification: | Public
-| Keywords: | Safari cookies, Safari binary cookies, Cookies.binarycookies
+| Keywords: | Recycle.Bin, $I file, $R file
 |===
 
 [preface]
@@ -47,142 +45,50 @@ in the section entitled "GNU Free Documentation License".
 
 :numbered:
 == Overview
-[yellow-background]*TODO: add text*
+A Windows Recycle.Bin file constists of:
 
-[yellow-background]*TODO: add typical file location*
-
-....
-/var/private/mobile/Library
-/var/private/mobile/$APP_DIRECTORY/Library/Cookies
-....
-
-Where `$APP_DIRECTORY` is the application specific directory.
-
-A Cookies.binarycookies file consists of:
-
-* File header
-* Pages
-* File footer
+* $I file; contains metadata of the original file
+* $R file; contains data of the orignal file
 
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | big-endian and little-endian
-| Date and time values |
-| Character strings |
+| Byte order | little-endian
+| Date and time values | FILETIME in UTC
+| Character strings | UTF-16 little-endian formatted string with end-of-string character
 |===
 
-=== File header
-
-The file header is variable of size and consists of:
+=== $I file
+The $I file is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "cook" | Signature
-| 4 | 4 | | Number of pages +
-Contains a big-endian integer value
-| 8 | 4 x number | | Page sizes +
-Array of 32-bit big-endian size values in bytes
+| 0 | 8 | 1 or 2 | Format version
+| 8 | 8 | | Original file size
+| 16 | 8 | | Deletion date and time +
+Contains a FILETIME
+4+| _If format version == 1_
+| 24 | ... | | Original filename +
+Contains an UTF-16 little-endian string with end-of-string character.
+4+| _If format version == 2_
+| 24 | 4 | | Number of characters in original filename
+| 28 | ... | | Original filename +
+Contains an UTF-16 little-endian string with end-of-string character.
 |===
 
-=== Page
+==== Format versions
 
-A page consists of:
-
-* Page header
-* An array of cookie records
-* Page footer
-
-==== Page header
-
-The page header is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
+[cols="1,2",options="header"]
 |===
-| Offset | Size | Value | Description
-| 0 | 4 | "\x00\x00\x01\x00" | Page header signature
-| 4 | 4 | | Number of cookie records +
-Contains a little-endian integer value
-| 8 | 4 x number | | Record offsets +
-Array of 32-bit little-endian offset values in bytes
-|===
-
-==== Page footer
-
-The page footer is 4 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | "\x00\x00\x00\x00" | Page footer signature
-|===
-
-==== Cookie record
-
-The cookie record is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Record size +
-Contains the little-endina size of the record in bytes
-| 4 | 4 | | [yellow-background]*Unknown*
-| 8 | 4 | | Cookie flags +
-Contains a little-endian integer value
-| 12 | 4 | | [yellow-background]*Unknown*
-| 16 | 4 | | URL (or cookie domain) string offset +
-Contains a little-endian offset relative to the start of the record
-| 20 | 4 | | Cookie name offset +
-Contains a little-endian offset relative to the start of the record
-| 24 | 4 | | Cookie path offset +
-Contains a little-endian offset relative to the start of the record
-| 28 | 4 | | Cookie value offset +
-Contains a little-endian offset relative to the start of the record
-| 32 | 8 | 0 | [yellow-background]*Unknown (end of cookie record header?)*
-| 40 | 8 | | Expiration date and time +
-Contains a 64-bit little-endian float Cocoa timestamp
-| 48 | 8 | | Creation date and time +
-Contains a 64-bit little-endian float Cocoa timestamp
-| 56 | ... | | URL (or cookie domain) string
-| ... | ... | | Cookie name string
-| ... | ... | | Cookie path string
-| ... | ... | | Cookie value data
-|===
-
-==== Cookie flags
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x00000001 | | Is secure cookie (https)
-| 0x00000002 | | [yellow-background]*Unknown*
-| 0x00000004 | | Is HTTP only cookie
-|===
-
-=== File footer
-
-The file footer is 8 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 8 | | [yellow-background]*Unknown (checksum)*
+| Value | Description
+| 1 | Introduced in Windows Vista
+| 2 | Introduced in Windows 10
 |===
 
 :numbered!:
 [appendix]
 == References
-
-`[REFERENCE]`
-
-[cols="1,5",options="header"]
-|===
-| Title: | Safari/iOS – Cookies.binarycookies reader
-| Author(s): | satishb3
-| Date: | October 27, 2012
-| URL: | http://www.securitylearn.net/2012/10/27/cookies-binarycookies-reader/
-|===
 
 [appendix]
 == GNU Free Documentation License
