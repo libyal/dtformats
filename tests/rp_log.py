@@ -11,7 +11,7 @@ from tests import test_lib
 
 
 class RestorePointLogFileTest(test_lib.BaseTestCase):
-  """Windows Windows Restore Point rp.log file tests."""
+  """Windows Restore Point rp.log file tests."""
 
   # pylint: disable=protected-access
 
