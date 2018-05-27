@@ -245,7 +245,7 @@ Contains '+' or '-'
 Contains a signed integer
 |===
 
-==== [[range_of_integers_value]]Range of integers value>>
+===== [[range_of_integers_value]]Range of integers value
 
 [cols="1,1,1,5",options="header"]
 |===
