@@ -54,7 +54,9 @@ A utmp login records file consists of:
 | Characteristics | Description
 | Byte order | litte-endian
 | Date and time values | POSIX timestamp with microseconds in UTC
-| Character strings |
+| Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string encoded with th system codepage. +
+Though technically maybe incorrect, this document will use term (extended) ASCII string. +
+On modern versions of Linux the system encoding will be UTF-8.
 |===
 
 === Record
