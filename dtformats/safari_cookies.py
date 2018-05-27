@@ -126,6 +126,29 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
+  def _ReadCString(self, page_data, string_offset):
+    """Reads a string from the page data.
+
+    Args:
+      page_data (bytes): page data.
+      string_offset (int): offset of the string relative to the start
+          of the page.
+
+    Returns:
+      str: string.
+
+    Raises:
+      ParseError: if the string cannot be read.
+    """
+    try:
+      value_string = self._CSTRING.MapByteStream(page_data[string_offset:])
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError((
+          'Unable to map string data at offset: 0x{0:08x} with error: '
+          '{1!s}').format(string_offset, exception))
+
+    return value_string.rstrip(b'\x00')
+
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
 
@@ -163,6 +186,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       raise errors.ParseError(
           'Unsupported file signature: {0!s}'.format(file_header.signature))
 
+    # TODO: move page sizes array into file header, this will require dtFabric
+    # to compare signature as part of data map.
     # TODO: check for upper limit.
     page_sizes_data_size = file_header.number_of_pages * 4
 
@@ -262,7 +287,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
 
     Args:
       page_data (bytes): page data.
-      record_offset (int): record offset.
+      record_offset (int): offset of the record relative to the start
+          of the page.
 
     Raises:
       ParseError: if the record cannot be read.
@@ -284,62 +310,39 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintRecordHeader(record_header)
 
-      value_string = ''
-      if record_header.url_offset:
-        data_offset = record_offset + record_header.url_offset
-        try:
-          value_string = self._CSTRING.MapByteStream(
-              page_data[data_offset:record_data_size])
+    value_string = ''
+    if record_header.url_offset:
+      data_offset = record_offset + record_header.url_offset
+      value_string = self._ReadCString(page_data, data_offset)
 
-        except dtfabric_errors.MappingError as exception:
-          raise errors.ParseError((
-              'Unable to map URL data at offset: 0x{0:08x} with error: '
-              '{1!s}').format(data_offset, exception))
-
+    if self._debug:
       self._DebugPrintValue('URL', value_string)
 
-      value_string = ''
-      if record_header.name_offset:
-        data_offset = record_offset + record_header.name_offset
-        try:
-          value_string = self._CSTRING.MapByteStream(
-              page_data[data_offset:record_data_size])
+    value_string = ''
+    if record_header.name_offset:
+      data_offset = record_offset + record_header.name_offset
+      value_string = self._ReadCString(page_data, data_offset)
 
-        except dtfabric_errors.MappingError as exception:
-          raise errors.ParseError((
-              'Unable to map name data at offset: 0x{0:08x} with error: '
-              '{1!s}').format(data_offset, exception))
-
+    if self._debug:
       self._DebugPrintValue('Name', value_string)
 
-      value_string = ''
-      if record_header.path_offset:
-        data_offset = record_offset + record_header.path_offset
-        try:
-          value_string = self._CSTRING.MapByteStream(
-              page_data[data_offset:record_data_size])
+    value_string = ''
+    if record_header.path_offset:
+      data_offset = record_offset + record_header.path_offset
+      value_string = self._ReadCString(page_data, data_offset)
 
-        except dtfabric_errors.MappingError as exception:
-          raise errors.ParseError((
-              'Unable to map path data at offset: 0x{0:08x} with error: '
-              '{1!s}').format(data_offset, exception))
-
+    if self._debug:
       self._DebugPrintValue('Path', value_string)
 
-      value_string = ''
-      if record_header.value_offset:
-        data_offset = record_offset + record_header.value_offset
-        try:
-          value_string = self._CSTRING.MapByteStream(
-              page_data[data_offset:record_data_size])
+    value_string = ''
+    if record_header.value_offset:
+      data_offset = record_offset + record_header.value_offset
+      value_string = self._ReadCString(page_data, data_offset)
 
-        except dtfabric_errors.MappingError as exception:
-          raise errors.ParseError((
-              'Unable to map value data at offset: 0x{0:08x} with error: '
-              '{1!s}').format(data_offset, exception))
-
+    if self._debug:
       self._DebugPrintValue('Value', value_string)
 
+    if self._debug:
       self._DebugPrintText('\n')
 
   def ReadFileObject(self, file_object):
