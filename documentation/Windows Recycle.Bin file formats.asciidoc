@@ -1,4 +1,4 @@
-= The Windows Recycle.Bin file format
+= The Windows Recycle.Bin file formats
 
 :toc:
 :toclevels: 4
