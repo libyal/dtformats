@@ -40,7 +40,12 @@ class UTMPFileTest(test_lib.BaseTestCase):
 
     test_file._DebugPrintEntry(entry)
 
-  # TODO: add tests for _DecodeString
+  def testDecodeString(self):
+    """Tests the _DecodeString function."""
+    test_file = utmp.UTMPFile()
+
+    string = test_file._DecodeString(b'test\x00')
+    self.assertEqual(string, 'test')
 
   def testFormatPackedIPv4Address(self):
     """Tests the _FormatPackedIPv4Address function."""

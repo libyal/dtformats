@@ -129,9 +129,9 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
               exception))
 
     if format_version == 1:
-      return original_filename.rstrip(b'\x00')
+      return original_filename.rstrip('\x00')
 
-    return original_filename.string.rstrip(b'\x00')
+    return original_filename.string.rstrip('\x00')
 
   def ReadFileObject(self, file_object):
     """Reads a Windows Restore Point rp.log file-like object.

@@ -98,14 +98,12 @@ class UTMPFile(data_format.BinaryDataFile):
     Returns:
       str: decoded string.
     """
-    byte_stream = byte_stream.rstrip(b'\x00')
-
     try:
       string = byte_stream.decode(encoding)
     except UnicodeDecodeError:
       string = 'INVALID'
 
-    return string
+    return string.rstrip('\x00')
 
   def _FormatPackedIPv4Address(self, packed_ip_address):
     """Formats a packed IPv4 address as a human readable string.
