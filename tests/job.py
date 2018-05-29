@@ -96,7 +96,59 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
 
     test_file._DebugPrintTrigger(trigger)
 
-  # TODO: add tests for _DebugPrintVariableLengthDataSection.
+  def testDebugPrintVariableLengthDataSection(self):
+    """Tests the _DebugVariableVariableLengthDataSection function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = job.WindowsTaskSchedularJobFile(
+        output_writer=output_writer)
+
+    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap('job_string')
+    application_name = data_type_map.CreateStructureValues(
+        number_of_characters=0)
+
+    parameters = data_type_map.CreateStructureValues(
+        number_of_characters=0)
+
+    working_directory = data_type_map.CreateStructureValues(
+        number_of_characters=0)
+
+    author = data_type_map.CreateStructureValues(
+        number_of_characters=0)
+
+    comment = data_type_map.CreateStructureValues(
+        number_of_characters=0)
+
+    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
+        'job_user_data')
+    user_data = data_type_map.CreateStructureValues(
+        size=0,
+        stream=b'')
+
+    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
+        'job_reserved_data')
+    reserved_data = data_type_map.CreateStructureValues(
+        size=0,
+        stream=b'')
+
+    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
+        'job_triggers')
+    triggers = data_type_map.CreateStructureValues(
+        number_of_triggers=0,
+        triggers_array=[])
+
+    data_type_map = test_file._VARIABLE_LENGTH_DATA_SECTION
+    data_section = data_type_map.CreateStructureValues(
+        application_name=application_name,
+        author=author,
+        comment=comment,
+        parameters=parameters,
+        reserved_data=reserved_data,
+        running_instance_count=1,
+        triggers=triggers,
+        user_data=user_data,
+        working_directory=working_directory)
+
+    test_file._DebugPrintVariableLengthDataSection(data_section)
 
   @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadFixedLengthDataSection(self):
@@ -127,9 +179,8 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
-    # TODO: add debug=True
     test_file = job.WindowsTaskSchedularJobFile(
-        output_writer=output_writer)
+        debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['wintask.job'])
     test_file.Open(test_file_path)
