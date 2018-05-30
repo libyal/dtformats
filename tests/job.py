@@ -104,19 +104,24 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
 
     data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap('job_string')
     application_name = data_type_map.CreateStructureValues(
-        number_of_characters=0)
+        number_of_characters=0,
+        string='')
 
     parameters = data_type_map.CreateStructureValues(
-        number_of_characters=0)
+        number_of_characters=0,
+        string='')
 
     working_directory = data_type_map.CreateStructureValues(
-        number_of_characters=0)
+        number_of_characters=0,
+        string='')
 
     author = data_type_map.CreateStructureValues(
-        number_of_characters=0)
+        number_of_characters=0,
+        string='')
 
     comment = data_type_map.CreateStructureValues(
-        number_of_characters=0)
+        number_of_characters=0,
+        string='')
 
     data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
         'job_user_data')
