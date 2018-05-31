@@ -436,7 +436,7 @@ class WMFFile(data_format.BinaryDataFile):
       0x005408A9: 'DPSONON',
       0x00550009: 'DSTINVERT',
       0x005601A9: 'DPSOX',
-      0x000570389: 'DPSOAN',
+      0x00570389: 'DPSOAN',
       0x00580785: 'PDSPOAX',
       0x00590609: 'DPSNOX',
       0x005A0049: 'PATINVERT',

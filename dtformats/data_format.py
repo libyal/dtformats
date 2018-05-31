@@ -98,13 +98,13 @@ class BinaryDataFormat(object):
       self._output_writer.WriteText(text)
 
   def _FormatDataInHexadecimal(self, data):
-    """Formats data in a hexadecimal represenation.
+    """Formats data in a hexadecimal representation.
 
     Args:
       data (bytes): data.
 
     Returns:
-      str: hexadecimal represenation of the data.
+      str: hexadecimal representation of the data.
     """
     in_group = False
     previous_hexadecimal_string = None
