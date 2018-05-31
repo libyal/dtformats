@@ -184,8 +184,7 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       self._DebugPrintFileHeader(file_header)
 
     if file_header.signature != self._SIGNATURE:
-      raise errors.ParseError(
-          'Unsupported file signature: {0!s}'.format(file_header.signature))
+      raise errors.ParseError('Unsupported signature')
 
     # TODO: move page sizes array into file header, this will require dtFabric
     # to compare signature as part of data map.
@@ -203,7 +202,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     try:
       page_sizes_array = self._PAGE_SIZES.MapByteStream(
           page_sizes_data, context=context)
-    except dtfabric_errors.MappingError as exception:
+    except (dtfabric_errors.ByteStreamTooSmallError,
+            dtfabric_errors.MappingError) as exception:
       raise errors.ParseError((
           'Unable to map page sizes data at offset: 0x{0:08x} with error: '
           '{1!s}').format(file_offset, exception))
