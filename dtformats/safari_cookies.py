@@ -142,7 +142,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     """
     try:
       value_string = self._CSTRING.MapByteStream(page_data[string_offset:])
-    except dtfabric_errors.MappingError as exception:
+    except (dtfabric_errors.ByteStreamTooSmallError,
+            dtfabric_errors.MappingError) as exception:
       raise errors.ParseError((
           'Unable to map string data at offset: 0x{0:08x} with error: '
           '{1!s}').format(string_offset, exception))
