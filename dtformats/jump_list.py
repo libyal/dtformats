@@ -6,7 +6,6 @@
 
 from __future__ import unicode_literals
 
-import datetime
 import logging
 import os
 
@@ -14,38 +13,9 @@ import pyfwsi
 import pylnk
 import pyolecf
 
-from dtfabric import errors as dtfabric_errors
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 from dtformats import data_range
 from dtformats import errors
-
-
-def FromFiletime(filetime):
-  """Converts a FILETIME timestamp into a Python datetime object.
-
-  The FILETIME is mainly used in Windows file formats and NTFS.
-
-  The FILETIME is a 64-bit value containing:
-  100th nano seconds since 1601-01-01 00:00:00
-
-  Technically FILETIME consists of 2 x 32-bit parts and is presumed
-  to be unsigned.
-
-  Args:
-    filetime (int): 64-bit FILETIME timestamp.
-
-  Returns:
-    datetime: date and time or None.
-  """
-  if filetime < 0:
-    return None
-
-  timestamp, _ = divmod(filetime, 10)
-
-  return datetime.datetime(1601, 1, 1) + datetime.timedelta(
-      microseconds=timestamp)
 
 
 class LNKFileEntry(object):
@@ -108,24 +78,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     recovered_entries (list[LNKFileEntry]): recovered LNK file entries.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'jump_list.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _DEST_LIST_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('dest_list_header')
-
-  _DEST_LIST_HEADER_SIZE = _DEST_LIST_HEADER.GetByteSize()
-
-  _DEST_LIST_ENTRY_V1 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'dest_list_entry_v1')
-
-  _DEST_LIST_ENTRY_V3 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'dest_list_entry_v3')
+  _DEFINITION_FILE = 'jump_list.yaml'
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes an Automatic Destinations Jump List file.
@@ -174,9 +127,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     value_string = '{0:f}'.format(dest_list_entry.unknown3)
     self._DebugPrintValue('Unknown3', value_string)
 
-    value_string = FromFiletime(dest_list_entry.last_modification_time)
-    value_string = '{0!s}'.format(value_string)
-    self._DebugPrintValue('Last modification time', value_string)
+    self._DebugPrintFiletimeValue(
+        'Last modification time', dest_list_entry.last_modification_time)
 
     # TODO: debug print pin status.
     value_string = '{0:d}'.format(dest_list_entry.pin_status)
@@ -271,11 +223,11 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the DestList stream entry cannot be read.
     """
     if self._format_version == 1:
-      data_type_map = self._DEST_LIST_ENTRY_V1
+      data_type_map = self._GetDataTypeMap('dest_list_entry_v1')
       description = 'dest list entry v1'
 
     elif self._format_version >= 3:
-      data_type_map = self._DEST_LIST_ENTRY_V3
+      data_type_map = self._GetDataTypeMap('dest_list_entry_v3')
       description = 'dest list entry v3'
 
     dest_list_entry, entry_data_size = self._ReadStructureFromFileObject(
@@ -296,9 +248,10 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the DestList stream header cannot be read.
     """
     stream_offset = olecf_item.tell()
-    dest_list_header = self._ReadStructure(
-        olecf_item, stream_offset, self._DEST_LIST_HEADER_SIZE,
-        self._DEST_LIST_HEADER, 'dest list header')
+    data_type_map = self._GetDataTypeMap('dest_list_header')
+
+    dest_list_header, _ = self._ReadStructureFromFileObject(
+        olecf_item, stream_offset, data_type_map, 'dest list header')
 
     if self._debug:
       self._DebugPrintDestListHeader(dest_list_header)
@@ -381,34 +334,9 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     recovered_entries (list[LNKFileEntry]): recovered LNK file entries.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'jump_list.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('custom_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _HEADER_VALUE_TYPE_0 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'custom_file_header_value_type_0')
-
-  _HEADER_VALUE_TYPE_1_OR_2 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'custom_file_header_value_type_1_or_2')
-
-  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap('custom_file_footer')
-
-  _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
+  _DEFINITION_FILE = 'jump_list.yaml'
 
   _FILE_FOOTER_SIGNATURE = 0xbabffbab
-
-  _ENTRY_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('custom_entry_header')
-
-  _ENTRY_HEADER_SIZE = _ENTRY_HEADER.GetByteSize()
 
   _LNK_GUID = (
       b'\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46')
@@ -466,9 +394,10 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the file footer cannot be read.
     """
     file_offset = file_object.tell()
-    file_footer = self._ReadStructure(
-        file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        'file footer')
+    data_type_map = self._GetDataTypeMap('custom_file_footer')
+
+    file_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
       self._DebugPrintFileFooter(file_footer)
@@ -487,9 +416,10 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+    data_type_map = self._GetDataTypeMap('custom_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -503,20 +433,19 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
           file_header.header_values_type))
 
     if file_header.header_values_type == 0:
-      data_type_map = self._HEADER_VALUE_TYPE_0
+      data_type_map = self._GetDataTypeMap('custom_file_header_value_type_0')
     else:
-      data_type_map = self._HEADER_VALUE_TYPE_1_OR_2
+      data_type_map = self._GetDataTypeMap(
+          'custom_file_header_value_type_1_or_2')
 
+    file_offset = file_object.tell()
     # TODO: implement read file_header_value_data for HEADER_VALUE_TYPE_0
     data_size = data_type_map.GetByteSize()
     file_header_value_data = file_object.read(data_size)
 
-    try:
-      file_header_value = data_type_map.MapByteStream(file_header_value_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError(
-          'Unable to parse file header value with error: {0:s}'.format(
-              exception))
+    file_header_value = self._ReadStructureFromByteStream(
+        file_header_value_data, file_offset, data_type_map,
+        'custom file header value')
 
     if self._debug:
       if file_header.header_values_type == 0:
@@ -573,6 +502,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
     remaining_file_size = self._file_size - file_offset
+    data_type_map = self._GetDataTypeMap('custom_entry_header')
 
     # The Custom Destination file does not have a unique signature in
     # the file header that is why we use the first LNK class identifier (GUID)
@@ -580,9 +510,8 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     first_guid_checked = False
     while remaining_file_size > 4:
       try:
-        entry_header = self._ReadStructure(
-            file_object, file_offset, self._ENTRY_HEADER_SIZE,
-            self._ENTRY_HEADER, 'entry header')
+        entry_header, _ = self._ReadStructureFromFileObject(
+            file_object, file_offset, data_type_map, 'entry header')
 
       except errors.ParseError as exception:
         error_message = (

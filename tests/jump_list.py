@@ -11,11 +11,22 @@ import uuid
 
 from dtformats import jump_list
 
+import pyolecf
+
 from tests import test_lib
 
 
-# TODO: add tests for FromFiletime.
-# TODO: add tests for LNKFileEntry.
+class LNKFileEntryTest(test_lib.BaseTestCase):
+  """Windows Shortcut (LNK) file entry tests."""
+
+  def testOpenClose(self):
+    """Tests the Open and Close functions."""
+    lnk_file_entry = jump_list.LNKFileEntry('test')
+
+    # TODO: implement.
+    _ = lnk_file_entry
+
+  # TODO: add tests for GetShellItems
 
 
 class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
@@ -30,7 +41,9 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
     test_file._format_version = 3
 
     uuid_value = uuid.UUID('{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
-    data_type_map = test_file._DEST_LIST_ENTRY_V3
+
+    data_type_map = test_file._GetDataTypeMap('dest_list_entry_v3')
+
     dest_list_entry = data_type_map.CreateStructureValues(
         unknown1=1,
         droid_volume_identifier=uuid_value,
@@ -58,7 +71,8 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
     test_file._format_version = 3
 
-    data_type_map = test_file._DEST_LIST_HEADER
+    data_type_map = test_file._GetDataTypeMap('dest_list_header')
+
     dest_list_header = data_type_map.CreateStructureValues(
         format_version=1,
         last_entry_number=5,
@@ -71,7 +85,25 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
 
     test_file._DebugPrintDestListHeader(dest_list_header)
 
-  # TODO: add tests for _ReadDestList.
+  @test_lib.skipUnlessHasTestFile([
+      '1b4dd67f29cb1962.automaticDestinations-ms'])
+  def testReadDestList(self):
+    """Tests the _ReadDestList function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        '1b4dd67f29cb1962.automaticDestinations-ms'])
+    with open(test_file_path, 'rb') as file_object:
+      olecf_file = pyolecf.file()
+      olecf_file.open_file_object(file_object)
+
+      try:
+        test_file._ReadDestList(olecf_file)
+
+      finally:
+        olecf_file.close()
+
   # TODO: add tests for _ReadDestListEntry.
   # TODO: add tests for _ReadDestListHeader.
   # TODO: add tests for _ReadLNKFile.
@@ -80,7 +112,7 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
   @test_lib.skipUnlessHasTestFile([
       '1b4dd67f29cb1962.automaticDestinations-ms'])
   def testReadFileObjectOnV1File(self):
-    """Tests the ReadFileObject on a format version 1 file."""
+    """Tests the ReadFileObject function on a format version 1 file."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
 
@@ -91,7 +123,7 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
   @test_lib.skipUnlessHasTestFile([
       '9d1f905ce5044aee.automaticDestinations-ms'])
   def testReadFileObjectOnV3File(self):
-    """Tests the ReadFileObject on a format version 3 file."""
+    """Tests the ReadFileObject function on a format version 3 file."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
 
@@ -114,7 +146,7 @@ class CustomDestinationsFileTest(test_lib.BaseTestCase):
 
   @test_lib.skipUnlessHasTestFile(['5afe4de1b92fc382.customDestinations-ms'])
   def testReadFileObject(self):
-    """Tests the ReadFileObject."""
+    """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.CustomDestinationsFile(output_writer=output_writer)
 
