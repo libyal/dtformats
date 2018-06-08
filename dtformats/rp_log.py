@@ -119,7 +119,7 @@ class RestorePointLogFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header, _ = self._ReadStructureWithSizeHint(
+    file_header, _ = self._ReadStructureFromFileObject(
         file_object, file_offset, self._FILE_HEADER, 'file header')
 
     if self._debug:

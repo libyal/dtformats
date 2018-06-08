@@ -211,6 +211,8 @@ members:
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
+  # TODO: add tests for _GetDataTypeMap
+
   def testReadData(self):
     """Tests the _ReadData function."""
     output_writer = test_lib.TestOutputWriter()
@@ -239,6 +241,8 @@ members:
 
     with self.assertRaises(errors.ParseError):
       test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
+
+  # TODO: add tests for _ReadDefinitionFile
 
   def testReadStructure(self):
     """Tests the _ReadStructure function."""
@@ -295,6 +299,27 @@ members:
       test_format._ReadStructureFromByteStream(
           b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
           data_type_map, 'point3d')
+
+  def testReadStructureFromFileObject(self):
+    """Tests the _ReadStructureFromFileObject function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_format = data_format.BinaryDataFormat(
+        debug=True, output_writer=output_writer)
+
+    file_object = io.BytesIO(
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
+
+    test_format._ReadStructureFromFileObject(
+        file_object, 0, self._POINT3D, "point3d")
+
+    file_object = io.BytesIO(
+        b'\x03\x00\x00\x00'
+        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
+        b'\x04\x00\x00\x00\x05\x00\x00\x00\x06\x00\x00\x00'
+        b'\x06\x00\x00\x00\x07\x00\x00\x00\x08\x00\x00\x00')
+
+    test_format._ReadStructureFromFileObject(
+        file_object, 0, self._SHAPE3D, "shape3d")
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):

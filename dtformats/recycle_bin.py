@@ -121,7 +121,7 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
       data_map_description = 'UTF-16 little-endian string with size'
 
     try:
-      original_filename, _ = self._ReadStructureWithSizeHint(
+      original_filename, _ = self._ReadStructureFromFileObject(
           file_object, file_offset, data_map, data_map_description)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(

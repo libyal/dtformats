@@ -266,6 +266,9 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
 
     Returns:
       int: entry data size.
+
+    Raises:
+      ParseError: if the DestList stream entry cannot be read.
     """
     if self._format_version == 1:
       data_type_map = self._DEST_LIST_ENTRY_V1
@@ -275,7 +278,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       data_type_map = self._DEST_LIST_ENTRY_V3
       description = 'dest list entry v3'
 
-    dest_list_entry, entry_data_size = self._ReadStructureWithSizeHint(
+    dest_list_entry, entry_data_size = self._ReadStructureFromFileObject(
         olecf_item, stream_offset, data_type_map, description)
 
     if self._debug:

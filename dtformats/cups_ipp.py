@@ -146,7 +146,7 @@ class CupsIppFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
 
-    attribute, _ = self._ReadStructureWithSizeHint(
+    attribute, _ = self._ReadStructureFromFileObject(
         file_object, file_offset, self._ATTRIBUTE, 'attribute')
 
     if self._debug:
