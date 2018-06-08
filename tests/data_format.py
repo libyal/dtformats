@@ -256,21 +256,6 @@ members:
     test_format._ReadStructure(
         file_object, 0, self._POINT3D_SIZE, self._POINT3D, 'point3d')
 
-  def testReadStructureWithSizeHint(self):
-    """Tests the _ReadStructureWithSizeHint function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
-        debug=True, output_writer=output_writer)
-
-    file_object = io.BytesIO(
-        b'\x03\x00\x00\x00'
-        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'
-        b'\x04\x00\x00\x00\x05\x00\x00\x00\x06\x00\x00\x00'
-        b'\x06\x00\x00\x00\x07\x00\x00\x00\x08\x00\x00\x00')
-
-    test_format._ReadStructureWithSizeHint(
-        file_object, 0, self._SHAPE3D, 'shape3d')
-
   def testReadStructureFromByteStream(self):
     """Tests the _ReadStructureFromByteStream function."""
     output_writer = test_lib.TestOutputWriter()

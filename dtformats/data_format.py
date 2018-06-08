@@ -22,6 +22,10 @@ class BinaryDataFormat(object):
   # The dtFabric definition file, which must be overwritten by a subclass.
   _DEFINITION_FILE = None
 
+  # Preserve the absolute path value of __file__ in case it is changed
+  # at run-time.
+  _DEFINITION_FILES_PATH = os.path.dirname(__file__)
+
   _HEXDUMP_CHARACTER_MAP = [
       '.' if byte < 0x20 or byte > 0x7e else chr(byte) for byte in range(256)]
 
@@ -229,20 +233,21 @@ class BinaryDataFormat(object):
 
     return data
 
-  def _ReadDefinitionFile(self, path):
+  def _ReadDefinitionFile(self, filename):
     """Reads a dtFabric definition file.
 
     Args:
-      path (str): path to the dtFabric definition file.
+      filename (str): name of the dtFabric definition file.
 
     Returns:
       dtfabric.DataTypeFabric: data type fabric which contains the data format
           data type maps of the data type definition, such as a structure, that
-          can be mapped onto binary data or None if no path is provided.
+          can be mapped onto binary data or None if no filename is provided.
     """
-    if not path:
+    if not filename:
       return None
 
+    path = os.path.join(self._DEFINITION_FILES_PATH, filename)
     with open(path, 'rb') as file_object:
       definition = file_object.read()
 
@@ -310,47 +315,6 @@ class BinaryDataFormat(object):
 
     return self._ReadStructureFromByteStream(
         data, file_offset, data_type_map, description)
-
-  # TODO: deprecate in favor of _ReadStructureFromFileObject
-  def _ReadStructureWithSizeHint(
-      self, file_object, file_offset, data_type_map, description):
-    """Reads a structure using a size hint.
-
-    Args:
-      file_object (file): a file-like object.
-      file_offset (int): offset of the structure data relative from the start
-          of the file-like object.
-      data_type_map (dtfabric.DataTypeMap): data type map of the structure.
-      description (str): description of the structure.
-
-    Returns:
-      tuple[object, int]: structure values object and data size of
-          the structure.
-
-    Raises:
-      ParseError: if the structure cannot be read.
-      ValueError: if file-like object or data type map is missing.
-    """
-    context = None
-    last_size_hint = 0
-    size_hint = data_type_map.GetSizeHint()
-
-    while size_hint != last_size_hint:
-      data = self._ReadData(file_object, file_offset, size_hint, description)
-
-      try:
-        context = dtfabric_data_maps.DataTypeMapContext()
-        structure_values_object = self._ReadStructureFromByteStream(
-            data, file_offset, data_type_map, description, context=context)
-        return structure_values_object, size_hint
-
-      except dtfabric_errors.ByteStreamTooSmallError:
-        pass
-
-      last_size_hint = size_hint
-      size_hint = data_type_map.GetSizeHint(context=context)
-
-    raise errors.ParseError('Unable to read {0:s}'.format(description))
 
   def _ReadStructureFromByteStream(
       self, byte_stream, file_offset, data_type_map, description, context=None):

@@ -7,8 +7,6 @@ import os
 
 from dfdatetime import rfc2579_date_time as dfdatetime_rfc2579_date_time
 
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 from dtformats import errors
 
@@ -16,28 +14,7 @@ from dtformats import errors
 class CupsIppFile(data_format.BinaryDataFile):
   """CUPS Internet Printing Protocol (IPP) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'cups_ipp.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cups_ipp_header')
-
-  _HEADER_SIZE = _HEADER.GetByteSize()
-
-  _TAG_VALUE = _DATA_TYPE_FABRIC.CreateDataTypeMap('int8')
-  _TAG_VALUE_SIZE = _TAG_VALUE.GetByteSize()
-
-  _ATTRIBUTE = _DATA_TYPE_FABRIC.CreateDataTypeMap('cups_ipp_attribute')
-
-  _DATETIME_VALUE = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'cups_ipp_datetime_value')
-
-  _INTEGER_VALUE = _DATA_TYPE_FABRIC.CreateDataTypeMap('int32be')
+  _DEFINITION_FILE = 'cups_ipp.yaml'
 
   # TODO: add descriptive names.
   _DELIMITER_TAGS = (0x01, 0x02, 0x04, 0x05)
@@ -145,9 +122,10 @@ class CupsIppFile(data_format.BinaryDataFile):
       ParseError: if the attribute cannot be read.
     """
     file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('cups_ipp_attribute')
 
     attribute, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, self._ATTRIBUTE, 'attribute')
+        file_object, file_offset, data_type_map, 'attribute')
 
     if self._debug:
       self._DebugPrintAttribute(attribute)
@@ -155,10 +133,11 @@ class CupsIppFile(data_format.BinaryDataFile):
     value = None
     if attribute.tag_value in (0x21, 0x23):
       file_offset = file_object.tell()
+      data_type_map = self._GetDataTypeMap('int32be')
+
       try:
         value = self._ReadStructureFromByteStream(
-            attribute.value_data, file_offset, self._INTEGER_VALUE,
-            'integer value')
+            attribute.value_data, file_offset, data_type_map, 'integer value')
       except (ValueError, errors.ParseError) as exception:
         raise errors.ParseError(
             'Unable to parse integer value with error: {0!s}'.format(exception))
@@ -217,13 +196,14 @@ class CupsIppFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the attributes group cannot be read.
     """
+    data_type_map = self._GetDataTypeMap('int8')
+
     tag_value = 0
 
     while tag_value != 0x03:
       file_offset = file_object.tell()
-      tag_value = self._ReadStructure(
-          file_object, file_offset, self._TAG_VALUE_SIZE, self._TAG_VALUE,
-          'tag value')
+      tag_value, _ = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, 'tag value')
 
       if tag_value < 0x10:
         if self._debug:
@@ -253,9 +233,11 @@ class CupsIppFile(data_format.BinaryDataFile):
     Raises:
       ParseError: when the datetime value cannot be parsed.
     """
+    data_type_map = self._GetDataTypeMap('cups_ipp_datetime_value')
+
     try:
       value = self._ReadStructureFromByteStream(
-          byte_stream, file_offset, self._DATETIME_VALUE, 'date-time value')
+          byte_stream, file_offset, data_type_map, 'date-time value')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse datetime value with error: {0!s}'.format(exception))
@@ -276,9 +258,11 @@ class CupsIppFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the header cannot be read.
     """
+    data_type_map = self._GetDataTypeMap('cups_ipp_header')
+
     file_offset = file_object.tell()
-    header = self._ReadStructure(
-        file_object, file_offset, self._HEADER_SIZE, self._HEADER, 'header')
+    header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
       self._DebugPrintHeader(header)

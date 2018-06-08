@@ -22,7 +22,8 @@ class CupsIppFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = cups_ipp.CupsIppFile(output_writer=output_writer)
 
-    data_type_map = test_file._HEADER
+    data_type_map = test_file._GetDataTypeMap('cups_ipp_header')
+
     header = data_type_map.CreateStructureValues(
         major_version=1,
         minor_version=2,
