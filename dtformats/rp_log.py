@@ -3,32 +3,13 @@
 
 from __future__ import unicode_literals
 
-import os
-
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 
 
 class RestorePointLogFile(data_format.BinaryDataFile):
   """Windows Restore Point rp.log file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'rp_log.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_log_file_header')
-
-  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_log_file_footer')
-
-  _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
+  _DEFINITION_FILE = 'rp_log.yaml'
 
   # TODO: implement an item based lookup.
   _EVENT_TYPES = {
@@ -102,9 +83,10 @@ class RestorePointLogFile(data_format.BinaryDataFile):
       ParseError: if the file footer cannot be read.
     """
     file_offset = self._file_size - 8
-    file_footer = self._ReadStructure(
-        file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        'file footer')
+    data_type_map = self._GetDataTypeMap('rp_log_file_footer')
+
+    file_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
       self._DebugPrintFileFooter(file_footer)
@@ -119,8 +101,10 @@ class RestorePointLogFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('rp_log_file_header')
+
     file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, self._FILE_HEADER, 'file header')
+        file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)

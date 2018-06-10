@@ -3,10 +3,6 @@
 
 from __future__ import unicode_literals
 
-import os
-
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 from dtformats import errors
 
@@ -22,25 +18,7 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     original_size (int): original size of the deleted file.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'recycle_bin.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'recycle_bin_metadata_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _UTF16LE_STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'utf16le_string')
-
-  _UTF16LE_STRING_WITH_SIZE = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'utf16le_string_with_size')
+  _DEFINITION_FILE = 'recycle_bin.yaml'
 
   _SUPPORTED_FORMAT_VERSION = (1, 2)
 
@@ -85,9 +63,10 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+    data_type_map = self._GetDataTypeMap('recycle_bin_metadata_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -114,15 +93,15 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
 
     if format_version == 1:
-      data_map = self._UTF16LE_STRING
-      data_map_description = 'UTF-16 little-endian string'
+      data_type_map = self._GetDataTypeMap('utf16le_string')
+      description = 'UTF-16 little-endian string'
     else:
-      data_map = self._UTF16LE_STRING_WITH_SIZE
-      data_map_description = 'UTF-16 little-endian string with size'
+      data_type_map = self._GetDataTypeMap('utf16le_string_with_size')
+      description = 'UTF-16 little-endian string with size'
 
     try:
       original_filename, _ = self._ReadStructureFromFileObject(
-          file_object, file_offset, data_map, data_map_description)
+          file_object, file_offset, data_type_map, description)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse original filename with error: {0!s}'.format(

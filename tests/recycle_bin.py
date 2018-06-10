@@ -20,7 +20,9 @@ class RecycleBinMetadataFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = recycle_bin.RecycleBinMetadataFile(output_writer=output_writer)
 
-    data_type_map = test_file._FILE_HEADER
+    data_type_map = test_file._GetDataTypeMap(
+        'recycle_bin_metadata_file_header')
+
     file_header = data_type_map.CreateStructureValues(
         deletion_time=0,
         format_version=1,

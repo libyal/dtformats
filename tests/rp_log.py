@@ -20,7 +20,8 @@ class RestorePointLogFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = rp_log.RestorePointLogFile(output_writer=output_writer)
 
-    data_type_map = test_file._FILE_FOOTER
+    data_type_map = test_file._GetDataTypeMap('rp_log_file_footer')
+
     file_footer = data_type_map.CreateStructureValues(
         creation_time=1)
 
@@ -31,7 +32,8 @@ class RestorePointLogFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = rp_log.RestorePointLogFile(output_writer=output_writer)
 
-    data_type_map = test_file._FILE_HEADER
+    data_type_map = test_file._GetDataTypeMap('rp_log_file_header')
+
     file_header = data_type_map.CreateStructureValues(
         description='Description'.encode('utf-16-le'),
         event_type=1,
