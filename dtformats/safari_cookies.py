@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import datetime
 
-from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 
 from dtformats import data_format
@@ -144,17 +143,18 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('binarycookies_file_header')
 
-    file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file header')
+    file_header, file_header_data_size = self._ReadStructureFromFileObject(
+        file_object, 0, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
     if file_header.signature != self._SIGNATURE:
       raise errors.ParseError('Unsupported signature')
+
+    file_offset = file_header_data_size
 
     # TODO: move page sizes array into file header, this will require dtFabric
     # to compare signature as part of data map.
@@ -172,10 +172,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     data_type_map = self._GetDataTypeMap('binarycookies_page_sizes')
 
     try:
-      page_sizes_array = data_type_map.MapByteStream(
-          page_sizes_data, context=context)
-    except (dtfabric_errors.ByteStreamTooSmallError,
-            dtfabric_errors.MappingError) as exception:
+      page_sizes_array = self._ReadStructureFromByteStream(
+          page_sizes_data, file_offset, data_type_map, 'page sizes',
+          context=context)
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
           'Unable to map page sizes data at offset: 0x{0:08x} with error: '
           '{1!s}').format(file_offset, exception))
@@ -211,8 +211,9 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     data_type_map = self._GetDataTypeMap('binarycookies_page_header')
 
     try:
-      page_header = data_type_map.MapByteStream(page_data)
-    except dtfabric_errors.MappingError as exception:
+      page_header = self._ReadStructureFromByteStream(
+          page_data, file_offset, data_type_map, 'page header')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
           'Unable to map page header data at offset: 0x{0:08x} with error: '
           '{1!s}').format(file_offset, exception))
@@ -271,8 +272,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     data_type_map = self._GetDataTypeMap('binarycookies_record_header')
 
     try:
-      record_header = data_type_map.MapByteStream(page_data[record_offset:])
-    except dtfabric_errors.MappingError as exception:
+      record_header = self._ReadStructureFromByteStream(
+          page_data[record_offset:], record_offset, data_type_map,
+          'record header')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
           'Unable to map record header data at offset: 0x{0:08x} with error: '
           '{1!s}').format(record_offset, exception))

@@ -98,7 +98,7 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
     page_data = b'string\x00'
 
     cstring = test_file._ReadCString(page_data, 0)
-    self.assertEqual(cstring, b'string')
+    self.assertEqual(cstring, 'string')
 
     with self.assertRaises(errors.ParseError):
       test_file._ReadCString(page_data[:-1], 0)
