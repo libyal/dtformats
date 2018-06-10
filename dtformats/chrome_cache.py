@@ -202,25 +202,9 @@ class DataBlockFile(data_format.BinaryDataFile):
     number_of_entries (int): number of entries.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'chrome_cache.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
+  _DEFINITION_FILE = 'chrome_cache.yaml'
 
   # TODO: update empty, hints, updating and user.
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'chrome_cache_data_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _CACHE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap('chrome_cache_entry')
-
-  _CACHE_ENTRY_SIZE = _CACHE_ENTRY.GetByteSize()
 
   SIGNATURE = 0xc104cac3
 
@@ -380,9 +364,10 @@ class DataBlockFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'data block file header')
+    data_type_map = self._GetDataTypeMap('chrome_cache_data_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'data block file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -412,9 +397,11 @@ class DataBlockFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the cache entry cannot be read.
     """
-    cache_entry = self._ReadStructure(
-        self._file_object, block_offset, self._CACHE_ENTRY_SIZE,
-        self._CACHE_ENTRY, 'data block cache entry')
+    data_type_map = self._GetDataTypeMap('chrome_cache_entry')
+
+    cache_entry, _ = self._ReadStructureFromFileObject(
+        self._file_object, block_offset, data_type_map,
+        'data block cache entry')
 
     byte_string = bytes(cache_entry.key)
     cache_entry_key, _, _ = byte_string.partition(b'\x00')
@@ -468,26 +455,7 @@ class IndexFile(data_format.BinaryDataFile):
     index_table (dict[str, object]): index table.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'chrome_cache.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _UINT32LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'chrome_cache_index_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _LRU_DATA = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'chrome_cache_index_file_lru_data')
-
-  _LRU_DATA_SIZE = _LRU_DATA.GetByteSize()
+  _DEFINITION_FILE = 'chrome_cache.yaml'
 
   SIGNATURE = 0xc103cac3
 
@@ -599,9 +567,10 @@ class IndexFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'index file header')
+    data_type_map = self._GetDataTypeMap('chrome_cache_index_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'index file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -625,14 +594,12 @@ class IndexFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the LRU data cannot be read.
     """
     file_offset = file_object.tell()
-    lru_data = self._ReadStructure(
-        file_object, file_offset, self._LRU_DATA_SIZE, self._LRU_DATA,
-        'index file LRU')
+    data_type_map = self._GetDataTypeMap('chrome_cache_index_file_lru_data')
+
+    lru_data, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'index file LRU')
 
     if self._debug:
       self._DebugPrintLRUData(lru_data)
@@ -646,13 +613,17 @@ class IndexFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the index table cannot be read.
     """
+    file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('uint32le')
+
     cache_address_index = 0
     cache_address_data = file_object.read(4)
 
     while len(cache_address_data) == 4:
       try:
-        value = self._UINT32LE.MapByteStream(cache_address_data)
-      except dtfabric_errors.MappingError as exception:
+        value = self._ReadStructureFromByteStream(
+            cache_address_data, file_offset, data_type_map, 'cache address')
+      except (ValueError, errors.ParseError) as exception:
         raise errors.ParseError((
             'Unable to parse index table entry: {0:d} with error: '
             '{1:s}').format(cache_address_index, exception))
@@ -667,8 +638,10 @@ class IndexFile(data_format.BinaryDataFile):
 
         self.index_table[cache_address_index] = cache_address
 
-      cache_address_index += 1
+      file_offset = file_object.tell()
       cache_address_data = file_object.read(4)
+
+      cache_address_index += 1
 
     if self._debug:
       self._DebugPrintText('\n')
