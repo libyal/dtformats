@@ -13,22 +13,7 @@ from dtformats import data_format
 class AppleSystemLogFile(data_format.BinaryDataFile):
   """Apple System Log (.asl) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'asl.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('asl_header')
-
-  _HEADER_SIZE = _HEADER.GetByteSize()
-
-  _RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap('asl_record')
-
-  _RECORD_SIZE = _RECORD.GetByteSize()
+  _DEFINITION_FILE = 'asl.yaml'
 
   def _DebugPrintHeader(self, header):
     """Prints header debug information.
@@ -127,13 +112,12 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     Returns:
       asl_header: header.
-
-    Raises:
-      IOError: if the header section cannot be read.
     """
     file_offset = file_object.tell()
-    header = self._ReadStructure(
-        file_object, file_offset, self._HEADER_SIZE, self._HEADER, 'header')
+    data_type_map = self._GetDataTypeMap('asl_header')
+
+    header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
       self._DebugPrintHeader(header)
@@ -149,12 +133,11 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     Returns:
       asl_record: record.
-
-    Raises:
-      IOError: if the record section cannot be read.
     """
-    record = self._ReadStructure(
-        file_object, file_offset, self._RECORD_SIZE, self._RECORD, 'record')
+    data_type_map = self._GetDataTypeMap('asl_record')
+
+    record, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'record')
 
     if self._debug:
       self._DebugPrintRecord(record)
