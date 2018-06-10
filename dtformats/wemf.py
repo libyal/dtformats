@@ -153,7 +153,7 @@ class EMFFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
-      file_offset (int): offset of the data relative from the start of
+      file_offset (int): offset of the data relative to the start of
           the file-like object.
 
     Raises:
@@ -726,7 +726,7 @@ class WMFFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
-      file_offset (int): offset of the data relative from the start of
+      file_offset (int): offset of the data relative to the start of
           the file-like object.
 
     Raises:

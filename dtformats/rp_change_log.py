@@ -3,11 +3,7 @@
 
 from __future__ import unicode_literals
 
-import os
-
-from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
@@ -37,53 +33,12 @@ class ChangeLogEntry(object):
 class RestorePointChangeLogFile(data_format.BinaryDataFile):
   """Windows Restore Point change.log file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'rp_change_log.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
+  _DEFINITION_FILE = 'rp_change_log.yaml'
 
   # TODO: refactor rp_change_log_volume_path_record in more generic
   # string record
 
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
   _RECORD_SIGNATURE = 0xabcdef12
-
-  _RECORD_TYPE = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_record_type')
-
-  _RECORD_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_record_header')
-
-  _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
-
-  _CHANGE_LOG_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_entry')
-
-  _CHANGE_LOG_ENTRY_SIZE = _CHANGE_LOG_ENTRY.GetByteSize()
-
-  _CHANGE_LOG_ENTRY2 = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_entry2')
-
-  _VOLUME_PATH_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_volume_path_record')
-
-  _LOG_ENTRY_FLAGS = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_entry_flags')
-
-  _LOG_ENTRY_TYPES = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'rp_change_log_entry_types')
-
-  _UINT32LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
-
-  _UTF16LE_STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('utf16le_string')
 
   # TODO: implement an item based lookup.
   LOG_ENTRY_FLAGS = {
@@ -201,7 +156,10 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     value_string = '{0:d}'.format(record_header.record_size)
     self._DebugPrintValue('Record size', value_string)
 
-    record_type_string = self._RECORD_TYPE.GetName(record_header.record_type)
+    data_type_map = self._GetDataTypeMap('rp_change_log_record_type')
+
+    record_type_string = data_type_map.GetName(record_header.record_type)
+
     value_string = '{0:d} ({1:s})'.format(
         record_header.record_type, record_type_string or 'UNKNOWN')
     self._DebugPrintValue('Record type', value_string)
@@ -234,9 +192,10 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
       ParseError: if the change log entry cannot be read.
     """
     file_offset = file_object.tell()
-    change_log_entry_record = self._ReadStructure(
-        file_object, file_offset, self._CHANGE_LOG_ENTRY_SIZE,
-        self._CHANGE_LOG_ENTRY, 'change log entry record')
+    data_type_map = self._GetDataTypeMap('rp_change_log_entry')
+
+    change_log_entry_record, data_size = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'change log entry record')
 
     if self._debug:
       self._DebugPrintChangeLogEntryRecord(change_log_entry_record)
@@ -251,9 +210,9 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
 
     # TODO: refactor to use size hints
     record_size = (
-        change_log_entry_record.record_size - self._CHANGE_LOG_ENTRY_SIZE)
+        change_log_entry_record.record_size - data_size)
     record_data = file_object.read(record_size)
-    file_offset += self._CHANGE_LOG_ENTRY_SIZE
+    file_offset += data_size
 
     if self._debug:
       self._DebugPrintData('Record data', record_data)
@@ -261,10 +220,13 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'rp_change_log_entry': change_log_entry_record})
 
+    data_type_map = self._GetDataTypeMap('rp_change_log_entry2')
+
     try:
-      change_log_entry_record2 = self._CHANGE_LOG_ENTRY2.MapByteStream(
-          record_data, context=context)
-    except dtfabric_errors.MappingError as exception:
+      change_log_entry_record2 = self._ReadStructureFromByteStream(
+          record_data, file_offset, data_type_map, 'change log entry record',
+          context=context)
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse change log entry record with error: {0!s}'.format(
               exception))
@@ -302,9 +264,13 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
         break
       sub_record_data_offset += read_size
 
+    data_type_map = self._GetDataTypeMap('uint32le')
+
     try:
-      copy_of_record_size = self._UINT32LE.MapByteStream(record_data[-4:])
-    except dtfabric_errors.MappingError as exception:
+      copy_of_record_size = self._ReadStructureFromByteStream(
+          record_data[-4:], sub_record_data_offset, data_type_map,
+          'copy of record size')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse copy of record size with error: {0!s}'.format(
               exception))
@@ -330,10 +296,10 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+    data_type_map = self._GetDataTypeMap('rp_change_log_file_header')
+
+    file_header, file_header_data_size = self._ReadStructureFromFileObject(
+        file_object, 0, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -350,18 +316,22 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           'Unsupported change.log format version: {0:d}'.format(
               file_header.format_version))
 
-    record_size = file_header.record_size - self._FILE_HEADER_SIZE
+    file_offset = file_header_data_size
+    record_size = file_header.record_size - file_header_data_size
     record_data = file_object.read(record_size)
-    file_offset += self._FILE_HEADER_SIZE
 
     if self._debug:
       self._DebugPrintData('Record data', record_data)
 
-    self._ReadVolumePath(record_data[:-4])
+    self._ReadVolumePath(record_data[:-4], file_offset)
+
+    data_type_map = self._GetDataTypeMap('uint32le')
 
     try:
-      copy_of_record_size = self._UINT32LE.MapByteStream(record_data[-4:])
-    except dtfabric_errors.MappingError as exception:
+      copy_of_record_size = self._ReadStructureFromByteStream(
+          record_data[-4:], file_offset, data_type_map,
+          'copy of record size')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse copy of record size with error: {0!s}'.format(
               exception))
@@ -381,7 +351,8 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
 
     Args:
       record_data (bytes): record data.
-      record_data_offset (int): record data offset.
+      record_data_offset (int): record data offset relative to the start of
+          the file-like object.
 
     Returns:
       int: record data size.
@@ -389,10 +360,13 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the record cannot be read.
     """
+    data_type_map = self._GetDataTypeMap('rp_change_log_record_header')
+
     try:
-      record_header = self._RECORD_HEADER.MapByteStream(
-          record_data[record_data_offset:])
-    except dtfabric_errors.MappingError as exception:
+      record_header = self._ReadStructureFromByteStream(
+          record_data[record_data_offset:], record_data_offset, data_type_map,
+          'record header')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse record header with error: {0!s}'.format(
               exception))
@@ -404,17 +378,20 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintRecordHeader(record_header)
 
-    record_data_offset += self._RECORD_HEADER_SIZE
+    record_data_offset += data_type_map.GetByteSize()
 
     value_string = ''
     if record_header.record_type in (4, 5, 9):
-      try:
-        value_string = self._UTF16LE_STRING.MapByteStream(
-            record_data[record_data_offset:])
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError(
-            'Unable to parse UTF-16 string with error: {0!s}'.format(
-                exception))
+      data_type_map = self._GetDataTypeMap('utf16le_string')
+
+    try:
+      value_string = self._ReadStructureFromByteStream(
+          record_data[record_data_offset:], record_data_offset, data_type_map,
+          'value string')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError(
+          'Unable to parse UTF-16 string with error: {0!s}'.format(
+              exception))
 
     # TODO: add support for other record types.
     # TODO: store record values in runtime objects.
@@ -435,18 +412,23 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
 
     return record_header.record_size
 
-  def _ReadVolumePath(self, record_data):
+  def _ReadVolumePath(self, record_data, volume_path_offset):
     """Reads the volume path.
 
     Args:
       record_data (bytes): record data.
+      volume_path_offset (int): volume path offset relative to the start of
+          the file-like object.
 
     Raises:
       ParseError: if the volume path cannot be read.
     """
+    data_type_map = self._GetDataTypeMap('rp_change_log_volume_path_record')
+
     try:
-      volume_path_record = self._VOLUME_PATH_RECORD.MapByteStream(record_data)
-    except dtfabric_errors.MappingError as exception:
+      volume_path_record = self._ReadStructureFromByteStream(
+          record_data, volume_path_offset, data_type_map, 'volume path record')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse volume path record with error: {0!s}'.format(
               exception))

@@ -30,7 +30,8 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
     test_file = rp_change_log.RestorePointChangeLogFile(
         output_writer=output_writer)
 
-    data_type_map = test_file._CHANGE_LOG_ENTRY
+    data_type_map = test_file._GetDataTypeMap('rp_change_log_entry')
+
     change_log_entry_record = data_type_map.CreateStructureValues(
         entry_flags=1,
         entry_type=2,
@@ -51,7 +52,8 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
     test_file = rp_change_log.RestorePointChangeLogFile(
         output_writer=output_writer)
 
-    data_type_map = test_file._FILE_HEADER
+    data_type_map = test_file._GetDataTypeMap('rp_change_log_file_header')
+
     file_header = data_type_map.CreateStructureValues(
         format_version=1,
         record_size=2,
@@ -66,7 +68,8 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
     test_file = rp_change_log.RestorePointChangeLogFile(
         output_writer=output_writer)
 
-    data_type_map = test_file._RECORD_HEADER
+    data_type_map = test_file._GetDataTypeMap('rp_change_log_record_header')
+
     record_header = data_type_map.CreateStructureValues(
         record_size=1,
         record_type=2)

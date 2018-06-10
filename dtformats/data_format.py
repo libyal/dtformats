@@ -194,7 +194,7 @@ class BinaryDataFormat(object):
 
     Args:
       file_object (file): a file-like object.
-      file_offset (int): offset of the data relative from the start of
+      file_offset (int): offset of the data relative to the start of
           the file-like object.
       data_size (int): size of the data.
       description (str): description of the data.
@@ -260,7 +260,7 @@ class BinaryDataFormat(object):
 
     Args:
       file_object (file): a file-like object.
-      file_offset (int): offset of the string data relative from the start
+      file_offset (int): offset of the string data relative to the start
           of the file-like object.
       data_type_map (dtfabric.StringMap): data type map of the string.
       description (str): description of the string.
@@ -298,7 +298,7 @@ class BinaryDataFormat(object):
 
     Args:
       file_object (file): a file-like object.
-      file_offset (int): offset of the structure data relative from the start
+      file_offset (int): offset of the structure data relative to the start
           of the file-like object.
       data_size (int): data size of the structure.
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
@@ -322,7 +322,7 @@ class BinaryDataFormat(object):
 
     Args:
       byte_stream (bytes): byte stream.
-      file_offset (int): offset of the structure data relative from the start
+      file_offset (int): offset of the structure data relative to the start
           of the file-like object.
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
       description (str): description of the structure.
@@ -365,7 +365,7 @@ class BinaryDataFormat(object):
 
     Args:
       file_object (dvfvs.FileIO): a file-like object to parse.
-      file_offset (int): offset of the structure data relative from the start
+      file_offset (int): offset of the structure data relative to the start
           of the file-like object.
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
       description (str): description of the structure.

@@ -224,7 +224,7 @@ class CupsIppFile(data_format.BinaryDataFile):
 
     Args:
       byte_stream (bytes): byte stream.
-      file_offset (int): offset of the data relative from the start of
+      file_offset (int): offset of the data relative to the start of
           the file-like object.
 
     Returns:

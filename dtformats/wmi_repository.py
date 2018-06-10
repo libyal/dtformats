@@ -723,7 +723,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     Args:
       file_object (file): a file-like object.
-      file_offset (int): offset of the page relative from the start of the file.
+      file_offset (int): offset of the page relative to the start of the file.
       data_page (Optional[bool]): True if the page is a data page.
 
     Raises:
@@ -746,7 +746,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     Args:
       file_object (file): a file-like object.
-      data_offset (int): offset of the object record data relative from
+      data_offset (int): offset of the object record data relative to
           the start of the page.
       data_size (int): object record data size.
 
@@ -930,7 +930,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): a file-like object.
-      file_offset (int): offset of the page relative from the start of the file.
+      file_offset (int): offset of the page relative to the start of the file.
 
     Return:
       IndexBinaryTreePage: an index binary-tree page.
@@ -1319,7 +1319,7 @@ class MappingFile(data_format.BinaryDataFile):
     Args:
       file_object (file): file-like object.
       file_offset (Optional[int]): offset of the mappings file header
-          relative from the start of the file.
+          relative to the start of the file.
 
     Raises:
       ParseError: if the file header cannot be read.
@@ -1361,7 +1361,7 @@ class MappingFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): a file-like object.
-      file_offset (int): offset of the data relative from the start of
+      file_offset (int): offset of the data relative to the start of
           the file-like object.
       description (str): description of the page numbers table.
 
@@ -1560,7 +1560,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     """Reads a page.
 
     Args:
-      file_offset (int): offset of the page relative from the start of the file.
+      file_offset (int): offset of the page relative to the start of the file.
       data_page (Optional[bool]): True if the page is a data page.
 
     Return:
