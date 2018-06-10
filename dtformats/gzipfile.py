@@ -10,8 +10,6 @@ from __future__ import unicode_literals
 import os
 import zlib
 
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 from dtformats import errors
 
@@ -19,30 +17,7 @@ from dtformats import errors
 class GZipFile(data_format.BinaryDataFile):
   """GZip (.gz) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'gzipfile.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _MEMBER_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'gzip_member_header')
-
-  _MEMBER_HEADER_SIZE = _MEMBER_HEADER.GetByteSize()
-
-  _MEMBER_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'gzip_member_footer')
-
-  _MEMBER_FOOTER_SIZE = _MEMBER_FOOTER.GetByteSize()
-
-  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint16le')
-
-  _UINT16LE_SIZE = _UINT16LE.GetByteSize()
-
-  _CSTRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('cstring')
+  _DEFINITION_FILE = 'gzipfile.yaml'
 
   _GZIP_SIGNATURE = 0x8b1f
 
@@ -106,9 +81,10 @@ class GZipFile(data_format.BinaryDataFile):
       ParseError: if the member header cannot be read.
     """
     file_offset = file_object.tell()
-    member_header = self._ReadStructure(
-        file_object, file_offset, self._MEMBER_HEADER_SIZE,
-        self._MEMBER_HEADER, 'member header')
+    data_type_map = self._GetDataTypeMap('gzip_member_header')
+
+    member_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'member header')
 
     if self._debug:
       self._DebugPrintMemberHeader(member_header)
@@ -124,24 +100,29 @@ class GZipFile(data_format.BinaryDataFile):
 
     if member_header.flags & self._FLAG_FEXTRA:
       file_offset = file_object.tell()
-      extra_field_data_size = self._ReadStructure(
-          file_object, file_offset, self._UINT16LE_SIZE,
-          self._UINT16LE, 'extra field data size')
+      data_type_map = self._GetDataTypeMap('uint16le')
+
+      extra_field_data_size, _ = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, 'extra field data size')
 
       file_object.seek(extra_field_data_size, os.SEEK_CUR)
 
     if member_header.flags & self._FLAG_FNAME:
       file_offset = file_object.tell()
-      value_string = self._ReadString(
-          file_object, file_offset, self._CSTRING, 'original filename')
+      data_type_map = self._GetDataTypeMap('cstring')
+
+      value_string, _ = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, 'original filename')
 
       if self._debug:
         self._DebugPrintValue('Original filename', value_string)
 
     if member_header.flags & self._FLAG_FCOMMENT:
       file_offset = file_object.tell()
-      value_string = self._ReadString(
-          file_object, file_offset, self._CSTRING, 'comment')
+      data_type_map = self._GetDataTypeMap('cstring')
+
+      value_string, _ = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, 'comment')
 
       if self._debug:
         self._DebugPrintValue('Comment', value_string)
@@ -159,9 +140,10 @@ class GZipFile(data_format.BinaryDataFile):
       ParseError: if the member footer cannot be read.
     """
     file_offset = file_object.tell()
-    member_footer = self._ReadStructure(
-        file_object, file_offset, self._MEMBER_FOOTER_SIZE,
-        self._MEMBER_FOOTER, 'member footer')
+    data_type_map = self._GetDataTypeMap('gzip_member_footer')
+
+    member_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'member footer')
 
     if self._debug:
       self._DebugPrintMemberFooter(member_footer)

@@ -24,8 +24,8 @@ class GZipFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = gzipfile.GZipFile(output_writer=output_writer)
 
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'gzip_member_header')
+    data_type_map = test_file._GetDataTypeMap('gzip_member_header')
+
     data_section = data_type_map.CreateStructureValues(
         compression_flags=0x00,
         compression_method=8,
