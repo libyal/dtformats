@@ -53,7 +53,7 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: original_filename_ansi
+- name: original_filename
   type: stream
   element_data_type: byte
   elements_data_size: 260
@@ -65,8 +65,10 @@ members:
   data_type: uint64
 - name: original_file_size
   data_type: uint32
-- name: original_filename
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: 260
+---
+name: recycler_info2_file_entry_utf16le_string
+description: Windows Recycler INFO2 file entry Unicode original filename string
+type: string
+encoding: utf-16-le
+element_data_type: wchar16
+elements_terminator: "\x00\x00"

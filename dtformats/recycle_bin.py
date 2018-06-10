@@ -92,10 +92,12 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
 
     if format_version == 1:
-      data_type_map = self._GetDataTypeMap('utf16le_string')
+      data_type_map = self._GetDataTypeMap(
+          'recycle_bin_metadata_utf16le_string')
       description = 'UTF-16 little-endian string'
     else:
-      data_type_map = self._GetDataTypeMap('utf16le_string_with_size')
+      data_type_map = self._GetDataTypeMap(
+          'recycle_bin_metadata_utf16le_string_with_size')
       description = 'UTF-16 little-endian string with size'
 
     try:

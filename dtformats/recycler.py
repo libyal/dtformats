@@ -8,14 +8,7 @@ from dtformats import errors
 
 
 class RecyclerInfo2File(data_format.BinaryDataFile):
-  """Windows Recycler INFO2 file.
-
-  Attributes:
-    deletion_time (int): FILETIME timestamp of the date and time the original
-        file was deleted.
-    original_filename (str): original name of the deleted file.
-    original_size (int): original size of the deleted file.
-  """
+  """Windows Recycler INFO2 file."""
 
   _DEFINITION_FILE = 'recycler.yaml'
 
@@ -28,9 +21,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     """
     super(RecyclerInfo2File, self).__init__(
         debug=debug, output_writer=output_writer)
-    self.deletion_time = None
-    self.original_filename = None
-    self.original_file_size = None
+    self._file_entry_size = 0
 
   def _DebugPrintFileEntry(self, file_entry):
     """Prints file entry debug information.
@@ -50,10 +41,6 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
 
     value_string = '{0:d}'.format(file_entry.original_file_size)
     self._DebugPrintValue('Original file size', value_string)
-
-    self._DebugPrintValue('Original filename', file_entry.original_filename)
-
-    self._DebugPrintText('\n')
 
   def _DebugPrintFileHeader(self, file_header):
     """Prints file header debug information.
@@ -88,13 +75,42 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
       ParseError: if the file entry cannot be read.
     """
     file_offset = file_object.tell()
+
+    file_entry_data = self._ReadData(
+        file_object, file_offset, self._file_entry_size, 'file entry')
+
     data_type_map = self._GetDataTypeMap('recycler_info2_file_entry')
 
-    file_entry, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file entry')
+    try:
+      file_entry = self._ReadStructureFromByteStream(
+          file_entry_data, file_offset, data_type_map, 'file entry')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map file entry data at offset: 0x{0:08x} with error: '
+          '{1!s}').format(file_offset, exception))
 
     if self._debug:
       self._DebugPrintFileEntry(file_entry)
+
+    if self._file_entry_size > 280:
+      file_offset += 280
+
+      data_type_map = self._GetDataTypeMap(
+          'recycler_info2_file_entry_utf16le_string')
+
+      try:
+        original_filename = self._ReadStructureFromByteStream(
+            file_entry_data[280:], file_offset, data_type_map, 'file entry')
+      except (ValueError, errors.ParseError) as exception:
+        raise errors.ParseError((
+            'Unable to map file entry data at offset: 0x{0:08x} with error: '
+            '{1!s}').format(file_offset, exception))
+
+      if self._debug:
+        self._DebugPrintValue('Original filename', original_filename)
+
+    if self._debug:
+      self._DebugPrintText('\n')
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -113,9 +129,11 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
-    if file_header.file_entry_size != 800:
+    if file_header.file_entry_size not in (280, 800):
       raise errors.ParseError('Unsupported file entry size: {0:d}'.format(
           file_header.file_entry_size))
+
+    self._file_entry_size = file_header.file_entry_size
 
   def ReadFileObject(self, file_object):
     """Reads a Windows Recycler INFO2 file-like object.
@@ -133,4 +151,4 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     while file_offset < self._file_size:
       self._ReadFileEntry(file_object)
 
-      file_offset = file_object.tell()
+      file_offset += self._file_entry_size

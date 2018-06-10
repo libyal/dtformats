@@ -23,27 +23,6 @@ attributes:
   size: 2
   units: bytes
 ---
-name: utf16le_string
-description: Windows Recycle.Bin metadata ($I) format 1 original filename string
-type: string
-encoding: utf-16-le
-element_data_type: wchar16
-elements_terminator: "\x00\x00"
----
-name: utf16le_string_with_size
-description: Windows Recycle.Bin metadata ($I) format 2 original filename string
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: number_of_characters
-  data_type: uint32
-- name: string
-  type: string
-  encoding: utf-16-le
-  element_data_type: wchar16
-  number_of_elements: utf16le_string_with_size.number_of_characters
----
 name: recycle_bin_metadata_file_header
 description: Windows Recycle.Bin metadata ($I) format 1 and 2 file header
 type: structure
@@ -56,3 +35,24 @@ members:
   data_type: uint64
 - name: deletion_time
   data_type: uint64
+---
+name: recycle_bin_metadata_utf16le_string
+description: Windows Recycle.Bin metadata ($I) format 1 original filename string
+type: string
+encoding: utf-16-le
+element_data_type: wchar16
+elements_terminator: "\x00\x00"
+---
+name: recycle_bin_metadata_utf16le_string_with_size
+description: Windows Recycle.Bin metadata ($I) format 2 original filename string
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_characters
+  data_type: uint32
+- name: string
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  number_of_elements: recycle_bin_metadata_utf16le_string_with_size.number_of_characters

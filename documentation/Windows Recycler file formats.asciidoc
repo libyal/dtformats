@@ -65,13 +65,21 @@ Though technically maybe incorrect, this document will use term (extended) ASCII
 Unicode strings are stored in UTF-16 little-endian without the byte order mark (BOM).
 |===
 
-=== INFO2 file
+=== Test version
+The following version of programs were used to test the information within this document:
+
+* Windows Me
+* Windows 2000
+* Windows XP
+* Windows 2003
+
+== INFO2 file
 The INFO2 file is variable of size and consists of:
 
 * file header
 * recycler file entries
 
-==== File header
+=== File header
 The file header is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -81,27 +89,31 @@ The file header is 20 bytes of size and consists of:
 Seen: 0x05
 | 4 | 4 | | [yellow-background]*Unknown (Number of file entries)*
 | 8 | 4 | | [yellow-background]*Unknown (Previous number of file entries)*
-| 12 | 4 | 800 | File entry size
+| 12 | 4 | 280 or 800 | File entry size +
+280 on Windows Me, 800 on Windows 2000 and later
 | 16 | 4 | | [yellow-background]*Unknown* +
 Seen: 0x00 (win2k), 0x05 (winxp)
 |===
 
-==== File entry
+=== File entry
 The file entry is 800 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 260 | | Original filename +
-Contains an extended ASCII string with end-of-string character
+Contains an extended ASCII string with end-of-string character +
+On some versions of Windows the unused bytes can contain remnant data 
 | 260 | 4 | | Index within the INFO2 file
 | 264 | 4 | | Drive number
 | 268 | 8 | | Deletion date and time +
 Contains a FILETIME
 | 276 | 4 | | [yellow-background]*Unknown (original file size?)* +
 Seen: 4096 (1 cluster block?) for 5 byte original file size
+4+| _If file entry size > 280_
 | 280 | 520 | | Original filename +
-Contains an UTF-16 little-endian string with end-of-string character
+Contains an UTF-16 little-endian string with end-of-string character +
+On some versions of Windows the unused bytes can contain remnant data 
 |===
 
 [NOTE]
