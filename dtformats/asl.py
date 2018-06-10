@@ -3,10 +3,6 @@
 
 from __future__ import unicode_literals
 
-import os
-
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 
 

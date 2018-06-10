@@ -3,11 +3,7 @@
 
 from __future__ import unicode_literals
 
-import os
-
 from dfdatetime import posix_time as dfdatetime_posix_time
-
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 
@@ -15,18 +11,7 @@ from dtformats import data_format
 class UTMPFile(data_format.BinaryDataFile):
   """An UTMP file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'utmp.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _UTMP_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap('utmp_entry')
-
-  _UTMP_ENTRY_SIZE = _UTMP_ENTRY.GetByteSize()
+  _DEFINITION_FILE = 'utmp.yaml'
 
   _EMPTY_IP_ADDRESS = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
@@ -139,15 +124,16 @@ class UTMPFile(data_format.BinaryDataFile):
       file_object (file): file-like object.
     """
     file_offset = 0
+    data_type_map = self._GetDataTypeMap('utmp_entry')
+
     while file_offset < self._file_size:
-      entry = self._ReadStructure(
-          file_object, file_offset, self._UTMP_ENTRY_SIZE, self._UTMP_ENTRY,
-          'entry')
+      entry, entry_data_size = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, 'entry')
 
       if self._debug:
         self._DebugPrintEntry(entry)
 
-      file_offset += self._UTMP_ENTRY_SIZE
+      file_offset += entry_data_size
 
   def ReadFileObject(self, file_object):
     """Reads an UTMP file-like object.
