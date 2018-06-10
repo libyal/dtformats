@@ -36,7 +36,9 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
     test_file.file_format = 'bin-little-endian'
 
-    data_type_map = test_file._CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY
+    data_type_map = test_file._GetDataTypeMap(
+        'cpio_binary_little_endian_file_entry')
+
     file_entry = data_type_map.CreateStructureValues(
         device_number=1,
         file_size=0,
@@ -54,7 +56,8 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
 
     test_file.file_format = 'newc'
 
-    data_type_map = test_file._CPIO_NEW_ASCII_FILE_ENTRY
+    data_type_map = test_file._GetDataTypeMap('cpio_new_ascii_file_entry')
+
     file_entry = data_type_map.CreateStructureValues(
         checksum=0x12345678,
         device_major_number=3,

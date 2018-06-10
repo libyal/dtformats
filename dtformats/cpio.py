@@ -5,8 +5,6 @@ from __future__ import unicode_literals
 
 import os
 
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 from dtformats import data_range
 from dtformats import errors
@@ -55,39 +53,9 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     size (int): size of the CPIO file data.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'cpio.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
+  _DEFINITION_FILE = 'cpio.yaml'
 
   # TODO: move path into structure.
-
-  _CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'cpio_binary_big_endian_file_entry')
-
-  _CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY_SIZE = (
-      _CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY.GetByteSize())
-
-  _CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'cpio_binary_little_endian_file_entry')
-
-  _CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY_SIZE = (
-      _CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY.GetByteSize())
-
-  _CPIO_PORTABLE_ASCII_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'cpio_portable_ascii_file_entry')
-
-  _CPIO_PORTABLE_ASCII_FILE_ENTRY_SIZE = (
-      _CPIO_PORTABLE_ASCII_FILE_ENTRY.GetByteSize())
-
-  _CPIO_NEW_ASCII_FILE_ENTRY = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'cpio_new_ascii_file_entry')
-
-  _CPIO_NEW_ASCII_FILE_ENTRY_SIZE = _CPIO_NEW_ASCII_FILE_ENTRY.GetByteSize()
 
   _CPIO_SIGNATURE_BINARY_BIG_ENDIAN = b'\x71\xc7'
   _CPIO_SIGNATURE_BINARY_LITTLE_ENDIAN = b'\xc7\x71'
@@ -198,21 +166,17 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       ParseError: if the file entry cannot be read.
     """
     if self.file_format == 'bin-big-endian':
-      data_type_map = self._CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY
-      file_entry_data_size = self._CPIO_BINARY_BIG_ENDIAN_FILE_ENTRY_SIZE
+      data_type_map = self._GetDataTypeMap('cpio_binary_big_endian_file_entry')
     elif self.file_format == 'bin-little-endian':
-      data_type_map = self._CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY
-      file_entry_data_size = self._CPIO_BINARY_LITTLE_ENDIAN_FILE_ENTRY_SIZE
+      data_type_map = self._GetDataTypeMap(
+          'cpio_binary_little_endian_file_entry')
     elif self.file_format == 'odc':
-      data_type_map = self._CPIO_PORTABLE_ASCII_FILE_ENTRY
-      file_entry_data_size = self._CPIO_PORTABLE_ASCII_FILE_ENTRY_SIZE
+      data_type_map = self._GetDataTypeMap('cpio_portable_ascii_file_entry')
     elif self.file_format in ('crc', 'newc'):
-      data_type_map = self._CPIO_NEW_ASCII_FILE_ENTRY
-      file_entry_data_size = self._CPIO_NEW_ASCII_FILE_ENTRY_SIZE
+      data_type_map = self._GetDataTypeMap('cpio_new_ascii_file_entry')
 
-    file_entry = self._ReadStructure(
-        file_object, file_offset, file_entry_data_size, data_type_map,
-        'file entry')
+    file_entry, file_entry_data_size = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file entry')
 
     file_offset += file_entry_data_size
 
