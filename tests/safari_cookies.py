@@ -60,7 +60,8 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = safari_cookies.BinaryCookiesFile(output_writer=output_writer)
 
-    data_type_map = test_file._FILE_HEADER
+    data_type_map = test_file._GetDataTypeMap('binarycookies_file_header')
+
     file_header = data_type_map.CreateStructureValues(
         number_of_pages=1,
         signature=b'cook')
@@ -72,7 +73,8 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = safari_cookies.BinaryCookiesFile(output_writer=output_writer)
 
-    data_type_map = test_file._RECORD_HEADER
+    data_type_map = test_file._GetDataTypeMap('binarycookies_record_header')
+
     record_header = data_type_map.CreateStructureValues(
         creation_time=0,
         expiration_time=1,

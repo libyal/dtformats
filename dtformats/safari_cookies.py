@@ -4,11 +4,9 @@
 from __future__ import unicode_literals
 
 import datetime
-import os
 
 from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
@@ -17,40 +15,7 @@ from dtformats import errors
 class BinaryCookiesFile(data_format.BinaryDataFile):
   """Safari Cookies (Cookies.binarycookies) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'safari_cookies.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  # TODO: combine binarycookies_file_header and binarycookies_page_sizes into
-  # binarycookies_file_header. Have means to incrementally map.
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'binarycookies_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _PAGE_SIZES = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'binarycookies_page_sizes')
-
-  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'binarycookies_file_footer')
-
-  _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
-
-  _PAGE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'binarycookies_page_header')
-
-  _RECORD_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'binarycookies_record_header')
-
-  _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
-
-  _CSTRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('cstring')
+  _DEFINITION_FILE = 'safari_cookies.yaml'
 
   _SIGNATURE = b'cook'
 
@@ -140,15 +105,17 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the string cannot be read.
     """
+    data_type_map = self._GetDataTypeMap('cstring')
+
     try:
-      value_string = self._CSTRING.MapByteStream(page_data[string_offset:])
-    except (dtfabric_errors.ByteStreamTooSmallError,
-            dtfabric_errors.MappingError) as exception:
+      value_string = self._ReadStructureFromByteStream(
+          page_data[string_offset:], string_offset, data_type_map, 'cstring')
+    except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to map string data at offset: 0x{0:08x} with error: '
+          'Unable to parse string at offset: 0x{0:08x} with error: '
           '{1!s}').format(string_offset, exception))
 
-    return value_string.rstrip(b'\x00')
+    return value_string.rstrip('\x00')
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
@@ -160,11 +127,13 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       ParseError: if the file footer cannot be read.
     """
     file_offset = file_object.tell()
-    self._ReadStructure(
-        file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        'file footer')
+    data_type_map = self._GetDataTypeMap('binarycookies_file_footer')
+
+    file_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file footer')
 
     # TODO: add _DebugPrintFileFooter
+    _ = file_footer
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -176,9 +145,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+    data_type_map = self._GetDataTypeMap('binarycookies_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -199,8 +169,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'binarycookies_file_header': file_header})
 
+    data_type_map = self._GetDataTypeMap('binarycookies_page_sizes')
+
     try:
-      page_sizes_array = self._PAGE_SIZES.MapByteStream(
+      page_sizes_array = data_type_map.MapByteStream(
           page_sizes_data, context=context)
     except (dtfabric_errors.ByteStreamTooSmallError,
             dtfabric_errors.MappingError) as exception:
@@ -236,8 +208,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     page_data = self._ReadData(
         file_object, file_offset, page_size, 'page data')
 
+    data_type_map = self._GetDataTypeMap('binarycookies_page_header')
+
     try:
-      page_header = self._PAGE_HEADER.MapByteStream(page_data)
+      page_header = data_type_map.MapByteStream(page_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
           'Unable to map page header data at offset: 0x{0:08x} with error: '
@@ -294,9 +268,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the record cannot be read.
     """
+    data_type_map = self._GetDataTypeMap('binarycookies_record_header')
+
     try:
-      record_header = self._RECORD_HEADER.MapByteStream(
-          page_data[record_offset:])
+      record_header = data_type_map.MapByteStream(page_data[record_offset:])
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
           'Unable to map record header data at offset: 0x{0:08x} with error: '

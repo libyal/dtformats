@@ -347,7 +347,8 @@ class BinaryDataFormat(object):
 
     try:
       return data_type_map.MapByteStream(byte_stream, context=context)
-    except dtfabric_errors.MappingError as exception:
+    except (dtfabric_errors.ByteStreamTooSmallError,
+            dtfabric_errors.MappingError) as exception:
       raise errors.ParseError((
           'Unable to map {0:s} data at offset: 0x{1:08x} with error: '
           '{2!s}').format(description, file_offset, exception))
@@ -389,12 +390,22 @@ class BinaryDataFormat(object):
 
       try:
         context = dtfabric_data_maps.DataTypeMapContext()
-        structure_values_object = self._ReadStructureFromByteStream(
-            data, file_offset, data_type_map, description, context=context)
+        structure_values_object = data_type_map.MapByteStream(
+            data, context=context)
+
+        if self._debug:
+          data_description = '{0:s} data'.format(description.title())
+          self._DebugPrintData(data_description, data)
+
         return structure_values_object, data_size
 
       except dtfabric_errors.ByteStreamTooSmallError:
         pass
+
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            'Unable to map {0:s} data at offset: 0x{1:08x} with error: '
+            '{2!s}').format(description, file_offset, exception))
 
       last_data_size = data_size
       data_size = data_type_map.GetSizeHint(context=context)
