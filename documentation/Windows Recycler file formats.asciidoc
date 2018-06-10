@@ -1,4 +1,4 @@
-= The Windows Recycle.Bin file formats
+= The Windows Recycler file formats
 
 :toc:
 :toclevels: 4
@@ -6,11 +6,11 @@
 :numbered!:
 [abstract]
 == Summary
-The Windows Recycle.Bin file format is used by Windows to keep track of the
+The Windows Recycler file format is used by Windows to keep track of the
 original location of soft deleted filed. This specification is based on
 available documentation and was enhanced by analyzing test data.
 
-This document is intended as a working document for the Windows Recycle.Bin
+This document is intended as a working document for the Windows Recycler
 file format specification.
 
 [preface]
@@ -18,15 +18,15 @@ file format specification.
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | This document contains information about the Windows Recycle.Bin file format
+| Abstract: | This document contains information about the Windows Recycler file format
 | Classification: | Public
-| Keywords: | Recycle.Bin, $I file, $R file
+| Keywords: | Recycler, INFO2
 |===
 
 [preface]
 == License
 ....
-Copyright (C) 2016-2018, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2018, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -39,59 +39,74 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
-| 0.0.1 | J.B. Metz | July 2016 | Initial version.
-| 0.0.2 | J.B. Metz | May 2018 | Textual changes.
-| 0.0.3 | J.B. Metz | June 2018 | Textual changes.
+| 0.0.1 | J.B. Metz | June 2018 | Initial version.
 |===
 
 :numbered:
 == Overview
-The Windows Recycle.Bin stores file per user in:
+The Windows Recycler stores file per user in:
 
 ....
-C:\$Recycle.Bin\%SID%\
+C:\Recycler\%SID%\
 ....
 
 The files stored in this directory are:
 
-* $I file; contains metadata of the original file
-* $R file; contains data of the orignal file
+* INFO2; contains metadata of the original files
+* other files; contains data of the orignal file
 
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
 | Byte order | little-endian
 | Date and time values | FILETIME in UTC
-| Character strings | UTF-16 little-endian formatted string with end-of-string character
+| Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string stored with a codepage. Sometimes referred to as ANSI string representation. +
+Though technically maybe incorrect, this document will use term (extended) ASCII string. +
+Unicode strings are stored in UTF-16 little-endian without the byte order mark (BOM).
 |===
 
-=== $I file
-The $I file is variable of size and consists of:
+=== INFO2 file
+The INFO2 file is variable of size and consists of:
+
+* file header
+* recycler file entries
+
+==== File header
+The file header is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | 1 or 2 | Format version
-| 8 | 8 | | Original file size
-| 16 | 8 | | Deletion date and time +
+| 0 | 4 | | [yellow-background]*Unknown* +
+Seen: 0x05
+| 4 | 4 | | [yellow-background]*Unknown (Number of file entries)*
+| 8 | 4 | | [yellow-background]*Unknown (Previous number of file entries)*
+| 12 | 4 | 800 | File entry size
+| 16 | 4 | | [yellow-background]*Unknown* +
+Seen: 0x00 (win2k), 0x05 (winxp)
+|===
+
+==== File entry
+The file entry is 800 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 260 | | Original filename +
+Contains an extended ASCII string with end-of-string character
+| 260 | 4 | | Index within the INFO2 file
+| 264 | 4 | | Drive number
+| 268 | 8 | | Deletion date and time +
 Contains a FILETIME
-4+| _If format version == 1_
-| 24 | ... | | Original filename +
-Contains an UTF-16 little-endian string with end-of-string character.
-4+| _If format version == 2_
-| 24 | 4 | | Number of characters in original filename
-| 28 | ... | | Original filename +
-Contains an UTF-16 little-endian string with end-of-string character.
+| 276 | 4 | | [yellow-background]*Unknown (original file size?)* +
+Seen: 4096 (1 cluster block?) for 5 byte original file size
+| 280 | 520 | | Original filename +
+Contains an UTF-16 little-endian string with end-of-string character
 |===
 
-==== Format versions
-
-[cols="1,2",options="header"]
-|===
-| Value | Description
-| 1 | Introduced in Windows Vista
-| 2 | Introduced in Windows 10
-|===
+[NOTE]
+A filename consists of `[drive][:\][path][null]`. The maximum filename size
+`1 + 2 + 256 + 1 = 260` as defined by MAX_PATH.
 
 :numbered!:
 [appendix]

@@ -23,7 +23,7 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
   _SUPPORTED_FORMAT_VERSION = (1, 2)
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a Windows Restore Point rp.log file.
+    """Initializes a Windows Recycle.Bin metadata ($I) file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -62,11 +62,10 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('recycle_bin_metadata_file_header')
 
     file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file header')
+        file_object, 0, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -113,7 +112,7 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     return original_filename.string.rstrip('\x00')
 
   def ReadFileObject(self, file_object):
-    """Reads a Windows Restore Point rp.log file-like object.
+    """Reads a Windows Recycle.Bin metadata ($I) file-like object.
 
     Args:
       file_object (file): file-like object.
