@@ -34,6 +34,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | May 2018 | Initial version.
+| 0.0.2 | J.B. Metz | June 2018 | Additional information about extensions (utmpx).
 |===
 
 :numbered:
@@ -45,7 +46,16 @@ The utmp login records format is used by the btmp, utmp and wtmp files.
 * wtmp; contains a historical status of the system
 * btmp; contains failed login attempts
 
-A utmp login records file consists of:
+There are multiple utmp file formats:
+
+* Linux libc5 utmp
+* Linux libc6 utmp
+* Mac OS X utmp
+* Mac OS X 10.5 utmpx
+
+== Linux libc6 utmp
+
+A Linux libc6 utmp file consists of:
 
 * one or more records
 
@@ -61,12 +71,14 @@ On modern versions of Linux the system encoding will be UTF-8.
 
 === Record
 
+The Linux libc6 utmp recordd is 384 bytes in size and consists of:
+
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Type of login +
 Contains a signed integer +
-See section: <<types,Types>>
+See section: <<linux_libc6_types,Types of login>>
 | 4 | 4 | | Process identifier (PID)
 | 8 | 32 | | Terminal +
 Contains an encoded string
@@ -90,7 +102,7 @@ Contains a packed IPv4 or IPv6 address
 | 364 | 20 | | [yellow-background]*Unknown (reserved for future usage)*
 |===
 
-==== [[types]]Types
+=== [[linux_libc6_types]]Types of login
 
 [cols="1,1,5",options="header"]
 |===
@@ -108,6 +120,87 @@ UT_UNKNOWN | Record is empty and does not contain valid information
 | 9 | ACCOUNTING | [yellow-background]*Unknown (Not implemented)*
 |===
 
+== Mac OS X 10.5 utmpx
+
+A Mac OS X 10.5 utmpx file consists of:
+
+* file header
+* records
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | litte-endian
+| Date and time values | POSIX timestamp with microseconds in UTC
+| Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string encoded with th system codepage. +
+Though technically maybe incorrect, this document will use term (extended) ASCII string.
+|===
+
+=== File header
+
+The Mac OS X 10.5 utmpx file header is 628 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | "utmpx-1.00" | Signature
+| 8 | 288 | 0 | [yellow-background]*Unknown (empty values)*
+| 296 | 2 | 10 | [yellow-background]*Unknown*
+| 298 | 330 | 0 | [yellow-background]*Unknown (empty values)*
+|===
+
+=== Record
+
+The Mac OS X 10.5 utmpx record is 628 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 256 | | Username +
+Contains an encoded string
+| 256 | 4 | | [yellow-background]*Unknown (Terminal indentifier)*
+| 260 | 32 | | Terminal (tty name) +
+Contains an encoded string
+| 292 | 4 | | Process identifier (PID)
+| 296 | 2 | | Type of login +
+Contains a signed integer +
+See section: <<mac_os_x_10_5_types,Types of login>>
+| 298 | 2 | | [yellow-background]*Unknown (possible upper bytes of type of login)*
+| 300 | 4 | | Timestamp +
+Contains a signed integer
+| 304 | 4 | | Microseconds +
+Contains a signed integer
+| 308 | 256 | | Hostname +
+Contains an encoded string
+| 564 | 64 | | [yellow-background]*Unknown*
+|===
+
+[NOTE]
+The first record contains little information except for the the boot time for
+PID 1.
+
+=== [[mac_os_x_10_5_types]]Types of login
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | EMPTY | Record is empty and does not contain valid information
+| 1 | RUN_LVL | Record represents a change in system run-level
+| 2 | BOOT_TIME | Time of system boot
+| 3 | OLD_TIME | Time before system clock change
+| 4 | NEW_TIME | Time after system clock change
+| 5 | INIT_PROCESS | Process spawned by init
+| 6 | LOGIN_PROCESS | Main process for user login session
+| 7 | USER_PROCESS | Process spawned by user
+| 8 | DEAD_PROCESS | Terminated process
+| 9 | ACCOUNTING | [yellow-background]*Unknown*
+| 10 | SIGNATURE | Signature, value used in file header
+| 11 | SHUTDOWN_TIME | TIme of system shutdown
+|===
+
+[NOTE]
+That the order of OLD_TIME and NEW_TIME is reversed to that of Linux
+
 :numbered!:
 [appendix]
 == References
@@ -122,6 +215,18 @@ UT_UNKNOWN | Record is empty and does not contain valid information
 |===
 | Title: | utmp man page
 | URL: | http://man7.org/linux/man-pages/man5/utmp.5.html
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | utmp header file
+| URL: | /usr/include/utmp.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | utmpx header file
+| URL: | /usr/include/utmpx.h
 |===
 
 [appendix]
