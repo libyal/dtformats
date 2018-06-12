@@ -145,7 +145,9 @@ The Mac OS X 10.5 utmpx file header is 628 bytes in size and consists of:
 | Offset | Size | Value | Description
 | 0 | 8 | "utmpx-1.00" | Signature
 | 8 | 288 | 0 | [yellow-background]*Unknown (empty values)*
-| 296 | 2 | 10 | [yellow-background]*Unknown*
+| 296 | 2 | 10 | Type of login +
+Contains a signed integer +
+See section: <<mac_os_x_10_5_types,Types of login>>
 | 298 | 330 | 0 | [yellow-background]*Unknown (empty values)*
 |===
 
@@ -158,21 +160,22 @@ The Mac OS X 10.5 utmpx record is 628 bytes in size and consists of:
 | Offset | Size | Value | Description
 | 0 | 256 | | Username +
 Contains an encoded string
-| 256 | 4 | | [yellow-background]*Unknown (Terminal indentifier)*
-| 260 | 32 | | Terminal (tty name) +
+| 256 | 4 | | Terminal indentifier
+| 260 | 32 | | Terminal (tty name or line) +
 Contains an encoded string
 | 292 | 4 | | Process identifier (PID)
 | 296 | 2 | | Type of login +
 Contains a signed integer +
 See section: <<mac_os_x_10_5_types,Types of login>>
-| 298 | 2 | | [yellow-background]*Unknown (possible upper bytes of type of login)*
+| 298 | 2 | | [yellow-background]*Unknown* +
+[yellow-background]*The runtime size of the type of login is short, could this be the upper 2 bytes used for storage?*
 | 300 | 4 | | Timestamp +
 Contains a signed integer
 | 304 | 4 | | Microseconds +
 Contains a signed integer
 | 308 | 256 | | Hostname +
 Contains an encoded string
-| 564 | 64 | | [yellow-background]*Unknown*
+| 564 | 16 x 4 = 64 | | [yellow-background]*Unknown (reserved for future usage)*
 |===
 
 [NOTE]

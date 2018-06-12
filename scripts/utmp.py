@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script to parse UTMP files."""
+"""Script to parse utmp files."""
 
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
 import logging
+import os
 import sys
 
 from dtformats import output_writers
@@ -20,7 +21,7 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      'Extracts information from UTMP files.'))
+      'Extracts information from utmp files.'))
 
   argument_parser.add_argument(
       '-d', '--debug', dest='debug', action='store_true', default=False,
@@ -28,7 +29,7 @@ def Main():
 
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='PATH',
-      default=None, help='path of the UTMP file.')
+      default=None, help='path of the utmp file.')
 
   options = argument_parser.parse_args()
 
@@ -51,11 +52,20 @@ def Main():
     print('')
     return False
 
-  utmp_file = utmp.UTMPFile(
-      debug=options.debug, output_writer=output_writer)
+  with open(options.source, 'rb') as file_object:
+    file_object.seek(0, os.SEEK_SET)
+    utmp_signature = file_object.read(11)
+
+  if utmp_signature == b'utmpx-1.00\x00':
+    utmp_file = utmp.MacOSXUtmpxFile(
+        debug=options.debug, output_writer=output_writer)
+  else:
+    utmp_file = utmp.LinuxLibc6UtmpFile(
+        debug=options.debug, output_writer=output_writer)
+
   utmp_file.Open(options.source)
 
-  output_writer.WriteText('UTMP information:')
+  output_writer.WriteText('utmp information:')
 
   utmp_file.Close()
 
