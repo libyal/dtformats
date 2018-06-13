@@ -35,7 +35,9 @@ class CupsIppFileTest(test_lib.BaseTestCase):
   # TODO: test _DebugPrintTagValue function
   # TODO: test _ReadAttribute function
   # TODO: test _ReadAttributesGroup function
+  # TODO: test _ReadBooleanValue function
   # TODO: test _ReadDateTimeValue function
+  # TODO: test _ReadIntegerValue function
 
   @test_lib.skipUnlessHasTestFile(['cups_ipp_2.0'])
   def testReadHeader(self):
