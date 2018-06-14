@@ -1,4 +1,4 @@
-= MacOS File System Events Disk Log Stream format
+= MacOS keychain database file format
 
 :toc:
 :toclevels: 4
@@ -6,21 +6,20 @@
 :numbered!:
 [abstract]
 == Summary
-The MacOS File System Events Disk Log Stream format is used by fseventsd on
-MacOS to store file system events. This specification is based on the
-source code and documentation.
+The MacOS keychain database file format is used by MacOS to store keys.
+This specification is based on the source code and documentation.
 
-This document is intended as a working document for the MacOS File System
-Events Disk Log Stream format file format specification.
+This document is intended as a working document for the MacOS keychain database
+file format specification.
 
 [preface]
 == Document information
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | MacOS File System Events Disk Log Stream format
+| Abstract: | MacOS keychain database file format
 | Classification: | Public
-| Keywords: | fseventsd
+| Keywords: | keychain
 |===
 
 [preface]
@@ -39,131 +38,105 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
-| 0.0.1 | J.B. Metz | January 2018 | Initial version.
+| 0.0.1 | J.B. Metz | June 2018 | Initial version.
 |===
 
 :numbered:
 == Overview
 
-An fsevents file System Events Disk Log Stream file is a multi-member GZIP
-file that consists of:
-
-* one or more Disk Log Streams
+* file header
+* tables array
+  * one or more tables
 
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | little-endian
-| Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string stored with a codepage. +
-Though technically maybe incorrect, this document will use term (extended) ASCII string.
+| Byte order | big-endian
+| Date and time values |
+| Character strings |
 |===
 
-== Disk log stream
+== File header
 
-A disk log stream consists of:
-
-* a stream header
-* one or more event records
-
-=== Stream header
-
-The stream header is 12 bytes of size and consists of:
+The file header is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "1SLD" +
-"2SLD" | Signature
-| 4 | 4 | | [yellow-background]*Unknown*
-| 8 | 4 | | stream size
+| 0 | 4 | "kych" | Signature
+| 4 | 2 | 1 | Major format version
+| 6 | 2 | 0 | Minor format version
+| 8 | 4 | 16 | [yellow-background]*Unknown (Header data size or offset to unknown)*
+| 12 | 4 | | Tables array offset
+| 16 | 4 | | [yellow-background]*Unknown* +
+Seen: 0
 |===
 
-[NOTE]
-The signature in little-endian is "DLS1", which presumably represents Disk
-Log(ger) Stream version 1 and version 2 for "DLS2". Format version 1 is used
-in Mac OS X Leopard (10.5) through macOS Sierra (10.12) and format version 2
-in MacOS High Sierra (10.13).
+== Tables array
 
-=== Event record version 1
-
-The event record version 1 is variable of size and consists of:
+The tables array is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | ... | | Path +
-Contains an extended ASCII string with end-of-string character
-| ... | 8 | | Event identifier
-| ... | 4 | | Event flags +
-See section: <<event_flags,Event flags>>
+| 0 | 4 | | Data size +
+Contains the size of the tables array data including the 4 bytes of the data size itself
+| 4 | 4 | | Number of tables
+| 8 | 4 x number of tables | | Table offsets +
+The offset is relative to the start of the tables array
+| ... | ... | | Tables array data
 |===
 
-=== Record version 2
+=== Table header
 
-The event record version 2 is variable of size and consists of:
+The table header is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | ... | | Path +
-Contains an extended ASCII string with end-of-string character
-| ... | 8 | | Event identifier
-| ... | 4 | | Event flags +
-See section: <<event_flags,Event flags>>
-| ... | 8 | | Node identifier
+| 0 | 4 | | Data size +
+Contains the size of the table data including the 4 bytes of the data size itself
+| 4 | 4 | | Record type
+| 8 | 4 | | Number of records
+| 12 | 4 | | Records array offset +
+The offset is relative to the start of the table header
+| 16 | 4 | | Index offset +
+The offset is relative to the start of the table header
+| 20 | 4 | | [yellow-background]*Unknown* +
+Seen: 0
+| 24 | 4 | | Number of record offsets
+| 28 | 4 x number of records | Record offsets +
+The offset is relative to the start of the table header
 |===
 
-=== [[event_flags]]Event flags
+=== Record header
 
-[cols="1,1,5",options="header"]
+The record header is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
 |===
-| Value | Identifier | Description
-| 0x00000000 | kFSEventStreamEventFlagNone | Change in the directory at the specific path
-| 0x00000001 | kFSEventStreamEventFlagMustScanSubDirs | Must scan sub directories recursively
-| 0x00000002 | kFSEventStreamEventFlagUserDropped |
-| 0x00000004 | kFSEventStreamEventFlagKernelDropped |
-| 0x00000008 | kFSEventStreamEventFlagEventIdsWrapped |
-| 0x00000010 | kFSEventStreamEventFlagHistoryDone |
-| 0x00000020 | kFSEventStreamEventFlagRootChanged |
-| 0x00000040 | kFSEventStreamEventFlagMount |
-| 0x00000080 | kFSEventStreamEventFlagUnmount |
-| 0x00000100 | kFSEventStreamEventFlagItemCreated |
-| 0x00000200 | kFSEventStreamEventFlagItemRemoved |
-| 0x00000400 | kFSEventStreamEventFlagItemInodeMetaMod |
-| 0x00000800 | kFSEventStreamEventFlagItemRenamed |
-| 0x00001000 | kFSEventStreamEventFlagItemModified |
-| 0x00002000 | kFSEventStreamEventFlagItemFinderInfoMod |
-| 0x00004000 | kFSEventStreamEventFlagItemChangeOwner |
-| 0x00008000 | kFSEventStreamEventFlagItemXattrMod |
-| 0x00010000 | kFSEventStreamEventFlagItemIsFile |
-| 0x00020000 | kFSEventStreamEventFlagItemIsDir |
-| 0x00040000 | kFSEventStreamEventFlagItemIsSymlink |
-| 0x00080000 | kFSEventStreamEventFlagOwnEvent |
-| 0x00100000 | kFSEventStreamEventFlagItemIsHardlink |
-| 0x00200000 | kFSEventStreamEventFlagItemIsLastHardlink |
-| 0x00400000 | kFSEventStreamEventFlagItemCloned |
+| Offset | Size | Value | Description
+| 0 | 4 | | Data size +
+Contains the size of the record data including the 4 bytes of the data size itself
 |===
+
+== Notes
+
+Look into file name changes in MacOS 10.12 from .keychain to .keychain-db
+if that also imposed format changes.
 
 :numbered!:
 [appendix]
 == References
 
-[cols="1,5",options="header"]
-|===
-| Title: | Using the File System Events API
-| URL: | https://developer.apple.com/library/content/documentation/Darwin/Conceptual/FSEvents_ProgGuide/UsingtheFSEventsFramework/UsingtheFSEventsFramework.html
-|===
+`[REFERENCE]`
 
 [cols="1,5",options="header"]
 |===
-| Title: | FSEventStreamEventFlags
-| URL: | https://developer.apple.com/documentation/coreservices/1455361-fseventstreameventflags
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | FSEvents.h
-| URL: | file:///System/Library/Frameworks//CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Headers/FSEvents.h
+| Title: |
+| Author(s): |
+| Date: |
+| URL: |
 |===
 
 [appendix]

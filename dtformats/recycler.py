@@ -27,7 +27,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     """Prints file entry debug information.
 
     Args:
-      file_entry (rp_log_file_entry): file entry.
+      file_entry (recycler_info2_file_entry): file entry.
     """
     # TODO: debug print ANSI original filename.
 
@@ -46,7 +46,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     """Prints file header debug information.
 
     Args:
-      file_header (rp_log_file_header): file header.
+      file_header (recycler_info2_file_header): file header.
     """
     value_string = '0x{0:08x}'.format(file_header.unknown1)
     self._DebugPrintValue('Unknown1', value_string)

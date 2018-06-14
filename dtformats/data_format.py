@@ -211,10 +211,6 @@ class BinaryDataFormat(object):
 
     file_object.seek(file_offset, os.SEEK_SET)
 
-    if self._debug:
-      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
-          description, file_offset))
-
     read_error = ''
 
     try:
@@ -311,6 +307,10 @@ class BinaryDataFormat(object):
       ParseError: if the structure cannot be read.
       ValueError: if file-like object or data type map is missing.
     """
+    if self._debug:
+      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
+          description, file_offset))
+
     data = self._ReadData(file_object, file_offset, data_size, description)
 
     return self._ReadStructureFromByteStream(
@@ -384,6 +384,10 @@ class BinaryDataFormat(object):
     data_size = data_type_map.GetByteSize()
     if not data_size:
       data_size = data_type_map.GetSizeHint()
+
+    if self._debug:
+      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
+          description, file_offset))
 
     while data_size != last_data_size:
       data = self._ReadData(file_object, file_offset, data_size, description)
