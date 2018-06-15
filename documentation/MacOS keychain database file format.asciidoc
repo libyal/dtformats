@@ -87,6 +87,19 @@ The offset is relative to the start of the tables array
 | ... | ... | | Tables array data
 |===
 
+== Table
+
+A table consist of:
+
+* table header
+* zero or more records
+* [yellow-background]*Unknown (trailing data)*
+
+....
+Table trailing data:
+0x00000000  00 00 00 08 00 00 00 00                           ........
+....
+
 === Table header
 
 The table header is variable of size and consists of:
@@ -96,47 +109,488 @@ The table header is variable of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Data size +
 Contains the size of the table data including the 4 bytes of the data size itself
-| 4 | 4 | | Record type
+| 4 | 4 | | Record type +
+See section: <<record_types,Record types>>
 | 8 | 4 | | Number of records
 | 12 | 4 | | Records array offset +
 The offset is relative to the start of the table header
-| 16 | 4 | | Index offset +
-The offset is relative to the start of the table header
+| 16 | 4 | | [yellow-background]*Unknown (Index offset?)*
 | 20 | 4 | | [yellow-background]*Unknown* +
-Seen: 0
+Seen: 0x00, 0x1d
 | 24 | 4 | | Number of record offsets
-| 28 | 4 x number of records | Record offsets +
-The offset is relative to the start of the table header
+| 28 | 4 x number of records | | Record offsets +
+The offset is relative to the start of the table header, or 0 if not set
 |===
+
+=== [[record_types]]Record types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000000 | CSSM_DL_DB_SCHEMA_INFO | Record identifiers and table names
+| 0x00000001 | CSSM_DL_DB_SCHEMA_INDEXES |
+| 0x00000002 | CSSM_DL_DB_SCHEMA_ATTRIBUTES |
+| 0x00000003 | CSSM_DL_DB_SCHEMA_PARSING_MODULE |
+| | |
+| 0x0000000a | CSSM_DL_DB_RECORD_ANY |
+| 0x0000000b | CSSM_DL_DB_RECORD_CERT |
+| 0x0000000c | CSSM_DL_DB_RECORD_CRL |
+| 0x0000000d | CSSM_DL_DB_RECORD_POLICY |
+| 0x0000000e | CSSM_DL_DB_RECORD_GENERIC |
+| 0x0000000f | CSSM_DL_DB_RECORD_PUBLIC_KEY |
+| 0x00000010 | CSSM_DL_DB_RECORD_PRIVATE_KEY |
+| 0x00000011 | CSSM_DL_DB_RECORD_SYMMETRIC_KEY |
+| 0x00000012 | CSSM_DL_DB_RECORD_ALL_KEYS |
+| | |
+| 0x80000000 | CSSM_DL_DB_RECORD_GENERIC_PASSWORD | Generic passwords
+| 0x80000001 | CSSM_DL_DB_RECORD_INTERNET_PASSWORD | Internet passwords
+| 0x80000002 | CSSM_DL_DB_RECORD_APPLESHARE_PASSWORD |
+| 0x80000003 | CSSM_DL_DB_RECORD_USER_TRUST |
+| 0x80000004 | CSSM_DL_DB_RECORD_X509_CRL |
+| 0x80000005 | CSSM_DL_DB_RECORD_UNLOCK_REFERRAL |
+| 0x80000006 | CSSM_DL_DB_RECORD_EXTENDED_ATTRIBUTE |
+| | |
+| 0x80001000 | CSSM_DL_DB_RECORD_X509_CERTIFICATE |
+| | |
+| 0x80008000 | CSSM_DL_DB_RECORD_METADATA |
+|===
+
+[NOTE]
+The MSB (0x80000000) of the value indicates application specific tables.
+
+== Record
+
+A record consist of:
+
+* record header
+* attribute value offsets
+* attribute value data
+* [yellow-background]*Unknown (padding)*
 
 === Record header
 
-The record header is variable of size and consists of:
+The record header is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Data size +
 Contains the size of the record data including the 4 bytes of the data size itself
+| 4 | 4 | | [yellow-background]*Unknown (record index)*
+| 8 | 4 | | [yellow-background]*Unknown*
+| 12 | 4 | | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown*
+| 20 | 4 | | [yellow-background]*Unknown*
 |===
+
+=== Attribute value offsets
+
+The attribute value offset are variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 x number of attributes | | Attribute value offset +
+The offset is relative to the start of the record header - 1, or 0 if value is empty (NULL)
+|===
+
+The number of attributes is dependent on the record type.
+
+=== CSSM_DL_DB_SCHEMA_INFO attribute values
+
+The CSSM_DL_DB_SCHEMA_INFO (or CSSM_DL_DB_SCHEMA_RELATIONS) attribute values
+data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| 0 | RelationID | Integer 32-bit unsigned | Record type (or relation identifier) +
+See section: <<record_types,Record types>>
+| 1 | RelationName | String with size | Table name (or relation name)
+|===
+
+=== CSSM_DL_DB_SCHEMA_INDEXES attribute values
+
+The CSSM_DL_DB_SCHEMA_INDEXES attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type Attribute description
+| 0 | RelationID | Integer 32-bit unsigned | Record type (or relation identifier) +
+See section: <<record_types,Record types>>
+| 1 | IndexID | Integer 32-bit unsigned | Index identifier
+| 2 | AttributeID | Integer 32-bit unsigned | Attribute identifier
+| 3 | IndexType | Integer 32-bit unsigned | Index type
+| 4 | IndexedDataLocation | Integer 32-bit unsigned | Location of the source data used to create the index
+|===
+
+=== CSSM_DL_DB_SCHEMA_ATTRIBUTES attribute values
+
+The CSSM_DL_DB_SCHEMA_ATTRIBUTES attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type Attribute description
+| 0 | RelationID | Integer 32-bit unsigned | Record type (or relation identifier) +
+See section: <<record_types,Record types>>
+| 1 | AttributeID | Integer 32-bit unsigned | Attribute identifier
+| 2 | AttributeNameFormat | Integer 32-bit unsigned | Data type of the attribute name +
+See section: <<attribute_data_types,Attribute data types>>
+| 3 | AttributeName | | Attribute name
+| 4 | AttributeNameID | Binary data | Identifier of the attribute name +
+[yellow-background]*Contains an OID*
+| 5 | AttributeFormat | Integer 32-bit unsigned | Data type of the attribute value +
+See section: <<attribute_data_types,Attribute data types>>
+|===
+
+[NOTE]
+The data type of AttributeName is depedent on AttributeNameFormat
+
+=== CSSM_DL_DB_SCHEMA_PARSING_MODULE attribute values
+
+The CSSM_DL_DB_SCHEMA_PARSING_MODULE attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type Attribute description
+| 0 | RelationID | Integer 32-bit unsigned | Record type (or relation identifier) +
+See section: <<record_types,Record types>>
+| 1 | AttributeID | Integer 32-bit unsigned | Attribute identifier
+| 2 | ModuleID | Binary data | Module identifier +
+Contains a GUID/UUID
+| 3 | AddinVersion | String with size | Module version
+| 4 | SSID | Integer 32-bit unsigned | Subservice module identifier
+| 5 | SubserviceType | Integer 32-bit unsigned | Subservice module type
+|===
+
+=== CSSM_DL_DB_RECORD_CERT attribute values
+
+....
+Attribute Name	Attribute Type	Attribute Description
+CertType	CSSM_CERT_TYPE	One of the values defined for CSSM_CERT_TYPE.
+CertEncoding	CSSM_CERT_ENCODING	One of the values defined for CSSM_CERT_ENCODING.
+PrintName	CSSM_Data 
+(max length 16 characters)	The PrintName attribute required in all DL-stored records.
+Alias	CSSM_Data 
+(max length 8 bytes)	The Alias attribute required in all DL-stored records.
+....
+
+=== CSSM_DL_DB_RECORD_CERT attribute values
+
+....
+Attribute Name	Attribute Type	Attribute Description
+CrlType	CSSM_CRL_TYPE	One of the values defined for CSSM_CRL_TYPE.
+CrlEncoding	CSSM_CRL_ENCODING	One of the values defined for CSSM_CRL_ENCODING.
+PrintName	CSSM_Data 
+(max length 16 characters)	The PrintName attribute required in all DL-stored records.
+Alias	CSSM_Data 
+(max length 8 bytes)	The Alias attribute required in all DL-stored records.
+....
+
+=== CSSM_DL_DB_RECORD_POLICY attribute values
+
+....
+Attribute Name	Attribute Type	Attribute Description
+PolicyName	CSSM_OID	One of the values defined by the policy domain.
+PrintName	CSSM_Data 
+(max length 16 characters)	The PrintName attribute required in all DL-stored records.
+Alias	CSSM_Data 
+(max length 8 bytes)	The Alias attribute required in all DL-stored records.
+....
+
+=== CSSM_DL_DB_RECORD_GENERIC attribute values
+
+....
+Attribute Name	Attribute Type	Attribute Description
+PrintName	CSSM_Data 
+(max length 16 characters)	The PrintName attribute required in all DL-stored records.
+Alias	CSSM_Data 
+(max length 8 bytes)	The Alias attribute required in all DL-stored records.
+....
+
+=== CSSM_DL_DB_RECORD_PUBLIC_KEY attribute values
+
+....
+Table: CSSM_DL_DB_RECORD_PUBLIC_KEY (0x0000000f)
+        Columns:
+                : KeyClass
+                : PrintName
+                : Alias
+                : Permanent
+                : Private
+                : Modifiable
+                : Label
+                : ApplicationTag
+                : KeyCreator
+                : KeyType
+                : KeySizeInBits
+                : EffectiveKeySize
+                : StartDate
+                : EndDate
+                : Sensitive
+                : AlwaysSensitive
+                : Extractable
+                : NeverExtractable
+                : Encrypt
+                : Decrypt
+                : Derive
+                : Sign
+                : Verify
+                : SignRecover
+                : VerifyRecover
+                : Wrap
+                : Unwrap
+....
+
+=== CSSM_DL_DB_RECORD_PRIVATE_KEY attribute values
+
+....
+Table: CSSM_DL_DB_RECORD_PRIVATE_KEY (0x00000010)
+        Columns:
+                : KeyClass
+                : PrintName
+                : Alias
+                : Permanent
+                : Private
+                : Modifiable
+                : Label
+                : ApplicationTag
+                : KeyCreator
+                : KeyType
+                : KeySizeInBits
+                : EffectiveKeySize
+                : StartDate
+                : EndDate
+                : Sensitive
+                : AlwaysSensitive
+                : Extractable
+                : NeverExtractable
+                : Encrypt
+                : Decrypt
+                : Derive
+                : Sign
+                : Verify
+                : SignRecover
+                : VerifyRecover
+                : Wrap
+                : Unwrap
+....
+
+=== CSSM_DL_DB_RECORD_SYMMETRIC_KEY attribute values
+
+....
+Table: CSSM_DL_DB_RECORD_SYMMETRIC_KEY (0x00000011)
+        Columns:
+                : KeyClass
+                : PrintName
+                : Alias
+                : Permanent
+                : Private
+                : Modifiable
+                : Label
+                : ApplicationTag
+                : KeyCreator
+                : KeyType
+                : KeySizeInBits
+                : EffectiveKeySize
+                : StartDate
+                : EndDate
+                : Sensitive
+                : AlwaysSensitive
+                : Extractable
+                : NeverExtractable
+                : Encrypt
+                : Decrypt
+                : Derive
+                : Sign
+                : Verify
+                : SignRecover
+                : VerifyRecover
+                : Wrap
+                : Unwrap
+....
+
+=== CSSM_DL_DB_RECORD_GENERIC_PASSWORD attribute values
+
+....
+Table:  (0x80000000)
+        Columns:
+                : cdat
+                : mdat
+                : desc
+                : icmt
+                : crtr
+                : type
+                : scrp
+                : PrintName
+                : Alias
+                : invi
+                : nega
+                : cusi
+                : prot
+                : acct
+                : svce
+                : gena
+....
+
+=== CSSM_DL_DB_RECORD_INTERNET_PASSWORD attribute values
+
+....
+Table:  (0x80000001)
+        Columns:
+                : cdat
+                : mdat
+                : desc
+                : icmt
+                : crtr
+                : type
+                : scrp
+                : PrintName
+                : Alias
+                : invi
+                : nega
+                : cusi
+                : prot
+                : acct
+                : sdmn
+                : srvr
+                : ptcl
+                : atyp
+                : port
+                : path
+....
+
+=== CSSM_DL_DB_RECORD_APPLESHARE_PASSWORD attribute values
+
+....
+Table:  (0x80000002)
+        Columns:
+                : cdat
+                : mdat
+                : desc
+                : icmt
+                : crtr
+                : type
+                : scrp
+                : PrintName
+                : Alias
+                : invi
+                : nega
+                : cusi
+                : prot
+                : acct
+                : vlme
+                : srvr
+                : ptcl
+                : addr
+                : ssig
+....
+
+=== CSSM_DL_DB_RECORD_USER_TRUST attribute values
+
+=== CSSM_DL_DB_RECORD_X509_CRL attribute values
+
+=== CSSM_DL_DB_RECORD_UNLOCK_REFERRAL attribute values
+
+=== CSSM_DL_DB_RECORD_EXTENDED_ATTRIBUTE attribute values
+
+=== CSSM_DL_DB_RECORD_X509_CERTIFICATE attribute values
+
+=== CSSM_DL_DB_RECORD_METADATA attribute values
+
+== [[attribute_data_types]]Attribute data types
+
+The attribute data types (or formats):
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | CSSM_DB_ATTRIBUTE_FORMAT_STRING |
+| 1 | CSSM_DB_ATTRIBUTE_FORMAT_SINT32 | Integer 32-bit, signed
+| 2 | CSSM_DB_ATTRIBUTE_FORMAT_UINT32 | Integer 32-bit, unsigned
+| 3 | CSSM_DB_ATTRIBUTE_FORMAT_BIG_NUM |
+| 4 | CSSM_DB_ATTRIBUTE_FORMAT_REAL | Floating-point 64-bit
+| 5 | CSSM_DB_ATTRIBUTE_FORMAT_TIME_DATE |
+| 6 | CSSM_DB_ATTRIBUTE_FORMAT_BLOB |
+| 7 | CSSM_DB_ATTRIBUTE_FORMAT_MULTI_UINT32 |
+| 8 | CSSM_DB_ATTRIBUTE_FORMAT_COMPLEX |
+|===
+
+....
+STRING
+
+A string containing only printable characters, NULL terminator is optional. Greater than and less than operations are performed by comparing the binary value of each character (strcmp). The character format is platform specific.
+
+BIG_NUM
+
+This is a sign-magnitude little-endian integer of arbitrary size. The first bit represents the sign of the number (0 == positive, 1 == negative, zero is non-deterministic), all other bits represent the magnitude. Padding zeros are allowed.
+
+TIME_DATE
+
+A representation of generalized time: A NULL terminated ASCII string representation of Zulu Time and Data of size 16 character and following the format: "YYYYMMDDhhmmssZ"
+BLOB
+
+An opaque block of data. Greater than and less than operations are preformed by comparing the binary value of each byte.
+MULTI_UINT32
+
+An array of uint32s. The length of this structure must be a multiple of four. Greater than and less than operations are performed by comparing the binary value of each uint32.
+COMPLEX
+
+A non-standard or complex structure. The type is further defined by the attribute's name. (for example, if AttributeName = APP_DOMAIN_STRUCTURED_NAME, then the implied type is a application-defined structure containing a name). Use of this type is not recommended.
+....
 
 == Notes
 
 Look into file name changes in MacOS 10.12 from .keychain to .keychain-db
 if that also imposed format changes.
 
+Module specific attribute identifiers:
+....
+    'cdat': 'kSecCreationDateItemAttr',
+    'mdat': 'kSecModDateItemAttr',
+    'desc': 'kSecDescriptionItemAttr',
+    'icmt': 'kSecCommentItemAttr',
+    'crtr': 'kSecCreatorItemAttr',
+    'type': 'kSecTypeItemAttr',
+    'scrp': 'kSecScriptCodeItemAttr',
+    'labl': 'kSecLabelItemAttr',
+    'invi': 'kSecInvisibleItemAttr',
+    'nega': 'kSecNegativeItemAttr',
+    'cusi': 'kSecCustomIconItemAttr',
+    'acct': 'kSecAccountItemAttr',
+    'svce': 'kSecServiceItemAttr',
+    'gena': 'kSecGenericItemAttr',
+    'sdmn': 'kSecSecurityDomainItemAttr',
+    'srvr': 'kSecServerItemAttr',
+    'atyp': 'kSecAuthenticationTypeItemAttr',
+    'port': 'kSecPortItemAttr',
+    'path': 'kSecPathItemAttr',
+    'vlme': 'kSecVolumeItemAttr',
+    'addr': 'kSecAddressItemAttr',
+    'ssig': 'kSecSignatureItemAttr',
+    'ptcl': 'kSecProtocolItemAttr',
+    'ctyp': 'kSecCertificateType',
+    'cenc': 'kSecCertificateEncoding',
+    'crtp': 'kSecCrlType',
+    'crnc': 'kSecCrlEncoding',
+    'alis': 'kSecAlias',
+    'inet': 'kSecInternetPasswordItemClass',
+    'genp': 'kSecGenericPasswordItemClass',
+    'ashp': 'kSecAppleSharePasswordItemClass',
+    0x80001000: 'kSecCertificateItemClass'
+....
+
 :numbered!:
 [appendix]
 == References
 
-`[REFERENCE]`
+`[OPENGROUP]`
 
 [cols="1,5",options="header"]
 |===
-| Title: |
-| Author(s): |
-| Date: |
-| URL: |
+| Title: | Common Security: CDSA and CSSM
+| Version: | 2
+| URL: | http://pubs.opengroup.org/onlinepubs/009608599/
 |===
 
 [appendix]

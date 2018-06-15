@@ -1,6 +1,7 @@
 name: keychain
 type: format
 description: MacOS keychain database file format.
+urls: ["https://github.com/libyal/dtformats/blob/master/documentation/MacOS%20keychain%20database%20file%20format.asciidoc"]
 ---
 name: byte
 type: integer
@@ -65,7 +66,7 @@ attributes:
 members:
 - name: size
   data_type: uint32
-- name: super_class_name
+- name: string
   type: stream
   element_data_type: char
   number_of_elements: keychain_string.size
@@ -117,9 +118,9 @@ members:
   data_type: uint32
 - name: records_array_offset
   data_type: uint32
-- name: index_offset
-  data_type: uint32
 - name: unknown1
+  data_type: uint32
+- name: unknown2
   data_type: uint32
 - name: number_of_record_offsets
   data_type: uint32
@@ -135,43 +136,44 @@ attributes:
 members:
 - name: data_size
   data_type: uint32
-- name: unknown1
+- name: record_index
   data_type: uint32
 - name: unknown2
   data_type: uint32
 - name: unknown3
   data_type: uint32
-- name: ssgp_length
-  data_type: uint32
 - name: unknown4
-  data_type: uint32
-- name: creation_time
-  data_type: uint32
-- name: last_modification_time
-  data_type: uint32
-- name: description_offset
   data_type: uint32
 - name: unknown5
   data_type: uint32
-- name: comments_offset
+---
+name: keychain_record_attribute_value_offsets
+type: sequence
+element_data_type: uint32be
+number_of_elements: number_of_attribute_values
+---
+name: keychain_record_schema_indexes
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: relation_identifier
   data_type: uint32
-- name: unknown6
+- name: index_identifier
   data_type: uint32
-- name: unknown7
+- name: attribute_identifier
   data_type: uint32
-- name: name_offset
+---
+name: keychain_record_schema_information
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: relation_identifier
   data_type: uint32
-- name: unknown8
+- name: relation_name_size
   data_type: uint32
-- name: unknown9
-  data_type: uint32
-- name: unknown10
-  data_type: uint32
-- name: unknown11
-  data_type: uint32
-- name: unknown12
-  data_type: uint32
-- name: account_nmae_offset
-  data_type: uint32
-- name: unknown13
-  data_type: uint32
+- name: relation_name
+  type: stream
+  element_data_type: char
+  number_of_elements: keychain_record_schema_information.relation_name_size

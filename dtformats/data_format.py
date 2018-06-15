@@ -284,6 +284,10 @@ class BinaryDataFormat(object):
 
     byte_stream = b''.join(byte_stream)
 
+    if self._debug:
+      data_description = '{0:s} data'.format(description.title())
+      self._DebugPrintData(data_description, byte_stream)
+
     return self._ReadStructureFromByteStream(
         byte_stream, file_offset, data_type_map, description)
 
@@ -313,6 +317,10 @@ class BinaryDataFormat(object):
 
     data = self._ReadData(file_object, file_offset, data_size, description)
 
+    if self._debug:
+      data_description = '{0:s} data'.format(description.title())
+      self._DebugPrintData(data_description, data)
+
     return self._ReadStructureFromByteStream(
         data, file_offset, data_type_map, description)
 
@@ -327,6 +335,8 @@ class BinaryDataFormat(object):
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
       description (str): description of the structure.
       context (Optional[dtfabric.DataTypeMapContext]): data type map context.
+      suppress_debug_output (Optional[bool]): True if debug output should be
+          suppressed.
 
     Returns:
       object: structure values object.
@@ -340,10 +350,6 @@ class BinaryDataFormat(object):
 
     if not data_type_map:
       raise ValueError('Missing data type map.')
-
-    if self._debug:
-      data_description = '{0:s} data'.format(description.title())
-      self._DebugPrintData(data_description, byte_stream)
 
     try:
       return data_type_map.MapByteStream(byte_stream, context=context)

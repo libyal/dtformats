@@ -56,9 +56,17 @@ def Main():
 
   keychain_file.Open(options.source)
 
-  print('Keychain database file information:')
+  print('Keychain database file schema:')
 
-  # TODO: print file information.
+  for table in keychain_file.tables:
+    print('Table: {0:s} (0x{1:08x})'.format(
+        table.relation_name, table.relation_identifier))
+    print('\tColumns:')
+
+    for column in table.columns:
+      print('\t\t: {0!s}'.format(column.attribute_name or ''))
+
+    print('')
 
   print('')
 
