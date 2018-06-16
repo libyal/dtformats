@@ -1,3 +1,8 @@
+name: asl
+type: format
+description: Apple System Log (ASL) file format
+urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Apple%20System%20Log%20(ASL)%20file%20format.asciidoc"]
+---
 name: byte
 type: integer
 attributes:
@@ -33,7 +38,7 @@ attributes:
   size: 8
   units: bytes
 ---
-name: asl_header
+name: asl_file_header
 type: structure
 attributes:
   byte_order: big-endian
@@ -57,6 +62,21 @@ members:
   element_data_type: byte
   elements_data_size: 36
 ---
+name: asl_record_string
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: unknown1
+  data_type: uint16
+- name: string_size
+  data_type: uint32
+- name: string
+  type: string
+  encoding: utf8
+  element_data_type: byte
+  elements_data_size: asl_record_string.string_size
+---
 name: asl_record
 type: structure
 attributes:
@@ -64,7 +84,7 @@ attributes:
 members:
 - name: unknown1
   data_type: uint16
-- name: record_data_size
+- name: data_size
   data_type: uint32
 - name: next_record_offset
   data_type: uint64
@@ -97,4 +117,22 @@ members:
 - name: facility_string_offset
   data_type: uint64
 - name: message_string_offset
+  data_type: uint64
+---
+name: asl_record_extra_field
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: name_string_offset
+  data_type: uint64
+- name: value_string_offset
+  data_type: uint64
+---
+name: asl_record_footer
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: previous_record_offset
   data_type: uint64

@@ -7,6 +7,7 @@ import abc
 import os
 
 from dfdatetime import filetime as dfdatetime_filetime
+from dfdatetime import posix_time as dfdatetime_posix_time
 
 from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
@@ -53,8 +54,8 @@ class BinaryDataFormat(object):
       self._output_writer.WriteText('{0:s}:\n'.format(description))
       self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
 
-  def _DebugPrintValueDecimal(self, description, value):
-    """Prints a value in decimal for debugging.
+  def _DebugPrintDecimalValue(self, description, value):
+    """Prints a decimal value for debugging.
 
     Args:
       description (str): description.
@@ -76,6 +77,25 @@ class BinaryDataFormat(object):
       date_time_string = 'Never (0x7fffffffffffffff)'
     else:
       date_time = dfdatetime_filetime.Filetime(timestamp=value)
+      date_time_string = date_time.CopyToDateTimeString()
+      if date_time_string:
+        date_time_string = '{0:s} UTC'.format(date_time_string)
+      else:
+        date_time_string = '0x{08:x}'.format(value)
+
+    self._DebugPrintValue(description, date_time_string)
+
+  def _DebugPrintPosixTimeValue(self, description, value):
+    """Prints a POSIX timestamp value for debugging.
+
+    Args:
+      description (str): description.
+      value (object): value.
+    """
+    if value == 0:
+      date_time_string = 'Not set (0)'
+    else:
+      date_time = dfdatetime_posix_time.PosixTime(timestamp=value)
       date_time_string = date_time.CopyToDateTimeString()
       if date_time_string:
         date_time_string = '{0:s} UTC'.format(date_time_string)

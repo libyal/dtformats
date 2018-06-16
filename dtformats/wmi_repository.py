@@ -200,7 +200,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
     data_size = class_definition.data_size
 
     if self._debug:
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Super class name size', super_class_name_size)
 
       self._DebugPrintValue('Super class name', super_class_name)
@@ -208,7 +208,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
       value_string = '{0!s}'.format(FromFiletime(date_time))
       self._DebugPrintValue('Unknown date and time', value_string)
 
-      self._DebugPrintValueDecimal('Data size', data_size)
+      self._DebugPrintDecimalValue('Data size', data_size)
 
       self._DebugPrintData('Data', class_definition.data)
 
@@ -256,14 +256,14 @@ class ObjectRecord(data_format.BinaryDataFormat):
       property_descriptors.append(property_descriptor)
 
     if self._debug:
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Unknown1', class_definition_header.unknown1)
 
       value_string = '0x{0:08x}'.format(
           class_definition_header.class_name_offset)
       self._DebugPrintValue('Class name offset', value_string)
 
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Default value size',
           class_definition_header.default_value_size)
 
@@ -276,7 +276,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
       self._DebugPrintData(
           'Super class name block data', super_class_name_block_data)
 
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Qualifiers block size',
           class_definition_header.qualifiers_block_size)
 
@@ -284,7 +284,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
           class_definition_header.qualifiers_block_data)
       self._DebugPrintData('Qualifiers block data', qualifiers_block_data)
 
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Number of property descriptors', number_of_property_descriptors)
 
       for index, property_descriptor in enumerate(property_descriptors):
@@ -322,7 +322,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
               super_class_name_block.uper_class_name_string)
           self._DebugPrintValue('Super class name string', value_string)
 
-          self._DebugPrintValueDecimal(
+          self._DebugPrintDecimalValue(
               'Super class name size',
               super_class_name_block.super_class_name_size)
 
@@ -425,7 +425,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
         self._DebugPrintValue(description, value_string)
 
         description = 'Property: {0:d} index'.format(index)
-        self._DebugPrintValueDecimal(
+        self._DebugPrintDecimalValue(
             description, property_definition.index)
 
         description = 'Property: {0:d} offset'.format(index)
@@ -434,11 +434,11 @@ class ObjectRecord(data_format.BinaryDataFormat):
         self._DebugPrintValue(description, value_string)
 
         description = 'Property: {0:d} level'.format(index)
-        self._DebugPrintValueDecimal(
+        self._DebugPrintDecimalValue(
             description, property_definition.level)
 
         description = 'Property: {0:d} qualifiers block size'.format(index)
-        self._DebugPrintValueDecimal(
+        self._DebugPrintDecimalValue(
             description, property_definition.qualifiers_block_size)
 
         description = 'Property: {0:d} qualifiers block data:'.format(index)
@@ -453,7 +453,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
       if property_value_size is not None:
         if self._debug:
           description = 'Property: {0:d} value size'.format(index)
-          self._DebugPrintValueDecimal(description, property_value_size)
+          self._DebugPrintDecimalValue(description, property_value_size)
 
           # TODO: handle variable size value data.
           # TODO: handle array.
@@ -496,7 +496,7 @@ class ObjectRecord(data_format.BinaryDataFormat):
       value_string = '{0!s}'.format(FromFiletime(interface.date_time2))
       self._DebugPrintValue('Unknown data and time2', value_string)
 
-      self._DebugPrintValueDecimal('Data size', interface.data_size)
+      self._DebugPrintDecimalValue('Data size', interface.data_size)
 
       self._DebugPrintText('\n')
 
@@ -547,23 +547,23 @@ class ObjectRecord(data_format.BinaryDataFormat):
       attribute_value_string = ''
 
     if self._debug:
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Name space string size', registration.name_space_string_size)
 
       self._DebugPrintValue('Name space string', name_space_string)
 
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Class name string size', registration.class_name_string_size)
 
       self._DebugPrintValue('Class name string', class_name_string)
 
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Attribute name string size',
           registration.attribute_name_string_size)
 
       self._DebugPrintValue('Attribute name string', attribute_name_string)
 
-      self._DebugPrintValueDecimal(
+      self._DebugPrintDecimalValue(
           'Attribute value string size',
           registration.attribute_value_string_size)
 
@@ -667,7 +667,7 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
           file_offset + object_descriptor.data_offset)
       self._DebugPrintValue('Data offset', value_string)
 
-      self._DebugPrintValueDecimal('Data size', object_descriptor.data_size)
+      self._DebugPrintDecimalValue('Data size', object_descriptor.data_size)
 
       value_string = '0x{0:08x}'.format(object_descriptor.data_checksum)
       self._DebugPrintValue('Checksum', value_string)
@@ -831,11 +831,11 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     Args:
       page_body (cim_page_body): page body.
     """
-    self._DebugPrintValueDecimal('Number of keys', page_header.number_of_keys)
+    self._DebugPrintDecimalValue('Number of keys', page_header.number_of_keys)
 
     for index, value in enumerate(page_header.unknown2):
       description = 'Unknown2: {0:d}'.format(index)
-      self._DebugPrintValueDecimal(description, value)
+      self._DebugPrintDecimalValue(description, value)
 
     for index, page_number in enumerate(page_header.sub_pages):
       description = 'Sub page: {0:d} mapped page number'.format(index)
@@ -854,7 +854,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
 
     self._DebugPrintData('Key data', page_header.key_data)
 
-    self._DebugPrintValueDecimal(
+    self._DebugPrintDecimalValue(
         'Number of values', page_header.number_of_values)
 
     for index, offset in enumerate(page_header.value_offsets):
@@ -879,13 +879,13 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         page_header.page_type, page_type_string)
     self._DebugPrintValue('Page type', value_string)
 
-    self._DebugPrintValueDecimal(
+    self._DebugPrintDecimalValue(
         'Mapped page number', page_header.mapped_page_number)
 
     value_string = '0x{0:08x}'.format(page_header.unknown1)
     self._DebugPrintValue('Unknown1', value_string)
 
-    self._DebugPrintValueDecimal(
+    self._DebugPrintDecimalValue(
         'Root page number', page_header.root_page_number)
 
     self._DebugPrintText('\n')
@@ -1050,7 +1050,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
 
       if self._debug:
         description = 'Page key: {0:d} number of segments'.format(index)
-        self._DebugPrintValueDecimal(description, page_key.number_of_segments)
+        self._DebugPrintDecimalValue(description, page_key.number_of_segments)
 
         description = 'Page key: {0:d} segments'.format(index)
         value_string = ', '.join([
@@ -1249,7 +1249,7 @@ class MappingFile(data_format.BinaryDataFile):
     value_string = '0x{0:08x}'.format(file_header.format_version)
     self._DebugPrintValue('Format version', value_string)
 
-    self._DebugPrintValueDecimal(
+    self._DebugPrintDecimalValue(
         'Number of pages', file_header.number_of_pages)
 
     self._DebugPrintText('\n')
@@ -1418,7 +1418,7 @@ class MappingFile(data_format.BinaryDataFile):
       self._DebugPrintData(data_description, b''.join([
           number_of_entries_data, entries_data]))
 
-      self._DebugPrintValueDecimal('Number of entries', number_of_entries)
+      self._DebugPrintDecimalValue('Number of entries', number_of_entries)
 
     if not entries_data:
       page_numbers = tuple()

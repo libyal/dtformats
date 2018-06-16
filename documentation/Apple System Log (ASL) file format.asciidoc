@@ -55,6 +55,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 
 === File header
+
 The file header is 80 bytes in size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -73,13 +74,33 @@ The offset is specified in bytes and relative from the start of the file
 |===
 
 === Log entry
-The file header is variable in size and consists of:
+
+* zero or more log entry strings
+* log entry descriptor
+
+==== [[log_entry_string]]Log entry string
+
+The log entry string is variable in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | 0x0000 | [yellow-background]*Unknown*
-| 2 | 4 | | [yellow-background]*Unknown*
+| 0 | 2 | 0x0001 | [yellow-background]*Unknown (data type?)*
+| 2 | 4 | | String size
+| 6 | ... | | String +
+Contains an UTF-8 encoded string with an end-of-string character
+|===
+
+==== Log entry
+
+The log entry is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | 0x0000 | [yellow-background]*Unknown (data type?)*
+| 2 | 4 | | Data size
+4+| _Data_
 | 6 | 8 | | Next log entry offset +
 The offset is specified in bytes and relative from the start of the file
 | 14 | 8 | | [yellow-background]*Unknown (Message identifier)*
@@ -95,16 +116,49 @@ See section: <<alert_levels,Alert levels>>
 | 50 | 4 | | Real user identifier (UID)
 | 54 | 4 | | Real group identifier (GID)
 | 58 | 8 | | [yellow-background]*Unknown (Reference PID)*
-| 66 | 8 | | Hostname string offset
-| 74 | 8 | | Sender string offset
-| 82 | 8 | | Facility string offset
-| 90 | 8 | | Message string offset
-| 98 | ... | | [yellow-background]*Unknown*
+| 66 | 8 | | Hostname string offset +
+Contains a <<log_entry_string_offset,Log entry string offset>>
+| 74 | 8 | | Sender string offset +
+Contains a <<log_entry_string_offset,Log entry string offset>>
+| 82 | 8 | | Facility string offset +
+Contains a <<log_entry_string_offset,Log entry string offset>>
+| 90 | 8 | | Message string offset +
+Contains a <<log_entry_string_offset,Log entry string offset>>
+| 98 | ... | | Array of extra fields
+4+| _Common_
 | ... | 8 | | Previous log entry offset +
 The offset is specified in bytes and relative from the start of the file
 |===
 
-=== [[alert_levels]]Alert levels
+==== [[log_entry_string_offset]]Log entry string offset
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _If string size <= 6_
+| 0 | 0.4 bits | 0x80 | Inline string flag
+| 0.4 | 0.4 bits | | String size
+| 1 | 7 | | String +
+Contains an UTF-8 encoded string with an end-of-string character
+4+| _If string size > 6_
+| 0 | 8 | | Offset to a <<log_entry_string,log entry string>> +
+The offset is specified in bytes and relative from the start of the file
+|===
+
+==== Log entry extra field
+
+The log entry extra field is 16 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Extra field name string offset +
+Contains a <<log_entry_string_offset,Log entry string offset>>
+| 8 | 8 | | Extra field value string offset +
+Contains a <<log_entry_string_offset,Log entry string offset>>
+|===
+
+==== [[alert_levels]]Alert levels
 
 [cols="1,1,5",options="header"]
 |===
@@ -126,41 +180,9 @@ Pointers are a 8 bytes field that stores an integer that identify the file offse
 Log Entry:
 (Text entries)*		None or one or more "Text entries"
 (ASL entry pointer points to this position)
-2 bytes			0x00
-4 bytes 		Integer with the number of bytes until the end of the entry. 6 previous bytes are not counted.
-8 bytes			Pointer to the next entry
-8 bytes			ASL Message ID
-12 bytes		TimeStamp (8 first bytes is an integer with the Epoch timestamp + 4 bytes for microseconds)
-2 bytes			Alert Level, Integer
-2 bytes			Flag, Integer
-4 bytes			PID, Integer
-4 bytes			UID, Integer
-4 bytes			GID, Integer
-4 bytes			Real UID, Integer
-4 bytes			Real GID, Integer
-8 bytes			Reference PID, Integer
-Text pointer		Hostname
-Text pointer		Sender
-Text pointer		Facility
-Text pointer		Message
+...
 (2xText pointer)*	None, one or more extra fields. For each extra fields we have two text pointers, the first text pointer contains the name of the fields whereas the second one contains the value of the field.
 8 bytes				Pointer to the previous ASL entry
-
-		------
-
-Text pointer:
-- Size: 8 bytes
-- If string is bigger than 6 characters it is a pointer to a Text entry.
-- If string is smaller or equal than 6 characters:
-	1 nibble 	The value will be 0x1000 identifying that the string is <= 6 characters.
-	1 nibble	Integer that identifies the number of characters
-	7 bytes		UTF8 strings, one byte per character. If String is smaller than 6 characters it is padded with 0x00
-
-		------
-
-Text entry:
-2 bytes		Integer that contains the size of the string (number of characters)
--		String in UTF8
 ....
 
 :numbered!:

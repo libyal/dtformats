@@ -1,7 +1,7 @@
 name: java_idx
 type: format
 description: Java WebStart Cache IDX file format.
-urls: ["https://www.forensicswiki.org/wiki/Java#IDX_file_format"]
+urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Java%20WebStart%20IDX%20file%20format.asciidoc"]
 ---
 name: bool8
 type: boolean

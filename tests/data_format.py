@@ -136,16 +136,19 @@ members:
          '.......\n\n')]
     self.assertEqual(output_writer.output, expected_output)
 
-  def testDebugPrintValueDecimal(self):
-    """Tests the _DebugPrintValueDecimal function."""
+  def testDebugPrintDecimalValue(self):
+    """Tests the _DebugPrintDecimalValue function."""
     output_writer = test_lib.TestOutputWriter()
     test_format = data_format.BinaryDataFormat(
         output_writer=output_writer)
 
-    test_format._DebugPrintValueDecimal('Description', 1)
+    test_format._DebugPrintDecimalValue('Description', 1)
 
     expected_output = ['Description\t\t\t\t\t\t\t\t: 1\n']
     self.assertEqual(output_writer.output, expected_output)
+
+  # TODO add tests for _DebugPrintFiletimeValue
+  # TODO add tests for _DebugPrintPosixTimeValue
 
   def testDebugPrintValue(self):
     """Tests the _DebugPrintValue function."""
