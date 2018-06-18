@@ -314,7 +314,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
       string_data = bytes(bytearray([
           string_offset >> (8 * byte_index) & 0xff
-          for byte_index in range(6, 0, -1)]))
+          for byte_index in range(6, -1, -1)]))
 
       try:
         string = string_data[:string_size].decode('utf-8')
