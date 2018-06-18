@@ -78,19 +78,6 @@ The offset is specified in bytes and relative from the start of the file
 * zero or more log entry strings
 * log entry descriptor
 
-==== [[log_entry_string]]Log entry string
-
-The log entry string is variable in size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | 0x0001 | [yellow-background]*Unknown (data type?)*
-| 2 | 4 | | String size
-| 6 | ... | | String +
-Contains an UTF-8 encoded string with an end-of-string character
-|===
-
 ==== Log entry
 
 The log entry is variable in size and consists of:
@@ -132,17 +119,32 @@ The offset is specified in bytes and relative from the start of the file
 
 ==== [[log_entry_string_offset]]Log entry string offset
 
+The log entry string offset is 8 bytes in size and consists of:
+
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 4+| _If string size <= 6_
 | 0 | 0.4 bits | 0x80 | Inline string flag
-| 0.4 | 0.4 bits | | String size
-| 1 | 7 | | String +
-Contains an UTF-8 encoded string with an end-of-string character
+| 0.4 | 0.4 bits | | Inline string size
+| 1 | 7 | | Inline string +
+Contains an UTF-8 encoded string without an end-of-string character
 4+| _If string size > 6_
 | 0 | 8 | | Offset to a <<log_entry_string,log entry string>> +
 The offset is specified in bytes and relative from the start of the file
+|===
+
+==== [[log_entry_string]]Log entry string
+
+The log entry string is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | 0x0001 | [yellow-background]*Unknown (data type?)*
+| 2 | 4 | | String size
+| 6 | ... | | String +
+Contains an UTF-8 encoded string with an end-of-string character
 |===
 
 ==== Log entry extra field
@@ -172,18 +174,6 @@ Contains a <<log_entry_string_offset,Log entry string offset>>
 | 6 | INFO |
 | 7 | DEBUG |
 |===
-
-== Notes
-....
-Pointers are a 8 bytes field that stores an integer that identify the file offset starting in position 0.
-
-Log Entry:
-(Text entries)*		None or one or more "Text entries"
-(ASL entry pointer points to this position)
-...
-(2xText pointer)*	None, one or more extra fields. For each extra fields we have two text pointers, the first text pointer contains the name of the fields whereas the second one contains the value of the field.
-8 bytes				Pointer to the previous ASL entry
-....
 
 :numbered!:
 [appendix]

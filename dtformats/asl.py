@@ -12,13 +12,18 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
   _DEFINITION_FILE = 'asl.yaml'
 
+  _FILE_SIGNATURE = b'ASL DB\x00\x00\x00\x00\x00\x00'
+
+  # Most significant bit of a 64-bit string offset.
+  _STRING_OFFSET_MSB = 1 << 63
+
   def _DebugPrintFileHeader(self, file_header):
     """Prints file header debug information.
 
     Args:
       file_header (asl_file_header): file header.
     """
-    value_string = file_header.signature.replace('\x00', '\\x00')
+    value_string = file_header.signature.replace(b'\x00', b'\\x00')
     self._DebugPrintValue('Signature', value_string)
 
     self._DebugPrintDecimalValue('Format version', file_header.format_version)
@@ -135,6 +140,9 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     Returns:
       asl_file_header: file header.
+
+    Raises:
+      ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('asl_file_header')
@@ -144,6 +152,9 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
+
+    if file_header.signature != self._FILE_SIGNATURE:
+      raise errors.ParseError('Invalid file signature.')
 
     return file_header
 
@@ -156,11 +167,16 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     Returns:
       int: next record offset.
+
+    Raises:
+      ParseError: if the record cannot be read.
     """
     record_strings_data_offset = file_object.tell()
+    record_strings_data_size = file_offset - record_strings_data_offset
 
-    record_strings_data = file_object.read(
-        file_offset - record_strings_data_offset)
+    record_strings_data = self._ReadData(
+        file_object, record_strings_data_offset, record_strings_data_size,
+        'record strings data')
 
     if self._debug:
       self._DebugPrintData('Record strings data', record_strings_data)
@@ -173,45 +189,31 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintRecord(record)
 
-    if record.hostname_string_offset & 0x8000000000000000:
-      # TODO: implement
-      pass
+    hostname = self._ReadRecordString(
+        record_strings_data, record_strings_data_offset,
+        record.hostname_string_offset)
 
-    elif record.hostname_string_offset > 0:
-      data_offset = record.hostname_string_offset - record_strings_data_offset
-      hostname = self._ReadRecordString(
-          record_strings_data[data_offset:], record.hostname_string_offset)
+    sender = self._ReadRecordString(
+        record_strings_data, record_strings_data_offset,
+        record.sender_string_offset)
 
-    if record.sender_string_offset & 0x8000000000000000:
-      # TODO: implement
-      pass
+    facility = self._ReadRecordString(
+        record_strings_data, record_strings_data_offset,
+        record.facility_string_offset)
 
-    elif record.sender_string_offset > 0:
-      data_offset = record.sender_string_offset - record_strings_data_offset
-      sender = self._ReadRecordString(
-          record_strings_data[data_offset:], record.sender_string_offset)
-
-    if record.facility_string_offset & 0x8000000000000000:
-      # TODO: implement
-      pass
-
-    elif record.facility_string_offset > 0:
-      data_offset = record.facility_string_offset - record_strings_data_offset
-      facility = self._ReadRecordString(
-          record_strings_data[data_offset:], record.facility_string_offset)
-
-    if record.message_string_offset & 0x8000000000000000:
-      # TODO: implement
-      pass
-
-    elif record.message_string_offset > 0:
-      data_offset = record.message_string_offset - record_strings_data_offset
-      message = self._ReadRecordString(
-          record_strings_data[data_offset:], record.message_string_offset)
+    message = self._ReadRecordString(
+        record_strings_data, record_strings_data_offset,
+        record.message_string_offset)
 
     file_offset += record_data_size
     additional_data_size = record.data_size + 6 - record_data_size
-    additional_data = file_object.read(additional_data_size)
+
+    if additional_data_size % 8 != 0:
+      raise errors.ParseError('Invalid record additional data size.')
+
+    additional_data = self._ReadData(
+        file_object, file_offset, additional_data_size,
+        'record additional data')
 
     if self._debug:
       self._DebugPrintData('Record additional data', additional_data)
@@ -223,33 +225,16 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
       file_offset += 16
 
-      if record_extra_field.name_string_offset == 0:
-        continue
+      name = self._ReadRecordString(
+          record_strings_data, record_strings_data_offset,
+          record_extra_field.name_string_offset)
 
-      if record_extra_field.name_string_offset & 0x8000000000000000:
-        # TODO: implement
-        pass
+      value = self._ReadRecordString(
+          record_strings_data, record_strings_data_offset,
+          record_extra_field.value_string_offset)
 
-      else:
-        data_offset = (
-            record_extra_field.name_string_offset - record_strings_data_offset)
-        name = self._ReadRecordString(
-            record_strings_data[data_offset:],
-            record_extra_field.name_string_offset)
-
-      value = None
-      if record_extra_field.value_string_offset & 0x8000000000000000:
-        # TODO: implement
-        pass
-
-      elif record_extra_field.value_string_offset > 0:
-        data_offset = (
-            record_extra_field.value_string_offset - record_strings_data_offset)
-        value = self._ReadRecordString(
-            record_strings_data[data_offset:],
-            record_extra_field.value_string_offset)
-
-      extra_fields[name] = value
+      if name is not None:
+        extra_fields[name] = value
 
     if self._debug:
       self._DebugPrintValue('Hostname', hostname)
@@ -267,7 +252,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
     return record.next_record_offset
 
   def _ReadRecordExtraField(self, byte_stream, file_offset):
-    """Reads a record extra filed.
+    """Reads a record extra field.
 
     Args:
       byte_stream (bytes): byte stream.
@@ -276,6 +261,9 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     Returns:
       asl_record_extra_field: record extra field.
+
+    Raises:
+      ParseError: if the record extra field cannot be read.
     """
     data_type_map = self._GetDataTypeMap('asl_record_extra_field')
 
@@ -292,26 +280,69 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     return record_extra_field
 
-  def _ReadRecordString(self, byte_stream, file_offset):
+  def _ReadRecordString(
+      self, record_strings_data, record_strings_data_offset, string_offset):
     """Reads a record string.
 
     Args:
-      byte_stream (bytes): byte stream.
-      file_offset (int): offset of the record string relative to the start of
+      record_strings_data (bytes): record strings data.
+      record_strings_data_offset (int): offset of the record strings data
+          relative to the start of the file.
+      string_offset (int): offset of the string relative to the start of
           the file.
 
     Returns:
-      str: record string.
+      str: record string or None if string offset is 0.
+
+    Raises:
+      ParseError: if the record string cannot be read.
     """
+    if string_offset == 0:
+      return None
+
+    if string_offset & self._STRING_OFFSET_MSB:
+      if self._debug:
+        value_string = '0x{0:01x}'.format(string_offset >> 60)
+        self._DebugPrintValue('Inline string flag', value_string)
+
+      if (string_offset >> 60) != 8:
+        raise errors.ParseError('Invalid inline record string flag.')
+
+      string_size = (string_offset >> 56) & 0x0f
+      if string_size >= 8:
+        raise errors.ParseError('Invalid inline record string size.')
+
+      string_data = bytes(bytearray([
+          string_offset >> (8 * byte_index) & 0xff
+          for byte_index in range(6, 0, -1)]))
+
+      try:
+        string = string_data[:string_size].decode('utf-8')
+      except UnicodeDecodeError as exception:
+        raise errors.ParseError(
+            'Unable to decode inline record string with error: {0!s}.'.format(
+                exception))
+
+      if self._debug:
+        self._DebugPrintDecimalValue('Inline string size', string_size)
+
+        self._DebugPrintValue('Inline string', string)
+
+        self._DebugPrintText('\n')
+
+      return string
+
+    data_offset = string_offset - record_strings_data_offset
     data_type_map = self._GetDataTypeMap('asl_record_string')
 
     try:
       record_string = self._ReadStructureFromByteStream(
-          byte_stream, file_offset, data_type_map, 'record string')
+          record_strings_data[data_offset:], string_offset, data_type_map,
+          'record string')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
           'Unable to parse record string at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
+          '{1!s}').format(string_offset, exception))
 
     if self._debug:
       self._DebugPrintRecordString(record_string)
@@ -328,9 +359,10 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       ParseError: if the file cannot be read.
     """
     file_header = self._ReadFileHeader(file_object)
-    file_offset = file_header.first_log_entry_offset
 
-    while file_offset < self._file_size:
-      file_offset = self._ReadRecord(file_object, file_offset)
-      if file_offset == 0:
-        break
+    if file_header.first_log_entry_offset > 0:
+      file_offset = file_header.first_log_entry_offset
+      while file_offset < self._file_size:
+        file_offset = self._ReadRecord(file_object, file_offset)
+        if file_offset == 0:
+          break
