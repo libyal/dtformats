@@ -3,8 +3,6 @@
 
 from __future__ import unicode_literals
 
-from dfdatetime import posix_time as dfdatetime_posix_time
-
 from dtformats import data_format
 from dtformats import errors
 
@@ -65,15 +63,7 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
     value_string = '{0:d}'.format(entry.session)
     self._DebugPrintValue('Session', value_string)
 
-    date_time = dfdatetime_posix_time.PosixTime(
-        timestamp=entry.timestamp)
-    date_time_string = date_time.CopyToDateTimeString()
-    if date_time_string:
-      date_time_string = '{0:s} UTC'.format(date_time_string)
-    else:
-      date_time_string = '0x{08:x}'.format(entry.timestamp)
-
-    self._DebugPrintValue('Timestamp', date_time_string)
+    self._DebugPrintPosixTimeValue('Timestamp', entry.timestamp)
 
     value_string = '{0:d}'.format(entry.microseconds)
     self._DebugPrintValue('Microseconds', value_string)
@@ -206,15 +196,7 @@ class MacOSXUtmpxFile(data_format.BinaryDataFile):
     value_string = '0x{0:04x}'.format(entry.unknown1)
     self._DebugPrintValue('Unknown1', value_string)
 
-    date_time = dfdatetime_posix_time.PosixTime(
-        timestamp=entry.timestamp)
-    date_time_string = date_time.CopyToDateTimeString()
-    if date_time_string:
-      date_time_string = '{0:s} UTC'.format(date_time_string)
-    else:
-      date_time_string = '0x{08:x}'.format(entry.timestamp)
-
-    self._DebugPrintValue('Timestamp', date_time_string)
+    self._DebugPrintPosixTimeValue('Timestamp', entry.timestamp)
 
     value_string = '{0:d}'.format(entry.microseconds)
     self._DebugPrintValue('Microseconds', value_string)

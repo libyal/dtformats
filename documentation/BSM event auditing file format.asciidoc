@@ -34,14 +34,17 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | December 2016 | Initial version.
-| 0.0.2 | J.B. Metz | June 208 | Additional changes.
+| 0.0.2 | J.B. Metz | June 2018 | Additional changes.
 |===
 
 :numbered:
 == Overview
 [yellow-background]*TODO: complete documentation*
 
-* AUT_HEADER32, AUT_HEADER32_EX or AUT_HEADER64 token type
+* One or more audit events
+  * Header token type (AUT_HEADER32, AUT_HEADER32_EX, AUT_HEADER64, AUT_HEADER64_EX)
+  * (AUT_TEXT, AUT_PATH, AUT_RETURN32)
+  * Trailer token type (AUT_TRAILER)
 
 [cols="1,5",options="header"]
 |===
@@ -68,13 +71,19 @@ See section: <<token_types,Token types>>
 | Value | Identifier | Description
 | 0x00 | AUT_INVALID |
 | | |
-| 0x11 | AUT_OTHER_FILE +
-AUT_OTHER_FILE32 |
-| 0x12 | AUT_OHEADER |
-| 0x13 | AUT_TRAILER |
-| 0x14 | AUT_HEADER +
+| 0x11 | AU_FILE_TOKEN +
+AUT_OTHER_FILE +
+AUT_OTHER_FILE32 | +
+Control token type
+| 0x12 | AUT_OHEADER | +
+Control token type
+| 0x13 | AU_HEADER_32_TOKEN +
+AUT_TRAILER |
+| 0x14 | AU_HEADER_32_TOKEN +
+AUT_HEADER +
 AUT_HEADER32 |
-| 0x15 | AUT_HEADER32_EX |
+| 0x15 | AU_HEADER_EX_32_TOKEN +
+AUT_HEADER32_EX |
 | | |
 | 0x21 | AUT_DATA |
 | 0x22 | AUT_IPC |
@@ -134,6 +143,7 @@ AUT_ARG32 |
 | 0x73 | AUT_ATTR64 |
 | 0x74 | AUT_HEADER64 |
 | 0x75 | AUT_SUBJECT64 |
+| | |
 | 0x77 | AUT_PROCESS64 |
 | 0x78 | AUT_OTHER_FILE64 |
 | 0x79 | AUT_HEADER64_EX |
@@ -144,10 +154,102 @@ AUT_ARG32 |
 | 0x7e | AUT_IN_ADDR_EX |
 | 0x7f | AUT_SOCKET_EX |
 3+| _Not defined by BSM_
-| 0x80 | AUT_SOCKINET32 |
-| 0x81 | AUT_SOCKINET128 |
-| 0x82 | AUT_SOCKUNIX |
+| 0x80 | AU_SOCK_INET_32_TOKEN +
+AUT_SOCKINET32 |
+| 0x81 | AU_SOCK_INET_128_TOKEN +
+AUT_SOCKINET128 |
+| 0x82 | AU_SOCK_UNIX_TOKEN +
+AUT_SOCKUNIX |
 |===
+
+....
+/*
+ * Data token types
+#define AUT_SERVER              ((char)0x25)
+#define AUT_SERVER32            AUT_SERVER
+ */
+
+#define AU_DATA_TOKEN               0x21
+#define AU_ARB_TOKEN                AU_DATA_TOKEN	
+#define AU_IPC_TOKEN                0x22
+#define AU_PATH_TOKEN               0x23
+#define AU_SUBJECT_32_TOKEN         0x24
+#define AU_PROCESS_32_TOKEN         0x26
+#define AU_RETURN_32_TOKEN          0x27
+#define AU_TEXT_TOKEN               0x28
+#define AU_OPAQUE_TOKEN             0x29
+#define AU_IN_ADDR_TOKEN            0x2A
+#define AU_IP_TOKEN                 0x2B
+#define AU_IPORT_TOKEN              0x2C
+#define AU_ARG32_TOKEN              0x2D	
+#define AU_SOCK_TOKEN               0x2E
+#define AU_SEQ_TOKEN                0x2F
+
+/*
+ * Modifier token types
+
+#define AUT_ACL                 ((char)0x30)
+#define AUT_LABEL               ((char)0x33)
+#define AUT_GROUPS              ((char)0x34)
+#define AUT_ILABEL              ((char)0x35)
+#define AUT_SLABEL              ((char)0x36)
+#define AUT_CLEAR               ((char)0x37)
+#define AUT_PRIV                ((char)0x38)
+#define AUT_UPRIV               ((char)0x39)
+#define AUT_LIAISON             ((char)0x3A)
+ 
+ */
+
+#define AU_ATTR_TOKEN               0x31
+#define AU_IPCPERM_TOKEN            0x32
+#define AU_NEWGROUPS_TOKEN          0x3B
+#define AU_EXEC_ARG_TOKEN           0x3C
+#define AU_EXEC_ENV_TOKEN           0x3D
+#define AU_ATTR32_TOKEN             0x3E
+
+/*
+ * Command token types
+ */
+ 
+#define AU_CMD_TOKEN                0x51
+#define AU_EXIT_TOKEN               0x52
+
+/*
+ * Miscellaneous token types
+
+#define AUT_HOST                ((char)0x70)
+
+ */
+
+/*
+ * 64bit token types
+
+#define AUT_SERVER64            ((char)0x76)
+#define AUT_OTHER_FILE64		((char)0x78)
+
+ */
+
+#define AU_ARG64_TOKEN              0x71
+#define AU_RETURN_64_TOKEN          0x72
+#define AU_ATTR64_TOKEN             0x73
+#define AU_HEADER_64_TOKEN          0x74
+#define AU_SUBJECT_64_TOKEN         0x75
+#define AU_PROCESS_64_TOKEN         0x77
+
+/*
+ * Extended network address token types
+ */
+ 
+#define AU_HEADER_EX_64_TOKEN       0x79
+#define AU_SUBJECT_32_EX_TOKEN      0x7a	
+#define AU_PROCESS_32_EX_TOKEN      0x7b
+#define AU_SUBJECT_64_EX_TOKEN      0x7c
+#define AU_PROCESS_64_EX_TOKEN      0x7d
+#define AU_IN_ADDR_EX_TOKEN	    0x7e
+#define AU_SOCK_EX32_TOKEN          0x7f
+#define AU_SOCK_EX128_TOKEN         AUT_INVALID         /*XXX*/
+#define AU_IP_EX_TOKEN              AUT_INVALID         /*XXX*/
+....
 
 === AUT_OTHER_FILE32 token
 
@@ -180,8 +282,9 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x13 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | "b105" | Signature
-| 3 | 4 | | Record size
+| 1 | 2 | 0xb105 | Signature
+| 3 | 4 | | Event data size +
+Data size of the event
 |===
 
 === AUT_HEADER32 token
@@ -191,7 +294,8 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x14 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | Size
+| 1 | 4 | | Event data size +
+Data size of the event
 | 5 | 1 | | Format version
 | 6 | 2 | | Event type +
 See section: <<event_types,Event types>>
@@ -217,7 +321,8 @@ See section: <<event_types,Event types>>
 4+| _If net type == IPv4_
 | 14 | 4 | | IPv4 address
 4+| _If net type == IPv6_
-| 14 | 16 | | IPv6 address
+| 14 | 8 | | IPv6 address upper 64-bit
+| 22 | 8 | | IPv6 address lower 64-bit
 4+| _Common_
 | ... | 4 | | Timestamp +
 Contains a POSIX timestamp in seconds
@@ -261,7 +366,8 @@ See section: <<ipc_object_types,IPC object types>>
 | 0 | 1 | 0x23 | Token type +
 See section: <<token_types,Token types>>
 | 1 | 2 | | Path size
-| 3 | ... | | Path
+| 3 | ... | | Path +
+Contain a string with an end-of-string character
 |===
 
 === AUT_SUBJECT32 token
@@ -332,7 +438,8 @@ See section: <<token_types,Token types>>
 | 0 | 1 | 0x28 | Token type +
 See section: <<token_types,Token types>>
 | 1 | 2 | | Text size
-| 3 | ... | | Text
+| 3 | ... | | Text +
+Contain a string with an end-of-string character
 |===
 
 === AUT_OPAQUE token
@@ -638,17 +745,74 @@ See section: <<token_types,Token types>>
 
 === AUT_XGC token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x47 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_XPIXMAP token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x48 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_XPROPERTY token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x49 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_XWINDOW token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x4a | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_XCLIENT token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x4b | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_CMD token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x51 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_EXIT token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x72 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | [yellow-background]*Unknown (Status or exit code? BSM_ERRORS)*
+| 5 | 4 | | Return value
+|===
 
 === AUT_ZONENAME token
 
@@ -663,7 +827,23 @@ See section: <<token_types,Token types>>
 
 === AUT_HOST token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x70 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_ARG64 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x71 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_RETURN64 token
 
@@ -693,14 +873,6 @@ See section: <<token_types,Token types>>
 
 === AUT_HEADER64 token
 
-=== AUT_SUBJECT64 token
-
-=== AUT_PROCESS64 token
-
-=== AUT_OTHER_FILE64 token
-
-=== AUT_HEADER64 token
-
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
@@ -719,23 +891,239 @@ Contains a POSIX timestamp in seconds
 [NOTE]
 Plaso bsm.py defines this as token type 0x15
 
+=== AUT_SUBJECT64 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x75 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 8 | | Terminal port +
+Or [yellow-background]*Terminal port and terminal type*
+| 37 | 4 | | IPv4 address
+|===
+
+=== AUT_PROCESS64 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x77 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 8 | | Terminal port
+| 37 | 4 | | IPv4 address
+|===
+
+[NOTE]
+Double check this structure seems to be a duplicate of AUT_SUBJECT64
+
+=== AUT_OTHER_FILE64 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x78 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
+=== AUT_HEADER64_EX token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x79 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_SUBJECT32_EX token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x7a | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 4 | | Terminal port
+| 33 | 4 | | Net type
+4+| _If net type == IPv4_
+| 37 | 4 | | IPv4 address
+4+| _If net type == IPv6_
+| 37 | 8 | | IPv6 address upper 64-bit
+| 45 | 8 | | IPv6 address lower 64-bit
+|===
 
 === AUT_PROCESS32_EX token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x7b | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 4 | | Terminal port
+| 33 | 4 | | Net type
+4+| _If net type == IPv4_
+| 37 | 4 | | IPv4 address
+4+| _If net type == IPv6_
+| 37 | 8 | | IPv6 address upper 64-bit
+| 45 | 8 | | IPv6 address lower 64-bit
+|===
+
+[NOTE]
+Double check this structure seems to be a duplicate of AUT_SUBJECT32_EX
+
 === AUT_SUBJECT64_EX token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x7c | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 4 | | Terminal port
+| 31 | 4 | | Terminal type
+| 37 | 4 | | Net type
+4+| _If net type == IPv4_
+| 41 | 4 | | IPv4 address
+4+| _If net type == IPv6_
+| 41 | 8 | | IPv6 address upper 64-bit
+| 49 | 8 | | IPv6 address lower 64-bit
+|===
 
 === AUT_PROCESS64_EX token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x7d | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 8 | | Terminal port +
+Or [yellow-background]*Terminal port and terminal type*
+| 37 | 4 | | Net type
+4+| _If net type == IPv4_
+| 41 | 4 | | IPv4 address
+4+| _If net type == IPv6_
+| 41 | 8 | | IPv6 address upper 64-bit
+| 49 | 8 | | IPv6 address lower 64-bit
+|===
+
 === AUT_IN_ADDR_EX token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x7e | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Net type
+| 5 | 8 | | IPv6 address upper 64-bit
+| 13 | 8 | | IPv6 address lower 64-bit
+|===
 
 === AUT_SOCKET_EX token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x7f | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | Socket domain
+| 3 | 2 | | Socket type
+4+| _If socket domain == 26_
+| 5 | 2 | | IP type
+| 7 | 2 | | Source port
+| 9 | 8 | | Source IPv6 address upper 64-bit
+| 17 | 8 | | Source IPv6 address lower 64-bit
+| 25 | 2 | | Destination port
+| 27 | 8 | | Destination IPv6 address upper 64-bit
+| 35 | 8 | | Destination IPv6 address lower 64-bit
+4+| _Else_
+| 5 | 2 | | IP type
+| 7 | 2 | | Source port
+| 9 | 4 | | Source IPv4 address
+| 13 | 2 | | Destination port
+| 15 | 4 | | Destination IPv4 address
+|===
+
+[NOTE]
+Check if socket domain is really the deciding factor and not IP type
+
 === AUT_SOCKINET32 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x80 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | Net type
+| 3 | 2 | | Port number
+| 5 | 4 | | IPv4 address
+|===
 
 === AUT_SOCKINET128 token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x81 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | Net type
+| 3 | 2 | | Port number
+| 5 | 8 | | IPv6 address upper 64-bit
+| 13 | 8 | | IPv6 address lower 64-bit
+|===
+
 === AUT_SOCKUNIX token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x82 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | Family
+| 3 | ... | | Path +
+Contains a string with an end-of-string character
+|===
 
 === [[data_types]]Data types
 
@@ -767,6 +1155,12 @@ BSM_TOKEN_DATA_PRINT
 |===
 | Title: | OpenBSM project
 | URL: | https://github.com/openbsm/openbsm
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | BSM audit record
+| URL: | https://opensource.apple.com/source/xnu/xnu-517.9.5/bsd/bsm/audit_record.h
 |===
 
 [appendix]
