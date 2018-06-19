@@ -101,6 +101,7 @@ AUT_ARG32 |
 | 0x33 | AUT_LABEL |
 | 0x34 | AUT_GROUPS |
 | 0x35 | AUT_ACE |
+| | |
 | 0x38 | AUT_PRIV |
 | 0x39 | AUT_UPRIV |
 | 0x3a | AUT_LIAISON |
@@ -163,6 +164,14 @@ Contains a POSIX timestamp in seconds
 |===
 
 === AUT_OHEADER token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2d | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_TRAILER token
 
@@ -257,11 +266,63 @@ See section: <<token_types,Token types>>
 
 === AUT_SUBJECT32 token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x24 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 4 | | Terminal port
+| 33 | 4 | | IPv4 address
+|===
+
 === AUT_XATPATH token
 
-=== AUT_PROCESS token
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x25 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
+=== AUT_PROCESS32 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x26 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Audit user identifier (UID)
+| 5 | 4 | | Effective user identifier (UID)
+| 9 | 4 | | Effective group identifier (GID)
+| 13 | 4 | | Real user identifier (UID)
+| 17 | 4 | | Real group identifier (GID)
+| 21 | 4 | | Process identifier (PID)
+| 25 | 4 | | Session identifier
+| 29 | 4 | | Terminal port
+| 33 | 4 | | IPv4 address
+|===
+
+[NOTE]
+Double check this structure seems to be a duplicate of AUT_SUBJECT32
 
 === AUT_RETURN32 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x27 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 1 | | [yellow-background]*Unknown (Status or exit code? BSM_ERRORS)*
+| 2 | 4 | | Return value
+|===
 
 === AUT_TEXT token
 
@@ -287,57 +348,293 @@ See section: <<token_types,Token types>>
 
 === AUT_IN_ADDR token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2a | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | IPv4 address
+|===
+
 === AUT_IP token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2b | Token type +
+See section: <<token_types,Token types>>
+| 1 | 20 | | [yellow-background]*Unknown*
+|===
 
 === AUT_IPORT token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2c | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | Port number
+|===
+
 === AUT_ARG32 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2d | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_SOCKET token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2e | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_SEQ token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x2f | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | [yellow-background]*Unknown (Sequence number)*
+|===
 
 === AUT_ACL token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x30 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_ATTR token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x31 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | File mode
+| 5 | 4 | | User identifier (UID)
+| 9 | 4 | | Group identifier (GID)
+| 13 | 4 | | [yellow-background]*Unknown (File system identifier?)*
+| 17 | 8 | | [yellow-background]*Unknown (File system node identifier?)*
+| 25 | 4 | | [yellow-background]*Unknown (Device?)*
+|===
 
 === AUT_IPC_PERM token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x32 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | User identifier (UID)
+| 5 | 4 | | Group identifier (GID)
+| 9 | 4 | | Creator user identifier (UID)
+| 13 | 4 | | Creator group identifier (GID)
+| 17 | 4 | | Access mode
+| 21 | 4 | | yellow-background]*Unknown (Slot sequence number?)*
+| 25 | 4 | | yellow-background]*Unknown (Key?)*
+|===
+
 === AUT_LABEL token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x33 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_GROUPS token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x33 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | [yellow-background]*Unknown (Group number?)*
+|===
+
 === AUT_ACE token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x35 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_PRIV token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x38 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_UPRIV token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x39 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_LIAISON token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x3a | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_NEWGROUPS token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x3b | Token type +
+See section: <<token_types,Token types>>
+| 1 | 2 | | [yellow-background]*Unknown (New group number?)*
+|===
 
 === AUT_EXEC_ARGS token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x3c | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Number of arguments
+| 5 | ... | | Array of argument strings +
+Contains strings with an end-of-string character
+|===
+
 === AUT_EXEC_ENV token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x3d | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | Number of environment variables
+| 5 | ... | | Array of environment variable strings +
+Contains strings with an end-of-string character
+|===
 
 === AUT_ATTR32 token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x3e | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | File mode
+| 5 | 4 | | User identifier (UID)
+| 9 | 4 | | Group identifier (GID)
+| 13 | 4 | | [yellow-background]*Unknown (File system identifier?)*
+| 17 | 8 | | [yellow-background]*Unknown (File system node identifier?)*
+| 25 | 4 | | [yellow-background]*Unknown (Device?)*
+|===
+
 === AUT_UNAUTH token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x3f | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_XATOM token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x40 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_XOBJ token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x41 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_XPROTO token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x42 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_XSELECT token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x43 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_XCOLORMAP token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x44 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_XCURSOR token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x45 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
+
 === AUT_XFONT token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x46 | Token type +
+See section: <<token_types,Token types>>
+| 1 | ... | | [yellow-background]*Unknown*
+|===
 
 === AUT_XGC token
 
@@ -370,7 +667,29 @@ See section: <<token_types,Token types>>
 
 === AUT_RETURN64 token
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x72 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 1 | | [yellow-background]*Unknown (Status or exit code? BSM_ERRORS)*
+| 2 | 8 | | Return value
+|===
+
 === AUT_ATTR64 token
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x73 | Token type +
+See section: <<token_types,Token types>>
+| 1 | 4 | | File mode
+| 5 | 4 | | User identifier (UID)
+| 9 | 4 | | Group identifier (GID)
+| 13 | 4 | | [yellow-background]*Unknown (File system identifier?)*
+| 17 | 8 | | [yellow-background]*Unknown (File system node identifier?)*
+| 25 | 8 | | [yellow-background]*Unknown (Device?)*
+|===
 
 === AUT_HEADER64 token
 
