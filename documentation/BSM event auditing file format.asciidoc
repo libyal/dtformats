@@ -44,6 +44,7 @@ in the section entitled "GNU Free Documentation License".
 * One or more audit events
   * Header token type (AUT_HEADER32, AUT_HEADER32_EX, AUT_HEADER64, AUT_HEADER64_EX)
   * (AUT_TEXT, AUT_PATH, AUT_RETURN32)
+  * (AUT_SUBJECT32, AUT_TEXT, AUT_RETURN32)
   * Trailer token type (AUT_TRAILER)
 
 [cols="1,5",options="header"]
@@ -377,11 +378,16 @@ Contain a string with an end-of-string character
 | Offset | Size | Value | Description
 | 0 | 1 | 0x24 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | Audit user identifier (UID)
-| 5 | 4 | | Effective user identifier (UID)
-| 9 | 4 | | Effective group identifier (GID)
-| 13 | 4 | | Real user identifier (UID)
-| 17 | 4 | | Real group identifier (GID)
+| 1 | 4 | | Audit user identifier (UID) +
+Contains a signed integer, where -1 respresents [yellow-background]*TODO*
+| 5 | 4 | | Effective user identifier (UID) +
+Contains a signed integer
+| 9 | 4 | | Effective group identifier (GID) +
+Contains a signed integer
+| 13 | 4 | | Real user identifier (UID) +
+Contains a signed integer
+| 17 | 4 | | Real group identifier (GID) +
+Contains a signed integer
 | 21 | 4 | | Process identifier (PID)
 | 25 | 4 | | Session identifier
 | 29 | 4 | | Terminal port
@@ -490,7 +496,11 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x2d | Token type +
 See section: <<token_types,Token types>>
-| 1 | ... | | [yellow-background]*Unknown*
+| 1 | 1 | | Argument index
+| 2 | 4 | | Argument name
+| 6 | 2 | | Argument value size
+| 8 | ... | | Argument value +
+Contains a string with an end-of-string character
 |===
 
 === AUT_SOCKET token
@@ -842,7 +852,11 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x71 | Token type +
 See section: <<token_types,Token types>>
-| 1 | ... | | [yellow-background]*Unknown*
+| 1 | 1 | | Argument index
+| 2 | 8 | | Argument name
+| 10 | 2 | | Argument value size
+| 12 | ... | | Argument value +
+Contains a string with an end-of-string character
 |===
 
 === AUT_RETURN64 token

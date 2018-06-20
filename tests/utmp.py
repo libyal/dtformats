@@ -46,22 +46,6 @@ class LinuxLibc6UtmpFileTest(test_lib.BaseTestCase):
     string = test_file._DecodeString(b'test\x00')
     self.assertEqual(string, 'test')
 
-  def testFormatPackedIPv4Address(self):
-    """Tests the _FormatPackedIPv4Address function."""
-    test_file = utmp.LinuxLibc6UtmpFile()
-
-    ip_address = test_file._FormatPackedIPv4Address([0xc0, 0xa8, 0xcc, 0x62])
-    self.assertEqual(ip_address, '192.168.204.98')
-
-  def testFormatPackedIPv6Address(self):
-    """Tests the _FormatPackedIPv6Address function."""
-    test_file = utmp.LinuxLibc6UtmpFile()
-
-    ip_address = test_file._FormatPackedIPv6Address([
-        0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00,
-        0x00, 0x42, 0x83, 0x29])
-    self.assertEqual(ip_address, '2001:0db8:0000:0000:0000:ff00:0042:8329')
-
   @test_lib.skipUnlessHasTestFile(['utmp-linux_libc6'])
   def testReadEntries(self):
     """Tests the _ReadEntries function."""
