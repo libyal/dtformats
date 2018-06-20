@@ -51,6 +51,23 @@ attributes:
   size: 8
   units: bytes
 ---
+name: bsm_token_data_arg32
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: argument_index
+  data_type: uint8
+- name: argument_name
+  data_type: uint32
+- name: argument_value_size
+  data_type: uint16
+- name: argument_value
+  type: string
+  encoding: ascii
+  element_data_type: char
+  elements_data_size: bsm_token_data_arg32.argument_value_size
+---
 name: bsm_token_data_arg64
 type: structure
 attributes:
@@ -146,6 +163,34 @@ members:
 - name: session_identifier
   data_type: uint32
 - name: terminal_port
+  data_type: uint32
+- name: ip_address
+  type: sequence
+  element_data_type: byte
+  elements_data_size: 4
+---
+name: bsm_token_data_subject32_ex
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: audit_user_identifier
+  data_type: int32
+- name: effective_user_identifier
+  data_type: int32
+- name: effective_group_identifier
+  data_type: int32
+- name: real_user_identifier
+  data_type: int32
+- name: real_group_identifier
+  data_type: int32
+- name: process_identifier
+  data_type: uint32
+- name: session_identifier
+  data_type: uint32
+- name: terminal_port
+  data_type: uint32
+- name: net_type
   data_type: uint32
 - name: ip_address
   type: sequence

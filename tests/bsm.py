@@ -46,9 +46,7 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['apple.bsm'])
-    # TODO: implement BSM support
-    with self.assertRaises(errors.ParseError):
-      test_file.Open(test_file_path)
+    test_file.Open(test_file_path)
 
 
 if __name__ == '__main__':
