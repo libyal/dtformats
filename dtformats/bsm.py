@@ -709,24 +709,34 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x82: 'AUT_SOCKUNIX'}
 
   _DATA_TYPE_MAP_PER_TOKEN_TYPE = {
+      0x11: 'bsm_token_data_other_file32',
       0x13: 'bsm_token_data_trailer',
       0x14: 'bsm_token_data_header32',
+      0x21: 'bsm_token_data_data',
+      0x22: 'bsm_token_data_ipc',
       0x23: 'bsm_token_data_path',
       0x24: 'bsm_token_data_subject32',
       0x27: 'bsm_token_data_return32',
       0x28: 'bsm_token_data_text',
+      0x2a: 'bsm_token_data_in_addr',
+      0x2b: 'bsm_token_data_ip',
       0x2d: 'bsm_token_data_arg32',
       0x71: 'bsm_token_data_arg64',
       0x7a: 'bsm_token_data_subject32_ex',
   }
 
   _DESCRIPTION_PER_TOKEN_TYPE = {
+      0x11: 'token data other_file32',
       0x13: 'token data trailer',
       0x14: 'token data header32',
+      0x21: 'token data data',
+      0x22: 'token data ipc',
       0x23: 'token data path',
       0x24: 'token data subject32',
       0x27: 'token data return32',
       0x28: 'token data text',
+      0x2a: 'token data in_addr',
+      0x2b: 'token data ip',
       0x2d: 'token data arg32',
       0x71: 'token data arg64',
       0x7a: 'token data subject32_ex',
@@ -761,13 +771,30 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
+  def _DebugPrintTokenDataData(self, token_data):
+    """Prints AUT_DATA token data debug information.
+
+    Args:
+      token_data (bsm_token_data_data): token data.
+    """
+    value_string = '0x{0:02x}'.format(token_data.data_format)
+    self._DebugPrintValue('Data format', value_string)
+
+    value_string = '0x{0:02x}'.format(token_data.element_data_type)
+    self._DebugPrintValue('Element data type', value_string)
+
+    self._DebugPrintValue('Number of elements', token_data.number_of_elements)
+
+    # TODO: improve reading data
+    self._DebugPrintData('Data', token_data.data)
+
   def _DebugPrintTokenDataHeader32(self, token_data):
     """Prints AUT_HEADER32 token data debug information.
 
     Args:
       token_data (bsm_token_data_header32): token data.
     """
-    self._DebugPrintDecimalValue('Event data size', token_data.event_data_size)
+    self._DebugPrintDecimalValue('Record size', token_data.record_size)
 
     self._DebugPrintDecimalValue('Format version', token_data.format_version)
 
@@ -783,6 +810,64 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
 
     self._DebugPrintDecimalValue('Microseconds', token_data.microseconds)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataInAddr(self, token_data):
+    """Prints AUT_IN_ADDR token data debug information.
+
+    Args:
+      token_data (bsm_token_data_in_addr): token data.
+    """
+    value_string = self._FormatPackedIPv4Address(token_data.ip_address)
+    self._DebugPrintValue('IP address', value_string)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataIp(self, token_data):
+    """Prints AUT_IP token data debug information.
+
+    Args:
+      token_data (bsm_token_data_ip): token data.
+    """
+    # TODO: add other information.
+
+    value_string = self._FormatPackedIPv4Address(token_data.source_ip_address)
+    self._DebugPrintValue('Source IP address', value_string)
+
+    value_string = self._FormatPackedIPv4Address(
+        token_data.destination_ip_address)
+    self._DebugPrintValue('Destination IP address', value_string)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataIpc(self, token_data):
+    """Prints AUT_IP token data debug information.
+
+    Args:
+      token_data (bsm_token_data_ipc): token data.
+    """
+    value_string = '0x{0:02x}'.format(token_data.object_type)
+    self._DebugPrintValue('Object type', value_string)
+
+    value_string = '0x{0:08x}'.format(token_data.object_identifier)
+    self._DebugPrintValue('Object identifier', value_string)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataOtherFile32(self, token_data):
+    """Prints AUT_OTHER_FILE32 token data debug information.
+
+    Args:
+      token_data (bsm_token_data_other_file32): token data.
+    """
+    self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
+
+    self._DebugPrintDecimalValue('Microseconds', token_data.microseconds)
+
+    self._DebugPrintDecimalValue('Name size', token_data.name_size)
+
+    self._DebugPrintValue('Name', token_data.name.rstrip('\x00'))
 
     self._DebugPrintText('\n')
 
@@ -886,6 +971,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       raise errors.ParseError('Unsupported net type: {0:d}'.format(
           token_data.net_type))
 
+    # TODO: improve reading IP
     if token_data.net_type == 4:
       value_string = self._FormatPackedIPv4Address(token_data.ip_address)
     elif token_data.net_type == 6:
@@ -915,18 +1001,18 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     value_string = '0x{0:04x}'.format(token_data.signature)
     self._DebugPrintValue('Signature', value_string)
 
-    self._DebugPrintDecimalValue('Event data size', token_data.event_data_size)
+    self._DebugPrintDecimalValue('Record size', token_data.record_size)
 
     self._DebugPrintText('\n')
 
-  def _ReadEvent(self, file_object):
-    """Reads an event.
+  def _ReadRecord(self, file_object):
+    """Reads an event record.
 
     Args:
       file_object (file): file-like object.
 
     Raises:
-      ParseError: if the event cannot be read.
+      ParseError: if the event record cannot be read.
     """
     file_offset = file_object.tell()
     token_type, token_data = self._ReadToken(file_object)
@@ -935,8 +1021,8 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       raise errors.ParseError('Unsupported token type: 0x{0:02x}'.format(
           token_type))
 
-    event_end_offset = file_offset + token_data.event_data_size
-    while file_offset < event_end_offset:
+    record_end_offset = file_offset + token_data.record_size
+    while file_offset < record_end_offset:
       token_type, token_data = self._ReadToken(file_object)
 
       if token_type == 0x13:
@@ -981,10 +1067,16 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     # TODO: add callback for validation (trailer) and read of more complex
     # structures.
 
-    if token_type == 0x13:
+    if token_type == 0x11:
+      self._DebugPrintTokenDataOtherFile32(token_data)
+    elif token_type == 0x13:
       self._DebugPrintTokenDataTrailer(token_data)
     elif token_type == 0x14:
       self._DebugPrintTokenDataHeader32(token_data)
+    elif token_type == 0x21:
+      self._DebugPrintTokenDataData(token_data)
+    elif token_type == 0x22:
+      self._DebugPrintTokenDataIpc(token_data)
     elif token_type == 0x23:
       self._DebugPrintTokenDataPath(token_data)
     elif token_type == 0x24:
@@ -993,6 +1085,10 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       self._DebugPrintTokenDataReturn32(token_data)
     elif token_type == 0x28:
       self._DebugPrintTokenDataText(token_data)
+    elif token_type == 0x2a:
+      self._DebugPrintTokenDataInAddr(token_data)
+    elif token_type == 0x2b:
+      self._DebugPrintTokenDataIp(token_data)
     elif token_type in (0x2d, 0x71):
       self._DebugPrintTokenDataArg(token_data)
     elif token_type == 0x7a:
@@ -1011,5 +1107,5 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
     while file_offset < self._file_size:
-      self._ReadEvent(file_object)
+      self._ReadRecord(file_object)
       file_offset = file_object.tell()

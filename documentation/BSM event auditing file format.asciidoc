@@ -278,8 +278,8 @@ See section: <<token_types,Token types>>
 | 0 | 1 | 0x13 | Token type +
 See section: <<token_types,Token types>>
 | 1 | 2 | 0xb105 | Signature
-| 3 | 4 | | Event data size +
-Data size of the event
+| 3 | 4 | | Record size +
+Data size of the event record
 |===
 
 === AUT_HEADER32 token
@@ -289,8 +289,8 @@ Data size of the event
 | Offset | Size | Value | Description
 | 0 | 1 | 0x14 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | Event data size +
-Data size of the event
+| 1 | 4 | | Record size +
+Data size of the event record
 | 5 | 1 | | Format version
 | 6 | 2 | | Event type +
 See section: <<event_types,Event types>>
@@ -470,8 +470,27 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x2b | Token type +
 See section: <<token_types,Token types>>
-| 1 | 20 | | [yellow-background]*Unknown*
+| 1 | 12 | | [yellow-background]*Unknown (struct ip)*
+| 13 | 4 | | Source IPv4 address
+| 17 | 4 | | Destination IPv4 address
 |===
+
+....
+struct ip {
+	u_char	ip_v:4,			/* version */
+		ip_hl:4;		/* header length */
+	u_char	ip_tos;			/* type of service */
+	short	ip_len;			/* total length */
+	u_short	ip_id;			/* identification */
+	short	ip_off;			/* fragment offset field */
+#define	IP_DF 0x4000			/* dont fragment flag */
+#define	IP_MF 0x2000			/* more fragments flag */
+	u_char	ip_ttl;			/* time to live */
+	u_char	ip_p;			/* protocol */
+	u_short	ip_sum;			/* checksum */
+	struct	in_addr ip_src,ip_dst;	/* source and dest address */
+};
+....
 
 === AUT_IPORT token
 
@@ -1135,15 +1154,29 @@ Contains a string with an end-of-string character
 
 === [[data_types]]Data types
 
-....
-BSM_TOKEN_DATA_TYPE
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | AUR_BYTE +
+AUR_CHAR | Data type element is 1 byte in size
+| 1 | AUR_SHORT | Data type element is 2 bytes in size
+| 2 | AUR_INT +
+AUR_INT32 | Data type element is 4 bytes in size
+| 3 | AUR_LONG +
+AUR_INT64 | Data type element is 8 bytes in size
+|===
 
 === [[data_formats]]Data formats
 
-....
-BSM_TOKEN_DATA_PRINT
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | AUP_BINARY | Data is formatted as binary
+| 1 | AUP_OCTAL | Data is formatted as an octal integer
+| 2 | AUP_DECIMAL | Data is formatted as a decimal integer
+| 3 | AUP_HEX | Data is formatted as an hexadecimal integer
+| 4 | AUP_STRING | Data is formatted as a string
+|===
 
 === [[event_types]]Event types
 
@@ -1152,6 +1185,18 @@ BSM_TOKEN_DATA_PRINT
 ....
 
 === [[ipc_object_types]]IPC object types
+
+=== Socket types
+
+....
+#define	BSM_SOCK_DGRAM		1
+#define	BSM_SOCK_STREAM		2
+#define	BSM_SOCK_RAW		4
+#define	BSM_SOCK_RDM		5
+#define	BSM_SOCK_SEQPACKET	6
+
+#define	BSM_SOCK_UNKNOWN	500
+....
 
 :numbered!:
 [appendix]
@@ -1167,8 +1212,15 @@ BSM_TOKEN_DATA_PRINT
 
 [cols="1,5",options="header"]
 |===
-| Title: | BSM audit record
+| Title: | Apple BSM audit record
 | URL: | https://opensource.apple.com/source/xnu/xnu-517.9.5/bsd/bsm/audit_record.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | OpenBSM audit record
+| URL: | http://web.mit.edu/freebsd/head/contrib/openbsm/sys/bsm/audit_internal.h +
+http://web.mit.edu/freebsd/head/contrib/openbsm/sys/bsm/audit_record.h
 |===
 
 [appendix]
