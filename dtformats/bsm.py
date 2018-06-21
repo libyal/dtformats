@@ -716,12 +716,17 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x22: 'bsm_token_data_ipc',
       0x23: 'bsm_token_data_path',
       0x24: 'bsm_token_data_subject32',
+      0x26: 'bsm_token_data_subject32',
       0x27: 'bsm_token_data_return32',
       0x28: 'bsm_token_data_text',
+      0x29: 'bsm_token_data_opaque',
       0x2a: 'bsm_token_data_in_addr',
       0x2b: 'bsm_token_data_ip',
+      0x2c: 'bsm_token_data_iport',
       0x2d: 'bsm_token_data_arg32',
+      0x2f: 'bsm_token_data_seq',
       0x71: 'bsm_token_data_arg64',
+      0x77: 'bsm_token_data_subject64',
       0x7a: 'bsm_token_data_subject32_ex',
   }
 
@@ -733,12 +738,17 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x22: 'token data ipc',
       0x23: 'token data path',
       0x24: 'token data subject32',
+      0x26: 'token data process32',
       0x27: 'token data return32',
       0x28: 'token data text',
+      0x29: 'token data opaque',
       0x2a: 'token data in_addr',
       0x2b: 'token data ip',
+      0x2c: 'token data iport',
       0x2d: 'token data arg32',
+      0x2f: 'token data seq',
       0x71: 'token data arg64',
+      0x77: 'token data process64',
       0x7a: 'token data subject32_ex',
   }
 
@@ -855,6 +865,26 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
+  def _DebugPrintTokenDataIport(self, token_data):
+    """Prints AUT_IN_IPORT token data debug information.
+
+    Args:
+      token_data (bsm_token_data_iport): token data.
+    """
+    self._DebugPrintDecimalValue('Port number', token_data.port_number)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataOpaque(self, token_data):
+    """Prints AUT_OPAQUE token data debug information.
+
+    Args:
+      token_data (bsm_token_data_opaque): token data.
+    """
+    self._DebugPrintDecimalValue('Data size', token_data.data_size)
+
+    self._DebugPrintData('Data', token_data.data)
+
   def _DebugPrintTokenDataOtherFile32(self, token_data):
     """Prints AUT_OTHER_FILE32 token data debug information.
 
@@ -897,11 +927,25 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
-  def _DebugPrintTokenDataSubject32(self, token_data):
-    """Prints AUT_SUBJECT32 token data debug information.
+  def _DebugPrintTokenDataSeq(self, token_data):
+    """Prints AUT_IN_SEQ token data debug information.
 
     Args:
-      token_data (bsm_token_data_subject32): token data.
+      token_data (bsm_token_data_seq): token data.
+    """
+    self._DebugPrintDecimalValue('Sequence number', token_data.sequence_number)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataSubject(self, token_data):
+    """Prints AUT_SUBJECT## and AUT_PROCESS## token data debug information.
+
+    This method supports the tokens: AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32
+    and AUT_PROCESS64.
+
+    Args:
+      token_data (bsm_token_data_subject32|bsm_token_data_subject64): token
+          data.
     """
     self._DebugPrintDecimalValue(
         'Audit user identifier (UID)', token_data.audit_user_identifier)
@@ -936,7 +980,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     """Prints AUT_SUBJECT32_EX token data debug information.
 
     Args:
-      token_data (bsm_token_data_subject32): token data.
+      token_data (bsm_token_data_subject32_ex): token data.
 
     Raises:
       ParseError: if the net type is not supported.
@@ -1079,18 +1123,24 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       self._DebugPrintTokenDataIpc(token_data)
     elif token_type == 0x23:
       self._DebugPrintTokenDataPath(token_data)
-    elif token_type == 0x24:
-      self._DebugPrintTokenDataSubject32(token_data)
+    elif token_type in (0x24, 0x26, 0x77):
+      self._DebugPrintTokenDataSubject(token_data)
     elif token_type == 0x27:
       self._DebugPrintTokenDataReturn32(token_data)
     elif token_type == 0x28:
       self._DebugPrintTokenDataText(token_data)
+    elif token_type == 0x29:
+      self._DebugPrintTokenDataOpaque(token_data)
     elif token_type == 0x2a:
       self._DebugPrintTokenDataInAddr(token_data)
     elif token_type == 0x2b:
       self._DebugPrintTokenDataIp(token_data)
+    elif token_type == 0x2c:
+      self._DebugPrintTokenDataIport(token_data)
     elif token_type in (0x2d, 0x71):
       self._DebugPrintTokenDataArg(token_data)
+    elif token_type == 0x2f:
+      self._DebugPrintTokenDataSeq(token_data)
     elif token_type == 0x7a:
       self._DebugPrintTokenDataSubject32Ex(token_data)
 

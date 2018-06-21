@@ -42,10 +42,9 @@ in the section entitled "GNU Free Documentation License".
 [yellow-background]*TODO: complete documentation*
 
 * One or more audit events
-  * Header token type (AUT_HEADER32, AUT_HEADER32_EX, AUT_HEADER64, AUT_HEADER64_EX)
-  * (AUT_TEXT, AUT_PATH, AUT_RETURN32)
-  * (AUT_SUBJECT32, AUT_TEXT, AUT_RETURN32)
-  * Trailer token type (AUT_TRAILER)
+  * Header token (AUT_HEADER32, AUT_HEADER32_EX, AUT_HEADER64, AUT_HEADER64_EX)
+  * Zero or more content tokens
+  * Trailer token (AUT_TRAILER)
 
 [cols="1,5",options="header"]
 |===
@@ -449,8 +448,8 @@ Contain a string with an end-of-string character
 | Offset | Size | Value | Description
 | 0 | 1 | 0x29 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | [yellow-background]*Unknown (Text size)*
-| 3 | ... | | [yellow-background]*Unknown (Text)*
+| 1 | 2 | | Data size
+| 3 | ... | | Data
 |===
 
 === AUT_IN_ADDR token
