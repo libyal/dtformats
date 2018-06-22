@@ -119,6 +119,30 @@ members:
 - name: microseconds
   data_type: uint32
 ---
+name: bsm_token_data_header32_ex
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: record_size
+  data_type: uint32
+- name: format_version
+  data_type: uint8
+- name: event_type
+  data_type: uint16
+- name: modifier
+  data_type: uint16
+- name: net_type
+  data_type: uint32
+- name: ip_address
+  type: sequence
+  element_data_type: byte
+  elements_data_size: bsm_token_data_header32_ex.net_type
+- name: timestamp
+  data_type: uint32
+- name: microseconds
+  data_type: uint32
+---
 name: bsm_token_data_in_addr
 type: structure
 attributes:
@@ -225,6 +249,30 @@ members:
 - name: sequence_number
   data_type: uint32
 ---
+name: bsm_token_data_socket_ex
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: socket_domain
+  data_type: uint16
+- name: socket_type
+  data_type: uint16
+- name: ip_type
+  data_type: uint16
+- name: source_port
+  data_type: uint16
+- name: source_ip_address
+  type: sequence
+  element_data_type: byte
+  elements_data_size: 4
+- name: destination_port
+  data_type: uint16
+- name: destination_ip_address
+  type: sequence
+  element_data_type: byte
+  elements_data_size: 4
+---
 name: bsm_token_data_subject32
 type: structure
 attributes:
@@ -277,7 +325,7 @@ members:
 - name: ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: 4
+  elements_data_size: bsm_token_data_subject32_ex.net_type
 ---
 name: bsm_token_data_subject64
 type: structure
@@ -305,6 +353,34 @@ members:
   element_data_type: byte
   elements_data_size: 4
 ---
+name: bsm_token_data_subject64_ex
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: audit_user_identifier
+  data_type: int32
+- name: effective_user_identifier
+  data_type: int32
+- name: effective_group_identifier
+  data_type: int32
+- name: real_user_identifier
+  data_type: int32
+- name: real_group_identifier
+  data_type: int32
+- name: process_identifier
+  data_type: uint32
+- name: session_identifier
+  data_type: uint32
+- name: terminal_port
+  data_type: uint64
+- name: net_type
+  data_type: uint32
+- name: ip_address
+  type: sequence
+  element_data_type: byte
+  elements_data_size: bsm_token_data_subject64_ex.net_type
+---
 name: bsm_token_data_text
 type: structure
 attributes:
@@ -327,3 +403,16 @@ members:
   data_type: uint16
 - name: record_size
   data_type: uint32
+---
+name: bsm_token_data_zonename
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: name_size
+  data_type: uint16
+- name: name
+  type: string
+  encoding: ascii
+  element_data_type: char
+  elements_data_size: bsm_token_data_zonename.name_size

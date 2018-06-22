@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 import unittest
 
 from dtformats import bsm
-from dtformats import errors
 
 from tests import test_lib
 
@@ -34,9 +33,7 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['openbsm.bsm'])
-    # TODO: implement BSM support
-    with self.assertRaises(errors.ParseError):
-      test_file.Open(test_file_path)
+    test_file.Open(test_file_path)
 
   @test_lib.skipUnlessHasTestFile(['apple.bsm'])
   def testReadFileObjectWithAppleBSM(self):

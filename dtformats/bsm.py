@@ -712,6 +712,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x11: 'bsm_token_data_other_file32',
       0x13: 'bsm_token_data_trailer',
       0x14: 'bsm_token_data_header32',
+      0x15: 'bsm_token_data_header32_ex',
       0x21: 'bsm_token_data_data',
       0x22: 'bsm_token_data_ipc',
       0x23: 'bsm_token_data_path',
@@ -725,15 +726,21 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x2c: 'bsm_token_data_iport',
       0x2d: 'bsm_token_data_arg32',
       0x2f: 'bsm_token_data_seq',
+      0x60: 'bsm_token_data_zonename',
       0x71: 'bsm_token_data_arg64',
       0x77: 'bsm_token_data_subject64',
       0x7a: 'bsm_token_data_subject32_ex',
+      0x7b: 'bsm_token_data_subject32_ex',
+      0x7c: 'bsm_token_data_subject64_ex',
+      0x7d: 'bsm_token_data_subject64_ex',
+      0x7f: 'bsm_token_data_socket_ex',
   }
 
   _DESCRIPTION_PER_TOKEN_TYPE = {
       0x11: 'token data other_file32',
       0x13: 'token data trailer',
       0x14: 'token data header32',
+      0x15: 'token data header32_ex',
       0x21: 'token data data',
       0x22: 'token data ipc',
       0x23: 'token data path',
@@ -747,9 +754,14 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x2c: 'token data iport',
       0x2d: 'token data arg32',
       0x2f: 'token data seq',
+      0x60: 'token data zonename',
       0x71: 'token data arg64',
       0x77: 'token data process64',
       0x7a: 'token data subject32_ex',
+      0x7b: 'token data process32_ex',
+      0x7c: 'token data subject64_ex',
+      0x7d: 'token data process64_ex',
+      0x7f: 'token data socket_ex',
   }
 
   def __init__(self, debug=False, output_writer=None):
@@ -816,6 +828,46 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     value_string = '0x{0:04x}'.format(token_data.modifier)
     self._DebugPrintValue('Modifier', value_string)
+
+    self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
+
+    self._DebugPrintDecimalValue('Microseconds', token_data.microseconds)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataHeader32Ex(self, token_data):
+    """Prints AUT_HEADER32_EX token data debug information.
+
+    Args:
+      token_data (bsm_token_data_header32_ex): token data.
+
+    Raises:
+      ParseError: if the net type is not supported.
+    """
+    self._DebugPrintDecimalValue('Record size', token_data.record_size)
+
+    self._DebugPrintDecimalValue('Format version', token_data.format_version)
+
+    event_type_string = self._EVENT_TYPES.get(
+        token_data.event_type, 'UNKNOWN')
+    value_string = '0x{0:04x} ({1:s})'.format(
+        token_data.event_type, event_type_string)
+    self._DebugPrintValue('Event type', value_string)
+
+    value_string = '0x{0:04x}'.format(token_data.modifier)
+    self._DebugPrintValue('Modifier', value_string)
+
+    self._DebugPrintDecimalValue('Net type', token_data.net_type)
+
+    if token_data.net_type not in (4, 16):
+      raise errors.ParseError('Unsupported net type: {0:d}'.format(
+          token_data.net_type))
+
+    if token_data.net_type == 4:
+      value_string = self._FormatPackedIPv4Address(token_data.ip_address)
+    elif token_data.net_type == 16:
+      value_string = self._FormatPackedIPv6Address(token_data.ip_address)
+    self._DebugPrintValue('IP address', value_string)
 
     self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
 
@@ -937,8 +989,50 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
+  def _DebugPrintTokenDataSocketEx(self, token_data):
+    """Prints AUT_SOCKET_EX token data debug information.
+
+    Args:
+      token_data (bsm_token_data_socket_ex): token data.
+
+    Raises:
+      ParseError: if the IP type is not supported.
+    """
+    value_string = '0x{0:04x}'.format(token_data.socket_domain)
+    self._DebugPrintValue('Socket domain', value_string)
+
+    value_string = '0x{0:04x}'.format(token_data.socket_type)
+    self._DebugPrintValue('Socket type', value_string)
+
+    self._DebugPrintDecimalValue('IP type', token_data.ip_type)
+
+    if token_data.ip_type != 4:
+      raise errors.ParseError('Unsupported IP type: {0:d}'.format(
+          token_data.ip_type))
+
+    self._DebugPrintDecimalValue('Source port', token_data.source_port)
+
+    if token_data.ip_type == 4:
+      value_string = self._FormatPackedIPv4Address(token_data.source_ip_address)
+    elif token_data.ip_type == 6:
+      value_string = self._FormatPackedIPv6Address(token_data.source_ip_address)
+    self._DebugPrintValue('Source IP address', value_string)
+
+    self._DebugPrintDecimalValue(
+        'Destination port', token_data.destination_port)
+
+    if token_data.ip_type == 4:
+      value_string = self._FormatPackedIPv4Address(
+          token_data.destination_ip_address)
+    elif token_data.ip_type == 6:
+      value_string = self._FormatPackedIPv6Address(
+          token_data.destination_ip_address)
+    self._DebugPrintValue('Destination IP address', value_string)
+
+    self._DebugPrintText('\n')
+
   def _DebugPrintTokenDataSubject(self, token_data):
-    """Prints AUT_SUBJECT## and AUT_PROCESS## token data debug information.
+    """Prints AUT_SUBJECT##, AUT_PROCESS## token data debug information.
 
     This method supports the tokens: AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32
     and AUT_PROCESS64.
@@ -976,11 +1070,15 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
-  def _DebugPrintTokenDataSubject32Ex(self, token_data):
-    """Prints AUT_SUBJECT32_EX token data debug information.
+  def _DebugPrintTokenDataSubjectEx(self, token_data):
+    """Prints AUT_SUBJECT##_EX, AUT_PROCESS##_EX token data debug information.
+
+    This method supports the tokens: AUT_SUBJECT32_EX, AUT_SUBJECT64_EX,
+    AUT_PROCESS32_EX and AUT_PROCESS64_EX.
 
     Args:
-      token_data (bsm_token_data_subject32_ex): token data.
+      token_data (bsm_token_data_subject32_ex|bsm_token_data_subject64_ex):
+          token data.
 
     Raises:
       ParseError: if the net type is not supported.
@@ -1011,14 +1109,13 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     self._DebugPrintDecimalValue('Net type', token_data.net_type)
 
-    if token_data.net_type not in (4, 6):
+    if token_data.net_type not in (4, 16):
       raise errors.ParseError('Unsupported net type: {0:d}'.format(
           token_data.net_type))
 
-    # TODO: improve reading IP
     if token_data.net_type == 4:
       value_string = self._FormatPackedIPv4Address(token_data.ip_address)
-    elif token_data.net_type == 6:
+    elif token_data.net_type == 16:
       value_string = self._FormatPackedIPv6Address(token_data.ip_address)
     self._DebugPrintValue('IP address', value_string)
 
@@ -1046,6 +1143,18 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     self._DebugPrintValue('Signature', value_string)
 
     self._DebugPrintDecimalValue('Record size', token_data.record_size)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintTokenDataZonename(self, token_data):
+    """Prints AUT_ZONENAME token data debug information.
+
+    Args:
+      token_data (bsm_token_data_zonename): token data.
+    """
+    self._DebugPrintDecimalValue('Name size', token_data.name_size)
+
+    self._DebugPrintValue('Name', token_data.name.rstrip('\x00'))
 
     self._DebugPrintText('\n')
 
@@ -1117,6 +1226,8 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       self._DebugPrintTokenDataTrailer(token_data)
     elif token_type == 0x14:
       self._DebugPrintTokenDataHeader32(token_data)
+    elif token_type == 0x15:
+      self._DebugPrintTokenDataHeader32Ex(token_data)
     elif token_type == 0x21:
       self._DebugPrintTokenDataData(token_data)
     elif token_type == 0x22:
@@ -1141,8 +1252,12 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       self._DebugPrintTokenDataArg(token_data)
     elif token_type == 0x2f:
       self._DebugPrintTokenDataSeq(token_data)
-    elif token_type == 0x7a:
-      self._DebugPrintTokenDataSubject32Ex(token_data)
+    elif token_type == 0x60:
+      self._DebugPrintTokenDataZonename(token_data)
+    elif token_type in (0x7a, 0x7b, 0x7c, 0x7d):
+      self._DebugPrintTokenDataSubjectEx(token_data)
+    elif token_type == 0x7f:
+      self._DebugPrintTokenDataSocketEx(token_data)
 
     return token_type, token_data
 
