@@ -23,7 +23,7 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
 
     test_file_path = self._GetTestFilePath(['openbsm.bsm'])
     with open(test_file_path, 'rb') as file_object:
-      test_file._ReadToken(file_object)
+      test_file._ReadToken(file_object, 0)
 
   @test_lib.skipUnlessHasTestFile(['openbsm.bsm'])
   def testReadFileObjectWithOpenBSM(self):

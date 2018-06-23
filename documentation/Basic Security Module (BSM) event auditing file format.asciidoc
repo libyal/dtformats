@@ -118,21 +118,27 @@ AUT_SOCKET |
 | 0x2f | AU_SEQ_TOKEN +
 AUT_SEQ |
 | 0x30 | AUT_ACL | Modifier token type
-| 0x31 | AUT_ATTR |
-| 0x32 | AUT_IPC_PERM |
+| 0x31 | AU_ATTR_TOKEN +
+AUT_ATTR |
+| 0x32 | AU_IPCPERM_TOKEN +
+AUT_IPC_PERM |
 | 0x33 | AUT_LABEL | Modifier token type
 | 0x34 | AUT_GROUPS | Modifier token type
 | 0x35 | AUT_ILABEL +
 AUT_ACE | Modifier token type
 | 0x36 | AUT_SLABEL | Modifier token type
-| | |
+| 0x37 | AUT_CLEAR | Modifier token type
 | 0x38 | AUT_PRIV | Modifier token type
 | 0x39 | AUT_UPRIV | Modifier token type
 | 0x3a | AUT_LIAISON | Modifier token type
-| 0x3b | AUT_NEWGROUPS |
-| 0x3c | AUT_EXEC_ARGS |
-| 0x3d | AUT_EXEC_ENV |
-| 0x3e | AUT_ATTR32 |
+| 0x3b | AU_NEWGROUP_TOKENS +
+AUT_NEWGROUPS |
+| 0x3c | AU_EXEC_ARG_TOKEN +
+AUT_EXEC_ARGS |
+| 0x3d | AU_EXEC_ENV_TOKEN +
+AUT_EXEC_ENV |
+| 0x3e | AU_ATTR32_TOKEN +
+AUT_ATTR32 |
 | 0x3f | AUT_UNAUTH |
 | 0x40 | AUT_XATOM |
 | 0x41 | AUT_XOBJ |
@@ -147,27 +153,40 @@ AUT_ACE | Modifier token type
 | 0x4a | AUT_XWINDOW |
 | 0x4b | AUT_XCLIENT |
 | | |
-| 0x51 | AUT_CMD |
-| 0x52 | AUT_EXIT |
+| 0x51 | AUT_CMD | Command token type
+| 0x52 | AUT_EXIT | Command token type
 | | |
 | 0x60 | AUT_ZONENAME |
 | | |
 | 0x70 | AUT_HOST |
-| 0x71 | AUT_ARG64 |
-| 0x72 | AUT_RETURN64 |
-| 0x73 | AUT_ATTR64 |
-| 0x74 | AUT_HEADER64 |
-| 0x75 | AUT_SUBJECT64 |
-| | |
-| 0x77 | AUT_PROCESS64 |
+| 0x71 | AU_ARG64_TOKEN +
+AUT_ARG64 |
+| 0x72 | AU_RETURN_64_TOKEN +
+AUT_RETURN64 |
+| 0x73 | AU_ATTR64_TOKEN +
+AUT_ATTR64 |
+| 0x74 | AU_HEADER_64_TOKEN +
+AUT_HEADER64 |
+| 0x75 | AU_SUBJECT_64_TOKEN +
+AUT_SUBJECT64 |
+| 0x76 | AUT_SERVER64 |
+| 0x77 | AU_PROCESS_64_TOKEN +
+AUT_PROCESS64 |
 | 0x78 | AUT_OTHER_FILE64 |
-| 0x79 | AUT_HEADER64_EX |
-| 0x7a | AUT_SUBJECT32_EX |
-| 0x7b | AUT_PROCESS32_EX |
-| 0x7c | AUT_SUBJECT64_EX |
-| 0x7d | AUT_PROCESS64_EX |
-| 0x7e | AUT_IN_ADDR_EX |
-| 0x7f | AUT_SOCKET_EX |
+| 0x79 | AU_HEADER_EX_64_TOKEN +
+AUT_HEADER64_EX | Extended network address token type
+| 0x7a | AU_SUBJECT_32_EX_TOKEN +
+AUT_SUBJECT32_EX | Extended network address token type
+| 0x7b | AU_PROCESS_32_EX_TOKEN +
+AUT_PROCESS32_EX | Extended network address token type
+| 0x7c | AU_SUBJECT_64_EX_TOKEN +
+AUT_SUBJECT64_EX | Extended network address token type
+| 0x7d | AU_PROCESS_64_EX_TOKEN +
+AUT_PROCESS64_EX | Extended network address token type
+| 0x7e | AU_IN_ADDR_EX_TOKEN +
+AUT_IN_ADDR_EX | Extended network address token type
+| 0x7f | AU_SOCK_EX32_TOKEN +
+AUT_SOCKET_EX | Extended network address token type
 3+| _Not defined by BSM_
 | 0x80 | AU_SOCK_INET_32_TOKEN +
 AUT_SOCKINET32 |
@@ -184,65 +203,6 @@ AUT_SOCKUNIX |
 #define AUT_SERVER32            AUT_SERVER
  */
 
-/*
- * Modifier token types
-
-#define AUT_CLEAR               ((char)0x37)
-#define AUT_PRIV                ((char)0x38)
-#define AUT_UPRIV               ((char)0x39)
-#define AUT_LIAISON             ((char)0x3A)
- 
- */
-
-#define AU_ATTR_TOKEN               0x31
-#define AU_IPCPERM_TOKEN            0x32
-#define AU_NEWGROUPS_TOKEN          0x3B
-#define AU_EXEC_ARG_TOKEN           0x3C
-#define AU_EXEC_ENV_TOKEN           0x3D
-#define AU_ATTR32_TOKEN             0x3E
-
-/*
- * Command token types
- */
- 
-#define AU_CMD_TOKEN                0x51
-#define AU_EXIT_TOKEN               0x52
-
-/*
- * Miscellaneous token types
-
-#define AUT_HOST                ((char)0x70)
-
- */
-
-/*
- * 64bit token types
-
-#define AUT_SERVER64            ((char)0x76)
-#define AUT_OTHER_FILE64		((char)0x78)
-
- */
-
-#define AU_ARG64_TOKEN              0x71
-#define AU_RETURN_64_TOKEN          0x72
-#define AU_ATTR64_TOKEN             0x73
-#define AU_HEADER_64_TOKEN          0x74
-#define AU_SUBJECT_64_TOKEN         0x75
-#define AU_PROCESS_64_TOKEN         0x77
-
-/*
- * Extended network address token types
- */
- 
-#define AU_HEADER_EX_64_TOKEN       0x79
-#define AU_SUBJECT_32_EX_TOKEN      0x7a	
-#define AU_PROCESS_32_EX_TOKEN      0x7b
-#define AU_SUBJECT_64_EX_TOKEN      0x7c
-#define AU_PROCESS_64_EX_TOKEN      0x7d
-#define AU_IN_ADDR_EX_TOKEN	    0x7e
-#define AU_SOCK_EX32_TOKEN          0x7f
-#define AU_SOCK_EX128_TOKEN         AUT_INVALID         /*XXX*/
-#define AU_IP_EX_TOKEN              AUT_INVALID         /*XXX*/
 ....
 
 === AUT_OTHER_FILE32 token
@@ -256,7 +216,8 @@ See section: <<token_types,Token types>>
 Contains a POSIX timestamp in seconds
 | 5 | 4 | | Number of microseconds
 | 9 | 2 | | Filename size
-| 11 | ... | | Filename
+| 11 | ... | | Filename +
+Contain a string with an end-of-string character
 |===
 
 === AUT_OHEADER token
@@ -317,18 +278,16 @@ See section: <<event_types,Event types>>
 | 10 | 4 | 4 or 16 | Net type +
 See section: <<net_types,Net types>>
 4+| _If net type == AU_IPv4 (4)_
-| 14 | 4 | | IPv4 address
+| 14 | 4 | | IPv4 address +
+Contains a packed IPv4 address
 4+| _If net type == AU_IPv6 (16)_
-| 14 | 8 | | IPv6 address upper 64-bit
-| 22 | 8 | | IPv6 address lower 64-bit
+| 14 | 16 | | IPv6 address +
+Contains a packed IPv6 address
 4+| _Common_
 | ... | 4 | | Timestamp +
 Contains a POSIX timestamp in seconds
 | ... | 4 | | Number of microseconds
 |===
-
-[NOTE]
-Plaso bsm.py defines this as token type 0x74
 
 === AUT_DATA token
 
@@ -337,11 +296,12 @@ Plaso bsm.py defines this as token type 0x74
 | Offset | Size | Value | Description
 | 0 | 1 | 0x21 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 1 | | [yellow-background]*Unknown (How to print, data format)* +
+| 1 | 1 | | Data format (unit_print) +
 See section: <<data_formats,Data formats>>
-| 2 | 1 | | Element data type +
+| 2 | 1 | | Element data type (unit_type) +
 See section: <<data_types,Data types>>
-| 3 | 1 | | Number of elements (data units)
+| 3 | 1 | | Number of elements (unit_count) +
+| 4 | ... | Data elements
 |===
 
 === AUT_IPC token
@@ -388,7 +348,8 @@ Contains a signed integer
 | 21 | 4 | | Process identifier (PID)
 | 25 | 4 | | Audit session identifier (ASID)
 | 29 | 4 | | Terminal port
-| 33 | 4 | | IPv4 address
+| 33 | 4 | | IPv4 address +
+Contains a packed IPv4 address
 |===
 
 === AUT_XATPATH token
@@ -416,11 +377,12 @@ See section: <<token_types,Token types>>
 | 21 | 4 | | Process identifier (PID)
 | 25 | 4 | | Audit session identifier (ASID)
 | 29 | 4 | | Terminal port
-| 33 | 4 | | IPv4 address
+| 33 | 4 | | IPv4 address +
+Contains a packed IPv4 address
 |===
 
 [NOTE]
-Double check this structure seems to be a duplicate of AUT_SUBJECT32
+The AUT_PROCESS32 and AUT_SUBJECT32 token data are similar.
 
 === AUT_RETURN32 token
 
@@ -429,8 +391,9 @@ Double check this structure seems to be a duplicate of AUT_SUBJECT32
 | Offset | Size | Value | Description
 | 0 | 1 | 0x27 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 1 | | [yellow-background]*Unknown (Status or exit code? BSM_ERRORS)*
-| 2 | 4 | | Return value
+| 1 | 1 | | [yellow-background]*Unknown (Status?)*
+| 2 | 4 | | Return value +
+Contains a signed integer
 |===
 
 === AUT_TEXT token
@@ -463,7 +426,8 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x2a | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | IPv4 address
+| 1 | 4 | | IPv4 address +
+Contains a packed IPv4 address
 |===
 
 === AUT_IP token
@@ -473,9 +437,12 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x2b | Token type +
 See section: <<token_types,Token types>>
+4+| _IP packet header_
 | 1 | 12 | | [yellow-background]*Unknown (struct ip)*
-| 13 | 4 | | Source IPv4 address
-| 17 | 4 | | Destination IPv4 address
+| 13 | 4 | | Source IPv4 address +
+Contains a packed IPv4 address
+| 17 | 4 | | Destination IPv4 address +
+Contains a packed IPv4 address
 |===
 
 ....
@@ -541,7 +508,7 @@ https://github.com/apple/darwin-xnu/blob/master/bsd/sys/socketvar.h#L151
 | Offset | Size | Value | Description
 | 0 | 1 | 0x2f | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | [yellow-background]*Unknown (Sequence number)*
+| 1 | 4 | | Sequence number (audit count)
 |===
 
 === AUT_ACL token
@@ -561,12 +528,7 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x31 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | File mode
-| 5 | 4 | | User identifier (UID)
-| 9 | 4 | | Group identifier (GID)
-| 13 | 4 | | [yellow-background]*Unknown (File system identifier?)*
-| 17 | 8 | | [yellow-background]*Unknown (File system node identifier?)*
-| 25 | 4 | | [yellow-background]*Unknown (Device?)*
+| 1 | ... | | [yellow-background]*Unknown*
 |===
 
 === AUT_IPC_PERM token
@@ -580,9 +542,12 @@ See section: <<token_types,Token types>>
 | 5 | 4 | | Group identifier (GID)
 | 9 | 4 | | Creator user identifier (UID)
 | 13 | 4 | | Creator group identifier (GID)
-| 17 | 4 | | Access mode
-| 21 | 4 | | yellow-background]*Unknown (Slot sequence number?)*
-| 25 | 4 | | yellow-background]*Unknown (Key?)*
+| 17 | 2 | | [yellow-background]*Unknown (padding?)*
+| 19 | 2 | | Access mode
+| 21 | 2 | | [yellow-background]*Unknown (padding?)*
+| 23 | 2 | | Slot sequence number
+| 25 | 2 | | [yellow-background]*Unknown (padding?)*
+| 27 | 2 | | Key
 |===
 
 === AUT_LABEL token
@@ -652,7 +617,8 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x3b | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | [yellow-background]*Unknown (New group number?)*
+| 1 | 4 | | Number of groups
+| 5 | 4 x .... | | Array of group identifiers
 |===
 
 === AUT_EXEC_ARGS token
@@ -686,12 +652,13 @@ Contains strings with an end-of-string character
 | Offset | Size | Value | Description
 | 0 | 1 | 0x3e | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | File mode
+| 1 | 2 | | [yellow-background]*Unknown (padding?)*
+| 3 | 2 | | File mode
 | 5 | 4 | | User identifier (UID)
 | 9 | 4 | | Group identifier (GID)
-| 13 | 4 | | [yellow-background]*Unknown (File system identifier?)*
-| 17 | 8 | | [yellow-background]*Unknown (File system node identifier?)*
-| 25 | 4 | | [yellow-background]*Unknown (Device?)*
+| 13 | 4 | | File system identifier
+| 17 | 8 | | File identifier (HFS catalog node identifier)
+| 25 | 4 | | Device
 |===
 
 === AUT_UNAUTH token
@@ -841,9 +808,14 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x72 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | [yellow-background]*Unknown (Status or exit code? BSM_ERRORS)*
-| 5 | 4 | | Return value
+| 1 | 4 | | Error (status)
+| 5 | 4 | | Return value +
+Contains a signed integer
 |===
+
+....
+TODO error related to BSM_ERRORS
+....
 
 === AUT_ZONENAME token
 
@@ -887,8 +859,9 @@ Contains a string with an end-of-string character
 | Offset | Size | Value | Description
 | 0 | 1 | 0x72 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 1 | | [yellow-background]*Unknown (Status or exit code? BSM_ERRORS)*
-| 2 | 8 | | Return value
+| 1 | 1 | | [yellow-background]*Unknown (Status?)*
+| 2 | 8 | | Return value +
+Contains a signed integer
 |===
 
 === AUT_ATTR64 token
@@ -898,12 +871,13 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x73 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 4 | | File mode
+| 1 | 2 | | [yellow-background]*Unknown (padding?)*
+| 3 | 2 | | File mode
 | 5 | 4 | | User identifier (UID)
 | 9 | 4 | | Group identifier (GID)
-| 13 | 4 | | [yellow-background]*Unknown (File system identifier?)*
-| 17 | 8 | | [yellow-background]*Unknown (File system node identifier?)*
-| 25 | 8 | | [yellow-background]*Unknown (Device?)*
+| 13 | 4 | | File system identifier
+| 17 | 8 | | File identifier
+| 25 | 8 | | Device
 |===
 
 === AUT_HEADER64 token
@@ -924,9 +898,6 @@ Contains a POSIX timestamp in seconds
 | 18 | 8 | | Number of microseconds
 |===
 
-[NOTE]
-Plaso bsm.py defines this as token type 0x15
-
 === AUT_SUBJECT64 token
 
 [cols="1,1,1,5",options="header"]
@@ -941,9 +912,9 @@ See section: <<token_types,Token types>>
 | 17 | 4 | | Real group identifier (GID)
 | 21 | 4 | | Process identifier (PID)
 | 25 | 4 | | Audit session identifier (ASID)
-| 29 | 8 | | Terminal port +
-Or [yellow-background]*Terminal port and terminal type*
-| 37 | 4 | | IPv4 address
+| 29 | 8 | | Terminal port
+| 37 | 4 | | IPv4 address +
+Contains a packed IPv4 address
 |===
 
 === AUT_PROCESS64 token
@@ -961,11 +932,12 @@ See section: <<token_types,Token types>>
 | 21 | 4 | | Process identifier (PID)
 | 25 | 4 | | Audit session identifier (ASID)
 | 29 | 8 | | Terminal port
-| 37 | 4 | | IPv4 address
+| 37 | 4 | | IPv4 address +
+Contains a packed IPv4 address
 |===
 
 [NOTE]
-Double check this structure seems to be a duplicate of AUT_SUBJECT64
+The AUT_PROCESS64 and AUT_SUBJECT64 token data are similar.
 
 === AUT_OTHER_FILE64 token
 
@@ -984,7 +956,25 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x79 | Token type +
 See section: <<token_types,Token types>>
-| 1 | ... | | [yellow-background]*Unknown*
+| 1 | 4 | | Record size +
+Data size of the event record
+| 5 | 1 | | Format version +
+See section: <<format_versions,Format versions>>
+| 6 | 2 | | Event type +
+See section: <<event_types,Event types>>
+| 8 | 2 | | Modifier
+| 10 | 4 | 4 or 16 | Net type +
+See section: <<net_types,Net types>>
+4+| _If net type == AU_IPv4 (4)_
+| 14 | 4 | | IPv4 address +
+Contains a packed IPv4 address
+4+| _If net type == AU_IPv6 (16)_
+| 14 | 16 | | IPv6 address +
+Contains a packed IPv6 address
+4+| _Common_
+| ... | 8 | | Timestamp +
+Contains a POSIX timestamp in seconds
+| ... | 8 | | Number of microseconds
 |===
 
 === AUT_SUBJECT32_EX token
@@ -1005,10 +995,11 @@ See section: <<token_types,Token types>>
 | 33 | 4 | 4 or 16 | Net type (at_type) +
 See section: <<net_types,Net types>>
 4+| _If net type == AU_IPv4 (4)_
-| 37 | 4 | | IPv4 address (at_addr)
+| 37 | 4 | | IPv4 address (at_addr) +
+Contains a packed IPv4 address
 4+| _If net type == AU_IPv6 (16)_
-| 37 | 8 | | IPv6 address upper 64-bit
-| 45 | 8 | | IPv6 address lower 64-bit
+| 37 | 16 | | IPv6 address +
+Contains a packed IPv6 address
 |===
 
 === AUT_PROCESS32_EX token
@@ -1029,10 +1020,11 @@ See section: <<token_types,Token types>>
 | 33 | 4 | 4 or 16 | Net type (at_type) +
 See section: <<net_types,Net types>>
 4+| _If net type == AU_IPv4 (4)_
-| 37 | 4 | | IPv4 address (at_addr)
+| 37 | 4 | | IPv4 address (at_addr) +
+Contains a packed IPv4 address
 4+| _If net type == AU_IPv6 (16)_
-| 37 | 8 | | IPv6 address upper 64-bit
-| 45 | 8 | | IPv6 address lower 64-bit
+| 37 | 16 | | IPv6 address +
+Contains a packed IPv6 address
 |===
 
 [NOTE]
@@ -1056,10 +1048,11 @@ See section: <<token_types,Token types>>
 | 37 | 4 | 4 or 16 | Net type (at_type) +
 See section: <<net_types,Net types>>
 4+| _If net type == AU_IPv4 (4)_
-| 41 | 4 | | IPv4 address (at_addr)
+| 41 | 4 | | IPv4 address (at_addr) +
+Contains a packed IPv4 address
 4+| _If net type == AU_IPv6 (16)_
-| 41 | 8 | | IPv6 address upper 64-bit
-| 49 | 8 | | IPv6 address lower 64-bit
+| 41 | 16 | | IPv6 address +
+Contains a packed IPv6 address
 |===
 
 === AUT_PROCESS64_EX token
@@ -1080,10 +1073,11 @@ See section: <<token_types,Token types>>
 | 37 | 4 | 4 or 16 | Net type (at_type) +
 See section: <<net_types,Net types>>
 4+| _If net type == AU_IPv4 (4)_
-| 41 | 4 | | IPv4 address (at_addr)
+| 41 | 4 | | IPv4 address (at_addr) +
+Contains a packed IPv4 address
 4+| _If net type == AU_IPv6 (16)_
-| 41 | 8 | | IPv6 address upper 64-bit
-| 49 | 8 | | IPv6 address lower 64-bit
+| 41 | 16 | | IPv6 address +
+Contains a packed IPv6 address
 |===
 
 [NOTE]
@@ -1098,8 +1092,8 @@ The AUT_PROCESS64_EX and AUT_SUBJECT64_EX token data are similar.
 See section: <<token_types,Token types>>
 | 1 | 4 | | Net type +
 See section: <<net_types,Net types>>
-| 5 | 8 | | IPv6 address upper 64-bit
-| 13 | 8 | | IPv6 address lower 64-bit
+| 5 | 16 | | IP address +
+Contains a packed IPv4 or IPv6 address
 |===
 
 === AUT_SOCKET_EX token
@@ -1115,18 +1109,20 @@ See section: <<token_types,Token types>>
 | 5 | 2 | 4 | Net type (at_type) +
 See section: <<net_types,Net types>>
 | 7 | 2 | | Local port
-| 9 | 4 | | Local IPv4 address
+| 9 | 4 | | Local IPv4 address +
+Contains a packed IPv4 address
 | 13 | 2 | | Remote port
-| 15 | 4 | | Remote IPv4 address
+| 15 | 4 | | Remote IPv4 address +
+Contains a packed IPv4 address
 4+| _If socket domain == AF_INET6 (10)_
 | 5 | 2 | 16 | Net type (at_type) +
 See section: <<net_types,Net types>>
 | 7 | 2 | | Local port
-| 9 | 8 | | Local IPv6 address upper 64-bit
-| 17 | 8 | | Local IPv6 address lower 64-bit
+| 9 | 16 | | Local IPv6 address +
+Contains a packed IPv6 address
 | 25 | 2 | | Remote port
-| 27 | 8 | | Remote IPv6 address upper 64-bit
-| 35 | 8 | | Remote IPv6 address lower 64-bit
+| 27 | 16 | | Remote IPv6 address +
+Contains a packed IPv6 address
 |===
 
 === AUT_SOCKINET32 token
@@ -1136,10 +1132,10 @@ See section: <<net_types,Net types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x80 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | Net type +
-See section: <<net_types,Net types>>
-| 3 | 2 | | Port number
-| 5 | 4 | | IPv4 address
+| 1 | 2 | | Socket family
+| 3 | 2 | | Local port
+| 5 | 4 | | Local IPv4 address +
+Contains a packed IPv4 address
 |===
 
 === AUT_SOCKINET128 token
@@ -1149,11 +1145,10 @@ See section: <<net_types,Net types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x81 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | Net type +
-See section: <<net_types,Net types>>
-| 3 | 2 | | Port number
-| 5 | 8 | | IPv6 address upper 64-bit
-| 13 | 8 | | IPv6 address lower 64-bit
+| 1 | 2 | | Socket family
+| 3 | 2 | | Local port number
+| 5 | 16 | | Local IPv6 address +
+Contains a packed IPv6 address
 |===
 
 === AUT_SOCKUNIX token
@@ -1163,9 +1158,10 @@ See section: <<net_types,Net types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x82 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | Family
-| 3 | ... | | Path +
-Contains a string with an end-of-string character
+| 1 | 2 | | Socket family
+| 3 | ... | | Socket path +
+Contains a string with an end-of-string character +
+The maximum path string size is 105 bytes
 |===
 
 === [[format_versions]]Format versions
