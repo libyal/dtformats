@@ -529,6 +529,11 @@ See section: <<token_types,Token types>>
 | 1 | ... | | [yellow-background]*Unknown*
 |===
 
+....
+token_t *au_to_socket(struct socket *so);
+https://github.com/apple/darwin-xnu/blob/master/bsd/sys/socketvar.h#L151
+....
+
 === AUT_SEQ token
 
 [cols="1,1,1,5",options="header"]
@@ -1104,26 +1109,25 @@ See section: <<net_types,Net types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x7f | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | Socket domain
+| 1 | 2 | | Socket domain (Address family)
 | 3 | 2 | | Socket type
-4+| _If socket domain == 26_
-| 5 | 2 | | IP type
-| 7 | 2 | | Source port
-| 9 | 8 | | Source IPv6 address upper 64-bit
-| 17 | 8 | | Source IPv6 address lower 64-bit
-| 25 | 2 | | Destination port
-| 27 | 8 | | Destination IPv6 address upper 64-bit
-| 35 | 8 | | Destination IPv6 address lower 64-bit
-4+| _Else_
-| 5 | 2 | | IP type
-| 7 | 2 | | Source port
-| 9 | 4 | | Source IPv4 address
-| 13 | 2 | | Destination port
-| 15 | 4 | | Destination IPv4 address
+4+| _If socket domain == AF_INET (2)_
+| 5 | 2 | 4 | Net type (at_type) +
+See section: <<net_types,Net types>>
+| 7 | 2 | | Local port
+| 9 | 4 | | Local IPv4 address
+| 13 | 2 | | Remote port
+| 15 | 4 | | Remote IPv4 address
+4+| _If socket domain == AF_INET6 (10)_
+| 5 | 2 | 16 | Net type (at_type) +
+See section: <<net_types,Net types>>
+| 7 | 2 | | Local port
+| 9 | 8 | | Local IPv6 address upper 64-bit
+| 17 | 8 | | Local IPv6 address lower 64-bit
+| 25 | 2 | | Remote port
+| 27 | 8 | | Remote IPv6 address upper 64-bit
+| 35 | 8 | | Remote IPv6 address lower 64-bit
 |===
-
-[NOTE]
-Check if socket domain is really the deciding factor and not IP type
 
 === AUT_SOCKINET32 token
 

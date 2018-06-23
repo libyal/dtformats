@@ -258,20 +258,20 @@ members:
   data_type: uint16
 - name: socket_type
   data_type: uint16
-- name: ip_type
+- name: net_type
   data_type: uint16
-- name: source_port
+- name: local_port
   data_type: uint16
-- name: source_ip_address
+- name: local_ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: 4
-- name: destination_port
+  elements_data_size: bsm_token_data_socket_ex.net_type
+- name: remote_port
   data_type: uint16
-- name: destination_ip_address
+- name: remote_ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: 4
+  elements_data_size: bsm_token_data_socket_ex.net_type
 ---
 name: bsm_token_data_subject32
 type: structure

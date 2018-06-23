@@ -708,6 +708,8 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x81: 'AUT_SOCKINET128',
       0x82: 'AUT_SOCKUNIX'}
 
+  # Token types with unknown data format:
+  # 0x12: AUT_OHEADER
   _DATA_TYPE_MAP_PER_TOKEN_TYPE = {
       0x11: 'bsm_token_data_other_file32',
       0x13: 'bsm_token_data_trailer',
@@ -728,6 +730,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x2f: 'bsm_token_data_seq',
       0x60: 'bsm_token_data_zonename',
       0x71: 'bsm_token_data_arg64',
+      0x75: 'bsm_token_data_subject64',
       0x77: 'bsm_token_data_subject64',
       0x7a: 'bsm_token_data_subject32_ex',
       0x7b: 'bsm_token_data_subject32_ex',
@@ -735,6 +738,47 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x7d: 'bsm_token_data_subject64_ex',
       0x7f: 'bsm_token_data_socket_ex',
   }
+  #   0x25: 'AUT_XATPATH',
+  #   0x2e: 'AUT_SOCKET',
+  #   0x30: 'AUT_ACL',
+  #   0x31: 'AUT_ATTR',
+  #   0x32: 'AUT_IPC_PERM',
+  #   0x33: 'AUT_LABEL',
+  #   0x34: 'AUT_GROUPS',
+  #   0x35: 'AUT_ACE',
+  #   0x36: 'AUT_SLABEL',
+  #   0x38: 'AUT_PRIV',
+  #   0x39: 'AUT_UPRIV',
+  #   0x3a: 'AUT_LIAISON',
+  #   0x3b: 'AUT_NEWGROUPS',
+  #   0x3c: 'AUT_EXEC_ARGS',
+  #   0x3d: 'AUT_EXEC_ENV',
+  #   0x3e: 'AUT_ATTR32',
+  #   0x3f: 'AUT_UNAUTH',
+  #   0x40: 'AUT_XATOM',
+  #   0x41: 'AUT_XOBJ',
+  #   0x42: 'AUT_XPROTO',
+  #   0x43: 'AUT_XSELECT',
+  #   0x44: 'AUT_XCOLORMAP',
+  #   0x45: 'AUT_XCURSOR',
+  #   0x46: 'AUT_XFONT',
+  #   0x47: 'AUT_XGC',
+  #   0x48: 'AUT_XPIXMAP',
+  #   0x49: 'AUT_XPROPERTY',
+  #   0x4a: 'AUT_XWINDOW',
+  #   0x4b: 'AUT_XCLIENT',
+  #   0x51: 'AUT_CMD',
+  #   0x52: 'AUT_EXIT',
+  #   0x70: 'AUT_HOST',
+  #   0x72: 'AUT_RETURN64',
+  #   0x73: 'AUT_ATTR64',
+  #   0x74: 'AUT_HEADER64',
+  #   0x78: 'AUT_OTHER_FILE64',
+  #   0x79: 'AUT_HEADER64_EX',
+  #   0x7e: 'AUT_IN_ADDR_EX',
+  #   0x80: 'AUT_SOCKINET32',
+  #   0x81: 'AUT_SOCKINET128',
+  #   0x82: 'AUT_SOCKUNIX'
 
   _DESCRIPTION_PER_TOKEN_TYPE = {
       0x11: 'token data other_file32',
@@ -756,6 +800,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x2f: 'token data seq',
       0x60: 'token data zonename',
       0x71: 'token data arg64',
+      0x75: 'token data subject64',
       0x77: 'token data process64',
       0x7a: 'token data subject32_ex',
       0x7b: 'token data process32_ex',
@@ -1004,30 +1049,23 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     value_string = '0x{0:04x}'.format(token_data.socket_type)
     self._DebugPrintValue('Socket type', value_string)
 
-    self._DebugPrintDecimalValue('IP type', token_data.ip_type)
+    self._DebugPrintDecimalValue('Net type', token_data.net_type)
 
-    if token_data.ip_type != 4:
-      raise errors.ParseError('Unsupported IP type: {0:d}'.format(
-          token_data.ip_type))
+    self._DebugPrintDecimalValue('Local port', token_data.local_port)
 
-    self._DebugPrintDecimalValue('Source port', token_data.source_port)
+    if token_data.net_type == 4:
+      value_string = self._FormatPackedIPv4Address(token_data.local_ip_address)
+    elif token_data.net_type == 16:
+      value_string = self._FormatPackedIPv6Address(token_data.local_ip_address)
+    self._DebugPrintValue('Local IP address', value_string)
 
-    if token_data.ip_type == 4:
-      value_string = self._FormatPackedIPv4Address(token_data.source_ip_address)
-    elif token_data.ip_type == 6:
-      value_string = self._FormatPackedIPv6Address(token_data.source_ip_address)
-    self._DebugPrintValue('Source IP address', value_string)
+    self._DebugPrintDecimalValue('Remote port', token_data.remote_port)
 
-    self._DebugPrintDecimalValue(
-        'Destination port', token_data.destination_port)
-
-    if token_data.ip_type == 4:
-      value_string = self._FormatPackedIPv4Address(
-          token_data.destination_ip_address)
-    elif token_data.ip_type == 6:
-      value_string = self._FormatPackedIPv6Address(
-          token_data.destination_ip_address)
-    self._DebugPrintValue('Destination IP address', value_string)
+    if token_data.net_type == 4:
+      value_string = self._FormatPackedIPv4Address(token_data.remote_ip_address)
+    elif token_data.net_type == 16:
+      value_string = self._FormatPackedIPv6Address(token_data.remote_ip_address)
+    self._DebugPrintValue('Remote IP address', value_string)
 
     self._DebugPrintText('\n')
 
@@ -1234,7 +1272,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       self._DebugPrintTokenDataIpc(token_data)
     elif token_type == 0x23:
       self._DebugPrintTokenDataPath(token_data)
-    elif token_type in (0x24, 0x26, 0x77):
+    elif token_type in (0x24, 0x26, 0x75, 0x77):
       self._DebugPrintTokenDataSubject(token_data)
     elif token_type == 0x27:
       self._DebugPrintTokenDataReturn32(token_data)
