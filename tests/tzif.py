@@ -20,7 +20,8 @@ class TimeZoneInformationFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = tzif.TimeZoneInformationFile(output_writer=output_writer)
 
-    data_type_map = test_file._FILE_HEADER
+    data_type_map = test_file._GetDataTypeMap('tzif_file_header')
+
     file_header = data_type_map.CreateStructureValues(
         format_version=0x32,
         number_of_leap_seconds=1,

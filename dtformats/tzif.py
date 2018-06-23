@@ -3,10 +3,7 @@
 
 from __future__ import unicode_literals
 
-import os
-
 from dtfabric.runtime import data_maps as dtfabric_data_maps
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
@@ -19,29 +16,9 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     format_version (int): format version.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'tzif.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
+  _DEFINITION_FILE = 'tzif.yaml'
 
   # TODO: move path into structure.
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('tzif_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _TRANSITION_TIMES_32BIT = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'tzif_transition_times_32bit')
-
-  _TRANSITION_TIMES_64BIT = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'tzif_transition_times_64bit')
-
-  _TRANSITION_TIME_INDEX = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'tzif_transition_time_index')
 
   _FILE_SIGNATURE = b'TZif'
 
@@ -127,10 +104,10 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+    data_type_map = self._GetDataTypeMap('tzif_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, 0, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -154,9 +131,11 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the leap second records cannot be read.
     """
+    file_offset = file_object.tell()
     data_size = 8 * file_header.number_of_leap_seconds
 
-    data = file_object.read(data_size)
+    data = self._ReadData(
+        file_object, file_offset, data_size, 'leap second records')
 
     if self._debug:
       self._DebugPrintData('Leap second records data', data)
@@ -171,10 +150,12 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the local time types table cannot be read.
     """
+    file_offset = file_object.tell()
     # ttinfo structure
     data_size = 6 * file_header.number_of_local_time_types
 
-    data = file_object.read(data_size)
+    data = self._ReadData(
+        file_object, file_offset, data_size, 'local time types table')
 
     if self._debug:
       self._DebugPrintData('Local time types table data', data)
@@ -189,9 +170,11 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the standard time indicators cannot be read.
     """
+    file_offset = file_object.tell()
     data_size = 1 * file_header.number_of_standard_time_indicators
 
-    data = file_object.read(data_size)
+    data = self._ReadData(
+        file_object, file_offset, data_size, 'standard time indicators')
 
     if self._debug:
       self._DebugPrintData('Standard time indicators data', data)
@@ -207,17 +190,24 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       ParseError: if the transition time index cannot be read.
     """
     file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('tzif_transition_time_index')
+
+    data_size = 1 * file_header.number_of_transition_times
+
+    data = self._ReadData(
+        file_object, file_offset, data_size, 'transition time index')
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tzif_file_header': file_header})
 
-    data_size = 1 * file_header.number_of_transition_times
-
-    data = file_object.read(data_size)
-
-    transition_time_index = self._ReadStructureFromByteStream(
-        data, file_offset, self._TRANSITION_TIME_INDEX, 'transition time index',
-        context=context)
+    try:
+      transition_time_index = self._ReadStructureFromByteStream(
+          data, file_offset, data_type_map, 'transition time index',
+          context=context)
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to parse transition time index value with error: '
+          '{0!s}').format(exception))
 
     if self._debug:
       self._DebugPrintTransitionTimeIndex(transition_time_index)
@@ -232,7 +222,12 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the timezone abbreviation strings cannot be read.
     """
-    data = file_object.read(file_header.timezone_abbreviation_strings_size)
+    file_offset = file_object.tell()
+
+    data = self._ReadData(
+        file_object, file_offset,
+        file_header.timezone_abbreviation_strings_size,
+        'timezeone abbreviation strings')
 
     if self._debug:
       self._DebugPrintData('Timezeone abbreviation strings data', data)
@@ -294,17 +289,24 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       ParseError: if the 32-bit transition times cannot be read.
     """
     file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('tzif_transition_times_32bit')
+
+    data_size = 4 * file_header.number_of_transition_times
+
+    data = self._ReadData(
+        file_object, file_offset, data_size, '32-bit transition times')
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tzif_file_header': file_header})
 
-    data_size = 4 * file_header.number_of_transition_times
-
-    data = file_object.read(data_size)
-
-    transition_times = self._ReadStructureFromByteStream(
-        data, file_offset, self._TRANSITION_TIMES_32BIT,
-        '32-bit transition times', context=context)
+    try:
+      transition_times = self._ReadStructureFromByteStream(
+          data, file_offset, data_type_map, '32-bit transition times',
+          context=context)
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to parse 32-bit transition times value with error: '
+          '{0!s}').format(exception))
 
     if self._debug:
       self._DebugPrintTransitionTimes(transition_times)
@@ -320,17 +322,24 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       ParseError: if the 64-bit transition times cannot be read.
     """
     file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('tzif_transition_times_64bit')
+
+    data_size = 8 * file_header.number_of_transition_times
+
+    data = self._ReadData(
+        file_object, file_offset, data_size, '64-bit transition times')
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tzif_file_header': file_header})
 
-    data_size = 8 * file_header.number_of_transition_times
-
-    data = file_object.read(data_size)
-
-    transition_times = self._ReadStructureFromByteStream(
-        data, file_offset, self._TRANSITION_TIMES_64BIT,
-        '64-bit transition times', context=context)
+    try:
+      transition_times = self._ReadStructureFromByteStream(
+          data, file_offset, data_type_map, '64-bit transition times',
+          context=context)
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to parse 64-bit transition times value with error: '
+          '{0!s}').format(exception))
 
     if self._debug:
       self._DebugPrintTransitionTimes(transition_times)
@@ -345,9 +354,11 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the UTC time indicators cannot be read.
     """
+    file_offset = file_object.tell()
     data_size = 1 * file_header.number_of_utc_time_indicators
 
-    data = file_object.read(data_size)
+    data = self._ReadData(
+        file_object, file_offset, data_size, 'UTC time indicators')
 
     if self._debug:
       self._DebugPrintData('UTC time indicators data', data)
