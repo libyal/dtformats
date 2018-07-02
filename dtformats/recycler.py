@@ -21,6 +21,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     """
     super(RecyclerInfo2File, self).__init__(
         debug=debug, output_writer=output_writer)
+    self._codepage = 'cp1252'
     self._file_entry_size = 0
 
   def _DebugPrintFileEntry(self, file_entry):
@@ -29,7 +30,16 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     Args:
       file_entry (recycler_info2_file_entry): file entry.
     """
-    # TODO: debug print ANSI original filename.
+    # The original filename can contain remnant data after the end-of-string
+    # character.
+    original_filename = file_entry.original_filename.split(b'\x00')[0]
+
+    try:
+      original_filename = original_filename.decode(self._codepage)
+    except UnicodeDecodeError:
+      original_filename = '<DECODE ERROR>'
+
+    self._DebugPrintValue('Original filename (ANSI)', original_filename)
 
     value_string = '{0:d}'.format(file_entry.index)
     self._DebugPrintValue('Index', value_string)
@@ -107,7 +117,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
             '{1!s}').format(file_offset, exception))
 
       if self._debug:
-        self._DebugPrintValue('Original filename', original_filename)
+        self._DebugPrintValue('Original filename (Unicode)', original_filename)
 
     if self._debug:
       self._DebugPrintText('\n')
