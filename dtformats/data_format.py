@@ -425,7 +425,9 @@ class BinaryDataFormat(object):
       last_data_size = data_size
       data_size = data_type_map.GetSizeHint(context=context)
 
-    raise errors.ParseError('Unable to read {0:s}'.format(description))
+    raise errors.ParseError(
+        'Unable to read {0:s} at offset: 0x{1:08x}'.format(
+            description, file_offset))
 
 
 class BinaryDataFile(BinaryDataFormat):
