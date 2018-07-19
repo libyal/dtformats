@@ -44,14 +44,6 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
-[cols="1,5",options="header"]
-|===
-| Characteristics | Description
-| Byte order | big-endian
-| Date and time values | POSIX timestamp in UTC
-| Character strings |
-|===
-
 == Firefox cache version 1
 
 The Firefox cache directory contains the multiple type of files:
@@ -60,31 +52,56 @@ The Firefox cache directory contains the multiple type of files:
 * Cache block file
 * Cache data file
 
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | big-endian
+| Date and time values | POSIX timestamp in UTC
+| Character strings |
+|===
+
+=== [[cache1_location]]Cache location
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00ffffff | eBlockNumberMask | Cache block number
+| 0x03000000 | eExtraBlocksMask |
+| 0x30000000 | eLocationSelectorMask |
+| 0x4c000000 | eReservedMask | [yellow-background]*Unknown (Reserved)*
+| 0x80000000 | eLocationInitializedMask | Is location initialize flag
+|===
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x000000ff | eFileGenerationMask | File generation
+| 0x00ffff00 | eFileSizeMask | File size
+| 0x4f000000 | eFileReservedMask |
+| 0x80000000 | eLocationInitializedMask | Is location initialize flag
+|===
+
+....
+0x00000000	not initialized
+0x80xxxxyy	separate file of size xxxx bytes and generation yy
+0x91010003	block file 1, 2 blocks, starting at block 3.
+....
+
 === Cache map file
 
-File named:
+The cache map file is named:
 ....
 _CACHE_MAP_
 ....
 
-Contains:
+It contains:
 
-* Cache Map file header
-* An array of Cache Map buckets
-
-There are 32 buckets in the Cache map file. Within each bucket, there are 256
-records inside each bucket, hence the Cache Map file contains 8192 records in
-total.
-
-Each record contains the information for one instance of cache data. A record
-contains four 32-bit integers:
-
-* A Hash Number
-* An Eviction Rank
-* The Data Location
-* The Metadata Location
+* Cache map file header
+* An array of cache records (stored in 32 buckets)
 
 ==== File header
+
+The file header (nsDiskCacheHeader) is 276 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -92,12 +109,13 @@ contains four 32-bit integers:
 | 0 | 2 | | Major format version
 | 2 | 2 | | Minor format version
 | 4 | 4 | | Data size
-| 8 | 4 | | Entry count
+| 8 | 4 | | Number of entries +
+Contains a signed integer
 | 12 | 4 | | Is dirty flag
 | 16 | 4 | | Number of cache records
+Contains a signed integer
 | 20 | 32 x 4 = 128 | | Eviction rank array
 | 148 | 32 x 4 = 120 | | Bucket usage array
-| 276 | Number of records x 16 | | Mapfile buckets
 |===
 
 ==== [[cache1_format_versions]]Format versions
@@ -119,26 +137,71 @@ contains four 32-bit integers:
 [NOTE]
 The format version is defined in nsDiskCache.h
 
-==== Map bucket
+==== Cache record
 
-....
-| Byte Offset | Value | Notes | |:----------------|:----------|:----------| | 0-3 | Hash Number | Mozilla internal cache entry hash number | | 4-7 | Eviction | | | 8-11 | Data Location | Packed number containing location information for Data | | 12-15 | Metadata Location | Packed number containing location information for Metadata |
+The cache record (nsDiskCacheRecord) is 16 bytes of size and consists of:
 
-| Variable Name | Value | |:------------------|:----------| | eReservedMask | 0x4C000000 | | eLocationSelectorMask | 0x30000000 | | eLocationSelectorOffset | 28 | | eExtraBlocksMask | 0x03000000 | | eExtraBlocksOffset | 24 | | eBlockNumberMask | 0x00FFFFFF | | eFileGenerationMask | 0x000000FF | | eFileSizeMask | 0x00FFFF00 | | eFileSizeOffset | 8 | | eFileReservedMask | 0x4F000000 |
-....
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Hash number
+| 4 | 4 | | Eviction rank
+| 8 | 4 | | Data location +
+See section: <<cache_location,Cache location>>
+| 12 | 4 | | Metadata location +
+See section: <<cache1_location,Cache location>>
+|===
 
 === Cache block file
 
-File named:
+The cache block file is named:
 ....
 _CACHE_00#_
 ....
 
 Where `#` is a number ranging from `[1-3]`.
 
-=== Cache data File
+* `_CACHE_001_` contains blocks of size 256 bytes
+* `_CACHE_002_` contains blocks of size 1024 bytes
+* `_CACHE_003_` contains blocks of size 4096 bytes
 
-File named:
+[NOTE]
+Up to 4 contiguous blocks in the file may be used by a single entry.
+
+It contains:
+
+* A bitmap
+* Cached data blocks
+
+==== Cache entry
+
+The cache entry (nsDiskCacheEntry) is 32 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Major format version
+| 2 | 2 | | Minor format version
+| 4 | 4 | | Metadata location +
+See section: <<cache_location,Cache location>>
+| 8 | 4 | | Fetch count +
+Contains a signed integer
+| 12 | 4 | | Last fetched date and time +
+Contains a POSIX timestamp
+| 16 | 4 | | Last modification date and time +
+Contains a POSIX timestamp
+| 16 | 4 | | Expiration date and time +
+Contains a POSIX timestamp
+| 20 | 4 | | Data size
+| 24 | 4 | | Key size +
+The size included the end-of-string character
+| 28 | 4 | | Meta data size +
+The size included the end-of-string character
+|===
+
+=== Cache data file
+
+The (separate) cache data file is named:
 ....
 <hash number><type><generation number>
 ....
@@ -146,6 +209,8 @@ File named:
 Where `<hash number>`, `<type>`, `<generation number>` are placeholders for the corresponding values.
 
 == Firefox cache version 2
+
+[yellow-background]*TODO: document Firefox cache version 2*
 
 ....
 cache2/index
@@ -159,6 +224,31 @@ cache2/entries/*
 
 [cols="1,5",options="header"]
 |===
+| Title: | Necko/Cache
+| URL: | https://wiki.mozilla.org/Necko/Cache
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | mozilla-central/netwerk/cache/nsDiskCacheMap.h
+| URL: | https://dxr.mozilla.org/mozilla-central/source/netwerk/cache/nsDiskCacheMap.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | mozilla-central/netwerk/cache/nsDiskCacheBlockFile.h
+| URL: | https://dxr.mozilla.org/mozilla-central/source/netwerk/cache/nsDiskCacheBlockFile.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | mozilla-central/netwerk/cache/nsDiskCacheEntry.h
+| URL: | https://dxr.mozilla.org/mozilla-central/source/netwerk/cache/nsDiskCacheEntry.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | firefox-cache-forensics - FfFormat
 | URL: | https://code.google.com/archive/p/firefox-cache-forensics/wikis/FfFormat.wiki
 |===
 
