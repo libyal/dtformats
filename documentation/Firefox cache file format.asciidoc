@@ -194,9 +194,9 @@ Contains a POSIX timestamp
 Contains a POSIX timestamp
 | 20 | 4 | | Data size
 | 24 | 4 | | Key size +
-The size included the end-of-string character
+The size includes the end-of-string character
 | 28 | 4 | | Meta data size +
-The size included the end-of-string character
+The size includes the end-of-string character
 |===
 
 === Cache data file

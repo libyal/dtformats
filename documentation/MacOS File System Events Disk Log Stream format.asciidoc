@@ -40,6 +40,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | January 2018 | Initial version.
+| 0.0.2 | J.B. Metz | July 2018 | Additional information.
 |===
 
 :numbered:
@@ -74,7 +75,7 @@ The stream header is 12 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | "1SLD" +
 "2SLD" | Signature
-| 4 | 4 | | [yellow-background]*Unknown*
+| 4 | 4 | | [yellow-background]*Unknown (padding?)*
 | 8 | 4 | | stream size
 |===
 
@@ -115,34 +116,70 @@ See section: <<event_flags,Event flags>>
 
 === [[event_flags]]Event flags
 
+[NOTE]
+These are the litte-endian equivalents of the values observed in
+https://developer.apple.com/documentation/coreservices/core_services_enumerations/1455361-fseventstreameventflags
+
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000000 | kFSEventStreamEventFlagNone | Change in the directory at the specific path
-| 0x00000001 | kFSEventStreamEventFlagMustScanSubDirs | Must scan sub directories recursively
-| 0x00000002 | kFSEventStreamEventFlagUserDropped |
-| 0x00000004 | kFSEventStreamEventFlagKernelDropped |
-| 0x00000008 | kFSEventStreamEventFlagEventIdsWrapped |
-| 0x00000010 | kFSEventStreamEventFlagHistoryDone |
-| 0x00000020 | kFSEventStreamEventFlagRootChanged |
-| 0x00000040 | kFSEventStreamEventFlagMount |
-| 0x00000080 | kFSEventStreamEventFlagUnmount |
-| 0x00000100 | kFSEventStreamEventFlagItemCreated |
-| 0x00000200 | kFSEventStreamEventFlagItemRemoved |
-| 0x00000400 | kFSEventStreamEventFlagItemInodeMetaMod |
-| 0x00000800 | kFSEventStreamEventFlagItemRenamed |
-| 0x00001000 | kFSEventStreamEventFlagItemModified |
-| 0x00002000 | kFSEventStreamEventFlagItemFinderInfoMod |
-| 0x00004000 | kFSEventStreamEventFlagItemChangeOwner |
-| 0x00008000 | kFSEventStreamEventFlagItemXattrMod |
-| 0x00010000 | kFSEventStreamEventFlagItemIsFile |
-| 0x00020000 | kFSEventStreamEventFlagItemIsDir |
-| 0x00040000 | kFSEventStreamEventFlagItemIsSymlink |
-| 0x00080000 | kFSEventStreamEventFlagOwnEvent |
-| 0x00100000 | kFSEventStreamEventFlagItemIsHardlink |
-| 0x00200000 | kFSEventStreamEventFlagItemIsLastHardlink |
-| 0x00400000 | kFSEventStreamEventFlagItemCloned |
+| 0x00000001 | | Created
+| 0x00000002 | | Removed
+| 0x00000004 | | InodeMetadataModified
+| 0x00000008 | | Renamed
+| 0x00000010 | | Modified
+| 0x00000020 | | Exchange
+| 0x00000040 | | FinderInfoModified
+| 0x00000080 | | DirectoryCreated
+| 0x00000100 | | PermissionChanged
+| 0x00000200 | | ExtendedAttributeModified
+| 0x00000400 | | ExtendedAttributeRemoved
+| | |
+| 0x00001000 | | DocumentRevision
+| | |
+| 0x00004000 | | ItemCloned
+| | |
+| 0x00080000 | | LastHardLinkRemoved
+| 0x00100000 | | IsHardLink
+| | |
+| 0x00400000 | | IsSymbolicLink
+| 0x00800000 | | IsFile
+| 0x01000000 | | IsDirectory
+| 0x02000000 | | Mount
+| 0x04000000 | | Unmount
+| | |
+| 0x20000000 | | EndOfTransaction
 |===
+
+==== Notes
+
+[yellow-background]*Values taken from <sys/fsevents.h>*
+
+....
+#define FSE_CREATE_FILE          0
+#define FSE_DELETE               1
+#define FSE_STAT_CHANGED         2
+#define FSE_RENAME               3
+#define FSE_CONTENT_MODIFIED     4
+#define FSE_EXCHANGE             5
+#define FSE_FINDER_INFO_CHANGED  6
+#define FSE_CREATE_DIR           7
+#define FSE_CHOWN                8
+#define FSE_XATTR_MODIFIED       9
+#define FSE_XATTR_REMOVED       10
+#define FSE_DOCID_CREATED       11
+#define FSE_DOCID_CHANGED       12
+#define FSE_UNMOUNT_PENDING     13 // iOS-only: client must respond via FSEVENTS_UNMOUNT_PENDING_ACK
+#define FSE_CLONE               14
+
+FSE_CLONE + 13 == FSE_MODE_CLONE
+
+#define FSE_MODE_CLONE         (1 << 27)    // notification is for a clone
+#define FSE_TRUNCATED_PATH     (1 << 28)    // the path for this item had to be truncated
+#define FSE_REMOTE_DIR_EVENT   (1 << 29)    // this is a remotely generated directory-level granularity event
+#define FSE_MODE_LAST_HLINK    (1 << 30)    // link count == 0 on a hard-link delete 
+#define FSE_MODE_HLINK         (1 << 31)    // notification is for a hard-link
+....
 
 :numbered!:
 [appendix]
@@ -158,6 +195,11 @@ See section: <<event_flags,Event flags>>
 |===
 | Title: | FSEventStreamEventFlags
 | URL: | https://developer.apple.com/documentation/coreservices/1455361-fseventstreameventflags
+
+[cols="1,5",options="header"]
+|===
+| Title: | The Darwin Kernel (mirror)
+| URL: | https://github.com/apple/darwin-xnu/blob/master/bsd/sys/fsevents.h
 |===
 
 [cols="1,5",options="header"]
