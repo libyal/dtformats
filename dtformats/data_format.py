@@ -85,6 +85,33 @@ class BinaryDataFormat(object):
 
     self._DebugPrintValue(description, date_time_string)
 
+  def _DebugPrintStructureObject(self, structure_object, debug_info):
+    """Prints structure object debug information.
+
+    Args:
+      structure_object (object): structure object.
+      debug_info (list[tuple[str, str, int]]): debug information.
+    """
+    for attribute_name, description, value_format_callback in debug_info:
+      attribute_value = getattr(structure_object, attribute_name, None)
+      if attribute_value is None:
+        continue
+
+      # TODO: remove the need for this exception case.
+      if value_format_callback == '_FormatDataInHexadecimal':
+        self._DebugPrintData(description, attribute_value)
+        continue
+
+      value_format_function = None
+      if value_format_callback:
+        value_format_function = getattr(self, value_format_callback, None)
+      if value_format_function:
+        attribute_value = value_format_function(attribute_value)
+
+      self._DebugPrintValue(description, attribute_value)
+
+    self._DebugPrintText('\n')
+
   def _DebugPrintPosixTimeValue(self, description, value):
     """Prints a POSIX timestamp value for debugging.
 
@@ -189,6 +216,47 @@ class BinaryDataFormat(object):
 
     lines.extend(['', ''])
     return '\n'.join(lines)
+
+  def _FormatArrayOfIntegersAsDecimal(self, array_of_integers):
+    """Formats an array of integers as a decimal.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+
+    Returns:
+      str: array of integers formatted as decimal.
+    """
+    return ', '.join(['{0:d}'.format(integer) for integer in array_of_integers])
+
+  def _FormatIntegerAsDecimal(self, integer):
+    """Formats an integer as a decimal.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as decimal.
+    """
+    return '{0:d}'.format(integer)
+
+  def _FormatIntegerAsPosixTime(self, integer):
+    """Formats an integer as a POSIX date and time value.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as decimal.
+    """
+    if integer == 0:
+      return 'Not set (0)'
+
+    date_time = dfdatetime_posix_time.PosixTime(timestamp=integer)
+    date_time_string = date_time.CopyToDateTimeString()
+    if not date_time_string:
+      return '0x{08:x}'.format(integer)
+
+    return '{0:s} UTC'.format(date_time_string)
 
   def _FormatPackedIPv4Address(self, packed_ip_address):
     """Formats a packed IPv4 address as a human readable string.
@@ -445,6 +513,7 @@ class BinaryDataFile(BinaryDataFormat):
     self._file_object = None
     self._file_object_opened_in_object = False
     self._file_size = 0
+    self._path = None
 
   def Close(self):
     """Closes a binary data file.
@@ -459,6 +528,7 @@ class BinaryDataFile(BinaryDataFormat):
       self._file_object.close()
       self._file_object_opened_in_object = False
     self._file_object = None
+    self._path = None
 
   def Open(self, path):
     """Opens a binary data file.
@@ -477,6 +547,7 @@ class BinaryDataFile(BinaryDataFormat):
     file_object = open(path, 'rb')
 
     self._file_size = stat_object.st_size
+    self._path = path
 
     self.ReadFileObject(file_object)
 

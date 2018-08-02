@@ -57,7 +57,7 @@ The Firefox cache directory contains the multiple type of files:
 | Characteristics | Description
 | Byte order | big-endian
 | Date and time values | POSIX timestamp in UTC
-| Character strings |
+| Character strings | Character strings are ASCII encoded
 |===
 
 === [[cache1_location]]Cache location
@@ -99,6 +99,10 @@ It contains:
 * Cache map file header
 * An array of cache records (stored in 32 buckets)
 
+[yellow-background]*TODO is the file header followed by an array of cache
+records? In the sample files so far the cache map file is only 276 bytes of
+size. Presumably because data size is 0?*
+
 ==== File header
 
 The file header (nsDiskCacheHeader) is 276 bytes of size and consists of:
@@ -106,8 +110,10 @@ The file header (nsDiskCacheHeader) is 276 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | | Major format version
-| 2 | 2 | | Minor format version
+| 0 | 2 | | Major format version +
+See section: <<cache1_format_versions,Format versions>>
+| 2 | 2 | | Minor format version +
+See section: <<cache1_format_versions,Format versions>>
 | 4 | 4 | | Data size
 | 8 | 4 | | Number of entries +
 Contains a signed integer
@@ -115,7 +121,7 @@ Contains a signed integer
 | 16 | 4 | | Number of cache records
 Contains a signed integer
 | 20 | 32 x 4 = 128 | | Eviction rank array
-| 148 | 32 x 4 = 120 | | Bucket usage array
+| 148 | 32 x 4 = 128 | | Bucket usage array
 |===
 
 ==== [[cache1_format_versions]]Format versions
@@ -126,12 +132,12 @@ Contains a signed integer
 | 1.5 | | Mozilla 1.7
 | 1.6 | | Mozilla 1.8
 | | |
-| 1.8 | | Mozilla 1.8 (Firefox 2.#)
+| 1.8 | | Firefox 2.# (Mozilla 1.8)
 | | |
-| 1.11 | | Mozilla 1.9.1 (Firefox 3.5)
-| 1.12 | | Mozilla 1.9.2 (Firefox 3.6)
+| 1.11 | | Firefox 3.5 (Mozilla 1.9.1)
+| 1.12 | | Firefox 3.6 (Mozilla 1.9.2)
 | | |
-| 1.19 | | Mozilla 2.0 (Firefox 4.0)
+| 1.19 | | Firefox 4.0 (Mozilla 2.0)
 |===
 
 [NOTE]
@@ -208,6 +214,15 @@ The (separate) cache data file is named:
 
 Where `<hash number>`, `<type>`, `<generation number>` are placeholders for the corresponding values.
 
+==== Cache data file types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| d | | File that contains cached data
+| m | | File that contains cached metadata
+|===
+
 == Firefox cache version 2
 
 [yellow-background]*TODO: document Firefox cache version 2*
@@ -217,6 +232,198 @@ cache2/index
 cache2/doomed/*
 cache2/entries/*
 ....
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | big-endian
+| Date and time values | POSIX timestamp in UTC
+| Character strings | Character strings are ASCII encoded
+|===
+
+=== Cache index file
+
+==== Cache index header
+
+The cache index header (CacheIndexHeader) is 12 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Index version (sequence number)
+| 4 | 4 | | Last modification date and time
+| 8 | 4 | | Is dirty flag
+|===
+
+==== Cache index record
+
+The cache index header (CacheIndexHeader) is 12 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 20 | | Cache record hash +
+Contains a SHA-1 message digest
+| 20 | 4 | | [yellow-background]*Unknown (Frequency)*
+| 24 | 4 | | Expiration date and time +
+Contains a POSIX timestamp
+|===
+
+https://hg.mozilla.org/mozilla-central/annotate/f514ab5c4b5b/netwerk/cache2/CacheIndex.h#l53
+....
+struct CacheIndexRecord {
+    54 SHA1Sum::Hash mHash;
+    55 uint32_t      mFrecency;
+    56 uint32_t      mExpirationTime;
+    57 uint32_t      mAppId;
+    58
+    59 /*
+    60 *    1000 0000 0000 0000 0000 0000 0000 0000 : initialized
+    61 *    0100 0000 0000 0000 0000 0000 0000 0000 : anonymous
+    62 *    0010 0000 0000 0000 0000 0000 0000 0000 : inBrowser
+    63 *    0001 0000 0000 0000 0000 0000 0000 0000 : removed
+    64 *    0000 1000 0000 0000 0000 0000 0000 0000 : dirty
+    65 *    0000 0100 0000 0000 0000 0000 0000 0000 : fresh
+    66 *    0000 0011 0000 0000 0000 0000 0000 0000 : reserved
+    67 *    0000 0000 1111 1111 1111 1111 1111 1111 : file size (in kB)
+    68 */
+    69 uint32_t      mFlags;
+....
+
+https://dxr.mozilla.org/mozilla-central/source/netwerk/cache2/CacheIndex.h
+....
+00000000  00 00 00 05 5b 61 3f 86  00 00 00 00              |....[a?.....R/.6|
+
+mHash
+00000000                                       52 2f f0 36  |....[a?.....R/.6|
+00000010  65 1f ea 29 f2 27 bf b1  4b d9 34 17 5d db a6 2a  |e..).'..K.4.]..*|
+
+mFrecency
+00000020  3b 8d 9c 19                                       |;....9..^kK.....|
+
+mOriginAttrsHash (64-bit)
+00000020              da 39 a3 ee                           |;....9..^kK.....|
+00000020                           5e 6b 4b 0d              |;....9..^kK.....|
+
+mExpirationTime
+00000020                                       00 00 00 00  |;....9..^kK.....|
+
+mOnStartTime, mOnStopTime
+00000030  ff ff ff ff                                       |........$\..s.L.|
+
+mFlags
+00000030              80 00 00 03                           |........$\..s.L.|
+
+00000030                           24 5c ed a9 73 b4 4c 04  |........$\..s.L.|
+00000040  32 5e 8f 30 63 f7 59 6f  9c 88 f1 20 3b 8d 9c ba  |2^.0c.Yo... ;...|
+00000050  da 39 a3 ee 5e 6b 4b 0d  57 cb f1 1e ff ff ff ff  |.9..^kK.W.......|
+00000060  80 00 00 10 9b 45 ce 47  ee 0b 5d 54 8b fa 84 c6  |.....E.G..]T....|
+00000070  96 2b 40 49 09 05 44 b2  3f 56 f4 04 da 39 a3 ee  |.+@I..D.?V...9..|
+....
+
+....
+struct CacheIndexRecord {
+  SHA1Sum::Hash   mHash;
+  uint32_t        mFrecency;
+  OriginAttrsHash mOriginAttrsHash;
+  uint32_t        mExpirationTime;
+  uint16_t        mOnStartTime;
+  uint16_t        mOnStopTime;
+
+  /*
+   *    1000 0000 0000 0000 0000 0000 0000 0000 : initialized
+   *    0100 0000 0000 0000 0000 0000 0000 0000 : anonymous
+   *    0010 0000 0000 0000 0000 0000 0000 0000 : removed
+   *    0001 0000 0000 0000 0000 0000 0000 0000 : dirty
+   *    0000 1000 0000 0000 0000 0000 0000 0000 : fresh
+   *    0000 0100 0000 0000 0000 0000 0000 0000 : pinned
+   *    0000 0010 0000 0000 0000 0000 0000 0000 : has cached alt data
+   *    0000 0001 0000 0000 0000 0000 0000 0000 : reserved
+   *    0000 0000 1111 1111 1111 1111 1111 1111 : file size (in kB)
+   */
+  uint32_t        mFlags;
+....
+
+=== Cache file
+
+==== Cache file metadata header
+
+The cache file metadata header (CacheFileMetadataHeader) is 32 bytes of size
+and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Format version +
+See section: <<cache2_file_format_versions,Format versions>>
+| 4 | 4 | | Fetch count
+| 8 | 4 | | Last fetched date and time +
+Contains a POSIX timestamp
+| 12 | 4 | | Last modification date and time +
+Contains a POSIX timestamp
+| 16 | 4 | | [yellow-background]*Unknown (Frequency)*
+| 20 | 4 | | Expiration date and time +
+Contains a POSIX timestamp
+| 24 | 4 | | Key size +
+The size includes the end-of-string character
+| 28 | 4 | | Flags
+|===
+
+Version 3
+https://dxr.mozilla.org/mozilla-central/source/netwerk/cache2/CacheFileMetadata.h
+
+Version 2
+https://hg.mozilla.org/mozilla-central/annotate/80eff2b52d14/netwerk/cache2/CacheFileMetadata.h#l54
+
+....
+00000000  4e 31 cf 5a                                       |N1.Z........U...|
+
+00000000              00 00 00 01  00 00 00 01 55 ea c3 ff  |N1.Z........U...|
+00000010  55 ea c3 ff 3b 8d 9c 1a  55 eb 6c bf 00 00 00 e1  |U...;...U.l.....|
+00000020  3a 68 74 74 70 73 3a 2f  2f 77 77 77 2e 67 6f 6f  |:https://www.goo|
+
+class CacheFileMetadataHeader {
+  uint32_t        mVersion;
+  uint32_t        mFetchCount;
+  uint32_t        mLastFetched;
+  uint32_t        mLastModified;
+  uint32_t        mFrecency;
+  uint32_t        mExpirationTime;
+  uint32_t        mKeySize;
+  uint32_t        mFlags;
+
+Version 2
+47 uint32_t        mVersion;
+48 uint32_t        mFetchCount;
+49 uint32_t        mLastFetched;
+50 uint32_t        mLastModified;
+51 uint32_t        mFrecency;
+52 uint32_t        mExpirationTime;
+53 uint32_t        mKeySize;
+54 uint32_t        mFlags;
+
+Version 1	
+       uint32_t        mVersion;
+    18 uint32_t        mFetchCount;
+    19 uint32_t        mLastFetched;
+    20 uint32_t        mLastModified;
+    21 uint32_t        mExpirationTime;
+    22 uint32_t        mKeySize;
+    23 } CacheFileMetadataHeader;
+....
+
+==== [[cache2_file_format_versions]]Format versions
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | |
+| 2 | |
+| 3 | |
+|===
+
+[NOTE]
+The format version is defined in CacheFileMetadata.h
 
 :numbered!:
 [appendix]
@@ -248,8 +455,33 @@ cache2/entries/*
 
 [cols="1,5",options="header"]
 |===
+| Title: | mozilla-central/netwerk/cache2
+| URL: | https://dxr.mozilla.org/mozilla-central/source/netwerk/cache2
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | mozilla-central/netwerk/cache2/CacheIndex.h
+| URL: | https://dxr.mozilla.org/mozilla-central/source/netwerk/cache2/CacheIndex.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | mozilla-central/netwerk/cache2/CacheFileMetadata.h
+| URL: | https://dxr.mozilla.org/mozilla-central/source/netwerk/cache2/CacheFileMetadata.h
+|===
+
+[cols="1,5",options="header"]
+|===
 | Title: | firefox-cache-forensics - FfFormat
 | URL: | https://code.google.com/archive/p/firefox-cache-forensics/wikis/FfFormat.wiki
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | Firefox cache2 storage breakdown
+| Author(s): | J. Habben
+| URL: | https://www.guidancesoftware.com/blog/digital-forensics/2015/02/11/firefox-cache2-storage-breakdown
 |===
 
 [appendix]

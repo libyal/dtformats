@@ -1,7 +1,21 @@
 name: firefox_cache1
 type: format
-description: Mozilla Firefox version 1 cache file format
+description: Mozilla Firefox cache version 1 file format
 urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Firefox%20cache%20file%20format.asciidoc"]
+---
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: char
+type: integer
+attributes:
+  format: signed
+  size: 1
+  units: bytes
 ---
 name: uint16
 type: integer
@@ -44,11 +58,11 @@ members:
 - name: eviction_ranks
   type: sequence
   element_data_type: uint32
-  elements_data_size: 32
+  number_of_elements: 32
 - name: bucket_usage
   type: sequence
   element_data_type: uint32
-  elements_data_size: 32
+  number_of_elements: 32
 ---
 name: firefox_cache1_map_record
 type: structure
@@ -87,5 +101,14 @@ members:
   data_type: uint32
 - name: request_size
   data_type: uint32
-- name: info_size
+- name: information_size
   data_type: uint32
+- name: request
+  type: string
+  encoding: ascii
+  element_data_type: char
+  elements_data_size: firefox_cache1_entry.request_size
+- name: information
+  type: stream
+  element_data_type: byte
+  elements_data_size: firefox_cache1_entry.information_size
