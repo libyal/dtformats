@@ -1,0 +1,39 @@
+name: firefox_cache2
+type: format
+description: Mozilla Firefox cache version 2 file format
+urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Firefox%20cache%20file%20format.asciidoc"]
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint32be
+type: integer
+attributes:
+  byte_order: big-endian
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: firefox_cache2_file_metadata_header
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: format_version
+  data_type: uint32
+- name: fetch_count
+  data_type: int32
+- name: last_fetched_time
+  data_type: uint32
+- name: last_modified_time
+  data_type: uint32
+- name: frequency
+  data_type: uint32
+- name: expiration_time
+  data_type: uint32
+- name: key_size
+  data_type: uint32
