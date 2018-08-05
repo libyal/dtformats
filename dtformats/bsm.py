@@ -829,510 +829,303 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
   _TRAILER_TOKEN_SIGNATURE = 0xb105
 
-  def __init__(self, debug=False, output_writer=None):
-    """Initializes a Basic Security Module (BSM) event auditing file.
+  # AUT_ARG32 or AUT_ARG64 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_ARG = [
+      ('argument_index', 'Argument index', '_FormatIntegerAsDecimal'),
+      ('argument_name', 'Argument name', '_FormatIntegerAsHexadecimal8'),
+      ('argument_value_size', 'Argument value size', '_FormatIntegerAsDecimal'),
+      ('argument_value', 'Argument value', '_FormatString')]
+
+  # AUT_ATTR32 or AUT_ATTR64 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_ATTR = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
+      ('file_mode', 'File mode', '_FormatIntegerAsHexadecimal4'),
+      ('user_identifier', 'User identifier', '_FormatIntegerAsDecimal'),
+      ('group_identifier', 'Group identifier', '_FormatIntegerAsDecimal'),
+      ('file_system_identifier', 'File system identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('file_identifier', 'File identifier', '_FormatIntegerAsHexadecimal8'),
+      ('device', 'Device', '_FormatIntegerAsHexadecimal8')]
+
+  # AUT_DATA token data debug information.
+  # TODO: improve reading data
+  _DEBUG_INFO_TOKEN_DATA_DATA = [
+      ('data_format', 'Data format', '_FormatIntegerAsHexadecimal2'),
+      ('element_data_type', 'Element data type',
+       '_FormatIntegerAsHexadecimal2'),
+      ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
+      ('data', 'Data', '_FormatDataInHexadecimal')]
+
+  # AUT_EXIT, AUT_RETURN32, AUT_RETURN64 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_EXIT = [
+      ('status', 'Status', '_FormatIntegerAsHexadecimal8'),
+      ('return_value', 'Return value', '_FormatIntegerAsHexadecimal8')]
+
+  # AUT_HEADER32, AUT_HEADER64 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_HEADER = [
+      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
+      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
+      ('event_type', 'Event type', '_FormatIntegerAsEventType'),
+      ('modifier', 'Modifier', '_FormatIntegerAsHexadecimal4'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
+      ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal')]
+
+  # AUT_HEADER32_EX, AUT_HEADER64_EX token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_HEADER_EX = [
+      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
+      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
+      ('event_type', 'Event type', '_FormatIntegerAsEventType'),
+      ('modifier', 'Modifier', '_FormatIntegerAsHexadecimal4'),
+      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
+      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
+      ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal')]
+
+  # AUT_IN_ADDR token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_IN_ADDR = [
+      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPv4Address')]
+
+  # AUT_IN_ADDR_EX token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_IN_ADDR_EX = [
+      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
+      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress')]
+
+  # AUT_IP token data debug information.
+  # TODO: add remaining IPv4 header information.
+  _DEBUG_INFO_TOKEN_DATA_IP = [
+      ('source_ip_address', 'Source IP address',
+       '_FormatArrayOfIntegersAsIPv4Address'),
+      ('destination_ip_address', 'Destination IP address',
+       '_FormatArrayOfIntegersAsIPv4Address')]
+
+  # AUT_IPC token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_IPC = [
+      ('object_type', 'Object type', '_FormatIntegerAsHexadecimal2'),
+      ('object_identifier', 'Object identifier',
+       '_FormatIntegerAsHexadecimal8')]
+
+  # AUT_IPORT token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_IPORT = [
+      ('port_number', 'Port number', '_FormatIntegerAsDecimal')]
+
+  # AUT_OPAQUE token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_OPAQUE = [
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('data', 'Data', '_FormatDataInHexadecimal')]
+
+  # AUT_OTHER_FILE32 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_OTHER_FILE32 = [
+      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
+      ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal'),
+      ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
+      ('name', 'Name', '_FormatString')]
+
+  # AUT_PATH token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_PATH = [
+      ('path_size', 'Path size', '_FormatIntegerAsDecimal'),
+      ('path', 'Path', '_FormatString')]
+
+  # AUT_SEQ token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_SEQ = [
+      ('sequence_number', 'Sequence number', '_FormatIntegerAsDecimal')]
+
+  # AUT_SOCKET_EX token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_SOCKET_EX = [
+      ('socket_domain', 'Socket domain', '_FormatIntegerAsHexadecimal4'),
+      ('socket_type', 'Socket type', '_FormatIntegerAsHexadecimal4'),
+      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
+      ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
+      ('local_ip_address', 'Local IP address',
+       '_FormatArrayOfIntegersAsIPAddress'),
+      ('remote_port', 'Remote port', '_FormatIntegerAsDecimal'),
+      ('remote_ip_address', 'Remote IP address',
+       '_FormatArrayOfIntegersAsIPAddress')]
+
+  # AUT_SOCKINET32 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_SOCKINET32 = [
+      ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
+      ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
+      ('local_ip_address', 'Local IP address',
+       '_FormatArrayOfIntegersAsIPv4Address')]
+
+  # AUT_SOCKINET64 token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_SOCKINET64 = [
+      ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
+      ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
+      ('local_ip_address', 'Local IP address',
+       '_FormatArrayOfIntegersAsIPv6Address')]
+
+  # AUT_SOCKUNIX token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_SOCKUNIX = [
+      ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
+      ('socket_path', 'Socket path', None)]
+
+  # AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32 and AUT_PROCESS64 token data
+  # debug information.
+  _DEBUG_INFO_TOKEN_DATA_SUBJECT = [
+      ('audit_user_identifier', 'Audit user identifier',
+       '_FormatIntegerAsDecimal'),
+      ('effective_user_identifier', 'Effective user identifier',
+       '_FormatIntegerAsDecimal'),
+      ('effective_group_identifier', 'Effective group identifier',
+       '_FormatIntegerAsDecimal'),
+      ('real_user_identifier', 'Real user identifier',
+       '_FormatIntegerAsDecimal'),
+      ('real_group_identifier', 'Real group identifier',
+       '_FormatIntegerAsDecimal'),
+      ('process_identifier', 'Process identifier', '_FormatIntegerAsDecimal'),
+      ('session_identifier', 'Session identifier', '_FormatIntegerAsDecimal'),
+      ('terminal_port', 'Terminal port', '_FormatIntegerAsDecimal'),
+      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPv4Address')]
+
+  # AUT_SUBJECT32_EX, AUT_SUBJECT64_EX, AUT_PROCESS32_EX and AUT_PROCESS64_EX
+  # token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX = [
+      ('audit_user_identifier', 'Audit user identifier',
+       '_FormatIntegerAsDecimal'),
+      ('effective_user_identifier', 'Effective user identifier',
+       '_FormatIntegerAsDecimal'),
+      ('effective_group_identifier', 'Effective group identifier',
+       '_FormatIntegerAsDecimal'),
+      ('real_user_identifier', 'Real user identifier',
+       '_FormatIntegerAsDecimal'),
+      ('real_group_identifier', 'Real group identifier',
+       '_FormatIntegerAsDecimal'),
+      ('process_identifier', 'Process identifier', '_FormatIntegerAsDecimal'),
+      ('session_identifier', 'Session identifier', '_FormatIntegerAsDecimal'),
+      ('terminal_port', 'Terminal port', '_FormatIntegerAsDecimal'),
+      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
+      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress')]
+
+  # AUT_TEXT token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_TEXT = [
+      ('text_size', 'Text size', '_FormatIntegerAsDecimal'),
+      ('text', 'Text', '_FormatString')]
+
+  # AUT_TRAILER token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_TRAILER = [
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal4'),
+      ('record_size', 'Record size', '_FormatIntegerAsDecimal')]
+
+  # AUT_ZONENAME token data debug information.
+  _DEBUG_INFO_TOKEN_DATA_ZONENAME = [
+      ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
+      ('name', 'Name', '_FormatString')]
+
+  # TODO: implement and add debug info for token type 0x32
+  _DEBUG_INFO_TOKEN_DATA = {
+      0x11: _DEBUG_INFO_TOKEN_DATA_OTHER_FILE32,
+      0x13: _DEBUG_INFO_TOKEN_DATA_TRAILER,
+      0x14: _DEBUG_INFO_TOKEN_DATA_HEADER,
+      0x15: _DEBUG_INFO_TOKEN_DATA_HEADER_EX,
+      0x21: _DEBUG_INFO_TOKEN_DATA_DATA,
+      0x22: _DEBUG_INFO_TOKEN_DATA_IPC,
+      0x23: _DEBUG_INFO_TOKEN_DATA_PATH,
+      0x24: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
+      0x26: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
+      0x27: _DEBUG_INFO_TOKEN_DATA_EXIT,
+      0x28: _DEBUG_INFO_TOKEN_DATA_TEXT,
+      0x29: _DEBUG_INFO_TOKEN_DATA_OPAQUE,
+      0x2a: _DEBUG_INFO_TOKEN_DATA_IN_ADDR,
+      0x2b: _DEBUG_INFO_TOKEN_DATA_IP,
+      0x2c: _DEBUG_INFO_TOKEN_DATA_IPORT,
+      0x2d: _DEBUG_INFO_TOKEN_DATA_ARG,
+      0x2f: _DEBUG_INFO_TOKEN_DATA_SEQ,
+      0x3e: _DEBUG_INFO_TOKEN_DATA_ATTR,
+      0x52: _DEBUG_INFO_TOKEN_DATA_EXIT,
+      0x60: _DEBUG_INFO_TOKEN_DATA_ZONENAME,
+      0x71: _DEBUG_INFO_TOKEN_DATA_ARG,
+      0x72: _DEBUG_INFO_TOKEN_DATA_EXIT,
+      0x73: _DEBUG_INFO_TOKEN_DATA_ATTR,
+      0x74: _DEBUG_INFO_TOKEN_DATA_HEADER,
+      0x75: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
+      0x77: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
+      0x79: _DEBUG_INFO_TOKEN_DATA_HEADER_EX,
+      0x7a: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
+      0x7b: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
+      0x7c: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
+      0x7d: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
+      0x7e: _DEBUG_INFO_TOKEN_DATA_IN_ADDR_EX,
+      0x7f: _DEBUG_INFO_TOKEN_DATA_SOCKET_EX,
+      0x80: _DEBUG_INFO_TOKEN_DATA_SOCKINET32,
+      0x81: _DEBUG_INFO_TOKEN_DATA_SOCKINET64,
+      0x82: _DEBUG_INFO_TOKEN_DATA_SOCKUNIX,
+  }
+
+  def _FormatArrayOfIntegersAsIPAddress(self, array_of_integers):
+    """Formats an array of integers as an IP address.
 
     Args:
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(BSMEventAuditingFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+      array_of_integers (list[int]): array of integers.
 
-  def _DebugPrintTokenDataArg(self, token_data):
-    """Prints AUT_ARG32 or AUT_ARG64 token data debug information.
+    Returns:
+      str: array of integers formatted as an IP address or None if the number
+          of integers in the sequence is not supported.
+    """
+    number_of_integers = len(array_of_integers)
+
+    if number_of_integers == 4:
+      return self._FormatArrayOfIntegersAsIPv4Address(array_of_integers)
+    elif number_of_integers == 16:
+      return self._FormatArrayOfIntegersAsIPv6Address(array_of_integers)
+
+    return None
+
+  def _FormatIntegerAsEventType(self, integer):
+    """Formats an integer as an event type.
 
     Args:
-      token_data (bsm_token_data_arg32|bsm_token_data_arg64): token data.
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as an event type .
     """
-    self._DebugPrintDecimalValue('Argument index', token_data.argument_index)
+    event_type_string = self._EVENT_TYPES.get(integer, 'UNKNOWN')
+    return '0x{0:04x} ({1:s})'.format(integer, event_type_string)
 
-    value_string = '0x{0:08x}'.format(token_data.argument_name)
-    self._DebugPrintValue('Argument name', value_string)
-
-    self._DebugPrintDecimalValue(
-        'Argument value size', token_data.argument_value_size)
-
-    self._DebugPrintValue(
-        'Argument value', token_data.argument_value.rstrip('\x00'))
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataAttr(self, token_data):
-    """Prints AUT_ATTR32 or AUT_ATTR64 token data debug information.
+  def _FormatIntegerAsNetType(self, integer):
+    """Formats an integer as a net type.
 
     Args:
-      token_data (bsm_token_data_attr32|bsm_token_data_attr64): token data.
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a net type .
     """
-    value_string = '0x{0:04x}'.format(token_data.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
+    if integer not in (4, 16):
+      raise errors.ParseError('Unsupported net type: {0:d}'.format(integer))
 
-    value_string = '0x{0:04x}'.format(token_data.file_mode)
-    self._DebugPrintValue('File mode', value_string)
+    # TODO: print net type as descriptive string.
+    return self._FormatIntegerAsDecimal(integer)
 
-    self._DebugPrintDecimalValue('User identifier', token_data.user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Group identifier', token_data.group_identifier)
-
-    value_string = '0x{0:08x}'.format(token_data.file_system_identifier)
-    self._DebugPrintValue('File system identifier', value_string)
-
-    value_string = '0x{0:08x}'.format(token_data.file_identifier)
-    self._DebugPrintValue('File identifier', value_string)
-
-    value_string = '0x{0:08x}'.format(token_data.device)
-    self._DebugPrintValue('Device', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataData(self, token_data):
-    """Prints AUT_DATA token data debug information.
+  def _FormatString(self, string):
+    """Formats a string.
 
     Args:
-      token_data (bsm_token_data_data): token data.
+      string (str): string.
+
+    Returns:
+      str: formatted string.
     """
-    value_string = '0x{0:02x}'.format(token_data.data_format)
-    self._DebugPrintValue('Data format', value_string)
+    return string.rstrip('\x00')
 
-    value_string = '0x{0:02x}'.format(token_data.element_data_type)
-    self._DebugPrintValue('Element data type', value_string)
-
-    self._DebugPrintValue('Number of elements', token_data.number_of_elements)
-
-    # TODO: improve reading data
-    self._DebugPrintData('Data', token_data.data)
-
-  def _DebugPrintTokenDataExit(self, token_data):
-    """Prints AUT_EXIT, AUT_RETURN32, AUT_RETURN64 token data debug information.
-
-    Args:
-      token_data (bsm_token_data_exit|bsm_token_data_return32|
-                  bsm_token_data_return64): token data.
-    """
-    value_string = '0x{0:08x}'.format(token_data.status)
-    self._DebugPrintValue('Status', value_string)
-
-    value_string = '0x{0:08x}'.format(token_data.return_value)
-    self._DebugPrintValue('Return value', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataHeader(self, token_data):
-    """Prints AUT_HEADER32, AUT_HEADER64 token data debug information.
-
-    Args:
-      token_data (bsm_token_data_header32|bsm_token_data_header64): token data.
-    """
-    self._DebugPrintDecimalValue('Record size', token_data.record_size)
-
-    self._DebugPrintDecimalValue('Format version', token_data.format_version)
-
-    event_type_string = self._EVENT_TYPES.get(
-        token_data.event_type, 'UNKNOWN')
-    value_string = '0x{0:04x} ({1:s})'.format(
-        token_data.event_type, event_type_string)
-    self._DebugPrintValue('Event type', value_string)
-
-    value_string = '0x{0:04x}'.format(token_data.modifier)
-    self._DebugPrintValue('Modifier', value_string)
-
-    self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
-
-    self._DebugPrintDecimalValue('Microseconds', token_data.microseconds)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataHeaderEx(self, token_data):
-    """Prints AUT_HEADER32_EX, AUT_HEADER64_EX token data debug information.
-
-    Args:
-      token_data (bsm_token_data_header32_ex|bsm_token_data_header64_ex): token
-          data.
-
-    Raises:
-      ParseError: if the net type is not supported.
-    """
-    self._DebugPrintDecimalValue('Record size', token_data.record_size)
-
-    self._DebugPrintDecimalValue('Format version', token_data.format_version)
-
-    event_type_string = self._EVENT_TYPES.get(
-        token_data.event_type, 'UNKNOWN')
-    value_string = '0x{0:04x} ({1:s})'.format(
-        token_data.event_type, event_type_string)
-    self._DebugPrintValue('Event type', value_string)
-
-    value_string = '0x{0:04x}'.format(token_data.modifier)
-    self._DebugPrintValue('Modifier', value_string)
-
-    self._DebugPrintDecimalValue('Net type', token_data.net_type)
-
-    if token_data.net_type not in (4, 16):
-      raise errors.ParseError('Unsupported net type: {0:d}'.format(
-          token_data.net_type))
-
-    if token_data.net_type == 4:
-      value_string = self._FormatPackedIPv4Address(token_data.ip_address)
-    elif token_data.net_type == 16:
-      value_string = self._FormatPackedIPv6Address(token_data.ip_address)
-    self._DebugPrintValue('IP address', value_string)
-
-    self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
-
-    self._DebugPrintDecimalValue('Microseconds', token_data.microseconds)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataInAddr(self, token_data):
-    """Prints AUT_IN_ADDR token data debug information.
-
-    Args:
-      token_data (bsm_token_data_in_addr): token data.
-    """
-    value_string = self._FormatPackedIPv4Address(token_data.ip_address)
-    self._DebugPrintValue('IP address', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataInAddrEx(self, token_data):
-    """Prints AUT_IN_ADDR_EX token data debug information.
-
-    Args:
-      token_data (bsm_token_data_in_addr_ex): token data.
-    """
-    self._DebugPrintDecimalValue('Net type', token_data.net_type)
-
-    if token_data.net_type == 4:
-      value_string = self._FormatPackedIPv4Address(token_data.ip_address)
-    elif token_data.net_type == 16:
-      value_string = self._FormatPackedIPv6Address(token_data.ip_address)
-    self._DebugPrintValue('IP address', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataIp(self, token_data):
-    """Prints AUT_IP token data debug information.
-
-    Args:
-      token_data (bsm_token_data_ip): token data.
-    """
-    # TODO: add remaining IPv4 header information.
-
-    value_string = self._FormatPackedIPv4Address(token_data.source_ip_address)
-    self._DebugPrintValue('Source IP address', value_string)
-
-    value_string = self._FormatPackedIPv4Address(
-        token_data.destination_ip_address)
-    self._DebugPrintValue('Destination IP address', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataIpc(self, token_data):
-    """Prints AUT_IP token data debug information.
-
-    Args:
-      token_data (bsm_token_data_ipc): token data.
-    """
-    value_string = '0x{0:02x}'.format(token_data.object_type)
-    self._DebugPrintValue('Object type', value_string)
-
-    value_string = '0x{0:08x}'.format(token_data.object_identifier)
-    self._DebugPrintValue('Object identifier', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataIport(self, token_data):
-    """Prints AUT_IN_IPORT token data debug information.
-
-    Args:
-      token_data (bsm_token_data_iport): token data.
-    """
-    self._DebugPrintDecimalValue('Port number', token_data.port_number)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataOpaque(self, token_data):
-    """Prints AUT_OPAQUE token data debug information.
-
-    Args:
-      token_data (bsm_token_data_opaque): token data.
-    """
-    self._DebugPrintDecimalValue('Data size', token_data.data_size)
-
-    self._DebugPrintData('Data', token_data.data)
-
-  def _DebugPrintTokenDataOtherFile32(self, token_data):
-    """Prints AUT_OTHER_FILE32 token data debug information.
-
-    Args:
-      token_data (bsm_token_data_other_file32): token data.
-    """
-    self._DebugPrintPosixTimeValue('Timestamp', token_data.timestamp)
-
-    self._DebugPrintDecimalValue('Microseconds', token_data.microseconds)
-
-    self._DebugPrintDecimalValue('Name size', token_data.name_size)
-
-    self._DebugPrintValue('Name', token_data.name.rstrip('\x00'))
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataPath(self, token_data):
-    """Prints AUT_PATH token data debug information.
-
-    Args:
-      token_data (bsm_token_data_path): token data.
-    """
-    self._DebugPrintDecimalValue('Path size', token_data.path_size)
-
-    self._DebugPrintValue('Path', token_data.path.rstrip('\x00'))
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSeq(self, token_data):
-    """Prints AUT_IN_SEQ token data debug information.
-
-    Args:
-      token_data (bsm_token_data_seq): token data.
-    """
-    self._DebugPrintDecimalValue('Sequence number', token_data.sequence_number)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSocketEx(self, token_data):
-    """Prints AUT_SOCKET_EX token data debug information.
-
-    Args:
-      token_data (bsm_token_data_socket_ex): token data.
-
-    Raises:
-      ParseError: if the IP type is not supported.
-    """
-    value_string = '0x{0:04x}'.format(token_data.socket_domain)
-    self._DebugPrintValue('Socket domain', value_string)
-
-    value_string = '0x{0:04x}'.format(token_data.socket_type)
-    self._DebugPrintValue('Socket type', value_string)
-
-    self._DebugPrintDecimalValue('Net type', token_data.net_type)
-
-    self._DebugPrintDecimalValue('Local port', token_data.local_port)
-
-    if token_data.net_type == 4:
-      value_string = self._FormatPackedIPv4Address(token_data.local_ip_address)
-    elif token_data.net_type == 16:
-      value_string = self._FormatPackedIPv6Address(token_data.local_ip_address)
-    self._DebugPrintValue('Local IP address', value_string)
-
-    self._DebugPrintDecimalValue('Remote port', token_data.remote_port)
-
-    if token_data.net_type == 4:
-      value_string = self._FormatPackedIPv4Address(token_data.remote_ip_address)
-    elif token_data.net_type == 16:
-      value_string = self._FormatPackedIPv6Address(token_data.remote_ip_address)
-    self._DebugPrintValue('Remote IP address', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSockInet32(self, token_data):
-    """Prints AUT_SOCKINET32 token data debug information.
-
-    Args:
-      token_data (bsm_token_data_sockinet32): token data.
-
-    Raises:
-      ParseError: if the IP type is not supported.
-    """
-    value_string = '0x{0:04x}'.format(token_data.socket_family)
-    self._DebugPrintValue('Socket family', value_string)
-
-    self._DebugPrintDecimalValue('Local port', token_data.local_port)
-
-    value_string = self._FormatPackedIPv4Address(token_data.local_ip_address)
-    self._DebugPrintValue('Local IP address', token_data.socket_path)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSockInet64(self, token_data):
-    """Prints AUT_SOCKINET64 token data debug information.
-
-    Args:
-      token_data (bsm_token_data_sockinet64): token data.
-
-    Raises:
-      ParseError: if the IP type is not supported.
-    """
-    value_string = '0x{0:04x}'.format(token_data.socket_family)
-    self._DebugPrintValue('Socket family', value_string)
-
-    self._DebugPrintDecimalValue('Local port', token_data.local_port)
-
-    value_string = self._FormatPackedIPv6Address(token_data.local_ip_address)
-    self._DebugPrintValue('Local IP address', token_data.socket_path)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSockUnix(self, token_data):
-    """Prints AUT_SOCKUNIX token data debug information.
-
-    Args:
-      token_data (bsm_token_data_sockunix): token data.
-
-    Raises:
-      ParseError: if the IP type is not supported.
-    """
-    value_string = '0x{0:04x}'.format(token_data.socket_family)
-    self._DebugPrintValue('Socket family', value_string)
-
-    self._DebugPrintValue('Socket path', token_data.socket_path)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSubject(self, token_data):
-    """Prints AUT_SUBJECT##, AUT_PROCESS## token data debug information.
-
-    This method supports the tokens: AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32
-    and AUT_PROCESS64.
-
-    Args:
-      token_data (bsm_token_data_subject32|bsm_token_data_subject64): token
-          data.
-    """
-    self._DebugPrintDecimalValue(
-        'Audit user identifier (UID)', token_data.audit_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Effective user identifier (UID)', token_data.effective_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Effective group identifier (GID)',
-        token_data.effective_group_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Real user identifier (UID)', token_data.real_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Real group identifier (GID)', token_data.real_group_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Process identifier (PID)', token_data.process_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Session identifier', token_data.session_identifier)
-
-    self._DebugPrintDecimalValue('Terminal port', token_data.terminal_port)
-
-    value_string = self._FormatPackedIPv4Address(token_data.ip_address)
-    self._DebugPrintValue('IP address', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataSubjectEx(self, token_data):
-    """Prints AUT_SUBJECT##_EX, AUT_PROCESS##_EX token data debug information.
-
-    This method supports the tokens: AUT_SUBJECT32_EX, AUT_SUBJECT64_EX,
-    AUT_PROCESS32_EX and AUT_PROCESS64_EX.
-
-    Args:
-      token_data (bsm_token_data_subject32_ex|bsm_token_data_subject64_ex):
-          token data.
-
-    Raises:
-      ParseError: if the net type is not supported.
-    """
-    self._DebugPrintDecimalValue(
-        'Audit user identifier (UID)', token_data.audit_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Effective user identifier (UID)', token_data.effective_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Effective group identifier (GID)',
-        token_data.effective_group_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Real user identifier (UID)', token_data.real_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Real group identifier (GID)', token_data.real_group_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Process identifier (PID)', token_data.process_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Session identifier', token_data.session_identifier)
-
-    self._DebugPrintDecimalValue('Terminal port', token_data.terminal_port)
-
-    self._DebugPrintDecimalValue('Net type', token_data.net_type)
-
-    if token_data.net_type not in (4, 16):
-      raise errors.ParseError('Unsupported net type: {0:d}'.format(
-          token_data.net_type))
-
-    if token_data.net_type == 4:
-      value_string = self._FormatPackedIPv4Address(token_data.ip_address)
-    elif token_data.net_type == 16:
-      value_string = self._FormatPackedIPv6Address(token_data.ip_address)
-    self._DebugPrintValue('IP address', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataText(self, token_data):
-    """Prints AUT_TEXT token data debug information.
-
-    Args:
-      token_data (bsm_token_data_text): token data.
-    """
-    self._DebugPrintDecimalValue('Text size', token_data.text_size)
-
-    self._DebugPrintValue('Text', token_data.text.rstrip('\x00'))
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataTrailer(self, token_data):
-    """Prints AUT_TRAILER token data debug information.
-
-    Args:
-      token_data (bsm_token_data_trailer): token data.
-    """
-    value_string = '0x{0:04x}'.format(token_data.signature)
-    self._DebugPrintValue('Signature', value_string)
-
-    self._DebugPrintDecimalValue('Record size', token_data.record_size)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTokenDataZonename(self, token_data):
-    """Prints AUT_ZONENAME token data debug information.
-
-    Args:
-      token_data (bsm_token_data_zonename): token data.
-    """
-    self._DebugPrintDecimalValue('Name size', token_data.name_size)
-
-    self._DebugPrintValue('Name', token_data.name.rstrip('\x00'))
-
-    self._DebugPrintText('\n')
-
-  def _ReadRecord(self, file_object):
+  def _ReadRecord(self, file_object, file_offset):
     """Reads an event record.
 
     Args:
       file_object (file): file-like object.
+      file_offset (int): offset of the token relative to the start of
+          the file-like object.
 
     Raises:
       ParseError: if the event record cannot be read.
     """
-    file_offset = file_object.tell()
     token_type, token_data = self._ReadToken(file_object, file_offset)
 
     if self._debug:
-      if token_type == (0x14, 0x74):
-        self._DebugPrintTokenDataHeader(token_data)
-      elif token_type == (0x15, 0x79):
-        self._DebugPrintTokenDataHeaderEx(token_data)
+      debug_information = self._DEBUG_INFO_TOKEN_DATA.get(token_type, None)
+      if debug_information:
+        self._DebugPrintStructureObject(token_data, debug_information)
 
     if token_type not in self._HEADER_TOKEN_TYPES:
       raise errors.ParseError(
@@ -1356,53 +1149,9 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       file_offset = file_object.tell()
 
       if self._debug:
-        if token_type == 0x11:
-          self._DebugPrintTokenDataOtherFile32(token_data)
-        elif token_type == 0x13:
-          self._DebugPrintTokenDataTrailer(token_data)
-        elif token_type == 0x21:
-          self._DebugPrintTokenDataData(token_data)
-        elif token_type == 0x22:
-          self._DebugPrintTokenDataIpc(token_data)
-        elif token_type == 0x23:
-          self._DebugPrintTokenDataPath(token_data)
-        elif token_type in (0x24, 0x26, 0x75, 0x77):
-          self._DebugPrintTokenDataSubject(token_data)
-        elif token_type in (0x27, 0x52, 0x72):
-          self._DebugPrintTokenDataExit(token_data)
-        elif token_type == 0x28:
-          self._DebugPrintTokenDataText(token_data)
-        elif token_type == 0x29:
-          self._DebugPrintTokenDataOpaque(token_data)
-        elif token_type == 0x2a:
-          self._DebugPrintTokenDataInAddr(token_data)
-        elif token_type == 0x2b:
-          self._DebugPrintTokenDataIp(token_data)
-        elif token_type == 0x2c:
-          self._DebugPrintTokenDataIport(token_data)
-        elif token_type in (0x2d, 0x71):
-          self._DebugPrintTokenDataArg(token_data)
-        elif token_type == 0x2f:
-          self._DebugPrintTokenDataSeq(token_data)
-        elif token_type == 0x32:
-          # TODO: implement
-          pass
-        elif token_type in (0x3e, 0x73):
-          self._DebugPrintTokenDataAttr(token_data)
-        elif token_type == 0x60:
-          self._DebugPrintTokenDataZonename(token_data)
-        elif token_type in (0x7a, 0x7b, 0x7c, 0x7d):
-          self._DebugPrintTokenDataSubjectEx(token_data)
-        elif token_type == 0x7e:
-          self._DebugPrintTokenDataInAddrEx(token_data)
-        elif token_type == 0x7f:
-          self._DebugPrintTokenDataSocketEx(token_data)
-        elif token_type == 0x80:
-          self._DebugPrintTokenDataSockInet32(token_data)
-        elif token_type == 0x81:
-          self._DebugPrintTokenDataSockInet64(token_data)
-        elif token_type == 0x82:
-          self._DebugPrintTokenDataSockUnix(token_data)
+        debug_information = self._DEBUG_INFO_TOKEN_DATA.get(token_type, None)
+        if debug_information:
+          self._DebugPrintStructureObject(token_data, debug_information)
 
       if token_type == self._TRAILER_TOKEN_TYPE:
         break
@@ -1459,5 +1208,5 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
     while file_offset < self._file_size:
-      self._ReadRecord(file_object)
+      self._ReadRecord(file_object, file_offset)
       file_offset = file_object.tell()

@@ -23,8 +23,8 @@ class CacheMapFile(data_format.BinaryDataFile):
       ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
       ('is_dirty_flag', 'Is dirty flag', '_FormatIntegerAsDecimal'),
       ('number_of_records', 'Number of records', '_FormatIntegerAsDecimal'),
-      ('eviction_ranks', 'Eviction ranks', '_FormatArrayOfIntegersAsDecimal'),
-      ('bucket_usage', 'Bucket usage', '_FormatArrayOfIntegersAsDecimal')]
+      ('eviction_ranks', 'Eviction ranks', '_FormatArrayOfIntegersAsDecimals'),
+      ('bucket_usage', 'Bucket usage', '_FormatArrayOfIntegersAsDecimals')]
 
   _DEBUG_INFO_RECORD = [
       ('hash_number', 'Hash number', '_FormatIntegerAsDecimal'),

@@ -208,7 +208,7 @@ class DataBlockFile(data_format.BinaryDataFile):
   SIGNATURE = 0xc104cac3
 
   _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal'),
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
       ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
       ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
       ('file_number', 'File number', '_FormatIntegerAsDecimal'),
@@ -218,19 +218,19 @@ class DataBlockFile(data_format.BinaryDataFile):
       ('maximum_number_of_entries', 'Maximum number of entries',
        '_FormatIntegerAsDecimal'),
       ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('empty', 'Empty', '_FormatArrayOfIntegersAsDecimal'),
-      ('hints', 'Hints', '_FormatArrayOfIntegersAsDecimal'),
-      ('updating', 'Updating', '_FormatIntegerAsHexadecimal'),
-      ('user', 'User', '_FormatArrayOfIntegersAsDecimal')]
+      ('empty', 'Empty', '_FormatArrayOfIntegersAsDecimals'),
+      ('hints', 'Hints', '_FormatArrayOfIntegersAsDecimals'),
+      ('updating', 'Updating', '_FormatIntegerAsHexadecimal8'),
+      ('user', 'User', '_FormatArrayOfIntegersAsDecimals')]
 
   _DEBUG_INFO_CACHE_ENTRY = [
-      ('hash', 'Hash', '_FormatIntegerAsHexadecimal'),
+      ('hash', 'Hash', '_FormatIntegerAsHexadecimal8'),
       ('next_address', 'Next address', '_FormatIntegerAsCacheAddress'),
       ('rankings_node_address', 'Rankings node address',
        '_FormatIntegerAsCacheAddress'),
       ('reuse_count', 'Reuse count', '_FormatIntegerAsDecimal'),
       ('refetch_count', 'Refetch count', '_FormatIntegerAsDecimal'),
-      ('state', 'State', '_FormatIntegerAsHexadecimal'),
+      ('state', 'State', '_FormatIntegerAsHexadecimal8'),
       ('creation_time', 'Creation time', '_FormatIntegerAsTimestamp')]
 
   def __init__(self, debug=False, output_writer=None):
@@ -463,18 +463,18 @@ class IndexFile(data_format.BinaryDataFile):
   _DEFINITION_FILE = 'chrome_cache.yaml'
 
   _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal'),
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
       ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
       ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
       ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
       ('stored_data_size', 'Stored data size', '_FormatIntegerAsDecimal'),
       ('last_created_file_number', 'Last created file number',
        '_FormatIntegerAsDataStreamFilename'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
       ('table_size', 'Table size', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
       ('creation_time', 'Creation time', '_FormatIntegerAsTimestamp')]
 
   SIGNATURE = 0xc103cac3

@@ -21,20 +21,20 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       ('signature', 'Signature', '_FormatStreamAsSignature'),
       ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
       ('first_log_entry_offset', 'First log entry offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('creation_time', 'Creation time', '_FormatIntegerAsPosixTime'),
       ('cache_size', 'Cache size', '_FormatIntegerAsDecimal'),
       ('last_log_entry_offset', 'Last log entry offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('unknown1', 'Unknown1', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_RECORD = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
       ('next_record_offset', 'Next record offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('message_identifier', 'Message identifier',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('written_time', 'Written time', '_FormatIntegerAsPosixTime'),
       ('written_time_nanoseconds', 'Written time nanoseconds',
        '_FormatIntegerAsDecimal'),
@@ -53,22 +53,22 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       ('reference_process_identifier', 'Reference process identifier (PID)',
        '_FormatIntegerAsDecimal'),
       ('hostname_string_offset', 'Hostname string offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('sender_string_offset', 'Sender string offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('facility_string_offset', 'Facility string offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('message_string_offset', 'Message string offset',
-       '_FormatIntegerAsHexadecimal')]
+       '_FormatIntegerAsHexadecimal8')]
 
   _DEBUG_INFO_RECORD_EXTRA_FIELD = [
       ('name_string_offset', 'Name string offset',
-       '_FormatIntegerAsHexadecimal'),
+       '_FormatIntegerAsHexadecimal8'),
       ('value_string_offset', 'Value string offset',
-       '_FormatIntegerAsHexadecimal')]
+       '_FormatIntegerAsHexadecimal8')]
 
   _DEBUG_INFO_RECORD_STRING = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
       ('string_size', 'String size', '_FormatIntegerAsDecimal'),
       ('string', 'String', '_FormatString')]
 

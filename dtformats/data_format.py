@@ -217,16 +217,50 @@ class BinaryDataFormat(object):
     lines.extend(['', ''])
     return '\n'.join(lines)
 
-  def _FormatArrayOfIntegersAsDecimal(self, array_of_integers):
-    """Formats an array of integers as a decimal.
+  def _FormatArrayOfIntegersAsDecimals(self, array_of_integers):
+    """Formats an array of integers as decimals.
 
     Args:
       array_of_integers (list[int]): array of integers.
 
     Returns:
-      str: array of integers formatted as decimal.
+      str: array of integers formatted as decimals.
     """
     return ', '.join(['{0:d}'.format(integer) for integer in array_of_integers])
+
+  def _FormatArrayOfIntegersAsIPv4Address(self, array_of_integers):
+    """Formats an array of integers as an IPv4 address.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+
+    Returns:
+      str: array of integers formatted as an IPv4 address or None if the number
+          of integers in the array is not supported.
+    """
+    if len(array_of_integers) != 4:
+      return None
+
+    return '.'.join(['{0:d}'.format(octet) for octet in array_of_integers])
+
+  def _FormatArrayOfIntegersAsIPv6Address(self, array_of_integers):
+    """Formats an array of integers as an IPv6 address.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+
+    Returns:
+      str: array of integers formatted as an IPv6 address or None if the number
+          of integers in the array is not supported.
+    """
+    if len(array_of_integers) != 16:
+      return None
+
+    # Note that socket.inet_ntop() is not supported on Windows.
+    octet_pairs = zip(array_of_integers[0::2], array_of_integers[1::2])
+    octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
+    # TODO: omit ":0000" from the string.
+    return ':'.join(['{0:04x}'.format(pair) for pair in octet_pairs])
 
   def _FormatIntegerAsDecimal(self, integer):
     """Formats an integer as a decimal.
@@ -239,14 +273,36 @@ class BinaryDataFormat(object):
     """
     return '{0:d}'.format(integer)
 
-  def _FormatIntegerAsHexadecimal(self, integer):
-    """Formats an integer as a hexadecimal.
+  def _FormatIntegerAsHexadecimal2(self, integer):
+    """Formats an integer as an 2-digit hexadecimal.
 
     Args:
       integer (int): integer.
 
     Returns:
-      str: integer formatted as a hexadecimal.
+      str: integer formatted as an 2-digit hexadecimal.
+    """
+    return '0x{0:02x}'.format(integer)
+
+  def _FormatIntegerAsHexadecimal4(self, integer):
+    """Formats an integer as an 4-digit hexadecimal.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as an 4-digit hexadecimal.
+    """
+    return '0x{0:04x}'.format(integer)
+
+  def _FormatIntegerAsHexadecimal8(self, integer):
+    """Formats an integer as an 8-digit hexadecimal.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as an 8-digit hexadecimal.
     """
     return '0x{0:08x}'.format(integer)
 
@@ -269,6 +325,7 @@ class BinaryDataFormat(object):
 
     return '{0:s} UTC'.format(date_time_string)
 
+  # TODO: replace by _FormatArrayOfIntegersAsIPv4Address
   def _FormatPackedIPv4Address(self, packed_ip_address):
     """Formats a packed IPv4 address as a human readable string.
 
@@ -280,6 +337,7 @@ class BinaryDataFormat(object):
     """
     return '.'.join(['{0:d}'.format(octet) for octet in packed_ip_address[:4]])
 
+  # TODO: replace by _FormatArrayOfIntegersAsIPv6Address
   def _FormatPackedIPv6Address(self, packed_ip_address):
     """Formats a packed IPv6 address as a human readable string.
 
