@@ -29,7 +29,7 @@ class AppleSystemLogFileTest(test_lib.BaseTestCase):
     formatted_signature = test_file._FormatStreamAsSignature(
         b'ASL DB\x00\x00\x00\x00\x00\x00')
     self.assertEqual(
-        formatted_signature, b'ASL DB\\x00\\x00\\x00\\x00\\x00\\x00')
+        formatted_signature, 'ASL DB\\x00\\x00\\x00\\x00\\x00\\x00')
 
   def testFormatString(self):
     """Tests the _FormatString function."""

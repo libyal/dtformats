@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import uuid
 
 from dtformats import job
 
@@ -17,143 +16,14 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  def testDebugPrintFixedLengthDataSection(self):
-    """Tests the _DebugPrintFixedLengthDataSection function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = job.WindowsTaskSchedularJobFile(
-        output_writer=output_writer)
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'system_time')
-    system_time = data_type_map.CreateStructureValues(
-        day_of_month=7,
-        hours=17,
-        milliseconds=135,
-        minutes=41,
-        month=5,
-        seconds=25,
-        weekday=0,
-        year=2017)
-
-    uuid_value = uuid.UUID('{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
-    data_type_map = test_file._FIXED_LENGTH_DATA_SECTION
-    data_section = data_type_map.CreateStructureValues(
-        application_name_offset=3,
-        error_retry_count=5,
-        error_retry_interval=6,
-        exit_code=11,
-        flags=13,
-        format_version=2,
-        idle_deadline=7,
-        idle_wait=8,
-        job_identifier=uuid_value,
-        last_run_time=system_time,
-        maximum_run_time=10,
-        priority=9,
-        product_version=1,
-        status=12,
-        triggers_offset=4)
-
-    test_file._DebugPrintFixedLengthDataSection(data_section)
-
-  def testDebugPrintTrigger(self):
-    """Tests the _DebugPrintTrigger function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = job.WindowsTaskSchedularJobFile(
-        output_writer=output_writer)
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'job_trigger_date')
-    date = data_type_map.CreateStructureValues(
-        day_of_month=9,
-        month=5,
-        year=2017)
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'job_trigger_time')
-    time = data_type_map.CreateStructureValues(
-        hours=8,
-        minutes=1)
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'job_trigger')
-    trigger = data_type_map.CreateStructureValues(
-        duration=6,
-        end_date=date,
-        interval=7,
-        reserved1=2,
-        size=1,
-        start_date=date,
-        start_time=time,
-        trigger_arg0=10,
-        trigger_arg1=11,
-        trigger_arg2=12,
-        trigger_flags=8,
-        trigger_padding=13,
-        trigger_reserved2=14,
-        trigger_reserved3=15,
-        trigger_type=9)
-
-    test_file._DebugPrintTrigger(trigger)
-
-  def testDebugPrintVariableLengthDataSection(self):
-    """Tests the _DebugVariableVariableLengthDataSection function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = job.WindowsTaskSchedularJobFile(
-        output_writer=output_writer)
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap('job_string')
-    application_name = data_type_map.CreateStructureValues(
-        number_of_characters=0,
-        string='')
-
-    parameters = data_type_map.CreateStructureValues(
-        number_of_characters=0,
-        string='')
-
-    working_directory = data_type_map.CreateStructureValues(
-        number_of_characters=0,
-        string='')
-
-    author = data_type_map.CreateStructureValues(
-        number_of_characters=0,
-        string='')
-
-    comment = data_type_map.CreateStructureValues(
-        number_of_characters=0,
-        string='')
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'job_user_data')
-    user_data = data_type_map.CreateStructureValues(
-        size=0,
-        stream=b'')
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'job_reserved_data')
-    reserved_data = data_type_map.CreateStructureValues(
-        size=0,
-        stream=b'')
-
-    data_type_map = test_file._DATA_TYPE_FABRIC.CreateDataTypeMap(
-        'job_triggers')
-    triggers = data_type_map.CreateStructureValues(
-        number_of_triggers=0,
-        triggers_array=[])
-
-    data_type_map = test_file._VARIABLE_LENGTH_DATA_SECTION
-    data_section = data_type_map.CreateStructureValues(
-        application_name=application_name,
-        author=author,
-        comment=comment,
-        parameters=parameters,
-        reserved_data=reserved_data,
-        running_instance_count=1,
-        triggers=triggers,
-        user_data=user_data,
-        working_directory=working_directory)
-
-    test_file._DebugPrintVariableLengthDataSection(data_section)
+  # TODO: add test for _FormatDataStream
+  # TODO: add test for _FormatDate
+  # TODO: add test for _FormatIntegerAsIntervalInMilliseconds
+  # TODO: add test for _FormatIntegerAsIntervalInMinutes
+  # TODO: add test for _FormatIntegerAsProductVersion
+  # TODO: add test for _FormatString
+  # TODO: add test for _FormatSystemTime
+  # TODO: add test for _FormatTime
 
   @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadFixedLengthDataSection(self):

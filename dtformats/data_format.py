@@ -97,18 +97,17 @@ class BinaryDataFormat(object):
       if attribute_value is None:
         continue
 
-      # TODO: remove the need for this exception case.
-      if value_format_callback == '_FormatDataInHexadecimal':
-        self._DebugPrintData(description, attribute_value)
-        continue
-
       value_format_function = None
       if value_format_callback:
         value_format_function = getattr(self, value_format_callback, None)
       if value_format_function:
         attribute_value = value_format_function(attribute_value)
 
-      self._DebugPrintValue(description, attribute_value)
+      if '\n' in attribute_value:
+        self._output_writer.WriteText('{0:s}:\n'.format(description))
+        self._output_writer.WriteText(attribute_value)
+      else:
+        self._DebugPrintValue(description, attribute_value)
 
     self._DebugPrintText('\n')
 
@@ -353,6 +352,17 @@ class BinaryDataFormat(object):
     # TODO: omit ":0000" from the string.
     return ':'.join([
         '{0:04x}'.format(octet_pair) for octet_pair in octet_pairs])
+
+  def _FormatUUIDAsString(self, uuid):
+    """Formats an UUID as string.
+
+    Args:
+      uuid (uuid.UUID): UUID.
+
+    Returns:
+      str: UUID formatted as string.
+    """
+    return '{0!s}'.format(uuid)
 
   def _GetDataTypeMap(self, name):
     """Retrieves a data type map defined by the definition file.

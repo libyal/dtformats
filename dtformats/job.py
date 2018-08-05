@@ -36,178 +36,152 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
   _VARIABLE_LENGTH_DATA_SECTION = _DATA_TYPE_FABRIC.CreateDataTypeMap(
       'job_variable_length_data_section')
 
-  def _DebugPrintFixedLengthDataSection(self, data_section):
-    """Prints fixed-length data section debug information.
+  _DEBUG_INFO_FIXED_LENGTH_DATA_SECTION = [
+      ('signature', 'Signature', '_FormatIntegerAsProductVersion'),
+      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
+      ('job_identifier', 'Job identifier', '_FormatUUIDAsString'),
+      ('application_name_offset', 'Application name offset',
+       '_FormatIntegerAsHexadecimal4'),
+      ('triggers_offset', 'Triggers offset', '_FormatIntegerAsHexadecimal4'),
+      ('error_retry_count', 'Error retry count', '_FormatIntegerAsDecimal'),
+      ('error_retry_interval', 'Error retry interval',
+       '_FormatIntegerAsIntervalInMinutes'),
+      ('idle_deadline', 'Idle deadline', '_FormatIntegerAsIntervalInMinutes'),
+      ('idle_wait', 'Idle wait', '_FormatIntegerAsIntervalInMinutes'),
+      ('priority', 'Priority', '_FormatIntegerAsHexadecimal8'),
+      ('maximum_run_time', 'Maximum run time',
+       '_FormatIntegerAsIntervalInMilliseconds'),
+      ('exit_code', 'Exit code', '_FormatIntegerAsHexadecimal8'),
+      ('status', 'Status', '_FormatIntegerAsHexadecimal8'),
+      ('flags', 'Flags', '_FormatIntegerAsHexadecimal8'),
+      ('last_run_time', 'Last run time', '_FormatSystemTime')]
+
+  _DEBUG_INFO_TRIGGER = [
+      ('size', 'Size', '_FormatIntegerAsDecimal'),
+      ('reserved1', 'Reserved1', '_FormatIntegerAsHexadecimal4'),
+      ('start_date', 'Start date', '_FormatDate'),
+      ('end_date', 'End date', '_FormatDate'),
+      ('start_time', 'Start time', '_FormatTime'),
+      ('duration', 'Duration', '_FormatIntegerAsIntervalInMinutes'),
+      ('interval', 'Interval', '_FormatIntegerAsIntervalInMinutes'),
+      ('trigger_flags', 'Trigger flags', '_FormatIntegerAsHexadecimal8'),
+      ('trigger_type', 'Trigger type', '_FormatIntegerAsHexadecimal8'),
+      ('trigger_arg0', 'Trigger arg0', '_FormatIntegerAsHexadecimal4'),
+      ('trigger_arg1', 'Trigger arg1', '_FormatIntegerAsHexadecimal4'),
+      ('trigger_arg2', 'Trigger arg2', '_FormatIntegerAsHexadecimal4'),
+      ('trigger_padding', 'Trigger padding', '_FormatIntegerAsHexadecimal4'),
+      ('trigger_reserved2', 'Trigger reserved2',
+       '_FormatIntegerAsHexadecimal4'),
+      ('trigger_reserved3', 'Trigger reserved3',
+       '_FormatIntegerAsHexadecimal4')]
+
+  _DEBUG_INFO_VARIABLE_LENGTH_DATA_SECTION = [
+      ('running_instance_count', 'Running instance count',
+       '_FormatIntegerAsDecimal'),
+      ('application_name', 'Application name', '_FormatString'),
+      ('parameters', 'Parameters', '_FormatString'),
+      ('working_directory', 'Working directory', '_FormatString'),
+      ('author', 'Author', '_FormatString'),
+      ('comment', 'Comment', '_FormatString'),
+      ('user_data', 'User data', '_FormatDataStream'),
+      ('reserved_data', 'Reserved data', '_FormatDataStream'),
+      ('number_of_triggers', 'Number of triggers', '_FormatIntegerAsDecimal')]
+
+  def _FormatDataStream(self, data_stream):
+    """Formats a data stream structure
 
     Args:
-      data_section (job_fixed_length_data_section): fixed-length data section.
+      data_stream (job_reserved_data|job_user_data): data stream structure
+
+    Returns:
+      str: formatted data stream structure
     """
-    value_string = '0x{0:04x} ({1:d}.{2:d})'.format(
-        data_section.product_version,
-        (data_section.product_version >> 8) & 0xff,
-        data_section.product_version & 0xff)
-    self._DebugPrintValue('Product version', value_string)
+    # TODO: print data_stream.size on a separate line
+    return self._FormatDataInHexadecimal(data_stream.stream)
 
-    value_string = '{0:d}'.format(data_section.format_version)
-    self._DebugPrintValue('Format version', value_string)
-
-    value_string = '{0!s}'.format(data_section.job_identifier)
-    self._DebugPrintValue('Job identifier', value_string)
-
-    value_string = '0x{0:04x}'.format(data_section.application_name_offset)
-    self._DebugPrintValue('Application name offset', value_string)
-
-    value_string = '0x{0:04x}'.format(data_section.triggers_offset)
-    self._DebugPrintValue('Triggers offset', value_string)
-
-    value_string = '{0:d}'.format(data_section.error_retry_count)
-    self._DebugPrintValue('Error retry count', value_string)
-
-    value_string = '{0:d} minutes'.format(data_section.error_retry_interval)
-    self._DebugPrintValue('Error retry interval', value_string)
-
-    value_string = '{0:d} minutes'.format(data_section.idle_deadline)
-    self._DebugPrintValue('Idle deadline', value_string)
-
-    value_string = '{0:d} minutes'.format(data_section.idle_wait)
-    self._DebugPrintValue('Idle wait', value_string)
-
-    value_string = '0x{0:08x}'.format(data_section.priority)
-    self._DebugPrintValue('Priority', value_string)
-
-    value_string = '{0:d} milliseconds'.format(data_section.maximum_run_time)
-    self._DebugPrintValue('Maximum run time', value_string)
-
-    value_string = '0x{0:08x}'.format(data_section.exit_code)
-    self._DebugPrintValue('Exit code', value_string)
-
-    value_string = '0x{0:08x}'.format(data_section.status)
-    self._DebugPrintValue('Status', value_string)
-
-    value_string = '0x{0:08x}'.format(data_section.flags)
-    self._DebugPrintValue('Flags', value_string)
-
-    value_string = (
-        '{0:04d}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}.{6:03d}').format(
-            data_section.last_run_time.year,
-            data_section.last_run_time.month,
-            data_section.last_run_time.day_of_month,
-            data_section.last_run_time.hours,
-            data_section.last_run_time.minutes,
-            data_section.last_run_time.seconds,
-            data_section.last_run_time.milliseconds)
-    self._DebugPrintValue('Last run time', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTrigger(self, trigger):
-    """Prints trigger debug information.
+  def _FormatDate(self, date):
+    """Formats a date structure.
 
     Args:
-      trigger (job_trigger): trigger.
+      date (job_trigger_date): date structure.
+
+    Returns:
+      str: formatted date structure.
     """
-    value_string = '{0:d}'.format(trigger.size)
-    self._DebugPrintValue('Size', value_string)
+    return '{0:04d}-{1:02d}-{2:02d}'.format(
+        date.year, date.month, date.day_of_month)
 
-    value_string = '0x{0:04x}'.format(trigger.reserved1)
-    self._DebugPrintValue('Reserved1', value_string)
-
-    value_string = '{0:04d}-{1:02d}-{2:02d}'.format(
-        trigger.start_date.year, trigger.start_date.month,
-        trigger.start_date.day_of_month)
-    self._DebugPrintValue('Start date', value_string)
-
-    value_string = '{0:04d}-{1:02d}-{2:02d}'.format(
-        trigger.end_date.year, trigger.end_date.month,
-        trigger.end_date.day_of_month)
-    self._DebugPrintValue('End date', value_string)
-
-    value_string = '{0:02d}:{1:02d}'.format(
-        trigger.start_time.hours, trigger.start_time.minutes)
-    self._DebugPrintValue('Start time', value_string)
-
-    value_string = '{0:d} minutes'.format(trigger.duration)
-    self._DebugPrintValue('Duration', value_string)
-
-    value_string = '{0:d} minutes'.format(trigger.interval)
-    self._DebugPrintValue('Interval', value_string)
-
-    value_string = '0x{0:08x}'.format(trigger.trigger_flags)
-    self._DebugPrintValue('Trigger flags', value_string)
-
-    value_string = '0x{0:08x}'.format(trigger.trigger_type)
-    self._DebugPrintValue('Trigger type', value_string)
-
-    value_string = '0x{0:04x}'.format(trigger.trigger_arg0)
-    self._DebugPrintValue('Trigger arg0', value_string)
-
-    value_string = '0x{0:04x}'.format(trigger.trigger_arg1)
-    self._DebugPrintValue('Trigger arg1', value_string)
-
-    value_string = '0x{0:04x}'.format(trigger.trigger_arg2)
-    self._DebugPrintValue('Trigger arg2', value_string)
-
-    value_string = '0x{0:04x}'.format(trigger.trigger_padding)
-    self._DebugPrintValue('Trigger padding', value_string)
-
-    value_string = '0x{0:04x}'.format(trigger.trigger_reserved2)
-    self._DebugPrintValue('Trigger reserved2', value_string)
-
-    value_string = '0x{0:04x}'.format(trigger.trigger_reserved3)
-    self._DebugPrintValue('Trigger reserved3', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintVariableLengthDataSection(self, data_section):
-    """Prints variable-length data section debug information.
+  def _FormatIntegerAsIntervalInMilliseconds(self, integer):
+    """Formats an integer as an interval in milliseconds.
 
     Args:
-      data_section (job_variable_length_data_section): variable-length data
-          section.
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as an interval in milliseconds.
     """
-    value_string = '{0:d}'.format(data_section.running_instance_count)
-    self._DebugPrintValue('Running instance count', value_string)
+    return '{0:d} milliseconds'.format(integer)
 
-    value_string = '({0:d}) {1:s}'.format(
-        data_section.application_name.number_of_characters * 2,
-        data_section.application_name.string)
-    self._DebugPrintValue('Application name', value_string)
+  def _FormatIntegerAsIntervalInMinutes(self, integer):
+    """Formats an integer as an interval in minutes.
 
-    value_string = '({0:d}) {1:s}'.format(
-        data_section.parameters.number_of_characters * 2,
-        data_section.parameters.string)
-    self._DebugPrintValue('Parameters', value_string)
+    Args:
+      integer (int): integer.
 
-    value_string = '({0:d}) {1:s}'.format(
-        data_section.working_directory.number_of_characters * 2,
-        data_section.working_directory.string)
-    self._DebugPrintValue('Working directory', value_string)
+    Returns:
+      str: integer formatted as an interval in minutes.
+    """
+    return '{0:d} minutes'.format(integer)
 
-    value_string = '({0:d}) {1:s}'.format(
-        data_section.author.number_of_characters * 2,
-        data_section.author.string)
-    self._DebugPrintValue('Author', value_string)
+  def _FormatIntegerAsProductVersion(self, integer):
+    """Formats an integer as a product version.
 
-    value_string = '({0:d}) {1:s}'.format(
-        data_section.comment.number_of_characters * 2,
-        data_section.comment.string)
-    self._DebugPrintValue('Comment', value_string)
+    Args:
+      integer (int): integer.
 
-    value_string = '{0:d}'.format(data_section.user_data.size)
-    self._DebugPrintValue('User data size', value_string)
-    self._DebugPrintData('User data', data_section.user_data.stream)
+    Returns:
+      str: integer formatted as a product version.
+    """
+    return '0x{0:04x} ({1:d}.{2:d})'.format(
+        integer, (integer >> 8) & 0xff, integer & 0xff)
 
-    value_string = '{0:d}'.format(data_section.reserved_data.size)
-    self._DebugPrintValue('Reserved data size', value_string)
-    self._DebugPrintData('Reserved data', data_section.reserved_data.stream)
+  def _FormatString(self, string):
+    """Formats a string structure
 
-    value_string = '{0:d}'.format(data_section.triggers.number_of_triggers)
-    self._DebugPrintValue('Number of triggers', value_string)
+    Args:
+      string (job_string): string structure
 
-    self._DebugPrintText('\n')
+    Returns:
+      str: formatted string structure
+    """
+    # TODO: print string.number_of_characters on a separate line
+    return '({0:d} bytes) {1:s}'.format(
+        string.number_of_characters * 2, string.string)
 
-    for trigger in data_section.triggers.triggers_array:
-      self._DebugPrintTrigger(trigger)
+  def _FormatSystemTime(self, systemtime):
+    """Formats a SYSTEMTIME structure.
+
+    Args:
+      systemtime (system_time): SYSTEMTIME structure.
+
+    Returns:
+      str: formatted SYSTEMTIME structure.
+    """
+    return '{0:04d}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}.{6:03d}'.format(
+        systemtime.year, systemtime.month, systemtime.day_of_month,
+        systemtime.hours, systemtime.minutes, systemtime.seconds,
+        systemtime.milliseconds)
+
+  def _FormatTime(self, time):
+    """Formats a time structure.
+
+    Args:
+      time (job_trigger_time): time structure.
+
+    Returns:
+      str: formatted time structure.
+    """
+    return '{0:02d}:{1:02d}'.format(time.hours, time.minutes)
 
   def _ReadFixedLengthDataSection(self, file_object):
     """Reads the fixed-length data section.
@@ -224,7 +198,8 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
         self._FIXED_LENGTH_DATA_SECTION, 'fixed-length data section')
 
     if self._debug:
-      self._DebugPrintFixedLengthDataSection(data_section)
+      self._DebugPrintStructureObject(
+          data_section, self._DEBUG_INFO_FIXED_LENGTH_DATA_SECTION)
 
   def _ReadVariableLengthDataSection(self, file_object):
     """Reads the variable-length data section.
@@ -242,7 +217,11 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
         self._VARIABLE_LENGTH_DATA_SECTION, 'variable-length data section')
 
     if self._debug:
-      self._DebugPrintVariableLengthDataSection(data_section)
+      self._DebugPrintStructureObject(
+          data_section, self._DEBUG_INFO_VARIABLE_LENGTH_DATA_SECTION)
+
+      for trigger in data_section.triggers.triggers_array:
+        self._DebugPrintStructureObject(trigger, self._DEBUG_INFO_TRIGGER)
 
   def ReadFileObject(self, file_object):
     """Reads a Windows Task Scheduler job file-like object.

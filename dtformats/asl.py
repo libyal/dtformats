@@ -92,7 +92,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
     Returns:
       str: stream formatted as a signature.
     """
-    return stream.replace(b'\x00', b'\\x00')
+    return stream.decode('ascii').replace('\x00', '\\x00')
 
   def _FormatString(self, string):
     """Formats a string.
