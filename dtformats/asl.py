@@ -17,120 +17,93 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
   # Most significant bit of a 64-bit string offset.
   _STRING_OFFSET_MSB = 1 << 63
 
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
+  _DEBUG_INFO_FILE_HEADER = [
+      ('signature', 'Signature', '_FormatStreamAsSignature'),
+      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
+      ('first_log_entry_offset', 'First log entry offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('creation_time', 'Creation time', '_FormatIntegerAsPosixTime'),
+      ('cache_size', 'Cache size', '_FormatIntegerAsDecimal'),
+      ('last_log_entry_offset', 'Last log entry offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('unknown1', 'Unknown1', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_RECORD = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('next_record_offset', 'Next record offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('message_identifier', 'Message identifier',
+       '_FormatIntegerAsHexadecimal'),
+      ('written_time', 'Written time', '_FormatIntegerAsPosixTime'),
+      ('written_time_nanoseconds', 'Written time nanoseconds',
+       '_FormatIntegerAsDecimal'),
+      ('alert_level', 'Alert level', '_FormatIntegerAsDecimal'),
+      ('flags', 'Flags', '_FormatIntegerAsFlags'),
+      ('process_identifier', 'Process identifier (PID)',
+       '_FormatIntegerAsDecimal'),
+      ('user_identifier', 'User identifier (UID))',
+       '_FormatIntegerAsDecimal'),
+      ('group_identifier', 'Group identifier (GID))',
+       '_FormatIntegerAsDecimal'),
+      ('real_user_identifier', 'Real user identifier (UID))',
+       '_FormatIntegerAsDecimal'),
+      ('real_group_identifier', 'Real group identifier (GID))',
+       '_FormatIntegerAsDecimal'),
+      ('reference_process_identifier', 'Reference process identifier (PID)',
+       '_FormatIntegerAsDecimal'),
+      ('hostname_string_offset', 'Hostname string offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('sender_string_offset', 'Sender string offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('facility_string_offset', 'Facility string offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('message_string_offset', 'Message string offset',
+       '_FormatIntegerAsHexadecimal')]
+
+  _DEBUG_INFO_RECORD_EXTRA_FIELD = [
+      ('name_string_offset', 'Name string offset',
+       '_FormatIntegerAsHexadecimal'),
+      ('value_string_offset', 'Value string offset',
+       '_FormatIntegerAsHexadecimal')]
+
+  _DEBUG_INFO_RECORD_STRING = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
+      ('string_size', 'String size', '_FormatIntegerAsDecimal'),
+      ('string', 'String', '_FormatString')]
+
+  def _FormatIntegerAsFlags(self, integer):
+    """Formats an integer as flags.
 
     Args:
-      file_header (asl_file_header): file header.
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as flags.
     """
-    value_string = file_header.signature.replace(b'\x00', b'\\x00')
-    self._DebugPrintValue('Signature', value_string)
+    return '0x{0:04x}'.format(integer)
 
-    self._DebugPrintDecimalValue('Format version', file_header.format_version)
-
-    value_string = '0x{0:08x}'.format(file_header.first_log_entry_offset)
-    self._DebugPrintValue('First log entry offset', value_string)
-
-    self._DebugPrintPosixTimeValue('Creation time', file_header.creation_time)
-
-    self._DebugPrintDecimalValue('Cache size', file_header.cache_size)
-
-    value_string = '0x{0:08x}'.format(file_header.last_log_entry_offset)
-    self._DebugPrintValue('Last log entry offset', value_string)
-
-    self._DebugPrintData('Unknown1', file_header.unknown1)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintRecord(self, record):
-    """Prints record debug information.
+  def _FormatStreamAsSignature(self, stream):
+    """Formats a stream as a signature.
 
     Args:
-      record (asl_record): record.
+      stream (bytes): stream.
+
+    Returns:
+      str: stream formatted as a signature.
     """
-    value_string = '0x{0:04x}'.format(record.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
+    return stream.replace(b'\x00', b'\\x00')
 
-    self._DebugPrintDecimalValue('Data size', record.data_size)
-
-    value_string = '0x{0:08x}'.format(record.next_record_offset)
-    self._DebugPrintValue('Next record offset', value_string)
-
-    value_string = '0x{0:08x}'.format(record.message_identifier)
-    self._DebugPrintValue('Message identifier', value_string)
-
-    value_string = '{0:d}'.format(record.written_time)
-    self._DebugPrintValue('Written time', value_string)
-
-    value_string = '{0:d}'.format(record.written_time_nanoseconds)
-    self._DebugPrintValue('Written time nanoseconds', value_string)
-
-    self._DebugPrintDecimalValue('Alert level', record.alert_level)
-
-    value_string = '0x{0:04x}'.format(record.flags)
-    self._DebugPrintValue('Flags', value_string)
-
-    self._DebugPrintDecimalValue(
-        'Process identifier (PID)', record.process_identifier)
-
-    self._DebugPrintDecimalValue(
-        'User identifier (UID)', record.user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Group identifier (GID)', record.group_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Real user identifier (UID)', record.real_user_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Real group identifier (GID)', record.real_group_identifier)
-
-    self._DebugPrintDecimalValue(
-        'Reference process identifier (PID)',
-        record.reference_process_identifier)
-
-    value_string = '0x{0:08x}'.format(record.hostname_string_offset)
-    self._DebugPrintValue('Hostname string offset', value_string)
-
-    value_string = '0x{0:08x}'.format(record.sender_string_offset)
-    self._DebugPrintValue('Sender string offset', value_string)
-
-    value_string = '0x{0:08x}'.format(record.facility_string_offset)
-    self._DebugPrintValue('Facility string offset', value_string)
-
-    value_string = '0x{0:08x}'.format(record.message_string_offset)
-    self._DebugPrintValue('Message string offset', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintRecordExtraField(self, record_extra_field):
-    """Prints record extra field debug information.
+  def _FormatString(self, string):
+    """Formats a string.
 
     Args:
-      record_extra_field (asl_record_extra_field): record extra field.
+      string (str): string.
+
+    Returns:
+      str: formatted string.
     """
-    value_string = '0x{0:08x}'.format(record_extra_field.name_string_offset)
-    self._DebugPrintValue('Name string offset', value_string)
-
-    value_string = '0x{0:08x}'.format(record_extra_field.value_string_offset)
-    self._DebugPrintValue('Value string offset', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintRecordString(self, record_string):
-    """Prints record string debug information.
-
-    Args:
-      record_string (asl_record_string): record string.
-    """
-    value_string = '0x{0:04x}'.format(record_string.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    self._DebugPrintDecimalValue('String size', record_string.string_size)
-
-    self._DebugPrintValue('String', record_string.string.rstrip('\x00'))
-
-    self._DebugPrintText('\n')
+    return string.rstrip('\x00')
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -144,14 +117,13 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('asl_file_header')
 
     file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file header')
+        file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.signature != self._FILE_SIGNATURE:
       raise errors.ParseError('Invalid file signature.')
@@ -187,7 +159,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record')
 
     if self._debug:
-      self._DebugPrintRecord(record)
+      self._DebugPrintStructureObject(record, self._DEBUG_INFO_RECORD)
 
     hostname = self._ReadRecordString(
         record_strings_data, record_strings_data_offset,
@@ -276,7 +248,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           '{1!s}').format(file_offset, exception))
 
     if self._debug:
-      self._DebugPrintRecordExtraField(record_extra_field)
+      self._DebugPrintStructureObject(
+          record_extra_field, self._DEBUG_INFO_RECORD_EXTRA_FIELD)
 
     return record_extra_field
 
@@ -345,7 +318,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           '{1!s}').format(string_offset, exception))
 
     if self._debug:
-      self._DebugPrintRecordString(record_string)
+      self._DebugPrintStructureObject(
+          record_string, self._DEBUG_INFO_RECORD_STRING)
 
     return record_string.string.rstrip('\x00')
 

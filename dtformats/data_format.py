@@ -235,7 +235,7 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as decimal.
+      str: integer formatted as a decimal.
     """
     return '{0:d}'.format(integer)
 
@@ -246,7 +246,7 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as hexadecimal.
+      str: integer formatted as a hexadecimal.
     """
     return '0x{0:08x}'.format(integer)
 
