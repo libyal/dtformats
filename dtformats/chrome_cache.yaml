@@ -39,7 +39,7 @@ attributes:
   size: 8
   units: bytes
 ---
-name: chrome_cache_data_file_header
+name: chrome_cache_data_block_file_header
 type: structure
 attributes:
   byte_order: little-endian

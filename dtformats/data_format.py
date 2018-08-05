@@ -239,6 +239,17 @@ class BinaryDataFormat(object):
     """
     return '{0:d}'.format(integer)
 
+  def _FormatIntegerAsHexadecimal(self, integer):
+    """Formats an integer as a hexadecimal.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as hexadecimal.
+    """
+    return '0x{0:08x}'.format(integer)
+
   def _FormatIntegerAsPosixTime(self, integer):
     """Formats an integer as a POSIX date and time value.
 

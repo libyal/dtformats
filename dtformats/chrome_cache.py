@@ -174,8 +174,8 @@ class CacheEntry(object):
   """Cache entry.
 
   Attributes:
-    creation_time (int): creation time, in number of micro seconds since
-        January 1, 1970, 00:00:00 UTC.
+    creation_time (int): creation time, in number of microseconds since
+        since January 1, 1601, 00:00:00 UTC.
     hash (int): super fast hash of the key.
     key (byte): data of the key.
     next (int): cache address of the next cache entry.
@@ -197,7 +197,6 @@ class DataBlockFile(data_format.BinaryDataFile):
 
   Attributes:
     block_size (int): size of a data block.
-    creation_time (int): date and time the file was created.
     format_version (str): format version.
     number_of_entries (int): number of entries.
   """
@@ -207,6 +206,32 @@ class DataBlockFile(data_format.BinaryDataFile):
   # TODO: update empty, hints, updating and user.
 
   SIGNATURE = 0xc104cac3
+
+  _DEBUG_INFO_FILE_HEADER = [
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal'),
+      ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
+      ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
+      ('file_number', 'File number', '_FormatIntegerAsDecimal'),
+      ('next_file_number', 'Next file number', '_FormatIntegerAsDecimal'),
+      ('block_size', 'Block size', '_FormatIntegerAsDecimal'),
+      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
+      ('maximum_number_of_entries', 'Maximum number of entries',
+       '_FormatIntegerAsDecimal'),
+      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
+      ('empty', 'Empty', '_FormatArrayOfIntegersAsDecimal'),
+      ('hints', 'Hints', '_FormatArrayOfIntegersAsDecimal'),
+      ('updating', 'Updating', '_FormatIntegerAsHexadecimal'),
+      ('user', 'User', '_FormatArrayOfIntegersAsDecimal')]
+
+  _DEBUG_INFO_CACHE_ENTRY = [
+      ('hash', 'Hash', '_FormatIntegerAsHexadecimal'),
+      ('next_address', 'Next address', '_FormatIntegerAsCacheAddress'),
+      ('rankings_node_address', 'Rankings node address',
+       '_FormatIntegerAsCacheAddress'),
+      ('reuse_count', 'Reuse count', '_FormatIntegerAsDecimal'),
+      ('refetch_count', 'Refetch count', '_FormatIntegerAsDecimal'),
+      ('state', 'State', '_FormatIntegerAsHexadecimal'),
+      ('creation_time', 'Creation time', '_FormatIntegerAsTimestamp')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Chrome Cache data block file.
@@ -218,7 +243,6 @@ class DataBlockFile(data_format.BinaryDataFile):
     super(DataBlockFile, self).__init__(
         debug=debug, output_writer=output_writer)
     self.block_size = None
-    self.creation_time = None
     self.format_version = None
     self.number_of_entries = None
 
@@ -255,48 +279,41 @@ class DataBlockFile(data_format.BinaryDataFile):
         value_32bit >>= 1
         block_number += 1
 
+  def _DebugPrintCacheEntryDataStreamSizes(self, array_of_integers):
+    """Prints cache entry data stream sizes debug information.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+    """
+    for index, value in enumerate(array_of_integers):
+      description = 'Data stream size: {0:d}'.format(index)
+      value_string = '{0:d}'.format(value)
+      self._DebugPrintValue(description, value_string)
+
+  def _DebugPrintCacheEntryDataStreamAddresses(self, array_of_integers):
+    """Prints cache entry data stream addresses debug information.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+    """
+    for index, value in enumerate(array_of_integers):
+      description = 'Data stream address: {0:d}'.format(index)
+      cache_address = CacheAddress(value)
+      value_string = cache_address.GetDebugString()
+      self._DebugPrintValue(description, value_string)
+
   def _DebugPrintCacheEntry(self, cache_entry):
     """Prints cache entry debug information.
 
     Args:
       cache_entry (chrome_cache_entry): cache entry.
     """
-    value_string = '0x{0:08x}'.format(cache_entry.hash)
-    self._DebugPrintValue('Hash', value_string)
+    self._DebugPrintStructureObject(cache_entry, self._DEBUG_INFO_CACHE_ENTRY)
 
-    cache_address = CacheAddress(cache_entry.next_address)
-    value_string = cache_address.GetDebugString()
-    self._DebugPrintValue('Next address', value_string)
+    self._DebugPrintCacheEntryDataStreamSizes(cache_entry.data_stream_sizes)
 
-    cache_address = CacheAddress(cache_entry.rankings_node_address)
-    value_string = cache_address.GetDebugString()
-    self._DebugPrintValue('Rankings node address', value_string)
-
-    value_string = '{0:d}'.format(cache_entry.reuse_count)
-    self._DebugPrintValue('Reuse count', value_string)
-
-    value_string = '{0:d}'.format(cache_entry.refetch_count)
-    self._DebugPrintValue('Refetch count', value_string)
-
-    value_string = '0x{0:08x}'.format(cache_entry.state)
-    self._DebugPrintValue('State', value_string)
-
-    date_string = (datetime.datetime(1601, 1, 1) +
-                   datetime.timedelta(microseconds=cache_entry.creation_time))
-
-    value_string = '{0!s} (0x{1:08x})'.format(
-        date_string, cache_entry.creation_time)
-    self._DebugPrintValue('Creation time', value_string)
-
-    for value in cache_entry.data_stream_sizes:
-      value_string = '{0:d}'.format(value)
-      self._DebugPrintValue('Data stream size', value_string)
-
-    for index, value in enumerate(cache_entry.data_stream_addresses):
-      description = 'Data stream address: {0:d}'.format(index)
-      cache_address = CacheAddress(value)
-      value_string = cache_address.GetDebugString()
-      self._DebugPrintValue(description, value_string)
+    self._DebugPrintCacheEntryDataStreamAddresses(
+        cache_entry.data_stream_addresses)
 
     value_string = '0x{0:08x}'.format(cache_entry.flags)
     self._DebugPrintValue('Flags', value_string)
@@ -312,47 +329,38 @@ class DataBlockFile(data_format.BinaryDataFile):
     """Prints file header debug information.
 
     Args:
-      file_header (chrome_cache_data_file_header): file header.
+      file_header (chrome_cache_data_block_file_header): file header.
     """
-    value_string = '0x{0:08x}'.format(file_header.signature)
-    self._DebugPrintValue('Signature', value_string)
-
-    value_string = '{0:d}'.format(file_header.minor_version)
-    self._DebugPrintValue('Minor version', value_string)
-
-    value_string = '{0:d}'.format(file_header.major_version)
-    self._DebugPrintValue('Major version', value_string)
-
-    value_string = '{0:d}'.format(file_header.file_number)
-    self._DebugPrintValue('File number', value_string)
-
-    value_string = '{0:d}'.format(file_header.next_file_number)
-    self._DebugPrintValue('Next file number', value_string)
-
-    value_string = '{0:d}'.format(file_header.block_size)
-    self._DebugPrintValue('Block size', value_string)
-
-    value_string = '{0:d}'.format(file_header.number_of_entries)
-    self._DebugPrintValue('Number of entries', value_string)
-
-    value_string = '{0:d}'.format(file_header.maximum_number_of_entries)
-    self._DebugPrintValue('Maximum number of entries', value_string)
-
-    value_string = '{0!s}'.format(file_header.empty)
-    self._DebugPrintValue('Empty', value_string)
-
-    value_string = '{0!s}'.format(file_header.hints)
-    self._DebugPrintValue('Hints', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.updating)
-    self._DebugPrintValue('Updating', value_string)
-
-    value_string = '{0!s}'.format(file_header.user)
-    self._DebugPrintValue('User', value_string)
+    self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     self._DebugPrintAllocationBitmap(file_header.allocation_bitmap)
 
     self._DebugPrintText('\n')
+
+  def _FormatIntegerAsCacheAddress(self, integer):
+    """Formats an integer as a cache address.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a cache address.
+    """
+    cache_address = CacheAddress(integer)
+    return cache_address.GetDebugString()
+
+  def _FormatIntegerAsTimestamp(self, integer):
+    """Formats an integer as a Chrome timestamp.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a Chrome timestamp.
+    """
+    date_string = (datetime.datetime(1601, 1, 1) +
+                   datetime.timedelta(microseconds=integer))
+    return '{0!s} (0x{1:08x})'.format(date_string, integer)
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -363,11 +371,10 @@ class DataBlockFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
-    data_type_map = self._GetDataTypeMap('chrome_cache_data_file_header')
+    data_type_map = self._GetDataTypeMap('chrome_cache_data_block_file_header')
 
     file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'data block file header')
+        file_object, 0, data_type_map, 'data block file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -443,8 +450,6 @@ class DataBlockFile(data_format.BinaryDataFile):
     """
     self._ReadFileHeader(file_object)
 
-    self._file_object = file_object
-
 
 class IndexFile(data_format.BinaryDataFile):
   """Chrome Cache index file.
@@ -456,6 +461,21 @@ class IndexFile(data_format.BinaryDataFile):
   """
 
   _DEFINITION_FILE = 'chrome_cache.yaml'
+
+  _DEBUG_INFO_FILE_HEADER = [
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal'),
+      ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
+      ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
+      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
+      ('stored_data_size', 'Stored data size', '_FormatIntegerAsDecimal'),
+      ('last_created_file_number', 'Last created file number',
+       '_FormatIntegerAsDataStreamFilename'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal'),
+      ('table_size', 'Table size', '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal'),
+      ('creation_time', 'Creation time', '_FormatIntegerAsTimestamp')]
 
   SIGNATURE = 0xc103cac3
 
@@ -470,55 +490,6 @@ class IndexFile(data_format.BinaryDataFile):
     self.creation_time = None
     self.format_version = None
     self.index_table = {}
-
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
-
-    Args:
-      file_header (chrome_cache_index_file_header): file header.
-    """
-    value_string = '0x{0:08x}'.format(file_header.signature)
-    self._DebugPrintValue('Signature', value_string)
-
-    value_string = '{0:d}'.format(file_header.major_version)
-    self._DebugPrintValue('Major version', value_string)
-
-    value_string = '{0:d}'.format(file_header.minor_version)
-    self._DebugPrintValue('Minor version', value_string)
-
-    value_string = '{0:d}'.format(file_header.number_of_entries)
-    self._DebugPrintValue('Number of entries', value_string)
-
-    value_string = '{0:d}'.format(file_header.stored_data_size)
-    self._DebugPrintValue('Stored data size', value_string)
-
-    value_string = 'f_{0:06x}'.format(file_header.last_created_file_number)
-    self._DebugPrintValue('Last created file number', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '{0:d}'.format(file_header.table_size)
-    self._DebugPrintValue('Table size', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown4)
-    self._DebugPrintValue('Unknown4', value_string)
-
-    date_string = (
-        datetime.datetime(1601, 1, 1) +
-        datetime.timedelta(microseconds=file_header.creation_time))
-
-    value_string = '{0!s} (0x{1:08x})'.format(
-        date_string, file_header.creation_time)
-    self._DebugPrintValue('Creation time', value_string)
-
-    self._DebugPrintText('\n')
 
   def _DebugPrintLRUData(self, lru_data):
     """Prints LRU data debug information.
@@ -557,6 +528,30 @@ class IndexFile(data_format.BinaryDataFile):
 
     self._DebugPrintText('\n')
 
+  def _FormatIntegerAsDataStreamFilename(self, integer):
+    """Formats an integer as a data stream filename.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a data stream filename.
+    """
+    return '{0:d} (f_{0:06x})'.format(integer)
+
+  def _FormatIntegerAsTimestamp(self, integer):
+    """Formats an integer as a Chrome timestamp.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a Chrome timestamp.
+    """
+    date_string = (datetime.datetime(1601, 1, 1) +
+                   datetime.timedelta(microseconds=integer))
+    return '{0!s} (0x{1:08x})'.format(date_string, integer)
+
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
 
@@ -566,14 +561,13 @@ class IndexFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('chrome_cache_index_file_header')
 
     file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'index file header')
+        file_object, 0, data_type_map, 'index file header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.signature != self.SIGNATURE:
       raise errors.ParseError(
@@ -807,4 +801,3 @@ class ChromeCacheParser(object):
             debug=self._debug, output_writer=self._output_writer)
 
       chrome_cache_file.ReadFileObject(file_object)
-      chrome_cache_file.Close()
