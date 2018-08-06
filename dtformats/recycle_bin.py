@@ -22,6 +22,11 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
 
   _SUPPORTED_FORMAT_VERSION = (1, 2)
 
+  _DEBUG_INFO_FILE_HEADER = [
+      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
+      ('original_file_size', 'Original file size', '_FormatIntegerAsDecimal'),
+      ('deletion_time', 'Deletion time', '_FormatIntegerAsFiletime')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Windows Recycle.Bin metadata ($I) file.
 
@@ -35,20 +40,6 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     self.format_version = None
     self.original_filename = None
     self.original_file_size = None
-
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
-
-    Args:
-      file_header (rp_log_file_header): file header.
-    """
-    value_string = '{0:d}'.format(file_header.format_version)
-    self._DebugPrintValue('Format version', value_string)
-
-    value_string = '{0:d}'.format(file_header.original_file_size)
-    self._DebugPrintValue('Original file size', value_string)
-
-    self._DebugPrintFiletimeValue('Deletion time', file_header.deletion_time)
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -68,7 +59,7 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.format_version not in self._SUPPORTED_FORMAT_VERSION:
       raise errors.ParseError('Unsupported format version: {0:d}'.format(
@@ -89,16 +80,15 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the original filename cannot be read.
     """
-    file_offset = file_object.tell()
-
     if format_version == 1:
-      data_type_map = self._GetDataTypeMap(
-          'recycle_bin_metadata_utf16le_string')
+      data_type_map_name = 'recycle_bin_metadata_utf16le_string'
       description = 'UTF-16 little-endian string'
     else:
-      data_type_map = self._GetDataTypeMap(
-          'recycle_bin_metadata_utf16le_string_with_size')
+      data_type_map_name = 'recycle_bin_metadata_utf16le_string_with_size'
       description = 'UTF-16 little-endian string with size'
+
+    file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap(data_type_map_name)
 
     try:
       original_filename, _ = self._ReadStructureFromFileObject(
