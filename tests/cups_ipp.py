@@ -15,24 +15,8 @@ class CupsIppFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  # TODO: test _DebugPrintAttribute function
+  # TODO: test _FormatIntegerAsTagValue function
 
-  def testDebugPrintHeader(self):
-    """Tests the _DebugPrintHeader function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = cups_ipp.CupsIppFile(output_writer=output_writer)
-
-    data_type_map = test_file._GetDataTypeMap('cups_ipp_header')
-
-    header = data_type_map.CreateStructureValues(
-        major_version=1,
-        minor_version=2,
-        operation_identifier=3,
-        request_identifier=4)
-
-    test_file._DebugPrintHeader(header)
-
-  # TODO: test _DebugPrintTagValue function
   # TODO: test _ReadAttribute function
   # TODO: test _ReadAttributesGroup function
   # TODO: test _ReadBooleanValue function

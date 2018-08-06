@@ -94,6 +94,21 @@ class CupsIppFile(data_format.BinaryDataFile):
       0x49: 'mimeMediaType',
   }
 
+  _DEBUG_INFO_ATTRIBUTE = [
+      ('tag_value', 'Tag value', '_FormatIntegerAsTagValue'),
+      ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
+      ('name', 'Name', None),
+      ('value_data_size', 'Value data size', '_FormatIntegerAsDecimal'),
+      ('value_data_size', 'Value data size', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_HEADER = [
+      ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
+      ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
+      ('operation_identifier', 'Operation identifier',
+       '_FormatIntegerAsHexadecimal4'),
+      ('request_identifier', 'Request identifier',
+       '_FormatIntegerAsHexadecimal8')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a CUPS Internet Printing Protocol (IPP) file.
 
@@ -105,53 +120,17 @@ class CupsIppFile(data_format.BinaryDataFile):
         debug=debug, output_writer=output_writer)
     self._last_charset_attribute = 'ascii'
 
-  def _DebugPrintAttribute(self, attribute):
-    """Prints attribute debug information.
+  def _FormatIntegerAsTagValue(self, integer):
+    """Formats an integer as a tag value.
 
     Args:
-      attribute (cups_ipp_attribute): attribute.
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a tag value.
     """
-    self._DebugPrintTagValue(attribute.tag_value)
-
-    value_string = '{0:d}'.format(attribute.name_size)
-    self._DebugPrintValue('Name size', value_string)
-
-    self._DebugPrintValue('Name', attribute.name)
-
-    value_string = '{0:d}'.format(attribute.value_data_size)
-    self._DebugPrintValue('Value data size', value_string)
-
-    self._DebugPrintData('Value data', attribute.value_data)
-
-  def _DebugPrintHeader(self, header):
-    """Prints header debug information.
-
-    Args:
-      header (cups_ipp_header): header.
-    """
-    value_string = '{0:d}.{1:d}'.format(
-        header.major_version, header.minor_version)
-    self._DebugPrintValue('Format version', value_string)
-
-    value_string = '0x{0:04x}'.format(header.operation_identifier)
-    self._DebugPrintValue('Operation identifier', value_string)
-
-    value_string = '0x{0:08x}'.format(header.request_identifier)
-    self._DebugPrintValue('Request identifier', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTagValue(self, tag_value):
-    """Prints tag value debug information.
-
-    Args:
-      tag_value (int8): tag value.
-    """
-    value_string = '0x{0:02x} ({1:s})'.format(
-        tag_value, self._TAG_VALUE_STRINGS.get(tag_value, 'UNKNOWN'))
-    self._DebugPrintValue('Tag value', value_string)
-
-    self._DebugPrintText('\n')
+    return '0x{0:02x} ({1:s})'.format(
+        integer, self._TAG_VALUE_STRINGS.get(integer, 'UNKNOWN'))
 
   def _ReadAttribute(self, file_object):
     """Reads an attribute.
@@ -169,7 +148,7 @@ class CupsIppFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'attribute')
 
     if self._debug:
-      self._DebugPrintAttribute(attribute)
+      self._DebugPrintStructureObject(attribute, self._DEBUG_INFO_ATTRIBUTE)
 
     value = None
     if attribute.tag_value in self._INTEGER_TAG_VALUES:
@@ -334,7 +313,7 @@ class CupsIppFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
-      self._DebugPrintHeader(header)
+      self._DebugPrintStructureObject(header, self._DEBUG_INFO_HEADER)
 
   def ReadFileObject(self, file_object):
     """Reads a CUPS Internet Printing Protocol (IPP) file-like object.

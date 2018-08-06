@@ -92,6 +92,7 @@ class BinaryDataFormat(object):
       structure_object (object): structure object.
       debug_info (list[tuple[str, str, int]]): debug information.
     """
+    attribute_value = ''
     for attribute_name, description, value_format_callback in debug_info:
       attribute_value = getattr(structure_object, attribute_name, None)
       if attribute_value is None:
@@ -109,7 +110,8 @@ class BinaryDataFormat(object):
       else:
         self._DebugPrintValue(description, attribute_value)
 
-    self._DebugPrintText('\n')
+    if not attribute_value or attribute_value[:-2] != '\n\n':
+      self._DebugPrintText('\n')
 
   def _DebugPrintPosixTimeValue(self, description, value):
     """Prints a POSIX timestamp value for debugging.
