@@ -19,22 +19,9 @@ class GZipFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  def testDebugPrintMemberHeader(self):
-    """Tests the _DebugPrintMemberHeader function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = gzipfile.GZipFile(output_writer=output_writer)
-
-    data_type_map = test_file._GetDataTypeMap('gzip_member_header')
-
-    data_section = data_type_map.CreateStructureValues(
-        compression_flags=0x00,
-        compression_method=8,
-        flags=0x08,
-        modification_time=1343493847,
-        operating_system=3,
-        signature=0x8b1f)
-
-    test_file._DebugPrintMemberHeader(data_section)
+  # TODO: test _ReadCompressedData function
+  # TODO: test _ReadMemberCompressedData function
+  # TODO: test _ReadMemberFooter function
 
   @test_lib.skipUnlessHasTestFile(['syslog.gz'])
   def testReadMemberHeader(self):

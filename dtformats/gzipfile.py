@@ -31,45 +31,77 @@ class GZipFile(data_format.BinaryDataFile):
 
   _BUFFER_SIZE = 16 * 1024 * 1024
 
-  def _DebugPrintMemberHeader(self, member_header):
-    """Prints member header debug information.
+  _DEBUG_INFO_MEMBER_FOOTER = [
+      ('checksum', 'Checksum', '_FormatStreamAsHexadecimal8'),
+      ('uncompressed_data_size', 'Uncompressed data sizse',
+       '_FormatStreamAsDecimal')]
+
+  _DEBUG_INFO_MEMBER_HEADER = [
+      ('signature', 'Signature', '_FormatStreamAsHexadecimal4'),
+      ('compression_method', 'Compression method', '_FormatStreamAsDecimal'),
+      ('flags', 'Flags', '_FormatStreamAsHexadecimal2'),
+      ('modification_time', 'Modification time', '_FormatIntegerAsPosixTime'),
+      ('operating_system', 'Operating system', '_FormatStreamAsDecimal'),
+      ('compression_flags', 'Compression flags', '_FormatStreamAsHexadecimal2')]
+
+  def _ReadCompressedData(self, zlib_decompressor, compressed_data):
+    """Reads compressed data.
 
     Args:
-      member_header (gzip_member_header): member header.
+      zlib_decompressor (zlib.Decompress): zlib decompressor.
+      compressed_data (bytes): compressed data.
+
+    Returns:
+      tuple[bytes, bytes]: decompressed data and remaining data.
     """
-    value_string = '0x{0:04x}'.format(member_header.signature)
-    self._DebugPrintValue('Signature', value_string)
+    data_segments = []
+    while compressed_data:
+      data = zlib_decompressor.decompress(compressed_data)
+      if not data:
+        break
 
-    value_string = '{0:d}'.format(member_header.compression_method)
-    self._DebugPrintValue('Compression method', value_string)
+      data_segments.append(data)
+      compressed_data = getattr(zlib_decompressor, 'unused_data', b'')
 
-    value_string = '0x{0:02x}'.format(member_header.flags)
-    self._DebugPrintValue('Flags', value_string)
+    return b''.join(data_segments), compressed_data
 
-    value_string = '{0:d}'.format(member_header.modification_time)
-    self._DebugPrintValue('Modification time', value_string)
-
-    value_string = '{0:d}'.format(member_header.operating_system)
-    self._DebugPrintValue('Operating system', value_string)
-
-    value_string = '0x{0:02x}'.format(member_header.compression_flags)
-    self._DebugPrintValue('Compression flags', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintMemberFooter(self, member_footer):
-    """Prints member footer debug information.
+  def _ReadMemberCompressedData(self, file_object):
+    """Reads a member compressed data.
 
     Args:
-      member_footer (gzip_member_footer): member footer.
+      file_object (file): file-like object.
     """
-    value_string = '0x{0:08x}'.format(member_footer.checksum)
-    self._DebugPrintValue('Checksum', value_string)
+    zlib_decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
+    compressed_data = file_object.read(self._BUFFER_SIZE)
+    while compressed_data:
+      data, compressed_data = self._ReadCompressedData(
+          zlib_decompressor, compressed_data)
+      if compressed_data:
+        file_object.seek(-len(compressed_data), os.SEEK_CUR)
 
-    value_string = '{0:d}'.format(member_footer.uncompressed_data_size)
-    self._DebugPrintValue('Uncompressed data size', value_string)
+      if not data:
+        break
 
-    self._DebugPrintText('\n')
+      compressed_data = file_object.read(self._BUFFER_SIZE)
+
+  def _ReadMemberFooter(self, file_object):
+    """Reads a member footer.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the member footer cannot be read.
+    """
+    file_offset = file_object.tell()
+    data_type_map = self._GetDataTypeMap('gzip_member_footer')
+
+    member_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'member footer')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          member_footer, self._DEBUG_INFO_MEMBER_FOOTER)
 
   def _ReadMemberHeader(self, file_object):
     """Reads a member header.
@@ -87,7 +119,8 @@ class GZipFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'member header')
 
     if self._debug:
-      self._DebugPrintMemberHeader(member_header)
+      self._DebugPrintStructureObject(
+          member_header, self._DEBUG_INFO_MEMBER_HEADER)
 
     if member_header.signature != self._GZIP_SIGNATURE:
       raise errors.ParseError(
@@ -129,64 +162,6 @@ class GZipFile(data_format.BinaryDataFile):
 
     if member_header.flags & self._FLAG_FHCRC:
       file_object.read(2)
-
-  def _ReadMemberFooter(self, file_object):
-    """Reads a member footer.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the member footer cannot be read.
-    """
-    file_offset = file_object.tell()
-    data_type_map = self._GetDataTypeMap('gzip_member_footer')
-
-    member_footer, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'member footer')
-
-    if self._debug:
-      self._DebugPrintMemberFooter(member_footer)
-
-  def _ReadCompressedData(self, zlib_decompressor, compressed_data):
-    """Reads compressed data.
-
-    Args:
-      zlib_decompressor (zlib.Decompress): zlib decompressor.
-      compressed_data (bytes): compressed data.
-
-    Returns:
-      tuple[bytes, bytes]: decompressed data and remaining data.
-    """
-    data_segments = []
-    while compressed_data:
-      data = zlib_decompressor.decompress(compressed_data)
-      if not data:
-        break
-
-      data_segments.append(data)
-      compressed_data = getattr(zlib_decompressor, 'unused_data', b'')
-
-    return b''.join(data_segments), compressed_data
-
-  def _ReadMemberCompressedData(self, file_object):
-    """Reads a member compressed data.
-
-    Args:
-      file_object (file): file-like object.
-    """
-    zlib_decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
-    compressed_data = file_object.read(self._BUFFER_SIZE)
-    while compressed_data:
-      data, compressed_data = self._ReadCompressedData(
-          zlib_decompressor, compressed_data)
-      if compressed_data:
-        file_object.seek(-len(compressed_data), os.SEEK_CUR)
-
-      if not data:
-        break
-
-      compressed_data = file_object.read(self._BUFFER_SIZE)
 
   def ReadFileObject(self, file_object):
     """Reads a GZip file-like object.
