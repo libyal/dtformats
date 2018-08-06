@@ -12,6 +12,21 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
 
   _DEFINITION_FILE = 'recycler.yaml'
 
+  _DEBUG_INFO_FILE_ENTRY = [
+      ('original_filename', 'Original filename (ANSI)', '_FormatANSIString'),
+      ('index', 'Index', '_FormatIntegerAsDecimal'),
+      ('drive_number', 'Drive number', '_FormatIntegerAsDecimal'),
+      ('deletion_time', 'Deletion time', '_FormatIntegerAsFiletime'),
+      ('original_file_size', 'Original file size', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_FILE_HEADER = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('number_of_file_entries', 'Number of file entries',
+       '_FormatIntegerAsDecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('file_entry_size', 'File entry size', '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Windows Recycler INFO2 file.
 
@@ -22,58 +37,28 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     super(RecyclerInfo2File, self).__init__(
         debug=debug, output_writer=output_writer)
     self._codepage = 'cp1252'
-    self._file_entry_size = 0
+    self._file_entry_data_size = 0
 
-  def _DebugPrintFileEntry(self, file_entry):
-    """Prints file entry debug information.
+  def _FormatANSIString(self, string):
+    """Formats an ANSI string.
 
     Args:
-      file_entry (recycler_info2_file_entry): file entry.
+      string (str): string.
+
+    Returns:
+      str: formatted ANSI string.
+
+    Raises:
+      ParseError: if the string could not be decoded.
     """
-    # The original filename can contain remnant data after the end-of-string
-    # character.
-    original_filename = file_entry.original_filename.split(b'\x00')[0]
+    # The string can contain remnant data after the end-of-string character.
+    string = string.split(b'\x00')[0]
 
     try:
-      original_filename = original_filename.decode(self._codepage)
-    except UnicodeDecodeError:
-      original_filename = '<DECODE ERROR>'
-
-    self._DebugPrintValue('Original filename (ANSI)', original_filename)
-
-    value_string = '{0:d}'.format(file_entry.index)
-    self._DebugPrintValue('Index', value_string)
-
-    value_string = '{0:d}'.format(file_entry.drive_number)
-    self._DebugPrintValue('Drive number', value_string)
-
-    self._DebugPrintFiletimeValue('Deletion time', file_entry.deletion_time)
-
-    value_string = '{0:d}'.format(file_entry.original_file_size)
-    self._DebugPrintValue('Original file size', value_string)
-
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
-
-    Args:
-      file_header (recycler_info2_file_header): file header.
-    """
-    value_string = '0x{0:08x}'.format(file_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '{0:d}'.format(file_header.number_of_file_entries)
-    self._DebugPrintValue('Number of file entries', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '{0:d}'.format(file_header.file_entry_size)
-    self._DebugPrintValue('File entry size', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
-
-    self._DebugPrintText('\n')
+      return string.decode(self._codepage)
+    except UnicodeDecodeError as exception:
+      raise errors.ParseError(
+          'Unable to decode ANSI string with error: {0!s}.'.format(exception))
 
   def _ReadFileEntry(self, file_object):
     """Reads the file entry.
@@ -87,7 +72,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     file_offset = file_object.tell()
 
     file_entry_data = self._ReadData(
-        file_object, file_offset, self._file_entry_size, 'file entry')
+        file_object, file_offset, self._file_entry_data_size, 'file entry')
 
     data_type_map = self._GetDataTypeMap('recycler_info2_file_entry')
 
@@ -100,9 +85,9 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
           '{1!s}').format(file_offset, exception))
 
     if self._debug:
-      self._DebugPrintFileEntry(file_entry)
+      self._DebugPrintStructureObject(file_entry, self._DEBUG_INFO_FILE_ENTRY)
 
-    if self._file_entry_size > 280:
+    if self._file_entry_data_size > 280:
       file_offset += 280
 
       data_type_map = self._GetDataTypeMap(
@@ -137,13 +122,13 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.file_entry_size not in (280, 800):
       raise errors.ParseError('Unsupported file entry size: {0:d}'.format(
           file_header.file_entry_size))
 
-    self._file_entry_size = file_header.file_entry_size
+    self._file_entry_data_size = file_header.file_entry_size
 
   def ReadFileObject(self, file_object):
     """Reads a Windows Recycler INFO2 file-like object.
@@ -161,4 +146,4 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     while file_offset < self._file_size:
       self._ReadFileEntry(file_object)
 
-      file_offset += self._file_entry_size
+      file_offset += self._file_entry_data_size

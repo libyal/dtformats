@@ -274,6 +274,28 @@ class BinaryDataFormat(object):
     """
     return '{0:d}'.format(integer)
 
+  def _FormatIntegerAsFiletime(self, integer):
+    """Formats an integer as a FILETIME date and time value.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a FILETIME date and time value.
+    """
+    if integer == 0:
+      return 'Not set (0)'
+
+    if integer == 0x7fffffffffffffff:
+      return 'Never (0x7fffffffffffffff)'
+
+    date_time = dfdatetime_filetime.Filetime(timestamp=integer)
+    date_time_string = date_time.CopyToDateTimeString()
+    if not date_time_string:
+      return '0x{08:x}'.format(integer)
+
+    return '{0:s} UTC'.format(date_time_string)
+
   def _FormatIntegerAsHexadecimal2(self, integer):
     """Formats an integer as an 2-digit hexadecimal.
 
@@ -314,7 +336,7 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as decimal.
+      str: integer formatted as a POSIX date and time value.
     """
     if integer == 0:
       return 'Not set (0)'
