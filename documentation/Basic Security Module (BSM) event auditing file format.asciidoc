@@ -35,6 +35,7 @@ in the section entitled "GNU Free Documentation License".
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | December 2016 | Initial version.
 | 0.0.2 | J.B. Metz | June 2018 | Additional changes.
+| 0.0.3 | J.B. Metz | August 2018 | Additional information about AUT_GROUPS and AUT_NEWGROUPS.
 |===
 
 :numbered:
@@ -567,7 +568,8 @@ See section: <<token_types,Token types>>
 | Offset | Size | Value | Description
 | 0 | 1 | 0x33 | Token type +
 See section: <<token_types,Token types>>
-| 1 | 2 | | [yellow-background]*Unknown (Group number?)*
+| 1 | 4 | | Number of groups
+| 5 | number of groups x 4 | | Array of group identifiers
 |===
 
 === AUT_ACE token
@@ -618,7 +620,7 @@ See section: <<token_types,Token types>>
 | 0 | 1 | 0x3b | Token type +
 See section: <<token_types,Token types>>
 | 1 | 4 | | Number of groups
-| 5 | 4 x .... | | Array of group identifiers
+| 5 | number of groups x 4 | | Array of group identifiers
 |===
 
 === AUT_EXEC_ARGS token

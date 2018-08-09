@@ -712,6 +712,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
   # Token types with unknown data format:
   # 0x12: AUT_OHEADER
+  # TODO: complete implementation of bsm_token_data_exec_args
   _DATA_TYPE_MAP_PER_TOKEN_TYPE = {
       0x11: 'bsm_token_data_other_file32',
       0x13: 'bsm_token_data_trailer',
@@ -731,6 +732,10 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x2d: 'bsm_token_data_arg32',
       0x2f: 'bsm_token_data_seq',
       0x32: 'bsm_token_data_ipc_perm',
+      0x34: 'bsm_token_data_groups',
+      0x3b: 'bsm_token_data_groups',
+      0x3c: 'bsm_token_data_exec_args',
+      0x3d: 'bsm_token_data_exec_args',
       0x3e: 'bsm_token_data_attr32',
       0x52: 'bsm_token_data_exit',
       0x60: 'bsm_token_data_zonename',
@@ -803,6 +808,10 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x2d: 'token data arg32',
       0x2f: 'token data seq',
       0x32: 'token data ipc_perm',
+      0x34: 'token data groups',
+      0x3b: 'token data newgroups',
+      0x3c: 'token data exec_args',
+      0x3d: 'token data exec_env',
       0x3e: 'token data attr32',
       0x60: 'token data zonename',
       0x71: 'token data arg64',
@@ -1013,6 +1022,8 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('name', 'Name', '_FormatString')]
 
   # TODO: implement and add debug info for token type 0x32
+  # TODO: implement and add debug info for token type 0x34 and 0x3b
+  # TODO: implement and add debug info for token type 0x3c and 0x3d
   _DEBUG_INFO_TOKEN_DATA = {
       0x11: _DEBUG_INFO_TOKEN_DATA_OTHER_FILE32,
       0x13: _DEBUG_INFO_TOKEN_DATA_TRAILER,
