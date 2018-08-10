@@ -65,6 +65,42 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       7: 'CSSM_DB_ATTRIBUTE_FORMAT_MULTI_UINT32',
       8: 'CSSM_DB_ATTRIBUTE_FORMAT_COMPLEX'}
 
+  _DEBUG_INFO_FILE_HEADER = [
+      ('signature', 'Signature', '_FormatStreamAsSignature'),
+      ('major_format_version', 'Major format version',
+       '_FormatIntegerAsDecimal'),
+      ('minor_format_version', 'Minor format version',
+       '_FormatIntegerAsDecimal'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('tables_array_offset', 'Tables array offset',
+       '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
+
+  _DEBUG_INFO_RECORD_HEADER = [
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('record_index', 'Record index', '_FormatIntegerAsDecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
+      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8')]
+
+  _DEBUG_INFO_TABLES_ARRAY = [
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('number_of_tables', 'Number of tables', '_FormatIntegerAsDecimal'),
+      ('table_offsets', 'Table offsets', '_FormatTableOffsets')]
+
+  _DEBUG_INFO_TABLE_HEADER = [
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('record_type', 'Record type', '_FormatIntegerAsHexadecimal8'),
+      ('number_of_records', 'Number of records', '_FormatIntegerAsDecimal'),
+      ('record_array_offset', 'Record array offset',
+       '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('number_of_record_offsets', 'Number of record offsets',
+       '_FormatIntegerAsDecimal'),
+      ('record_offsets', 'Record offsets', '_FormatRecordOffsets')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a MacOS keychain database file.
 
@@ -81,113 +117,52 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     """list[KeychainDatabaseTable]: tables."""
     return self._tables.values()
 
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
+  def _FormatRecordOffsets(self, array_of_integers):
+    """Formats the record offsets.
 
     Args:
-      file_header (keychain_file_header): file header.
+      array_of_integers (list[int]): array of integers.
+
+    Returns:
+      str: formatted record offsets.
     """
-    value_string = file_header.signature.decode('ascii')
-    self._DebugPrintValue('Signature', value_string)
-
-    value_string = '{0:d}'.format(file_header.major_format_version)
-    self._DebugPrintValue('Major format version', value_string)
-
-    value_string = '{0:d}'.format(file_header.major_format_version)
-    self._DebugPrintValue('Major format version', value_string)
-
-    value_string = '{0:d}'.format(file_header.minor_format_version)
-    self._DebugPrintValue('Minor format version', value_string)
-
-    value_string = '{0:d}'.format(file_header.data_size)
-    self._DebugPrintValue('Data size', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.tables_array_offset)
-    self._DebugPrintValue('Tables array offset', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintRecordHeader(self, record_header):
-    """Prints record header debug information.
-
-    Args:
-      record_header (keychain_record_header): record header.
-    """
-    value_string = '{0:d}'.format(record_header.data_size)
-    self._DebugPrintValue('Data size', value_string)
-
-    value_string = '{0:d}'.format(record_header.record_index)
-    self._DebugPrintValue('Record index', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown4)
-    self._DebugPrintValue('Unknown4', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown5)
-    self._DebugPrintValue('Unknown5', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTablesArray(self, tables_array):
-    """Prints file tables array information.
-
-    Args:
-      tables_array (keychain_tables_array): tables array.
-    """
-    value_string = '{0:d}'.format(tables_array.data_size)
-    self._DebugPrintValue('Data size', value_string)
-
-    value_string = '{0:d}'.format(tables_array.number_of_tables)
-    self._DebugPrintValue('Number of tables', value_string)
-
-    for index, table_offset in enumerate(tables_array.table_offsets):
-      description_string = 'Table offset: {0:d}'.format(index)
-      value_string = '0x{0:08x}'.format(table_offset)
-      self._DebugPrintValue(description_string, value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintTableHeader(self, table_header):
-    """Prints table header debug information.
-
-    Args:
-      table_header (keychain_table_header): table header.
-    """
-    value_string = '{0:d}'.format(table_header.data_size)
-    self._DebugPrintValue('Data size', value_string)
-
-    value_string = '0x{0:08x}'.format(table_header.record_type)
-    self._DebugPrintValue('Record type', value_string)
-
-    value_string = '{0:d}'.format(table_header.number_of_records)
-    self._DebugPrintValue('Number of records', value_string)
-
-    value_string = '0x{0:08x}'.format(table_header.records_array_offset)
-    self._DebugPrintValue('Records array offset', value_string)
-
-    value_string = '0x{0:08x}'.format(table_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '0x{0:08x}'.format(table_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '{0:d}'.format(table_header.number_of_record_offsets)
-    self._DebugPrintValue('Number of record offsets', value_string)
-
-    for index, record_offset in enumerate(table_header.record_offsets):
+    lines = []
+    for index, record_offset in enumerate(array_of_integers):
       description_string = 'Record offset: {0:d}'.format(index)
-      value_string = '0x{0:08x}'.format(record_offset)
-      self._DebugPrintValue(description_string, value_string)
+      value_string = self._FormatIntegerAsHexadecimal8(record_offset)
+      line = self._FormatValue(description_string, value_string)
+      lines.append(line)
 
-    self._DebugPrintText('\n')
+    return ''.join(lines)
+
+  def _FormatTableOffsets(self, array_of_integers):
+    """Formats the table offsets.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+
+    Returns:
+      str: formatted table offsets.
+    """
+    lines = []
+    for index, table_offset in enumerate(array_of_integers):
+      description_string = 'Table offset: {0:d}'.format(index)
+      value_string = self._FormatIntegerAsHexadecimal8(table_offset)
+      line = self._FormatValue(description_string, value_string)
+      lines.append(line)
+
+    return ''.join(lines)
+
+  def _FormatStreamAsSignature(self, stream):
+    """Formats a stream as a signature.
+
+    Args:
+      stream (bytes): stream.
+
+    Returns:
+      str: stream formatted as a signature.
+    """
+    return stream.decode('ascii')
 
   def _ReadAttributeValueInteger(
       self, attribute_values_data, record_offset, attribute_values_data_offset,
@@ -289,7 +264,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.signature != self._FILE_SIGNATURE:
       raise errors.ParseError('Unsupported file signature.')
@@ -354,7 +329,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     if self._debug:
       for index, attribute_value_offset in enumerate(attribute_value_offsets):
         description_string = 'Attribute value offset: {0:d}'.format(index)
-        value_string = '0x{0:08x}'.format(attribute_value_offset)
+        value_string = self._FormatIntegerAsHexadecimal8(attribute_value_offset)
         self._DebugPrintValue(description_string, value_string)
 
       self._DebugPrintText('\n')
@@ -381,7 +356,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, record_header_offset, data_type_map, 'record header')
 
     if self._debug:
-      self._DebugPrintRecordHeader(record_header)
+      self._DebugPrintStructureObject(
+          record_header, self._DEBUG_INFO_RECORD_HEADER)
 
     return record_header
 
@@ -622,7 +598,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, tables_array_offset, data_type_map, 'tables array')
 
     if self._debug:
-      self._DebugPrintTablesArray(tables_array)
+      self._DebugPrintStructureObject(
+          tables_array, self._DEBUG_INFO_TABLES_ARRAY)
 
     for table_offset in tables_array.table_offsets:
       self._ReadTable(file_object, tables_array_offset + table_offset)
@@ -685,7 +662,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, table_header_offset, data_type_map, 'table header')
 
     if self._debug:
-      self._DebugPrintTableHeader(table_header)
+      self._DebugPrintStructureObject(
+          table_header, self._DEBUG_INFO_TABLE_HEADER)
 
     return table_header
 

@@ -140,10 +140,7 @@ class BinaryDataFormat(object):
       value (object): value.
     """
     if self._output_writer:
-      alignment, _ = divmod(len(description), 8)
-      alignment = 8 - alignment + 1
-      text = '{0:s}{1:s}: {2!s}\n'.format(
-          description, '\t' * alignment, value)
+      text = self._FormatValue(description, value)
       self._output_writer.WriteText(text)
 
   def _DebugPrintText(self, text):
@@ -387,6 +384,17 @@ class BinaryDataFormat(object):
       str: UUID formatted as string.
     """
     return '{0!s}'.format(uuid)
+
+  def _FormatValue(self, description, value):
+    """Formats a value for debugging.
+
+    Args:
+      description (str): description.
+      value (object): value.
+    """
+    alignment, _ = divmod(len(description), 8)
+    alignment = 8 - alignment + 1
+    return '{0:s}{1:s}: {2!s}\n'.format(description, '\t' * alignment, value)
 
   def _GetDataTypeMap(self, name):
     """Retrieves a data type map defined by the definition file.

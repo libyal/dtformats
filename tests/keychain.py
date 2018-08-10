@@ -15,26 +15,12 @@ class KeychainDatabaseFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  def testDebugPrintFileHeader(self):
-    """Tests the _DebugPrintFileHeader function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = keychain.KeychainDatabaseFile(output_writer=output_writer)
+  # TODO: add test for tables property
 
-    data_type_map = test_file._GetDataTypeMap('keychain_file_header')
-
-    file_header = data_type_map.CreateStructureValues(
-        data_size=0,
-        major_format_version=0,
-        minor_format_version=1,
-        signature=b'test',
-        tables_array_offset=2,
-        unknown1=2)
-
-    test_file._DebugPrintFileHeader(file_header)
-
-  # TODO: add test for _DebugPrintRecordHeader
   # TODO: add test for _DebugPrintTablesArray
   # TODO: add test for _DebugPrintTableHeader
+
+  # TODO: add test for _FormatStreamAsSignature
 
   @test_lib.skipUnlessHasTestFile(['login.keychain'])
   def testReadFileHeader(self):
