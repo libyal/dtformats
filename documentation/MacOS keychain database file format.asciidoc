@@ -518,35 +518,65 @@ The attribute data types (or formats):
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0 | CSSM_DB_ATTRIBUTE_FORMAT_STRING |
+| 0 | CSSM_DB_ATTRIBUTE_FORMAT_STRING | +
+See section: <<string_data_type,String data type>>
 | 1 | CSSM_DB_ATTRIBUTE_FORMAT_SINT32 | Integer 32-bit signed
 | 2 | CSSM_DB_ATTRIBUTE_FORMAT_UINT32 | Integer 32-bit unsigned
 | 3 | CSSM_DB_ATTRIBUTE_FORMAT_BIG_NUM |
 | 4 | CSSM_DB_ATTRIBUTE_FORMAT_REAL | Floating-point 64-bit
-| 5 | CSSM_DB_ATTRIBUTE_FORMAT_TIME_DATE | Date and time
+| 5 | CSSM_DB_ATTRIBUTE_FORMAT_TIME_DATE | Date and time +
+See section: <<date_time_data_type,Date time data type>>
 | 6 | CSSM_DB_ATTRIBUTE_FORMAT_BLOB | Binary data
 | 7 | CSSM_DB_ATTRIBUTE_FORMAT_MULTI_UINT32 |
 | 8 | CSSM_DB_ATTRIBUTE_FORMAT_COMPLEX |
 |===
 
+=== [[binary_data_type]]Binary data type
+
+The binary data type is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Binary data size
+| 4 | ... | | Binary data
+|===
+
+=== [[date_time_data_type]]Date time data type
+
+The date time data type is at 16 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Date and time string +
+The string is formatted as "YYYYMMDDhhmmssZ", with an end-of-string character
+|===
+
+=== [[string_data_type]]String data type
+
+The string data type is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | String size
+| 4 | ... | | String +
+The end-of-string character is optional +
+The encoding is platform specific
+|===
+
+=== Notes
+
 ....
-STRING
-
-A string containing only printable characters, NULL terminator is optional. Greater than and less than operations are performed by comparing the binary value of each character (strcmp). The character format is platform specific.
-
 BIG_NUM
 
 This is a sign-magnitude little-endian integer of arbitrary size. The first bit represents the sign of the number (0 == positive, 1 == negative, zero is non-deterministic), all other bits represent the magnitude. Padding zeros are allowed.
 
-TIME_DATE
-
-A representation of generalized time: A NULL terminated ASCII string representation of Zulu Time and Data of size 16 character and following the format: "YYYYMMDDhhmmssZ"
-BLOB
-
-An opaque block of data. Greater than and less than operations are preformed by comparing the binary value of each byte.
 MULTI_UINT32
 
 An array of uint32s. The length of this structure must be a multiple of four. Greater than and less than operations are performed by comparing the binary value of each uint32.
+
 COMPLEX
 
 A non-standard or complex structure. The type is further defined by the attribute's name. (for example, if AttributeName = APP_DOMAIN_STRUCTURED_NAME, then the implied type is a application-defined structure containing a name). Use of this type is not recommended.

@@ -39,25 +39,28 @@ attributes:
   size: 4
   units: bytes
 ---
+name: keychain_blob
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: size
+  data_type: uint32
+- name: blob
+  type: stream
+  element_data_type: char
+  number_of_elements: keychain_blob.size
+---
 name: keychain_date_time
 type: structure
 attributes:
   byte_order: big-endian
 members:
-- name: year
-  data_type: uint32
-- name: month
-  data_type: uint16
-- name: day_of_month
-  data_type: uint16
-- name: hours
-  data_type: uint16
-- name: minutes
-  data_type: uint16
-- name: seconds
-  data_type: uint16
-- name: unknown1
-  data_type: uint16
+- name: date_time
+  type: string
+  encoding: ascii
+  element_data_type: char
+  number_of_elements: 16
 ---
 name: keychain_string
 type: structure
@@ -162,6 +165,10 @@ members:
 - name: index_identifier
   data_type: uint32
 - name: attribute_identifier
+  data_type: uint32
+- name: index_type
+  data_type: uint32
+- name: index_data_location
   data_type: uint32
 ---
 name: keychain_record_schema_information

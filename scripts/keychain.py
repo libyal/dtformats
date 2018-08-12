@@ -35,6 +35,10 @@ def Main():
       'Extracts information from MacOS keychain database files.'))
 
   argument_parser.add_argument(
+      '-c', '--content', dest='content', action='store_true', default=False,
+      help='export database content instead of schema.')
+
+  argument_parser.add_argument(
       '-d', '--debug', dest='debug', action='store_true', default=False,
       help='enable debug output.')
 
@@ -68,33 +72,53 @@ def Main():
 
   keychain_file.Open(options.source)
 
-  print('Keychain database file schema:')
+  if not options.content:
+    print('Keychain database file schema:')
 
-  for table in keychain_file.tables:
-    print('Table: {0:s} (0x{1:08x})'.format(
-        table.relation_name, table.relation_identifier))
+    for table in keychain_file.tables:
+      print('Table: {0:s} (0x{1:08x})'.format(
+          table.relation_name, table.relation_identifier))
 
-    number_of_columns = len(table.columns)
-    print('\tNumber of columns:\t{0:d}'.format(number_of_columns))
-    print('\tColumn\tIdentifier\tName\tType')
+      number_of_columns = len(table.columns)
+      print('\tNumber of columns:\t{0:d}'.format(number_of_columns))
+      print('\tColumn\tIdentifier\tName\tType')
 
-    for index, column in enumerate(table.columns):
-      if column.attribute_identifier >= number_of_columns:
-        attribute_identifier = ''
-      else:
-        attribute_identifier = '{0:d}'.format(column.attribute_identifier)
+      for index, column in enumerate(table.columns):
+        if column.attribute_identifier >= number_of_columns:
+          attribute_identifier = ''
+        else:
+          attribute_identifier = '{0:d}'.format(column.attribute_identifier)
 
-      attribute_data_type = ATTRIBUTE_DATA_TYPES.get(
-          column.attribute_data_type,
-          '0x{0:08x}'.format(column.attribute_data_type))
+        attribute_data_type = ATTRIBUTE_DATA_TYPES.get(
+            column.attribute_data_type,
+            '0x{0:08x}'.format(column.attribute_data_type))
 
-      print('\t{0:d}\t{1:s}\t{2:s}\t{3:s}'.format(
-          index, attribute_identifier, column.attribute_name or 'NULL',
-          attribute_data_type))
+        print('\t{0:d}\t{1:s}\t{2:s}\t{3:s}'.format(
+            index, attribute_identifier, column.attribute_name or 'NULL',
+            attribute_data_type))
+
+      print('')
 
     print('')
 
-  print('')
+  else:
+    for table in keychain_file.tables:
+      print('Table: {0:s} (0x{1:08x})'.format(
+          table.relation_name, table.relation_identifier))
+
+      print('\t'.join([column.attribute_name for column in table.columns]))
+
+      for record in table.records:
+        record_values = []
+        for value in record.values():
+          if value is None:
+            record_values.append('NULL')
+          else:
+            record_values.append('{0!s}'.format(value))
+
+        print('\t'.join(record_values))
+
+      print('')
 
   keychain_file.Close()
 

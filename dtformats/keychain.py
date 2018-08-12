@@ -33,6 +33,7 @@ class KeychainDatabaseTable(object):
 
   Attributes:
     columns (list[KeychainDatabaseColumn]): columns.
+    records (list[dict[str, str]]): records.
     relation_identifier (int): relation identifier.
     relation_name (str): relation name.
   """
@@ -41,6 +42,7 @@ class KeychainDatabaseTable(object):
     """Initializes a MacOS keychain database table."""
     super(KeychainDatabaseTable, self).__init__()
     self.columns = []
+    self.records = []
     self.relation_identifier = None
     self.relation_name = None
 
@@ -91,6 +93,13 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       7: 'CSSM_DB_ATTRIBUTE_FORMAT_MULTI_UINT32',
       8: 'CSSM_DB_ATTRIBUTE_FORMAT_COMPLEX'}
 
+  _ATTRIBUTE_DATA_READ_FUNCTIONS = {
+      0: '_ReadAttributeValueString',
+      1: '_ReadAttributeValueInteger',
+      2: '_ReadAttributeValueInteger',
+      5: '_ReadAttributeValueDateTime',
+      6: '_ReadAttributeValueBinaryData'}
+
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
       ('major_format_version', 'Major format version',
@@ -126,6 +135,16 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       ('number_of_record_offsets', 'Number of record offsets',
        '_FormatIntegerAsDecimal'),
       ('record_offsets', 'Record offsets', '_FormatRecordOffsets')]
+
+  _DEBUG_INFO_SCHEMA_INDEXES_RECORD_VALUES = [
+      ('relation_identifier', 'Relation identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('index_identifier', 'Index identifier', '_FormatIntegerAsHexadecimal8'),
+      ('attribute_identifier', 'Attribute identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('index_type', 'Index type', '_FormatIntegerAsHexadecimal8'),
+      ('index_data_location', 'Index data location',
+       '_FormatIntegerAsHexadecimal8')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a MacOS keychain database file.
@@ -215,6 +234,90 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       lines.append(line)
 
     return ''.join(lines)
+
+  def _ReadAttributeValueBinaryData(
+      self, attribute_values_data, record_offset, attribute_values_data_offset,
+      attribute_value_offset, description):
+    """Reads a binary data attribute value.
+
+    Args:
+      attribute_values_data (bytes): attribute values data.
+      record_offset (int): offset of the record relative to the start of
+          the file.
+      attribute_values_data_offset (int): offset of the attribute values data
+          relative to the start of the record.
+      attribute_value_offset (int): offset of the attribute relative to
+          the start of the record.
+      description (str): description of the attribute value.
+
+    Returns:
+      bytes: binary data value or None if attribute value offset is not set.
+
+    Raises:
+      ParseError: if the attribute value cannot be read.
+    """
+    if attribute_value_offset == 0:
+      return None
+
+    data_type_map = self._GetDataTypeMap('keychain_blob')
+
+    file_offset = (
+        record_offset + attribute_values_data_offset + attribute_value_offset)
+
+    attribute_value_offset -= attribute_values_data_offset + 1
+    attribute_value_data = attribute_values_data[attribute_value_offset:]
+
+    try:
+      string_attribute_value = self._ReadStructureFromByteStream(
+          attribute_value_data, file_offset, data_type_map, description)
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map binary data attribute value data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(file_offset, exception))
+
+    return repr(string_attribute_value.blob)
+
+  def _ReadAttributeValueDateTime(
+      self, attribute_values_data, record_offset, attribute_values_data_offset,
+      attribute_value_offset, description):
+    """Reads a date time attribute value.
+
+    Args:
+      attribute_values_data (bytes): attribute values data.
+      record_offset (int): offset of the record relative to the start of
+          the file.
+      attribute_values_data_offset (int): offset of the attribute values data
+          relative to the start of the record.
+      attribute_value_offset (int): offset of the attribute relative to
+          the start of the record.
+      description (str): description of the attribute value.
+
+    Returns:
+      str: date and time values.
+
+    Raises:
+      ParseError: if the attribute value cannot be read.
+    """
+    if attribute_value_offset == 0:
+      return None
+
+    data_type_map = self._GetDataTypeMap('keychain_date_time')
+
+    file_offset = (
+        record_offset + attribute_values_data_offset + attribute_value_offset)
+
+    attribute_value_offset -= attribute_values_data_offset + 1
+    attribute_value_data = attribute_values_data[attribute_value_offset:]
+
+    try:
+      date_time_attribute_value = self._ReadStructureFromByteStream(
+          attribute_value_data, file_offset, data_type_map, description)
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map date time attribute value data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(file_offset, exception))
+
+    return date_time_attribute_value.date_time.rstrip('\x00')
 
   def _ReadAttributeValueInteger(
       self, attribute_values_data, record_offset, attribute_values_data_offset,
@@ -323,22 +426,58 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     return file_header
 
-  def _ReadRecord(self, file_object, record_offset):
+  def _ReadRecord(self, file_object, record_offset, record_type):
     """Reads the record.
 
     Args:
       file_object (file): file-like object.
       record_offset (int): offset of the record relative to the start of
           the file.
+      record_type (int): record type, which should correspond to a relation
+          identifier of a table defined in the schema.
 
     Raises:
       ParseError: if the record cannot be read.
     """
+    table = self._tables.get(record_type, None)
+    if not table:
+      raise errors.ParseError(
+          'Missing table for relation identifier: 0x{0:08}'.format(record_type))
+
     record_header = self._ReadRecordHeader(file_object, record_offset)
 
-    if self._debug:
-      record_data = file_object.read(record_header.data_size - 24)
-      self._DebugPrintData('Record data', record_data)
+    record = collections.OrderedDict()
+    if table.columns:
+      attribute_value_offsets = self._ReadRecordAttributeValueOffset(
+          file_object, record_offset + 24, len(table.columns))
+
+      file_offset = file_object.tell()
+      attribute_values_data_offset = file_offset - record_offset
+      attribute_values_data_size = record_header.data_size - (
+          file_offset - record_offset)
+      attribute_values_data = file_object.read(attribute_values_data_size)
+
+      if self._debug:
+        self._DebugPrintData('Attribute values data', attribute_values_data)
+
+      for index, column in enumerate(table.columns):
+        attribute_data_read_function = self._ATTRIBUTE_DATA_READ_FUNCTIONS.get(
+            column.attribute_data_type, None)
+        if attribute_data_read_function:
+          attribute_data_read_function = getattr(
+              self, attribute_data_read_function, None)
+
+        if not attribute_data_read_function:
+          attribute_value = None
+        else:
+          attribute_value = attribute_data_read_function(
+              attribute_values_data, record_offset,
+              attribute_values_data_offset, attribute_value_offsets[index],
+              column.attribute_name)
+
+        record[column.attribute_name] = attribute_value
+
+    table.records.append(record)
 
   def _ReadRecordAttributeValueOffset(
       self, file_object, file_offset, number_of_attribute_values):
@@ -524,6 +663,20 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     table.columns.append(column)
 
+    table = self._tables.get(
+        self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_ATTRIBUTES, None)
+    if not table:
+      raise errors.ParseError('Missing CSSM_DL_DB_SCHEMA_ATTRIBUTES table.')
+
+    record = collections.OrderedDict({
+        'RelationID': relation_identifier,
+        'AttributeID': attribute_identifier,
+        'AttributeNameFormat': attribute_name_data_type,
+        'AttributeName': attribute_name,
+        'AttributeFormat': attribute_data_type})
+
+    table.records.append(record)
+
   def _ReadRecordSchemaIndexes(self, file_object, record_offset):
     """Reads a schema indexes (CSSM_DL_DB_SCHEMA_INDEXES) record.
 
@@ -551,19 +704,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         'schema indexes record values')
 
     if self._debug:
-      value_string = '0x{0:08x}'.format(record_values.relation_identifier)
-      self._DebugPrintValue('Relation identifier', value_string)
-
-      value_string = '{0:d}'.format(record_values.index_identifier)
-      self._DebugPrintValue('Index identifier', value_string)
-
-      value_string = '0x{0:08x}'.format(record_values.attribute_identifier)
-      self._DebugPrintValue('Attribute identifier', value_string)
-
-    if record_values.relation_identifier not in self._tables:
-      raise errors.ParseError(
-          'CSSM_DL_DB_SCHEMA_INDEXES defines relation identifier not defined '
-          'in CSSM_DL_DB_SCHEMA_INFO.')
+      self._DebugPrintStructureObject(
+          record_values, self._DEBUG_INFO_SCHEMA_INDEXES_RECORD_VALUES)
 
     if self._debug:
       file_offset = file_object.tell()
@@ -575,6 +717,24 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       else:
         trailing_data = file_object.read(trailing_data_size)
         self._DebugPrintData('Record trailing data', trailing_data)
+
+    if record_values.relation_identifier not in self._tables:
+      raise errors.ParseError(
+          'CSSM_DL_DB_SCHEMA_INDEXES defines relation identifier not defined '
+          'in CSSM_DL_DB_SCHEMA_INFO.')
+
+    table = self._tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_INDEXES, None)
+    if not table:
+      raise errors.ParseError('Missing CSSM_DL_DB_SCHEMA_INDEXES table.')
+
+    record = collections.OrderedDict({
+        'RelationID': record_values.relation_identifier,
+        'IndexID': record_values.index_identifier,
+        'AttributeID': record_values.attribute_identifier,
+        'IndexType': record_values.index_type,
+        'IndexedDataLocation': record_values.index_data_location})
+
+    table.records.append(record)
 
   def _ReadRecordSchemaInformation(self, file_object, record_offset):
     """Reads a schema information (CSSM_DL_DB_SCHEMA_INFO) record.
@@ -613,12 +773,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
       self._DebugPrintValue('Relation name', relation_name)
 
-    table = KeychainDatabaseTable()
-    table.relation_identifier = record_values.relation_identifier
-    table.relation_name = relation_name
-
-    self._tables[table.relation_identifier] = table
-
     if self._debug:
       file_offset = file_object.tell()
       trailing_data_size = record_header.data_size - (
@@ -629,6 +783,22 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       else:
         trailing_data = file_object.read(trailing_data_size)
         self._DebugPrintData('Record trailing data', trailing_data)
+
+    table = KeychainDatabaseTable()
+    table.relation_identifier = record_values.relation_identifier
+    table.relation_name = relation_name
+
+    self._tables[table.relation_identifier] = table
+
+    table = self._tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO, None)
+    if not table:
+      raise errors.ParseError('Missing CSSM_DL_DB_SCHEMA_INFO table.')
+
+    record = collections.OrderedDict({
+        'RelationID': record_values.relation_identifier,
+        'RelationName': relation_name})
+
+    table.records.append(record)
 
   def _ReadTablesArray(self, file_object, tables_array_offset):
     """Reads the tables array.
@@ -684,7 +854,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
           self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_ATTRIBUTES):
         self._ReadRecordSchemaAttributes(file_object, record_offset)
       else:
-        self._ReadRecord(file_object, record_offset)
+        self._ReadRecord(file_object, record_offset, table_header.record_type)
 
     if self._debug:
       file_offset = file_object.tell()
@@ -730,5 +900,4 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     """
     file_header = self._ReadFileHeader(file_object)
 
-    self._ReadTablesArray(
-        file_object, file_header.tables_array_offset)
+    self._ReadTablesArray(file_object, file_header.tables_array_offset)
