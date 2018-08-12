@@ -15,6 +15,7 @@ class KeychainDatabaseColumn(object):
   """MacOS keychain database column.
 
   Attributes:
+    attribute_data_type (int): attribute (data) type.
     attribute_identifier (int): attribute identifier.
     attribute_name (str): attribute name.
   """
@@ -22,6 +23,7 @@ class KeychainDatabaseColumn(object):
   def __init__(self):
     """Initializes a MacOS keychain database column."""
     super(KeychainDatabaseColumn, self).__init__()
+    self.attribute_data_type = None
     self.attribute_identifier = None
     self.attribute_name = None
 
@@ -53,6 +55,30 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO = 0x00000000
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INDEXES = 0x00000001
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_ATTRIBUTES = 0x00000002
+
+  _TABLE_NAMES = {
+      0x00000000: 'CSSM_DL_DB_SCHEMA_INFO',
+      0x00000001: 'CSSM_DL_DB_SCHEMA_INDEXES',
+      0x00000002: 'CSSM_DL_DB_SCHEMA_ATTRIBUTES',
+      0x00000003: 'CSSM_DL_DB_SCHEMA_PARSING_MODULE',
+      0x0000000a: 'CSSM_DL_DB_RECORD_ANY',
+      0x0000000b: 'CSSM_DL_DB_RECORD_CERT',
+      0x0000000c: 'CSSM_DL_DB_RECORD_CRL',
+      0x0000000d: 'CSSM_DL_DB_RECORD_POLICY',
+      0x0000000e: 'CSSM_DL_DB_RECORD_GENERIC',
+      0x0000000f: 'CSSM_DL_DB_RECORD_PUBLIC_KEY',
+      0x00000010: 'CSSM_DL_DB_RECORD_PRIVATE_KEY',
+      0x00000011: 'CSSM_DL_DB_RECORD_SYMMETRIC_KEY',
+      0x00000012: 'CSSM_DL_DB_RECORD_ALL_KEYS',
+      0x80000000: 'CSSM_DL_DB_RECORD_GENERIC_PASSWORD',
+      0x80000001: 'CSSM_DL_DB_RECORD_INTERNET_PASSWORD',
+      0x80000002: 'CSSM_DL_DB_RECORD_APPLESHARE_PASSWORD',
+      0x80000003: 'CSSM_DL_DB_RECORD_USER_TRUST',
+      0x80000004: 'CSSM_DL_DB_RECORD_X509_CRL',
+      0x80000005: 'CSSM_DL_DB_RECORD_UNLOCK_REFERRAL',
+      0x80000006: 'CSSM_DL_DB_RECORD_EXTENDED_ATTRIBUTE',
+      0x80001000: 'CSSM_DL_DB_RECORD_X509_CERTIFICATE',
+      0x80008000: 'CSSM_DL_DB_RECORD_METADATA'}
 
   _ATTRIBUTE_DATA_TYPES = {
       0: 'CSSM_DB_ATTRIBUTE_FORMAT_STRING',
@@ -91,7 +117,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
   _DEBUG_INFO_TABLE_HEADER = [
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('record_type', 'Record type', '_FormatIntegerAsHexadecimal8'),
+      ('record_type', 'Record type', '_FormatIntegerAsRecordType'),
       ('number_of_records', 'Number of records', '_FormatIntegerAsDecimal'),
       ('record_array_offset', 'Record array offset',
        '_FormatIntegerAsHexadecimal8'),
@@ -135,6 +161,43 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     return ''.join(lines)
 
+  def _FormatIntegerAsRecordValue(self, integer):
+    """Formats an integer as a record value.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as record value.
+    """
+    if integer is None:
+      return 'NULL'
+
+    return self._FormatIntegerAsHexadecimal8(integer)
+
+  def _FormatIntegerAsRecordType(self, integer):
+    """Formats an integer as a record type.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as record type.
+    """
+    table_name = self._TABLE_NAMES.get(integer, 'UNKNOWN')
+    return '0x{0:08x} ({1:s})'.format(integer, table_name)
+
+  def _FormatStreamAsSignature(self, stream):
+    """Formats a stream as a signature.
+
+    Args:
+      stream (bytes): stream.
+
+    Returns:
+      str: stream formatted as a signature.
+    """
+    return stream.decode('ascii')
+
   def _FormatTableOffsets(self, array_of_integers):
     """Formats the table offsets.
 
@@ -152,17 +215,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       lines.append(line)
 
     return ''.join(lines)
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii')
 
   def _ReadAttributeValueInteger(
       self, attribute_values_data, record_offset, attribute_values_data_offset,
@@ -394,7 +446,9 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       if relation_identifier is None:
         value_string = 'NULL'
       else:
-        value_string = '0x{0:08x}'.format(relation_identifier)
+        table_name = self._TABLE_NAMES.get(relation_identifier, 'UNKNOWN')
+        value_string = '0x{0:08x} ({1:s})'.format(
+            relation_identifier, table_name)
       self._DebugPrintValue('Relation identifier', value_string)
 
     attribute_identifier = self._ReadAttributeValueInteger(
@@ -402,10 +456,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         attribute_value_offsets[1], 'attribute identifier')
 
     if self._debug:
-      if attribute_identifier is None:
-        value_string = 'NULL'
-      else:
-        value_string = '{0:d}'.format(attribute_identifier)
+      value_string = self._FormatIntegerAsRecordValue(attribute_identifier)
       self._DebugPrintValue('Attribute identifier', value_string)
 
     attribute_name_data_type = self._ReadAttributeValueInteger(
@@ -467,6 +518,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       attribute_name = attribute_name.decode('ascii')
 
     column = KeychainDatabaseColumn()
+    column.attribute_data_type = attribute_data_type
     column.attribute_identifier = attribute_identifier
     column.attribute_name = attribute_name
 

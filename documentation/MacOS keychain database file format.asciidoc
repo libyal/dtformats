@@ -39,6 +39,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | June 2018 | Initial version.
+| 0.0.2 | J.B. Metz | August 2018 | Additional information.
 |===
 
 :numbered:
@@ -310,181 +311,193 @@ Alias	CSSM_Data
 
 === CSSM_DL_DB_RECORD_PUBLIC_KEY attribute values
 
-....
-Table: CSSM_DL_DB_RECORD_PUBLIC_KEY (0x0000000f)
-        Columns:
-                : KeyClass
-                : PrintName
-                : Alias
-                : Permanent
-                : Private
-                : Modifiable
-                : Label
-                : ApplicationTag
-                : KeyCreator
-                : KeyType
-                : KeySizeInBits
-                : EffectiveKeySize
-                : StartDate
-                : EndDate
-                : Sensitive
-                : AlwaysSensitive
-                : Extractable
-                : NeverExtractable
-                : Encrypt
-                : Decrypt
-                : Derive
-                : Sign
-                : Verify
-                : SignRecover
-                : VerifyRecover
-                : Wrap
-                : Unwrap
-....
+The CSSM_DL_DB_RECORD_PUBLIC_KEY attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| | KeyClass | |
+| | PrintName | |
+| | Alias | |
+| | Permanent | |
+| | Private | |
+| | Modifiable | |
+| | Label | |
+| | ApplicationTag | |
+| | KeyCreator | |
+| | KeyType | |
+| | KeySizeInBits | |
+| | EffectiveKeySize | |
+| | StartDate | |
+| | EndDate | |
+| | Sensitive | |
+| | AlwaysSensitive | |
+| | Extractable | |
+| | NeverExtractable | |
+| | Encrypt | |
+| | Decrypt | |
+| | Derive | |
+| | Sign | |
+| | Verify | |
+| | SignRecover | |
+| | VerifyRecover | |
+| | Wrap | |
+| | Unwrap | |
+|===
 
 === CSSM_DL_DB_RECORD_PRIVATE_KEY attribute values
 
-....
-Table: CSSM_DL_DB_RECORD_PRIVATE_KEY (0x00000010)
-        Columns:
-                : KeyClass
-                : PrintName
-                : Alias
-                : Permanent
-                : Private
-                : Modifiable
-                : Label
-                : ApplicationTag
-                : KeyCreator
-                : KeyType
-                : KeySizeInBits
-                : EffectiveKeySize
-                : StartDate
-                : EndDate
-                : Sensitive
-                : AlwaysSensitive
-                : Extractable
-                : NeverExtractable
-                : Encrypt
-                : Decrypt
-                : Derive
-                : Sign
-                : Verify
-                : SignRecover
-                : VerifyRecover
-                : Wrap
-                : Unwrap
-....
+The CSSM_DL_DB_RECORD_PRIVATE_KEY attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| | KeyClass | |
+| | PrintName | |
+| | Alias | |
+| | Permanent | |
+| | Private | |
+| | Modifiable | |
+| | Label | |
+| | ApplicationTag | |
+| | KeyCreator | |
+| | KeyType | |
+| | KeySizeInBits | |
+| | EffectiveKeySize | |
+| | StartDate | |
+| | EndDate | |
+| | Sensitive | |
+| | AlwaysSensitive | |
+| | Extractable | |
+| | NeverExtractable | |
+| | Encrypt | |
+| | Decrypt | |
+| | Derive | |
+| | Sign | |
+| | Verify | |
+| | SignRecover | |
+| | VerifyRecover | |
+| | Wrap | |
+| | Unwrap | |
+|===
 
 === CSSM_DL_DB_RECORD_SYMMETRIC_KEY attribute values
 
-....
-Table: CSSM_DL_DB_RECORD_SYMMETRIC_KEY (0x00000011)
-        Columns:
-                : KeyClass
-                : PrintName
-                : Alias
-                : Permanent
-                : Private
-                : Modifiable
-                : Label
-                : ApplicationTag
-                : KeyCreator
-                : KeyType
-                : KeySizeInBits
-                : EffectiveKeySize
-                : StartDate
-                : EndDate
-                : Sensitive
-                : AlwaysSensitive
-                : Extractable
-                : NeverExtractable
-                : Encrypt
-                : Decrypt
-                : Derive
-                : Sign
-                : Verify
-                : SignRecover
-                : VerifyRecover
-                : Wrap
-                : Unwrap
-....
+The CSSM_DL_DB_RECORD_SYMMETRIC_KEY attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| | KeyClass | |
+| | PrintName | |
+| | Alias | |
+| | Permanent | |
+| | Private | |
+| | Modifiable | |
+| | Label | |
+| | ApplicationTag | |
+| | KeyCreator | |
+| | KeyType | |
+| | KeySizeInBits | |
+| | EffectiveKeySize | |
+| | StartDate | |
+| | EndDate | |
+| | Sensitive | |
+| | AlwaysSensitive | |
+| | Extractable | |
+| | NeverExtractable | |
+| | Encrypt | |
+| | Decrypt | |
+| | Derive | |
+| | Sign | |
+| | Verify | |
+| | SignRecover | |
+| | VerifyRecover | |
+| | Wrap | |
+| | Unwrap | |
+|===
 
 === CSSM_DL_DB_RECORD_GENERIC_PASSWORD attribute values
 
-....
-Table:  (0x80000000)
-        Columns:
-                : cdat
-                : mdat
-                : desc
-                : icmt
-                : crtr
-                : type
-                : scrp
-                : PrintName
-                : Alias
-                : invi
-                : nega
-                : cusi
-                : prot
-                : acct
-                : svce
-                : gena
-....
+The CSSM_DL_DB_RECORD_GENERIC_PASSWORD attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| 0 | cdat | Date and time |
+| 1 | mdat | Date and time |
+| 2 | desc | Binary data |
+| 3 | icmt | Binary data |
+| 4 | crtr | Integer 32-bit unsigned |
+| 5 | type | Integer 32-bit unsigned |
+| 6 | scrp | Integer 32-bit unsigned |
+| 7 | PrintName | Binary data |
+| 8 | Alias | Binary data |
+| 9 | invi | Integer 32-bit unsigned |
+| 10 | nega | Integer 32-bit unsigned |
+| 11 | cusi | Integer 32-bit unsigned |
+| 12 | prot | Binary data |
+| 13 | acct | Binary data |
+| 14 | svce | Binary data |
+| 15 | gena | Binary data |
+|===
 
 === CSSM_DL_DB_RECORD_INTERNET_PASSWORD attribute values
 
-....
-Table:  (0x80000001)
-        Columns:
-                : cdat
-                : mdat
-                : desc
-                : icmt
-                : crtr
-                : type
-                : scrp
-                : PrintName
-                : Alias
-                : invi
-                : nega
-                : cusi
-                : prot
-                : acct
-                : sdmn
-                : srvr
-                : ptcl
-                : atyp
-                : port
-                : path
-....
+The CSSM_DL_DB_RECORD_INTERNET_PASSWORD attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| 0 | cdat | Date and time |
+| 1 | mdat | Date and time |
+| 2 | desc | Binary data |
+| 3 | icmt | Binary data |
+| 4 | crtr | Integer 32-bit unsigned |
+| 5 | type | Integer 32-bit unsigned |
+| 6 | scrp | Integer 32-bit unsigned |
+| 7 | PrintName | Binary data |
+| 8 | Alias | Binary data |
+| 9 | invi | Integer 32-bit unsigned |
+| 10 | nega | Integer 32-bit unsigned |
+| 11 | cusi | Integer 32-bit unsigned |
+| 12 | prot | Binary data |
+| 13 | acct | Binary data |
+| 14 | sdmn | Binary data |
+| 15 | srvr | Binary data |
+| 16 | ptcl | Integer 32-bit unsigned |
+| 17 | atyp | Binary data |
+| 18 | port | Integer 32-bit unsigned |
+| 19 | path | Binary data |
+|===
 
 === CSSM_DL_DB_RECORD_APPLESHARE_PASSWORD attribute values
 
-....
-Table:  (0x80000002)
-        Columns:
-                : cdat
-                : mdat
-                : desc
-                : icmt
-                : crtr
-                : type
-                : scrp
-                : PrintName
-                : Alias
-                : invi
-                : nega
-                : cusi
-                : prot
-                : acct
-                : vlme
-                : srvr
-                : ptcl
-                : addr
-                : ssig
-....
+The CSSM_DL_DB_RECORD_APPLESHARE_PASSWORD attribute values data consists of:
+
+[cols="1,3,3,5",options="header"]
+|===
+| Attribute number | Attribute name | Data type | Attribute description
+| 0 | cdat | Date and time |
+| 1 | mdat | Date and time |
+| 2 | desc | Binary data |
+| 3 | icmt | Binary data |
+| 4 | crtr | Integer 32-bit unsigned |
+| 5 | type | Integer 32-bit unsigned |
+| 6 | scrp | Integer 32-bit unsigned |
+| 7 | PrintName | Binary data |
+| 8 | Alias | Binary data |
+| 9 | invi | Integer 32-bit unsigned |
+| 10 | nega | Integer 32-bit unsigned |
+| 11 | cusi | Integer 32-bit unsigned |
+| 12 | prot | Binary data |
+| 13 | acct | Binary data |
+| 14 | vlme | Binary data |
+| 15 | srvr | Binary data |
+| 16 | ptcl | Integer 32-bit unsigned |
+| 17 | addr | Binary data |
+| 18 | ssig | Binary data |
+|===
 
 === CSSM_DL_DB_RECORD_USER_TRUST attribute values
 
@@ -506,12 +519,12 @@ The attribute data types (or formats):
 |===
 | Value | Identifier | Description
 | 0 | CSSM_DB_ATTRIBUTE_FORMAT_STRING |
-| 1 | CSSM_DB_ATTRIBUTE_FORMAT_SINT32 | Integer 32-bit, signed
-| 2 | CSSM_DB_ATTRIBUTE_FORMAT_UINT32 | Integer 32-bit, unsigned
+| 1 | CSSM_DB_ATTRIBUTE_FORMAT_SINT32 | Integer 32-bit signed
+| 2 | CSSM_DB_ATTRIBUTE_FORMAT_UINT32 | Integer 32-bit unsigned
 | 3 | CSSM_DB_ATTRIBUTE_FORMAT_BIG_NUM |
 | 4 | CSSM_DB_ATTRIBUTE_FORMAT_REAL | Floating-point 64-bit
-| 5 | CSSM_DB_ATTRIBUTE_FORMAT_TIME_DATE |
-| 6 | CSSM_DB_ATTRIBUTE_FORMAT_BLOB |
+| 5 | CSSM_DB_ATTRIBUTE_FORMAT_TIME_DATE | Date and time
+| 6 | CSSM_DB_ATTRIBUTE_FORMAT_BLOB | Binary data
 | 7 | CSSM_DB_ATTRIBUTE_FORMAT_MULTI_UINT32 |
 | 8 | CSSM_DB_ATTRIBUTE_FORMAT_COMPLEX |
 |===
