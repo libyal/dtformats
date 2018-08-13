@@ -165,7 +165,7 @@ A record consist of:
 
 * record header
 * attribute value offsets
-* attribute value data
+* attribute values data
 * [yellow-background]*Unknown (padding)*
 
 === Record header
