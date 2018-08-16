@@ -116,8 +116,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       ('record_index', 'Record index', '_FormatIntegerAsDecimal'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
       ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8')]
+      ('key_data_size', 'Key data size', '_FormatIntegerAsDecimal'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8')]
 
   _DEBUG_INFO_TABLES_ARRAY = [
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
@@ -454,35 +454,41 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
           file_object, record_offset + 24, number_of_columns)
 
       file_offset = file_object.tell()
-      attribute_values_data_offset = file_offset - record_offset
-      attribute_values_data_size = record_header.data_size
-      attribute_values_data = file_object.read(attribute_values_data_size)
+      record_data_offset = file_offset - record_offset
+      record_data_size = record_header.data_size
+      record_data = file_object.read(record_data_size - record_data_offset)
 
       if self._debug:
+        if record_header.key_data_size > 0:
+          self._DebugPrintData(
+              'Key data', record_data[:record_header.key_data_size])
+
         self._DebugPrintData(
-            'Attribute values data',
-            attribute_values_data[attribute_values_data_offset:])
+            'Attribute values data', record_data[record_header.key_data_size:])
 
         data_offsets = [
-            offset - attribute_values_data_offset - 1
+            offset - record_data_offset - 1
             for offset in sorted(attribute_value_offsets)
-            if offset > attribute_values_data_offset]
-        data_offsets.append(
-            attribute_values_data_size - attribute_values_data_offset)
+            if offset > record_data_offset]
+        data_offsets.append(record_data_size - record_data_offset)
         data_offsets.pop(0)
 
       for index, column in enumerate(table.columns):
         if self._debug:
-          attribute_value_offset = (
-              attribute_value_offsets[index] - attribute_values_data_offset - 1)
-          attribute_value_end_offset = data_offsets[0]
-          while attribute_value_end_offset <= attribute_value_offset:
-            data_offsets.pop(0)
+          if attribute_value_offsets[index] == 0:
+            attribute_value_offset = 0
+            attribute_value_end_offset = 0
+          else:
+            attribute_value_offset = (
+                attribute_value_offsets[index] - record_data_offset - 1)
             attribute_value_end_offset = data_offsets[0]
+            while attribute_value_end_offset <= attribute_value_offset:
+              data_offsets.pop(0)
+              attribute_value_end_offset = data_offsets[0]
 
           description = 'Attribute value: {0:d} ({1:s}) data'.format(
               index, column.attribute_name)
-          self._DebugPrintData(description, attribute_values_data[
+          self._DebugPrintData(description, record_data[
               attribute_value_offset:attribute_value_end_offset])
 
         attribute_data_read_function = self._ATTRIBUTE_DATA_READ_FUNCTIONS.get(
@@ -495,9 +501,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
           attribute_value = None
         else:
           attribute_value = attribute_data_read_function(
-              attribute_values_data, record_offset,
-              attribute_values_data_offset, attribute_value_offsets[index],
-              column.attribute_name)
+              record_data, record_offset, record_data_offset,
+              attribute_value_offsets[index], column.attribute_name)
 
         record[column.attribute_name] = attribute_value
 
@@ -826,38 +831,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     table.records.append(record)
 
-  def _ReadTablesArray(self, file_object, tables_array_offset):
-    """Reads the tables array.
-
-    Args:
-      file_object (file): file-like object.
-      tables_array_offset (int): offset of the tables array relative to
-          the start of the file.
-
-    Returns:
-      dict[str, KeychainDatabaseTable]: tables per name.
-
-    Raises:
-      ParseError: if the tables array cannot be read.
-    """
-    # TODO: implement https://github.com/libyal/dtfabric/issues/12 and update
-    # keychain_tables_array definition.
-
-    data_type_map = self._GetDataTypeMap('keychain_tables_array')
-
-    tables_array, _ = self._ReadStructureFromFileObject(
-        file_object, tables_array_offset, data_type_map, 'tables array')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          tables_array, self._DEBUG_INFO_TABLES_ARRAY)
-
-    tables = collections.OrderedDict()
-    for table_offset in tables_array.table_offsets:
-      self._ReadTable(tables, file_object, tables_array_offset + table_offset)
-
-    return tables
-
   def _ReadTable(self, tables, file_object, table_offset):
     """Reads the table.
 
@@ -922,6 +895,38 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
           table_header, self._DEBUG_INFO_TABLE_HEADER)
 
     return table_header
+
+  def _ReadTablesArray(self, file_object, tables_array_offset):
+    """Reads the tables array.
+
+    Args:
+      file_object (file): file-like object.
+      tables_array_offset (int): offset of the tables array relative to
+          the start of the file.
+
+    Returns:
+      dict[str, KeychainDatabaseTable]: tables per name.
+
+    Raises:
+      ParseError: if the tables array cannot be read.
+    """
+    # TODO: implement https://github.com/libyal/dtfabric/issues/12 and update
+    # keychain_tables_array definition.
+
+    data_type_map = self._GetDataTypeMap('keychain_tables_array')
+
+    tables_array, _ = self._ReadStructureFromFileObject(
+        file_object, tables_array_offset, data_type_map, 'tables array')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          tables_array, self._DEBUG_INFO_TABLES_ARRAY)
+
+    tables = collections.OrderedDict()
+    for table_offset in tables_array.table_offsets:
+      self._ReadTable(tables, file_object, tables_array_offset + table_offset)
+
+    return tables
 
   def ReadFileObject(self, file_object):
     """Reads a MacOS keychain database file-like object.
