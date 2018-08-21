@@ -1,0 +1,176 @@
+= Apple macOS Spotlight Database v2 file format
+
+:toc:
+:toclevels: 4
+
+:numbered!:
+[abstract]
+== Summary
+The Apple macOS Spotlight Database v2 file format is used to store data from the
+macOS Spotlight database.
+
+This document is intended as a working document for the Apple macOS Spotlight
+Database v2 file format file format specification.
+
+[preface]
+== Document information
+[cols="1,5"]
+|===
+| Author(s): | Everest Munro-Zeisberger <evmunro1@gmail.com>
+| Abstract: | Apple macOS Spotlight Database v2 file format
+| Classification: | Public:
+| Keywords: | Apple macOS Spotlight Database
+|===
+
+[preface]
+== License
+....
+Copyright (C) 2018, Everest Munro-Zeisberger <evmunro1@gmail.com>.
+Permission is granted to copy, distribute and/or modify this document under the
+terms of the GNU Free Documentation License, Version 1.3 or any later version
+published by the Free Software Foundation; with no Invariant Sections, no
+Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
+in the section entitled "GNU Free Documentation License".
+....
+
+[preface]
+== Revision history
+[cols="1,1,1,5",options="header"]
+|===
+| Version | Author | Date | Comments
+| 0.0.1 | Everest Munro-Zeisberger | <INSERT DATE> | Initial Version
+|===
+
+:numbered:
+== Overview
+[yellow-background]*TODO: complete documentation*
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | little-endian
+| Date and time values |
+| Character strings |
+|===
+
+=== File header
+
+The file header is <ENTER NUMBER> bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | "8tsd" | Signature
+| 4 | 4 | | [yellow-background]*Unknown Flags*
+| 8 | 4 | "\x00\x00\x00\x00" | 4 byte gap
+| 12 | 24 | | [yellow-background]*Unknown header bytes*
+| 36 | 4 | | Header size (seems to usually be 4096)
+| 40 | 4 | | Size of Block 0
+| 44 | 4 | | Size of all other blocks
+| 48 | 4 | | This value * 4096 = offset of first PROPERTY block
+| 52 | 4 | | This value * 4096 = offset of first CATEGORY block
+| 56 | 4 | | This value * 4096 = offset of UNKNOWN type block
+| 60 | 4 | | This value * 4096 = offset of first INDEX_1 block
+| 64 | 4 | | This value * 4096 = offset of first INDEX_2 block
+| 68 | 256 | "\x00...\x00" | Gap of zeros
+| 324 | 256 | | Original filename & location, followed by "\x00" bytes after
+| 580 | 3516 | | Unused, rest of header
+|===
+
+=== Block 0
+
+The first block starts right after the header, at offset 4096.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | "2mbd" | Signature
+| 4 | 4 | | Physical size
+| 8 | 4 | | Item count
+| 12 | 4 | | UNK Zero
+| 16 | 4 | | UNK Type
+| 20 | block 0 size - 20 | | Indexes of metadata blocks (16 bytes per index),
+structured as follows: [last_id_in_block, unknown1, offset_index, unknown2]
+|===
+
+=== Subsequent blocks
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | "2pbd" | Signature
+| 4 | 4 | | Physical size of block
+| 8 | 4 | | Logical size of block
+| 12 | 4 | | <<block_types,Block type>>
+| 16 | 4 | | [yellow-background]*Unknown (0 or size of uncompressed data)*
+| 20 | 4 | | This value * 4096 = next block index
+| 24 | 4 | | [yellow-background]*Unknown*
+| 28 | 4 | | [yellow-background]*Unknown*
+| 32 | block size - 32 | | <<block_data_format,Block data>>
+|===
+
+=== [[block_types]]Block Types
+
+[cols="1,5",options="header"]
+|===
+| ID | Name
+| 0x09 | METADATA
+| 0x11 | PROPERTY
+| 0x21 | CATEGORY
+| 0x41 | UNKNOWN_41
+| 0x81 | INDEX
+
+=== [[block_data_format]]Block Data Formats
+
+=== METADATA block
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Index
+| 4 | 5 | | Value Type
+| 5 | 6 | | Property Type
+| 6 | Logical size of block | | Name followed by "\x00" bytes
+|===
+
+==== PROPERTY block
+
+This following sequence (data separated by a null byte) is repeated for the
+rest of the logical size of the block.
+
+Each element has a unique index, and maps a Property Type, Value Type and
+Property Name to that corresponding index.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Index
+| 4 | 5 | | Value Type
+| 5 | 6 | | Property Type
+| 6 | until "\x00" byte | | Name followed by a "\x00"
+|===
+
+==== CATEGORY block
+
+This following sequence (data separated by a null byte) is repeated for the
+rest of the logical size of the block.
+
+Each element has a unique index, and maps a Category Name to that index.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Index
+| 4 | until "\x00" byte | | Name followed by a "\x00"
+|===
+
+==== INDEX block
+
+Maps a category (index) to a list of identifiers.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Index
+| 4 | Logical size of block | | List of IDs
+|===
