@@ -19,22 +19,9 @@ class MacOSSpotlightDatabaseV2FileTest(test_lib.BaseTestCase):
       output_writer = test_lib.TestOutputWriter()
       test_file = macos_spotlight_v2.MacOSSpotlightDatabaseV2File(output_writer=output_writer)
 
-      structure = test_file._ReadFileHeader(f)
-      print(structure.signature)
-      print(structure.flags)
-      print(structure.zero_gap)
-      print(structure.unknown_bytes)
-      print(structure.header_size)
-      print(structure.block_0_size)
-      print(structure.block_size)
-      print(structure.property_block_location)
-      print(structure.category_block_location)
-      print(structure.unknown_block_location)
-      print(structure.index_1_block_location)
-      print(structure.index_2_block_location)
-      print(structure.original_filename)
-
-      test_file._ReadBlock0(f)
+      test_file.ReadFileObject(f)
+      # print(len(test_file.categories))
+      # print(len(test_file.properties))
 
 if __name__ == '__main__':
   unittest.main()

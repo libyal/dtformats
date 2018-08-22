@@ -107,6 +107,8 @@ members:
   data_type: uint32
 - name: logical_size
   data_type: uint32
+- name: block_type
+  data_type: uint32
 - name: unknown_1
   data_type: uint32
 - name: next_block
@@ -124,13 +126,32 @@ members:
 - name: value
   data_type: cstring
 ---
-name: macos_spotlight_v2_category_block
+name: macos_spotlight_v2_property_entry
 type: structure
 members:
-- name: prefix
-  data_type: macos_spotlight_v2_block_prefix
-- name: entries
-  type: sequence
-  element_data_type: macos_spotlight_v2_category_entry
-  elements_data_size: macos_spotlight_v2_block_prefix.logical_size
+- name: index
+  data_type: uint32
+- name: value_type
+  data_type: byte
+- name: property_type
+  data_type: byte
+- name: value
+  data_type: cstring
 ---
+name: macos_spotlight_v2_index_entry
+type: structure
+members:
+- name: index
+  data_type: uint32
+- name: index_byte_count
+  data_type: byte
+---
+name: macos_spotlight_v2_index_entry_element
+type: structure
+members:
+- name: value
+  data_type: byte
+- name: zeros
+  type: stream
+  element_data_type: byte
+  number_of_elements: 3
