@@ -143,15 +143,33 @@ type: structure
 members:
 - name: index
   data_type: uint32
-- name: index_byte_count
-  data_type: byte
 ---
-name: macos_spotlight_v2_index_entry_element
+name: macos_spotlight_v2_metadata_block
 type: structure
 members:
-- name: value
-  data_type: byte
-- name: zeros
+- name: signature
   type: stream
   element_data_type: byte
-  number_of_elements: 3
+  number_of_elements: 4
+- name: physical_size
+  data_type: uint32
+- name: logical_size
+  data_type: uint32
+- name: block_type
+  data_type: uint32
+- name: unknown_1
+  data_type: uint32
+- name: compressed_data
+  type: stream
+  element_data_type: byte
+  number_of_elements: macos_spotlight_v2_metadata_block.logical_size
+---
+name: macos_spotlight_v2_metadata_item
+type: structure
+members:
+  - name: size
+    data_type: uint32
+  - name: data
+    type: stream
+    element_data_type: byte
+    number_of_elements: macos_spotlight_v2_metadata_item.size

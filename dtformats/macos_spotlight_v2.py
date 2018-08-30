@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 
 import datetime
+import zlib
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 
@@ -59,6 +60,7 @@ class MacOSSpotlightDatabaseV2File(data_format.BinaryDataFile):
     self.properties = {}
     self.indexes_1 = {}
     self.indexes_2 = {}
+    self.inode_mappings = {}
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -218,6 +220,47 @@ class MacOSSpotlightDatabaseV2File(data_format.BinaryDataFile):
 
     return bytes_read
 
+  def _ReadVarSizeNum(self, file_object, location):
+    """From:
+    https://github.com/ydkhatri/spotlight_parser/blob/master/spotlight_parser.py#L421
+    """
+    file_object.seek(location)
+    num = int.from_bytes(file_object.read(1), byteorder='little')
+
+    extra = 0
+    use_lower_nibble = True
+    if num == 0:
+        return num, 1
+    elif (num & 0xF0) == 0xF0: # 4 or more
+        use_lower_nibble = False
+        if (num & 0x0F)==0x0F: extra = 8
+        elif (num & 0x0E)==0x0E: extra = 7
+        elif (num & 0x0C)==0x0C: extra = 6
+        elif (num & 0x08)==0x08: extra = 5
+        else:
+            extra = 4
+            use_lower_nibble = True
+            num -= 0xF0
+    elif (num & 0xE0) == 0xE0:
+        extra = 3
+        num -= 0xE0
+    elif (num & 0xC0) == 0xC0:
+        extra = 2
+        num -=0xC0
+    elif (num & 0x80) == 0x80:
+        extra = 1
+        num -= 0x80
+
+    if extra:
+        num2 = 0
+        for x in range(1, extra + 1):
+            num_x = int.from_bytes(file_object.read(1), byteorder='big')
+            num2 += (num_x << (extra - x)*8)
+        if use_lower_nibble:
+            num2 = num2 + ((num) << (extra*8))
+        return num2, extra + 1
+    return num, extra + 1
+
   def _ReadVariableLengthQuantity(self, file_object, location):
     """Reads a VLQ and returns the value and number of bytes it takes up.
 
@@ -232,27 +275,32 @@ class MacOSSpotlightDatabaseV2File(data_format.BinaryDataFile):
       count: the number.
       bytes_read: the number of bytes this number takes up.
     """
-    final_byte = False
     value = 0
     bytes_read = 0
+    file_object.seek(location)
+    shift = 1
 
-    while not final_byte:
-      full_byte = int.from_bytes(file_object.read(1), byteorder='big')
+    while True:
+      full_byte = int.from_bytes(file_object.read(1), byteorder='little')
+      print(full_byte)
       bytes_read += 1
-      final_byte = not (full_byte & 0x80) # If prefix is 1, not the last byte
-      new_value = full_byte & 0x7F # Actual value is 7 least significant bits
+      value += (full_byte & 0x7F) * shift
+      if (full_byte & 0x80) == 0: # If prefix is 1, not the last byte
+        break
 
-      value = value << 7
-      value = value | new_value
+      shift << 7
+      value += shift
 
     return value, bytes_read
 
 
-  def _ReadIndexBlock(self, file_object, location):
+  def _ReadIndexBlock(self, file_object, location, dictionary):
     """Reads in an index block from a location and extracts it's data.
     Args:
       file_object (file): file-like object.
       location (int): file location to read from.
+      dictionary (dict) : the dict to store the values in. Only used for index
+        blocks
 
     Raises:
       ParseError: if the file header cannot be read.
@@ -261,48 +309,107 @@ class MacOSSpotlightDatabaseV2File(data_format.BinaryDataFile):
     prefix = self._ReadBlockPrefix(file_object, location)
     data_type_map = self._GetDataTypeMap('macos_spotlight_v2_index_entry')
 
+    end_position = location + prefix.logical_size
     location += self._BLOCK_PREFIX_SIZE
-    bytes_read = 0
 
-    for i in range(1, 2):
-    # while bytes_read < prefix.logical_size - self._BLOCK_PREFIX_SIZE:
+    while location < end_position:
       index_block, size = self._ReadStructureFromFileObject(file_object, location,
           data_type_map, 'index block entry')
       location += size
-      bytes_read += size
 
-      data_size, byte_offset = self._ReadVariableLengthQuantity(
+      data_size, byte_offset = self._ReadVarSizeNum(
           file_object, location)
       location += byte_offset
-      bytes_read += byte_offset
 
       location += data_size % 4
-      bytes_read += data_size % 4
 
+      data_size = 4 * int(data_size/4)
       data_byte_count = int(data_size/4)
-      uint32_map = self._GetDataTypeMap('uint32')
+
+      index_size = 0
       id_tuple = ()
       for id_index in range(0, data_byte_count):
         i, size = self._ReadStructureFromFileObject(file_object, location,
-            uint32_map, 'uint32')
+            data_type_map, 'uint32')
         location += size
-        bytes_read += size
+        index_size += size
 
-        id_tuple = id_tuple + (i,)
+        id_tuple = id_tuple + (i.index,)
 
-      print(id_tuple)
-      print(index_block.index)
-      print(data_size)
-      print(byte_offset)
+      dictionary[id] = id_tuple
 
-      print('-----------=')
+  def _DecompressMetadataLZ4(self, file_object, location):
+    """Decompresses the data from a metadata block.
 
-  def _ReadBlockData(self, file_object, location, block_type):
+    Args:
+      file_object (file): file-like object.
+      location (int): file location where the block starts.
+
+    Raises:
+      ParseError: if the data cannot be uncompressed.
+
+    Returns:
+      uncompressed (bytestream): uncompressed data.
+    """
+
+    # TODO: implement lz4 decompression method
+
+  def _ParseMetadataItem(self, data, size):
+    """Parses a single metadata item and stores its data.
+
+    Args:
+      data (bytestream): the raw metadata item data.
+      size (int): the size of the data.
+    """
+
+    # TODO: implement metadata item parsing
+
+  def _ReadMetadataBlock(self, file_object, location):
+    """Reads in a metadatablock from a location and extracts it's data.
+
+    Args:
+      file_object (file): file-like object.
+      location (int): file location to read from.
+      dictionary (dict) : the dict to store the values in. Only used for index
+        blocks
+
+    Raises:
+      ParseError: if the file header cannot be read.
+    """
+
+    data_type_map = self._GetDataTypeMap('macos_spotlight_v2_metadata_block')
+    block, size = self._ReadStructureFromFileObject(file_object, location,
+        data_type_map, 'metadata block')
+    if block.block_type != self._BLOCK_TYPES['metadata']:
+      errors.ParseError('Not a metadata block')
+
+    # Check for LZ4 compression
+    if block.block_type & 0x1000 == 0x1000:
+      uncompressed = self._DecompressMetadataLZ4(file_object, location)
+    # Else it's zlib compressed
+    else:
+      uncompressed = zlib.decompress(block.compressed_data)
+
+    items_in_block = []
+    position = 0
+    count = 0
+    data_size = len(uncompressed)
+    while position < data_size:
+      data_type_map = self._GetDataTypeMap('macos_spotlight_v2_metadata_item')
+      item, size = self._ReadStructureFromByteStream(uncompressed, position,
+          data_type_map, 'metadata item')
+      position += size
+      self._ParseMetadataItem(item, size)
+
+
+  def _ReadBlockData(self, file_object, location, block_type, dictionary=None):
     """Checks a block's type and passes parsing to the relevant method.
 
     Args:
       file_bject (file): file-like object.
       location (int): file location to read from.
+      dictionary (dict) : the dict to store the values in. Only used for index
+        blocks
 
     Raises:
       ParseError: if the file header cannot be read.
@@ -311,26 +418,30 @@ class MacOSSpotlightDatabaseV2File(data_format.BinaryDataFile):
       self._ReadCategoryBlock(file_object, location)
     elif block_type == self._BLOCK_TYPES['property']:
       self._ReadPropertyBlock(file_object, location)
+    elif block_type == self._BLOCK_TYPES['index']:
+      self._ReadIndexBlock(file_object, location, dictionary)
     else:
       raise errors.ParseError('Invalid block type: {}'.format(block_type))
 
-  def _ReadBlocks(self, file_object, location):
+  def _ReadBlocks(self, file_object, location, dictionary=None):
     """Parses a block and all it's subsequent blocks.
 
     Args:
       file_object (file): file-like object.
       location (int): file location to read from.
+      dictionary (dict) : the dict to store the values in. Only used for index
+        blocks
 
     Raises:
       ParseError: if the file header cannot be read.
     """
 
     prefix = self._ReadBlockPrefix(file_object, location)
-    self._ReadBlockData(file_object, location, prefix.block_type)
+    self._ReadBlockData(file_object, location, prefix.block_type, dictionary)
     while prefix.next_block != 0:
       location = prefix.next_block * self._BLOCK_INDEX_MULTIPLIER
       prefix = self._ReadBlockPrefix(file_object, location)
-      self._ReadBlockData(file_object, location, prefix.block_type)
+      self._ReadBlockData(file_object, location, prefix.block_type, dictionary)
 
   def ReadFileObject(self, file_object):
     """Reads a Safari Cookies (Cookies.binarycookies) file-like object.
@@ -343,6 +454,8 @@ class MacOSSpotlightDatabaseV2File(data_format.BinaryDataFile):
     self._ReadBlock0(file_object)
     # self._ReadBlocks(file_object, self.category_block_location * self._BLOCK_INDEX_MULTIPLIER)
     # self._ReadBlocks(file_object, self.property_block_location * self._BLOCK_INDEX_MULTIPLIER)
-    self._ReadIndexBlock(file_object, self.index_1_block_location * self._BLOCK_INDEX_MULTIPLIER)
+    # self._ReadBlocks(file_object, self.index_1_block_location * self._BLOCK_INDEX_MULTIPLIER, self.indexes_1)
+    # self._ReadBlocks(file_object, self.index_2_block_location * self._BLOCK_INDEX_MULTIPLIER, self.indexes_2)
+    self._ReadMetadataBlock(file_object, self.block0_indexes[0].offset_index * self._BLOCK_INDEX_MULTIPLIER)
 
 
