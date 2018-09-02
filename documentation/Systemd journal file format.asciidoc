@@ -48,7 +48,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Characteristics | Description
 | Byte order | little-endian
-| Date and time values |
+| Date and time values | POSIX timestamp stored in microseconds
 | Character strings |
 |===
 
@@ -70,32 +70,34 @@ See section <<flags,Flags>>
 | 40 | 16 | | Machine identifier
 | 56 | 16 | | Boot identifier +
 [yellow-background]*Also referred to as last writer?*
-| 64 | 16 | | Sequence number identifier
-| 80 | 8 | | Header size
-| 88 | 8 | | Arena size
-| 96 | 8 | | Data hash table offset +
+| 72 | 16 | | Sequence number identifier
+| 88 | 8 | | Header size
+| 96 | 8 | | Arena size
+| 104 | 8 | | Data hash table offset +
 The offset is relative from the start of the file
-| 104 | 8 | | Data hash table size
-| 112 | 8 | | Field hash table offset +
+| 112 | 8 | | Data hash table size
+| 120 | 8 | | Field hash table offset +
 The offset is relative from the start of the file
-| 120 | 8 | | Field hash table size
-| 128 | 8 | | Tail object offset +
+| 128 | 8 | | Field hash table size
+| 136 | 8 | | Tail object offset +
 The offset is relative from the start of the file
-| 136 | 8 | | Number of objects
-| 144 | 8 | | Number of entry objects
-| 152 | 8 | | Tail entry sequence number
-| 160 | 8 | | Head entry sequence number
-| 168 | 8 | | Entry array offset +
+| 144 | 8 | | Number of objects
+| 152 | 8 | | Number of entry objects
+| 160 | 8 | | Tail entry sequence number
+| 168 | 8 | | Head entry sequence number
+| 176 | 8 | | Entry array offset +
 The offset is relative from the start of the file
-| 176 | 8 | | Head entry real time
-| 184 | 8 | | Tail entry real time
-| 192 | 8 | | Tail entry monotonic
+| 184 | 8 | | Head entry real time +
+Contains a POSIX timestamp stored in microseconds
+| 192 | 8 | | Tail entry real time +
+Contains a POSIX timestamp stored in microseconds
+| 200 | 8 | | Tail entry monotonic
 4+| _Added in format version 187_
-| 200 | 8 | | Number of data objects
-| 208 | 8 | | Number of field objects
+| 208 | 8 | | Number of data objects
+| 216 | 8 | | Number of field objects
 4+| _Added in format version 189_
-| 216 | 8 | | Number of tag objects
-| 224 | 8 | | Number of entry arrays
+| 224 | 8 | | Number of tag objects
+| 232 | 8 | | Number of entry arrays
 |===
 
 == Object
@@ -117,7 +119,8 @@ See section: <<object_types,Object types>>
 | 1 | 1 | | Object flags +
 See section: <<object_flags,Object flags>>
 | 2 | 6 | | [yellow-background]*Unknown (reserved)*
-| 8 | 8 | | Object data size
+| 8 | 8 | | Data size +
+The data size includes the 16 bytes of the object header.
 |===
 
 [yellow-background]*Does the object data size include the size of the header?*
@@ -153,13 +156,17 @@ The data object values are variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | hash
-| 8 | 8 | | next hash offset
-| 16 | 8 | | next field offset
-| 24 | 8 | | entry offset
-| 32 | 8 | | entry array offset
-| 40 | 8 | | number of entries
-| 48 | ... | | array of entries
+| 0 | 8 | | Hash
+| 8 | 8 | | Next hash offset +
+Contains an offset relative to the start of the file or 0 if not set
+| 16 | 8 | | Next field offset +
+Contains an offset relative to the start of the file or 0 if not set
+| 24 | 8 | | Entry offset +
+Contains an offset relative to the start of the file or 0 if not set
+| 32 | 8 | | Entry array offset +
+Contains an offset relative to the start of the file or 0 if not set
+| 40 | 8 | | Number of entries
+| 48 | ... | | Array of entries
 |===
 
 === Field object values
@@ -187,7 +194,7 @@ The entry object values are variable of size and consists of:
 | 16 | 8 | | monotonic
 | 24 | 16 | | Boot identifier
 | 40 | 8 | | XOR hash
-| 48 | ... | | Array of entry items +
+| 48 | 16 x ... | | Array of entry items +
 See section: <<entry_item,Entry item>>
 |===
 
@@ -198,8 +205,9 @@ The entry item (EntryItem) are 16 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | object offset
-| 8 | 8 | | hash
+| 0 | 8 | | Object offset +
+Contains an offset relative to the start of the file or 0 if not set
+| 8 | 8 | | Hash
 |===
 
 === Hash table object values
@@ -224,15 +232,22 @@ The hash item (HashItem) are 16 bytes of size and consists of:
 | 8 | 8 | | tail hash offset
 |===
 
+=== Entry array object values
+
+The entry array object values are variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Next entry array offset +
+Contains an offset relative to the start of the file or 0 if not set
+| 8 | 8 x ... | | Array of entry object offsets +
+Contains an offset relative to the start of the file or 0 if not set
+|===
+
 == Notes
 
 ....
-struct EntryArrayObject {
-        ObjectHeader object;
-        le64_t next_entry_array_offset;
-        le64_t items[];
-} _packed_;
-
 #define TAG_LENGTH (256/8)
 
 struct TagObject {

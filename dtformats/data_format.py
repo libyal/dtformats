@@ -81,7 +81,7 @@ class BinaryDataFormat(object):
       if date_time_string:
         date_time_string = '{0:s} UTC'.format(date_time_string)
       else:
-        date_time_string = '0x{08:x}'.format(value)
+        date_time_string = '0x{0:08x}'.format(value)
 
     self._DebugPrintValue(description, date_time_string)
 
@@ -128,7 +128,7 @@ class BinaryDataFormat(object):
       if date_time_string:
         date_time_string = '{0:s} UTC'.format(date_time_string)
       else:
-        date_time_string = '0x{08:x}'.format(value)
+        date_time_string = '0x{0:08x}'.format(value)
 
     self._DebugPrintValue(description, date_time_string)
 
@@ -289,7 +289,7 @@ class BinaryDataFormat(object):
     date_time = dfdatetime_filetime.Filetime(timestamp=integer)
     date_time_string = date_time.CopyToDateTimeString()
     if not date_time_string:
-      return '0x{08:x}'.format(integer)
+      return '0x{0:08x}'.format(integer)
 
     return '{0:s} UTC'.format(date_time_string)
 
@@ -341,7 +341,26 @@ class BinaryDataFormat(object):
     date_time = dfdatetime_posix_time.PosixTime(timestamp=integer)
     date_time_string = date_time.CopyToDateTimeString()
     if not date_time_string:
-      return '0x{08:x}'.format(integer)
+      return '0x{0:08x}'.format(integer)
+
+    return '{0:s} UTC'.format(date_time_string)
+
+  def _FormatIntegerAsPosixTimeInMicroseconds(self, integer):
+    """Formats an integer as a POSIX date and time in microseconds value.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a POSIX date and time in microseconds value.
+    """
+    if integer == 0:
+      return 'Not set (0)'
+
+    date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(timestamp=integer)
+    date_time_string = date_time.CopyToDateTimeString()
+    if not date_time_string:
+      return '0x{0:08x}'.format(integer)
 
     return '{0:s} UTC'.format(date_time_string)
 
