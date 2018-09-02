@@ -166,8 +166,12 @@ Contains an offset relative to the start of the file or 0 if not set
 | 32 | 8 | | Entry array offset +
 Contains an offset relative to the start of the file or 0 if not set
 | 40 | 8 | | Number of entries
-| 48 | ... | | Array of entries
+| 48 | ... | | Data +
+Contains an array of entries +
+The data can be XZ of LZ4 compressed depending on the object flags
 |===
+
+[yellow-background]*TODO: describe how the compressed data is stored*
 
 === Field object values
 

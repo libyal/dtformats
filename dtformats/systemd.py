@@ -14,6 +14,13 @@ class SystemdJournalFile(data_format.BinaryDataFile):
 
   _FILE_SIGNATURE = b'LPKSHHRH'
 
+  _OBJECT_COMPRESSED_XZ = 1
+  _OBJECT_COMPRESSED_LZ4 = 2
+
+  _OBJECT_FLAGS = {
+      1: 'OBJECT_COMPRESSED_XZ',
+      2: 'OBJECT_COMPRESSED_LZ4'}
+
   _OBJECT_TYPE_UNUSED = 0
   _OBJECT_TYPE_DATA = 1
   _OBJECT_TYPE_FIELD = 2
@@ -22,10 +29,6 @@ class SystemdJournalFile(data_format.BinaryDataFile):
   _OBJECT_TYPE_FIELD_HASH_TABLE = 5
   _OBJECT_TYPE_ENTRY_ARRAY = 6
   _OBJECT_TYPE_TAG = 7
-
-  _OBJECT_FLAGS = {
-      1: 'OBJECT_COMPRESSED_XZ',
-      2: 'OBJECT_COMPRESSED_LZ4'}
 
   _OBJECT_TYPES = {
       0: 'OBJECT_UNUSED',
@@ -236,6 +239,11 @@ class SystemdJournalFile(data_format.BinaryDataFile):
       raise errors.ParseError('Unsupported object type: {0:d}.'.format(
           data_object.object_type))
 
+    if data_object.object_flags not in (
+        0, self._OBJECT_COMPRESSED_XZ, self._OBJECT_COMPRESSED_LZ4):
+      raise errors.ParseError('Unsupported object flags: 0x{0:02x}.'.format(
+          data_object.object_flags))
+
     if self._debug:
       self._DebugPrintStructureObject(
           data_object, self._DEBUG_INFO_DATA_OBJECT_VALUES)
@@ -269,6 +277,10 @@ class SystemdJournalFile(data_format.BinaryDataFile):
       raise errors.ParseError('Unsupported object type: {0:d}.'.format(
           entry_array_object.object_type))
 
+    if entry_array_object.object_flags != 0:
+      raise errors.ParseError('Unsupported object flags: 0x{0:02x}.'.format(
+          entry_array_object.object_flags))
+
     if self._debug:
       self._DebugPrintStructureObject(
           entry_array_object, self._DEBUG_INFO_ENTRY_ARRAY_OBJECT_VALUES)
@@ -301,6 +313,10 @@ class SystemdJournalFile(data_format.BinaryDataFile):
     if entry_object.object_type != self._OBJECT_TYPE_ENTRY:
       raise errors.ParseError('Unsupported object type: {0:d}.'.format(
           entry_object.object_type))
+
+    if entry_object.object_flags != 0:
+      raise errors.ParseError('Unsupported object flags: 0x{0:02x}.'.format(
+          entry_object.object_flags))
 
     if self._debug:
       self._DebugPrintStructureObject(

@@ -24,6 +24,14 @@ attributes:
   size: 4
   units: bytes
 ---
+name: uint32le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 4
+  units: bytes
+---
 name: uint64
 type: integer
 attributes:
@@ -140,6 +148,10 @@ members:
   data_type: uint64
 - name: number_of_entries
   data_type: uint64
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: systemd_journal_data_object.data_size - 64
 ---
 name: systemd_journal_entry_item
 type: structure
