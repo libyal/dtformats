@@ -7,7 +7,6 @@
 from __future__ import unicode_literals
 
 import unittest
-import uuid
 
 from dtformats import jump_list
 
@@ -34,56 +33,8 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  def testDebugPrintDestListEntry(self):
-    """Tests the _DebugPrintDestListEntry function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
-    test_file._format_version = 3
-
-    uuid_value = uuid.UUID('{97d57d7f-24e9-4de7-9306-b40d93442fbb}')
-
-    data_type_map = test_file._GetDataTypeMap('dest_list_entry_v3')
-
-    dest_list_entry = data_type_map.CreateStructureValues(
-        unknown1=1,
-        droid_volume_identifier=uuid_value,
-        droid_file_identifier=uuid_value,
-        birth_droid_volume_identifier=uuid_value,
-        birth_droid_file_identifier=uuid_value,
-        hostname='myhost',
-        entry_number=2,
-        unknown2=3,
-        unknown3=4.0,
-        last_modification_time=5,
-        pin_status=6,
-        unknown4=7,
-        unknown5=8,
-        unknown6=9,
-        path_size=6,
-        path='mypath',
-        unknown7=10)
-
-    test_file._DebugPrintDestListEntry(dest_list_entry)
-
-  def testDebugPrintDestListHeader(self):
-    """Tests the _DebugPrintDestListHeader function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
-    test_file._format_version = 3
-
-    data_type_map = test_file._GetDataTypeMap('dest_list_header')
-
-    dest_list_header = data_type_map.CreateStructureValues(
-        format_version=1,
-        last_entry_number=5,
-        last_revision_number=7,
-        number_of_entries=2,
-        number_of_pinned_entries=3,
-        unknown1=4.0,
-        unknown2=6,
-        unknown3=8)
-
-    test_file._DebugPrintDestListHeader(dest_list_header)
+  # TODO: add tests for _FormatIntegerAsPathSize.
+  # TODO: add tests for _FormatString.
 
   @test_lib.skipUnlessHasTestFile([
       '1b4dd67f29cb1962.automaticDestinations-ms'])

@@ -80,6 +80,42 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
 
   _DEFINITION_FILE = 'jump_list.yaml'
 
+  # TODO: debug print pin status.
+  _DEBUG_INFO_DEST_LIST_ENTRY = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('droid_volume_identifier', 'Droid volume identifier',
+       '_FormatUUIDAsString'),
+      ('droid_file_identifier', 'Droid file identifier', '_FormatUUIDAsString'),
+      ('birth_droid_volume_identifier', 'Birth droid volume identifier',
+       '_FormatUUIDAsString'),
+      ('birth_droid_file_identifier', 'Birth droid file identifier',
+       '_FormatUUIDAsString'),
+      ('hostname', 'Hostname', '_FormatString'),
+      ('entry_number', 'Entry number', '_FormatIntegerAsDecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('unknown3', 'Unknown3', '_FormatFloatingPoint'),
+      ('last_modification_time', 'Last modification time',
+       '_FormatIntegerAsFiletime'),
+      ('pin_status', 'Pin status', '_FormatIntegerAsDecimal'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
+      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8'),
+      ('unknown6', 'Unknown6', '_FormatIntegerAsHexadecimal8'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsPathSize'),
+      ('path', 'Path', '_FormatString'),
+      ('unknown7', 'Unknown7', '_FormatIntegerAsHexadecimal8')]
+
+  _DEBUG_INFO_DEST_LIST_HEADER = [
+      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
+      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
+      ('number_of_pinned_entries', 'Number of pinned entries',
+       '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatFloatingPoint'),
+      ('last_entry_number', 'Last entry number', '_FormatIntegerAsDecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('last_revision_number', 'Last revision number',
+       '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes an Automatic Destinations Jump List file.
 
@@ -93,100 +129,27 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     self.entries = []
     self.recovered_entries = []
 
-  def _DebugPrintDestListEntry(self, dest_list_entry):
-    """Prints DestList entry debug information.
+  def _FormatIntegerAsPathSize(self, integer):
+    """Formats an integer as a path size.
 
     Args:
-      dest_list_entry (dest_list_entry_v1|dest_list_entry_v3): DestList entry.
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as path size.
     """
-    value_string = '0x{0:08x}'.format(dest_list_entry.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
+    return '{0:d} characters ({1:d} bytes)'.format(integer, integer * 2)
 
-    value_string = '{0!s}'.format(dest_list_entry.droid_volume_identifier)
-    self._DebugPrintValue('Droid volume identifier', value_string)
-
-    value_string = '{0!s}'.format(dest_list_entry.droid_file_identifier)
-    self._DebugPrintValue('Droid file identifier', value_string)
-
-    value_string = '{0!s}'.format(
-        dest_list_entry.birth_droid_volume_identifier)
-    self._DebugPrintValue('Birth droid volume identifier', value_string)
-
-    value_string = '{0!s}'.format(dest_list_entry.birth_droid_file_identifier)
-    self._DebugPrintValue('Birth droid file identifier', value_string)
-
-    value_string, _, _ = dest_list_entry.hostname.partition('\x00')
-    self._DebugPrintValue('Hostname', value_string)
-
-    value_string = '{0:d}'.format(dest_list_entry.entry_number)
-    self._DebugPrintValue('Entry number', value_string)
-
-    value_string = '0x{0:08x}'.format(dest_list_entry.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '{0:f}'.format(dest_list_entry.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
-
-    self._DebugPrintFiletimeValue(
-        'Last modification time', dest_list_entry.last_modification_time)
-
-    # TODO: debug print pin status.
-    value_string = '{0:d}'.format(dest_list_entry.pin_status)
-    self._DebugPrintValue('Pin status', value_string)
-
-    if self._format_version >= 3:
-      value_string = '{0:d}'.format(dest_list_entry.unknown4)
-      self._DebugPrintValue('Unknown4', value_string)
-
-      value_string = '0x{0:08x}'.format(dest_list_entry.unknown5)
-      self._DebugPrintValue('Unknown5', value_string)
-
-      value_string = '0x{0:08x}'.format(dest_list_entry.unknown6)
-      self._DebugPrintValue('Unknown6', value_string)
-
-    value_string = '{0:d} characters ({1:d} bytes)'.format(
-        dest_list_entry.path_size, dest_list_entry.path_size * 2)
-    self._DebugPrintValue('Path size', value_string)
-
-    self._DebugPrintValue('Path string', dest_list_entry.path)
-
-    if self._format_version >= 3:
-      value_string = '0x{0:08x}'.format(dest_list_entry.unknown7)
-      self._DebugPrintValue('Unknown7', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintDestListHeader(self, dest_list_header):
-    """Prints DestList header debug information.
+  def _FormatString(self, string):
+    """Formats a string.
 
     Args:
-      dest_list_header (dest_list_header): DestList header.
+      string (str): string.
+
+    Returns:
+      str: formatted string.
     """
-    value_string = '{0:d}'.format(dest_list_header.format_version)
-    self._DebugPrintValue('Format version', value_string)
-
-    value_string = '{0:d}'.format(dest_list_header.number_of_entries)
-    self._DebugPrintValue('Number of entries', value_string)
-
-    value_string = '{0:d}'.format(dest_list_header.number_of_pinned_entries)
-    self._DebugPrintValue('Number of pinned entries', value_string)
-
-    value_string = '{0:f}'.format(dest_list_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '{0:d}'.format(dest_list_header.last_entry_number)
-    self._DebugPrintValue('Last entry number', value_string)
-
-    value_string = '0x{0:08x}'.format(dest_list_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '{0:d}'.format(dest_list_header.last_revision_number)
-    self._DebugPrintValue('Last revision number', value_string)
-
-    value_string = '0x{0:08x}'.format(dest_list_header.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
-
-    self._DebugPrintText('\n')
+    return string.rstrip('\x00')
 
   def _ReadDestList(self, olecf_file):
     """Reads the DestList stream.
@@ -234,7 +197,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
         olecf_item, stream_offset, data_type_map, description)
 
     if self._debug:
-      self._DebugPrintDestListEntry(dest_list_entry)
+      self._DebugPrintStructureObject(
+          dest_list_entry, self._DEBUG_INFO_DEST_LIST_ENTRY)
 
     return entry_data_size
 
@@ -254,7 +218,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
         olecf_item, stream_offset, data_type_map, 'dest list header')
 
     if self._debug:
-      self._DebugPrintDestListHeader(dest_list_header)
+      self._DebugPrintStructureObject(
+          dest_list_header, self._DEBUG_INFO_DEST_LIST_HEADER)
 
     if dest_list_header.format_version not in (1, 3, 4):
       raise errors.ParseError('Unsupported format version: {0:d}'.format(
@@ -341,6 +306,15 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
   _LNK_GUID = (
       b'\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46')
 
+  _DEBUG_INFO_FILE_FOOTER = [
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8')]
+
+  _DEBUG_INFO_FILE_HEADER = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('header_values_type', 'Header value type', '_FormatIntegerAsDecimal')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Custum Destinations Jump List file.
 
@@ -352,37 +326,6 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         debug=debug, output_writer=output_writer)
     self.entries = []
     self.recovered_entries = []
-
-  def _DebugPrintFileFooter(self, file_footer):
-    """Prints file footer debug information.
-
-    Args:
-      file_footer (file_footer): file footer.
-    """
-    value_string = '0x{0:08x}'.format(file_footer.signature)
-    self._DebugPrintValue('Signature', value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintFileHeader(self, file_header):
-    """Prints file header debug information.
-
-    Args:
-      file_header (file_header): file header.
-    """
-    value_string = '0x{0:08x}'.format(file_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '0x{0:08x}'.format(file_header.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
-
-    value_string = '{0:d}'.format(file_header.header_values_type)
-    self._DebugPrintValue('Header value type', value_string)
-
-    self._DebugPrintText('\n')
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
@@ -400,7 +343,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
-      self._DebugPrintFileFooter(file_footer)
+      self._DebugPrintStructureObject(file_footer, self._DEBUG_INFO_FILE_FOOTER)
 
     if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
       raise errors.ParseError(
@@ -415,14 +358,13 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('custom_file_header')
 
-    file_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file header')
+    file_header, file_offset = self._ReadStructureFromFileObject(
+        file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintFileHeader(file_header)
+      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.unknown1 != 2:
       raise errors.ParseError('Unsupported unknown1: {0:d}.'.format(
@@ -433,19 +375,14 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
           file_header.header_values_type))
 
     if file_header.header_values_type == 0:
-      data_type_map = self._GetDataTypeMap('custom_file_header_value_type_0')
+      data_type_map_name = 'custom_file_header_value_type_0'
     else:
-      data_type_map = self._GetDataTypeMap(
-          'custom_file_header_value_type_1_or_2')
+      data_type_map_name = 'custom_file_header_value_type_1_or_2'
 
-    file_offset = file_object.tell()
-    # TODO: implement read file_header_value_data for HEADER_VALUE_TYPE_0
-    data_size = data_type_map.GetByteSize()
-    file_header_value_data = file_object.read(data_size)
+    data_type_map = self._GetDataTypeMap(data_type_map_name)
 
-    file_header_value = self._ReadStructureFromByteStream(
-        file_header_value_data, file_offset, data_type_map,
-        'custom file header value')
+    file_header_value, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'custom file header value')
 
     if self._debug:
       if file_header.header_values_type == 0:

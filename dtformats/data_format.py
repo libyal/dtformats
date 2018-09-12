@@ -260,6 +260,17 @@ class BinaryDataFormat(object):
     # TODO: omit ":0000" from the string.
     return ':'.join(['{0:04x}'.format(pair) for pair in octet_pairs])
 
+  def _FormatFloatingPoint(self, floating_point):
+    """Formats a floating-point number.
+
+    Args:
+      floating_point (float): floaing-point number.
+
+    Returns:
+      str: formatted floating-point number.
+    """
+    return '{0:f}'.format(floating_point)
+
   def _FormatIntegerAsDecimal(self, integer):
     """Formats an integer as a decimal.
 
