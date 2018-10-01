@@ -41,6 +41,7 @@ in the section entitled "GNU Free Documentation License".
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | January 2018 | Initial version.
 | 0.0.2 | J.B. Metz | July 2018 | Additional information.
+| 0.0.3 | J.B. Metz | October 2018 | Small changes for asciidoc format.
 |===
 
 :numbered:
@@ -195,6 +196,7 @@ FSE_CLONE + 13 == FSE_MODE_CLONE
 |===
 | Title: | FSEventStreamEventFlags
 | URL: | https://developer.apple.com/documentation/coreservices/1455361-fseventstreameventflags
+|===
 
 [cols="1,5",options="header"]
 |===
