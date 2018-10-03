@@ -81,8 +81,8 @@ The cache is stored in multiple:
 |===
 | Filename | Description
 | index | The index file
-| data_# | Data block files
-| f_###### | (Separate) data stream file
+| pass:[data_#] | Data block files
+| pass:[f_######] | (Separate) data stream file
 |===
 
 === Test versions
@@ -113,11 +113,11 @@ The cache address is 4 bytes in size and consists of:
 | Offset | Size | Value | Description
 4+| _If file type is 0 (Separate file)_
 | 0.0 | 28 bits | | File number +
-The value represents the value of # in f_######
+The value represents the value of # in pass:[f_######]
 4+| _Else_
 | 0.0 | 16 bits | | Block number
 | 2.0 | 8 bits | | File number (or file selector) +
-The value represents the value of # in data_#
+The value represents the value of # in pass:[data_#]
 | 3.0 | 2 bits | | Block size +
 The number of contiguous blocks where 0 represents 1 block and 3 represents 4 blocks.
 | 3.2 | 2 bits | | Reserved
@@ -169,7 +169,7 @@ The index file header (IndexHeader) is 256 bytes in size and consists of:
 | 8 | 4 | | Number of entries
 | 12 | 4 | | [yellow-background]*Stored data size*
 | 16 | 4 | | Last created file number +
-The value represents the value of # in f_######
+The value represents the value of # in pass:[f_######]
 | 20 | 4 | | [yellow-background]*Dirty flag* +
 [yellow-background]*Identifier for all entries being changed*
 | 24 | 4 | | [yellow-background]*Usage statistics data cache address*
@@ -229,7 +229,7 @@ Contains 0-byte values
 === Index table
 The index table is an array of cache addresses.
 
-== Data block file format (data_#)
+== Data block file format (pass:[data_#])
 Overview:
 
 * File header
@@ -256,9 +256,9 @@ The index file header (BlockFileHeader) is 8192 bytes in size and consists of:
 | 4 | 2 | | Minor version
 | 6 | 2 | | Major version
 | 8 | 2 | | File number (or file index) +
-The value represents the value of # in data_#
+The value represents the value of # in pass:[data_#]
 | 10 | 2 | | Next file number (or next file index) +
-The value represents the value of # in data_#
+The value represents the value of # in pass:[data_#]
 | 12 | 4 | | Block size (or cache entry) size
 | 16 | 4 | | Number of entries
 | 20 | 4 | | Maximum number of entries
@@ -382,8 +382,8 @@ The rankings node (RankingsNode) is 36 bytes in size and consists of:
 |===
 
 == Data stream
-The data stream is stored inside the data block file (data_#), for small
-amounts of data, or stored as a separate file (f_######). The data stream is
+The data stream is stored inside the data block file (pass:[data_#]), for small
+amounts of data, or stored as a separate file (pass:[f_######]). The data stream is
 stored as a gzip file, for more information about the gzip file format see:
 `[FORENSICWIKI]`.
 
