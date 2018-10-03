@@ -62,7 +62,7 @@ persistent cached data.
 === Cache types
 The following file-based cache types (CacheType) are known:
 
-[cols="1,2",options="header"]
+[cols="1,2,5",options="header"]
 |===
 | Value | Identifier | Description
 | 0 | DISK_CACHE | On-disk HTTP response headers and web content cache
