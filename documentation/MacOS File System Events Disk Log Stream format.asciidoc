@@ -42,6 +42,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.1 | J.B. Metz | January 2018 | Initial version.
 | 0.0.2 | J.B. Metz | July 2018 | Additional information.
 | 0.0.3 | J.B. Metz | October 2018 | Small changes for asciidoc format.
+| 0.0.4 | J.B. Metz | November 2018 | Updated information about flags.
 |===
 
 :numbered:
@@ -118,30 +119,41 @@ See section: <<event_flags,Event flags>>
 === [[event_flags]]Event flags
 
 [NOTE]
-These are the litte-endian equivalents of the values observed in
-https://developer.apple.com/documentation/coreservices/core_services_enumerations/1455361-fseventstreameventflags
+The include header sys/fsevents.h defines various FSE constants, e.g.
+`#define FSE_CREATE_FILE 0`. The flag values correspond to:
+`FLAG = 1 << CONSTANT`
+
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000001 | | Created
-| 0x00000002 | | Removed
-| 0x00000004 | | InodeMetadataModified
-| 0x00000008 | | Renamed
-| 0x00000010 | | Modified
-| 0x00000020 | | Exchange
-| 0x00000040 | | FinderInfoModified
-| 0x00000080 | | DirectoryCreated
-| 0x00000100 | | PermissionChanged
-| 0x00000200 | | ExtendedAttributeModified
-| 0x00000400 | | ExtendedAttributeRemoved
+| 0x00000001 | FSE_CREATE_FILE | Created
+| 0x00000002 | FSE_DELETE | Removed
+| 0x00000004 | FSE_STAT_CHANGED | InodeMetadataModified
+| 0x00000008 | FSE_RENAME | Renamed
+| 0x00000010 | FSE_CONTENT_MODIFIED | Modified
+| 0x00000020 | FSE_EXCHANGE | Exchange
+| 0x00000040 | FSE_FINDER_INFO_CHANGED | FinderInfoModified
+| 0x00000080 | FSE_CREATE_DIR | DirectoryCreated
+| 0x00000100 | FSE_CHOWN | PermissionChanged
+| 0x00000200 | FSE_XATTR_MODIFIED | ExtendedAttributeModified
+| 0x00000400 | FSE_XATTR_REMOVED | ExtendedAttributeRemoved
+| 0x00000800 | FSE_DOCID_CREATED | 
+| 0x00001000 | FSE_DOCID_CHANGED | DocumentRevision
+| 0x00002000 | FSE_UNMOUNT_PENDING | +
+iOS-only: client must respond via FSEVENTS_UNMOUNT_PENDING_ACK
+| 0x00004000 | FSE_CLONE | ItemCloned
 | | |
-| 0x00001000 | | DocumentRevision
-| | |
-| 0x00004000 | | ItemCloned
-| | |
-| 0x00080000 | | LastHardLinkRemoved
-| 0x00100000 | | IsHardLink
+| 0x00010000 | FSE_MODE_CLONE | +
+notification is for a clone
+| 0x00020000 | FSE_TRUNCATED_PATH | +
+the path for this item had to be truncated
+| 0x00040000 | FSE_REMOTE_DIR_EVENT | +
+this is a remotely generated directory-level granularity event
+| 0x00080000 | FSE_MODE_LAST_HLINK | LastHardLinkRemoved +
+link count == 0 on a hard-link delete
+| 0x00100000 | FSE_MODE_HLINK | IsHardLink +
+notification is for a hard-link
 | | |
 | 0x00400000 | | IsSymbolicLink
 | 0x00800000 | | IsFile
@@ -151,36 +163,6 @@ https://developer.apple.com/documentation/coreservices/core_services_enumeration
 | | |
 | 0x20000000 | | EndOfTransaction
 |===
-
-==== Notes
-
-[yellow-background]*Values taken from <sys/fsevents.h>*
-
-....
-#define FSE_CREATE_FILE          0
-#define FSE_DELETE               1
-#define FSE_STAT_CHANGED         2
-#define FSE_RENAME               3
-#define FSE_CONTENT_MODIFIED     4
-#define FSE_EXCHANGE             5
-#define FSE_FINDER_INFO_CHANGED  6
-#define FSE_CREATE_DIR           7
-#define FSE_CHOWN                8
-#define FSE_XATTR_MODIFIED       9
-#define FSE_XATTR_REMOVED       10
-#define FSE_DOCID_CREATED       11
-#define FSE_DOCID_CHANGED       12
-#define FSE_UNMOUNT_PENDING     13 // iOS-only: client must respond via FSEVENTS_UNMOUNT_PENDING_ACK
-#define FSE_CLONE               14
-
-FSE_CLONE + 13 == FSE_MODE_CLONE
-
-#define FSE_MODE_CLONE         (1 << 27)    // notification is for a clone
-#define FSE_TRUNCATED_PATH     (1 << 28)    // the path for this item had to be truncated
-#define FSE_REMOTE_DIR_EVENT   (1 << 29)    // this is a remotely generated directory-level granularity event
-#define FSE_MODE_LAST_HLINK    (1 << 30)    // link count == 0 on a hard-link delete 
-#define FSE_MODE_HLINK         (1 << 31)    // notification is for a hard-link
-....
 
 :numbered!:
 [appendix]
