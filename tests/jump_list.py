@@ -8,9 +8,9 @@ from __future__ import unicode_literals
 
 import unittest
 
-from dtformats import jump_list
-
 import pyolecf
+
+from dtformats import jump_list
 
 from tests import test_lib
 

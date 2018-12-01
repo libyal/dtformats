@@ -156,6 +156,9 @@ class EMFFile(data_format.BinaryDataFile):
       file_offset (int): offset of the data relative to the start of
           the file-like object.
 
+    Returns:
+      Record: a record.
+
     Raises:
       ParseError: if the record cannot be read.
     """
@@ -728,6 +731,9 @@ class WMFFile(data_format.BinaryDataFile):
       file_object (file): file-like object.
       file_offset (int): offset of the data relative to the start of
           the file-like object.
+
+    Returns:
+      Record: a record.
 
     Raises:
       ParseError: if the record cannot be read.

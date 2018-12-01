@@ -401,6 +401,9 @@ class DataBlockFile(data_format.BinaryDataFile):
     Args:
       block_offset (int): offset of the block that contains the cache entry.
 
+    Returns:
+      CacheEntry: a cache entry.
+
     Raises:
       ParseError: if the cache entry cannot be read.
     """

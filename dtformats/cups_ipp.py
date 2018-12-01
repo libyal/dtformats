@@ -99,7 +99,7 @@ class CupsIppFile(data_format.BinaryDataFile):
       ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
       ('name', 'Name', None),
       ('value_data_size', 'Value data size', '_FormatIntegerAsDecimal'),
-      ('value_data_size', 'Value data size', '_FormatDataInHexadecimal')]
+      ('value_data', 'Value data', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_HEADER = [
       ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
@@ -216,7 +216,7 @@ class CupsIppFile(data_format.BinaryDataFile):
       if tag_value >= 0x10:
         file_object.seek(file_offset, os.SEEK_SET)
 
-        yield self._ReadAttribute(file_object)
+        self._ReadAttribute(file_object)
 
       elif (tag_value != self._DELIMITER_TAG_END_OF_ATTRIBUTES and
             tag_value not in self._DELIMITER_TAGS):

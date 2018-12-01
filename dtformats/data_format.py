@@ -421,6 +421,9 @@ class BinaryDataFormat(object):
     Args:
       description (str): description.
       value (object): value.
+
+    Returns:
+      str: formatted value.
     """
     alignment, _ = divmod(len(description), 8)
     alignment = 8 - alignment + 1
@@ -549,8 +552,6 @@ class BinaryDataFormat(object):
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
       description (str): description of the structure.
       context (Optional[dtfabric.DataTypeMapContext]): data type map context.
-      suppress_debug_output (Optional[bool]): True if debug output should be
-          suppressed.
 
     Returns:
       object: structure values object.
@@ -667,6 +668,7 @@ class BinaryDataFile(BinaryDataFormat):
 
     Raises:
       IOError: if the file is not opened.
+      OSError: if the file is not opened.
     """
     if not self._file_object:
       raise IOError('File not opened')
@@ -685,6 +687,7 @@ class BinaryDataFile(BinaryDataFormat):
 
     Raises:
       IOError: if the file is already opened.
+      OSError: if the file is already opened.
     """
     if self._file_object:
       raise IOError('File already opened')

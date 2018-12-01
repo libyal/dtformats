@@ -825,48 +825,48 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     self._first_mapped_page = None
     self._root_page = None
 
-  def _DebugPrintPageBody(self, page_header):
+  def _DebugPrintPageBody(self, page_body):
     """Prints page body debug information.
 
     Args:
       page_body (cim_page_body): page body.
     """
-    self._DebugPrintDecimalValue('Number of keys', page_header.number_of_keys)
+    self._DebugPrintDecimalValue('Number of keys', page_body.number_of_keys)
 
-    for index, value in enumerate(page_header.unknown2):
+    for index, value in enumerate(page_body.unknown2):
       description = 'Unknown2: {0:d}'.format(index)
       self._DebugPrintDecimalValue(description, value)
 
-    for index, page_number in enumerate(page_header.sub_pages):
+    for index, page_number in enumerate(page_body.sub_pages):
       description = 'Sub page: {0:d} mapped page number'.format(index)
       self._DebugPrintPageNumber(
           description, page_number,
           unavailable_page_numbers=set([0, 0xffffffff]))
 
-    for index, key_offset in enumerate(page_header.key_offsets):
+    for index, key_offset in enumerate(page_body.key_offsets):
       description = 'Key: {0:d} offset'.format(index)
       value_string = '0x{0:04x}'.format(key_offset)
       self._DebugPrintValue(description, value_string)
 
     value_string = '{0:d} ({1:d} bytes)'.format(
-        page_header.key_data_size, page_header.key_data_size * 2)
+        page_body.key_data_size, page_body.key_data_size * 2)
     self._DebugPrintValue('Key data size', value_string)
 
-    self._DebugPrintData('Key data', page_header.key_data)
+    self._DebugPrintData('Key data', page_body.key_data)
 
     self._DebugPrintDecimalValue(
-        'Number of values', page_header.number_of_values)
+        'Number of values', page_body.number_of_values)
 
-    for index, offset in enumerate(page_header.value_offsets):
+    for index, offset in enumerate(page_body.value_offsets):
       description = 'Value: {0:d} offset'.format(index)
       value_string = '0x{0:04x}'.format(offset)
       self._DebugPrintValue(description, value_string)
 
     value_string = '{0:d} ({1:d} bytes)'.format(
-        page_header.value_data_size, page_header.value_data_size * 2)
+        page_body.value_data_size, page_body.value_data_size * 2)
     self._DebugPrintValue('Value data size', value_string)
 
-    self._DebugPrintData('Value data', page_header.value_data)
+    self._DebugPrintData('Value data', page_body.value_data)
 
   def _DebugPrintPageHeader(self, page_header):
     """Prints page header debug information.

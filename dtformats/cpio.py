@@ -162,6 +162,9 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       file_offset (int): offset of the data relative to the start of
           the file-like object.
 
+    Returns:
+      CPIOArchiveFileEntry: a file entry.
+
     Raises:
       ParseError: if the file entry cannot be read.
     """

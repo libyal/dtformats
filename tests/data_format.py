@@ -22,7 +22,7 @@ class ErrorBytesIO(io.BytesIO):
   # The following methods are part of the file-like object interface.
   # pylint: disable=invalid-name
 
-  def read(self, size=None):  # pylint: disable=unused-argument
+  def read(self, size=None):  # pylint: disable=redundant-returns-doc,unused-argument
     """Reads bytes.
 
     Args:
@@ -34,6 +34,7 @@ class ErrorBytesIO(io.BytesIO):
 
     Raises:
       IOError: for testing.
+      OSError: for testing.
     """
     raise IOError('Unable to read for testing purposes.')
 
@@ -41,7 +42,7 @@ class ErrorBytesIO(io.BytesIO):
 class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
   """Data type map that errors."""
 
-  def FoldByteStream(self, unused_mapped_value, **unused_kwargs):
+  def FoldByteStream(self, mapped_value, **unused_kwargs):  # pylint: disable=redundant-returns-doc
     """Folds the data type into a byte stream.
 
     Args:
@@ -57,7 +58,7 @@ class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
     raise dtfabric_errors.FoldingError(
         'Unable to fold to byte stream for testing purposes.')
 
-  def MapByteStream(self, unused_byte_stream, **unused_kwargs):
+  def MapByteStream(self, byte_stream, **unused_kwargs):  # pylint: disable=redundant-returns-doc
     """Maps the data type on a byte stream.
 
     Args:

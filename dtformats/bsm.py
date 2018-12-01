@@ -1077,7 +1077,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     if number_of_integers == 4:
       return self._FormatArrayOfIntegersAsIPv4Address(array_of_integers)
-    elif number_of_integers == 16:
+    if number_of_integers == 16:
       return self._FormatArrayOfIntegersAsIPv6Address(array_of_integers)
 
     return None

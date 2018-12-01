@@ -101,6 +101,9 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Args:
       file_object (file): file-like object.
 
+    Returns:
+      tzif_file_header: a file header.
+
     Raises:
       ParseError: if the file header cannot be read.
     """
@@ -238,9 +241,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     Args:
       file_object (file): file-like object.
 
-    Returns:
-      tzif_file_header: file header.
-
     Raises:
       ParseError: if the 32-bit timezone information cannot be read.
     """
@@ -261,9 +261,6 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
-
-    Returns:
-      tzif_file_header: file header.
 
     Raises:
       ParseError: if the 64-bit timezone information cannot be read.

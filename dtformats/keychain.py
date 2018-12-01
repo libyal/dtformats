@@ -876,7 +876,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     Args:
       file_object (file): file-like object.
-      tables_header_offset (int): offset of the tables header relative to
+      table_header_offset (int): offset of the table header relative to
           the start of the file.
 
     Returns:

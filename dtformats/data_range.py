@@ -47,6 +47,7 @@ class DataRange(object):
 
     Raises:
       IOError: if the read failed.
+      OSError: if the read failed.
     """
     if self.data_offset < 0:
       raise IOError('Invalid data offset: {0:d} value out of bounds.'.format(
@@ -83,6 +84,7 @@ class DataRange(object):
 
     Raises:
       IOError: if the seek failed.
+      OSError: if the seek failed.
     """
     if self.data_size < 0:
       raise IOError('Invalid data size: {0:d} value out of bounds.'.format(
