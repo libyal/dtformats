@@ -32,17 +32,17 @@ class GZipFile(data_format.BinaryDataFile):
   _BUFFER_SIZE = 16 * 1024 * 1024
 
   _DEBUG_INFO_MEMBER_FOOTER = [
-      ('checksum', 'Checksum', '_FormatStreamAsHexadecimal8'),
+      ('checksum', 'Checksum', '_FormatIntegerAsHexadecimal8'),
       ('uncompressed_data_size', 'Uncompressed data sizse',
        '_FormatStreamAsDecimal')]
 
   _DEBUG_INFO_MEMBER_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsHexadecimal4'),
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal4'),
       ('compression_method', 'Compression method', '_FormatStreamAsDecimal'),
-      ('flags', 'Flags', '_FormatStreamAsHexadecimal2'),
+      ('flags', 'Flags', '_FormatIntegerAsHexadecimal2'),
       ('modification_time', 'Modification time', '_FormatIntegerAsPosixTime'),
       ('operating_system', 'Operating system', '_FormatStreamAsDecimal'),
-      ('compression_flags', 'Compression flags', '_FormatStreamAsHexadecimal2')]
+      ('compression_flags', 'Compression flags', '_FormatIntegerAsHexadecimal2')]
 
   def _ReadCompressedData(self, zlib_decompressor, compressed_data):
     """Reads compressed data.

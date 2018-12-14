@@ -104,7 +104,8 @@ class BinaryDataFormat(object):
       if value_format_function:
         attribute_value = value_format_function(attribute_value)
 
-      if '\n' in attribute_value:
+      if (isinstance(attribute_value, py2to3.STRING_TYPES) and
+          '\n' in attribute_value):
         self._output_writer.WriteText('{0:s}:\n'.format(description))
         self._output_writer.WriteText(attribute_value)
       else:
