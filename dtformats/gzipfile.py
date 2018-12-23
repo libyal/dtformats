@@ -42,7 +42,8 @@ class GZipFile(data_format.BinaryDataFile):
       ('flags', 'Flags', '_FormatIntegerAsHexadecimal2'),
       ('modification_time', 'Modification time', '_FormatIntegerAsPosixTime'),
       ('operating_system', 'Operating system', '_FormatStreamAsDecimal'),
-      ('compression_flags', 'Compression flags', '_FormatIntegerAsHexadecimal2')]
+      ('compression_flags', 'Compression flags',
+       '_FormatIntegerAsHexadecimal2')]
 
   def _ReadCompressedData(self, zlib_decompressor, compressed_data):
     """Reads compressed data.

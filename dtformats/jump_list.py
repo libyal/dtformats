@@ -316,7 +316,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       ('header_values_type', 'Header value type', '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a Custum Destinations Jump List file.
+    """Initializes a Custom Destinations Jump List file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.

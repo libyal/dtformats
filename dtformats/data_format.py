@@ -265,7 +265,7 @@ class BinaryDataFormat(object):
     """Formats a floating-point number.
 
     Args:
-      floating_point (float): floaing-point number.
+      floating_point (float): floating-point number.
 
     Returns:
       str: formatted floating-point number.
@@ -586,7 +586,7 @@ class BinaryDataFormat(object):
     successfully mapped onto the byte stream or until an error occurs.
 
     Args:
-      file_object (dvfvs.FileIO): a file-like object to parse.
+      file_object (file): a file-like object to parse.
       file_offset (int): offset of the structure data relative to the start
           of the file-like object.
       data_type_map (dtfabric.DataTypeMap): data type map of the structure.
