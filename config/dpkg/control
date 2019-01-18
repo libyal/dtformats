@@ -16,13 +16,13 @@ Description: Data files for dtFormats
 
 Package: python-dtformats
 Architecture: all
-Depends: dtformats-data, libfwsi-python (>= 20150606), liblnk-python (>= 20150830), libolecf-python (>= 20151223), python-backports.lzma, python-dfdatetime (>= 20180510), python-dtfabric (>= 20181128), python-yaml (>= 3.10), ${python:Depends}, ${misc:Depends}
+Depends: dtformats-data, libfwsi-python (>= 20150606), liblnk-python (>= 20150830), libolecf-python (>= 20151223), python-backports.lzma, python-dfdatetime (>= 20180510), python-dtfabric (>= 20181128), python-lz4 (>= 0.10.0), python-yaml (>= 3.10), ${python:Depends}, ${misc:Depends}
 Description: Python 2 module of dtFormats
  dtFormats is a collection of various file formats.
 
 Package: python3-dtformats
 Architecture: all
-Depends: dtformats-data, libfwsi-python3 (>= 20150606), liblnk-python3 (>= 20150830), libolecf-python3 (>= 20151223), python3-dfdatetime (>= 20180510), python3-dtfabric (>= 20181128), python3-yaml (>= 3.10), ${python3:Depends}, ${misc:Depends}
+Depends: dtformats-data, libfwsi-python3 (>= 20150606), liblnk-python3 (>= 20150830), libolecf-python3 (>= 20151223), python3-dfdatetime (>= 20180510), python3-dtfabric (>= 20181128), python3-lz4 (>= 0.10.0), python3-yaml (>= 3.10), ${python3:Depends}, ${misc:Depends}
 Description: Python 3 module of dtFormats
  dtFormats is a collection of various file formats.
 

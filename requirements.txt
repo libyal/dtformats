@@ -6,3 +6,4 @@ dtfabric >= 20181128
 libfwsi-python >= 20150606
 liblnk-python >= 20150830
 libolecf-python >= 20151223
+lz4 >= 0.10.0
