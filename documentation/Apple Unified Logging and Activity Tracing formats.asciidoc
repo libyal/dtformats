@@ -1,0 +1,1109 @@
+= Apple Unified Logging and Activity Tracing formats
+Sub title
+
+:toc:
+:toclevels: 4
+
+:numbered!:
+[abstract]
+== Summary
+
+[preface]
+== Document information
+[cols="1,5"]
+|===
+| Author(s): | Joachim Metz <joachim.metz@gmail.com>
+| Abstract: |
+| Classification: | Public
+| Keywords: |
+|===
+
+[preface]
+== License
+....
+Copyright (C) 2019, Joachim Metz <joachim.metz@gmail.com>.
+Permission is granted to copy, distribute and/or modify this document under the
+terms of the GNU Free Documentation License, Version 1.3 or any later version
+published by the Free Software Foundation; with no Invariant Sections, no
+Front-Cover Texts, and no Back-Cover Texts. A copy of the license is included
+in the section entitled "GNU Free Documentation License".
+....
+
+[preface]
+== Revision history
+[cols="1,1,1,5",options="header"]
+|===
+| Version | Author | Date | Comments
+| 0.0.1 | J.B. Metz | January 2019 | Initial version.
+|===
+
+:numbered:
+== Overview
+
+Apple Unified Logging and Activity Tracing consists of:
+
+* Diagnostics data
+* Shared-Cache Strings data
+
+=== Diagnostics data
+
+The diagnostics data can be stored in a logarchive (directory) or on a Mac OS
+system in the directory:
+
+....
+/private/var/db/diagnostics/
+/var/db/diagnostics/
+....
+
+The diagnostics directory contains the following sub directories:
+
+* HighVolume
+* Persist
+* Signpost
+* Special
+* timesync
+
+And files:
+
+* logdata.statistics.0.txt
+* shutdown.log
+* version.plist
+
+[yellow-background]*TODO describe what HighVolume sbu directory contains*
+
+The Persist, Signpost and Special sub directories can contain zero or more
+files with the extension .tracev3. These files are stored in the
+<<tracev3_file_format,tracev3 file format>>
+
+The timesync sub directory can contain one or more files with the extension
+.timesync. These files are stored in the
+<<timesync_database_file_format,timesync database file format>>
+
+[yellow-background]*TODO describe what logdata.statistics.0.txt file contains*
+
+[yellow-background]*TODO describe what shutdown.log file contains*
+
+[yellow-background]*TODO describe what version.plist file contains*
+
+=== Shared-Cache Strings data
+
+The Shared-Cache Strings data can be stored in a logarchive (directory) or
+on a Mac OS system in the directory:
+
+....
+/private/var/db/uuidtext/
+/var/db/uuidtext/
+....
+
+The uuidtext directory contains the following sub directories:
+
+* `[0-9A-F][0-9A-Z]`
+* dsc
+
+=== `[0-9A-F][0-9A-Z]` sub directory
+
+The `[0-9A-F][0-9A-Z]` sub directory contains zero or more files:
+
+* `[0-9A-F]{30}`
+
+[yellow-background]*TODO complete section*
+
+=== dsc sub directory
+
+The dsc sub directory contains one or more files:
+
+* `[0-9A-F]{32}`
+
+This filename relates to an UUID, for example:
+
+....
+2576AD2587533C119308541E6149A88D represents 2576AD25-8753-3C11-9308-541E6149A88D
+....
+
+These files are store in the <<shared_cache_strings_file_fomat,Shared-Cache strings (dsc) file format>>
+
+== [[tracev3_file_format]]tracev3 file format
+
+A tracev3 file consists of:
+
+* one or more chunks
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | little-endian
+|===
+
+=== tracev3 chunk
+
+A tracev3 chunk (tracev3_chunk) is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_header)_
+| 0 | 4 | | Chunk tag (tag) +
+See section: <<chunk_tag_types,Chunk tag types>>
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 4 | | Chunk data size (length)
+| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+4+| _Chunk data_
+| 16 | 4 | | Chunk data
+|===
+
+[NOTE]
+The chunk header is stored 64-bit aligned.
+
+=== [[chunk_tag_types]]Chunk tag types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x1000 | Header |
+| | |
+| 0x6001 | Firehose |
+| | |
+| 0x6003 | StateDump |
+| | |
+| 0x600b | Catalog |
+| | |
+| 0x600d | ChunkSet |
+|===
+
+=== Header chunk
+
+The Header chunk is 208 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_header)_
+| 0 | 4 | 0x1000 | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 4 | | Chunk data size (length)
+| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+4+| _Chunk data_
+| 16 | 4 | | [yellow-background]*Unknown* +
+Seen: 1
+| 20 | 4 | | [yellow-background]*Unknown* +
+Seen: 1
+| 24 | 4 | | [yellow-background]*Unknown (related to starttime?)*
+| 28 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 32 | 4 | | [yellow-background]*Unknown*
+| 36 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 40 | 4 | | [yellow-background]*Unknown*
+| 44 | 4 | | [yellow-background]*Unknown*
+| 48 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 52 | 4 | | [yellow-background]*Unknown (flags)* +
+(64bits) (is_boot)
+4+| _Unknown sub chunk (tracev3_subchunk_continuous)_
+| 56 | 4 | 0x6100 | Sub chunk tag
+| 60 | 4 | | Sub chunk data size +
+The size value does not include the 8 bytes of the sub chunk tag and data size
+| 64 | 4 | | [yellow-background]*Unknown (value data related to starttime?)*
+| 68 | 4 | | [yellow-background]*Unknown (empty values?)*
+4+| _Unknown sub chunk_
+| 72 | 4 | 0x6101 | Sub chunk tag
+| 76 | 4 | | Sub chunk data size +
+The size value does not include the 8 bytes of the sub chunk tag and data size
+| 80 | 4 | | [yellow-background]*Unknown*
+| 84 | 4 | | [yellow-background]*Unknown*
+| 88 | 16 | | Build version string
+| 104 | 16 | | Hardware model string
+| 120 | 16 | | [yellow-background]*Unknown (empty values?)*
+4+| _Unknown sub chunk_
+| 124 | 4 | 0x6102 | Sub chunk tag
+| 128 | 4 | | Sub chunk data size +
+The size value does not include the 8 bytes of the sub chunk tag and data size
+| 132 | 16 | | Boot identifier (Boot UUID) +
+Contains a UUID stored in big-endian
+| 148 | 4 | | Process Identifier (PID) of logd
+| 152 | 4 | | Exit status (of logd?)
+4+| _Time zone sub chunk (tracev3_subchunk_timezone)_
+| 156 | 4 | 0x6103 | Sub chunk tag
+| 164 | 4 | | Sub chunk data size +
+The size value does not include the 8 bytes of the sub chunk tag and data size
+| 168 | 48 | | Path to timezone information file
+|===
+
+....
+tracev3_subchunk_preamble
+tracev3_subchunk_generation
+tracev3_subchunk_systeminfo
+....
+
+=== Catalog chunk
+
+The Catalog chunk is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_header)_
+| 0 | 4 | 0x600b | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 4 | | Chunk data size (length)
+| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+4+| _Chunk data_
+| 16 | 2 | | Offset of the catalog sub system strings +
+The offset is relative to the start of the catalog UUIDs
+| 18 | 2 | | Offset of the catalog process information entries +
+The offset is relative to the start of the catalog UUIDs
+| 20 | 2 | | Number of process information entries +
+| 22 | 2 | | Offset of the catalog sub chunks +
+The offset is relative to the start of the catalog UUIDs
+| 24 | 4 | | Number of sub chunks
+| 28 | 4 | | [yellow-background]*Unknown*
+| 32 | 4 | | [yellow-background]*Unknown (earliest firehose timestamp?)*
+| 36 | 4 | | [yellow-background]*Unknown*
+| 40 | 16 x ... | | Catalog UUIDs +
+Contains an array of UUIDs stored in big-endian
+| ... | ... | | Catalog sub system strings +
+Contains an array of strings with an end-of-string character
+| ... | ... | | Catalog process information entries +
+Contains an array of <<catalog_process_information_entry,Catalog process information entries>>
+| ... | ... | | Catalog sub chunks +
+Contains an array of <<catalog_sub_chunk,Catalog sub chunks>>
+|===
+
+....
+tracev3_chunk_catalog
+tracev3_chunk_catalog_v2
+....
+
+==== [[catalog_process_information_entry]]Catalog process information entry
+
+....
+[000]
+           proc id : 205@206
+               pid : 205
+              euid : 0
+             index : 29
+             flags : 0
+         main uuid : 5D668FA2-8B2B-3227-B83D-3C6B763D75E7
+          dsc uuid : 2576AD25-8753-3C11-9308-541E6149A88D
+         uuidinfos : 0
+        subsystems : 1
+                <        id :   1,  subsystem :  1402,   category :  1422>
+....
+
+==== [[catalog_sub_chunk]]Catalog sub chunk
+
+....
+[000]
+           startts : 40533
+             endts : 4549897714
+         uncomp sz : 62200
+         comp algo : 256
+                 procinfos : 10
+                   indexes : 0,1,2,3,4,5,6,7,8,9,
+                   subcats : 25
+                   offsets : 0,337,177,113,33,259,308,228,132,422,70,375,296,248,216,41,25,442,394,348,158,62,431,223,191,
+....
+
+=== ChunkSet chunk
+
+The ChunkSet chunk is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_header)_
+| 0 | 4 | 0x600d | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 4 | | Chunk data size (length)
+| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+4+| _Chunk data_
+| 16 | ... | | Contains compressed data +
+The compressed data contains chunks
+|===
+
+=== Compressed data
+
+The compressed data consists of
+
+* start of compressed data marker
+* compressed data
+* end of compressed data marker
+
+==== Start of compressed data marker
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "bv41" | | start of LZ4 compressed block +
+See section: <<lz4_compressed_block,LZ4 compressed block>>
+| "bv4-" | | start of lZ4 uncompressed block +
+See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
+|===
+
+==== [[lz4_compressed_block]]LZ4 compressed block
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _LZ4 compressed block header_
+| 0 | 4 | "bv41" | Signature
+| 4 | 4 | | Uncompressed data size (in bytes)
+| 8 | 4 | | Block size (in bytes)
+4+| _LZ4 compressed block data_
+| 12 | ... | | LZ4 compressed data
+|===
+
+==== [[lz4_uncompressed_block]]LZ4 uncompressed block
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | "bv41" | Signature
+| 4 | 4 | | Uncompressed data size (in bytes)
+| 8 | 4 | | Block size (in bytes)
+4+| _LZ4 uncompressed block data_
+| 12 | ... | | uncompressed data
+|===
+
+==== End of compressed data marker
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "bv4$" | | end of LZ4 compressed or uncompressed block
+|===
+
+=== Firehose chunk
+
+The Firehose chunk is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_header)_
+| 0 | 4 | 0x6001 | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 4 | | Chunk data size (length)
+| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+4+| _Chunk data_
+| 16 | 8 | | [yellow-background]*Unknown (first number in proc_id #@#)*
+| 24 | 8 | | [yellow-background]*Unknown (second number in proc_id #@#)*
+| 32 | 2 | | [yellow-background]*Unknown (public size)*
+|===
+
+....
+tracev3_chunk_firehose
+tracev3_chunk_firehose_old
+....
+
+....
+chunk 4:            tag:0x6001, subtag:0x0000, length:4064
+
+firehose chunk:     
+    proc_id:        74@75
+    TTL:            0
+    collapsed:      0
+    size:           public:4048, priv:0
+    stream:         persist
+    base:           0
+
+0x00000000  4a 00 00 00 00 00 00 00  4b 00 00 00 00 00 00 00  J.......K.......
+0x00000010  d0 0f 00 10 00 00 00 03  00 00 00 00 00 00 00 00  ................
+....
+
+A Firehose tracepoint (firehose_tracepoint) is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x04 | [yellow-background]*Unknown*
+| 1 | 1 | | [yellow-background]*Unknown (Log level?)*
+| 2 | 2 | | [yellow-background]*Unknown (Flags?)*
+| 4 | 4 | | [yellow-background]*Unknown (format string location?)*
+| 8 | 8 | | [yellow-background]*Unknown (thread identifier?)*
+| 16 | 8 | | [yellow-background]*Unknown (time related?)*
+| 24 | 4 | | [yellow-background]*Unknown (process information location?)*
+| 28 | 2 | | [yellow-background]*Unknown*
+| 30 | 2 | | [yellow-background]*Unknown*
+| 32 | 4 | | [yellow-background]*Unknown*
+| 36 | 2 | | [yellow-background]*Unknown (value string size)*
+| 38 | ... | | [yellow-background]*Unknown (value string)*
+| ... | ... | | Alignment padding
+|===
+
+....
+0x00000020        02 02                                       ........_.......
+(main_exe, has_subsystem)
+....
+
+....
+tp 16 + 46:         log default (main_exe, has_subsystem)
+    time:           +3.790s
+    walltime:       1545925575 - 2018-12-27 16:46:15 (Thursday)
+    location:       pc:0x4b299 fmt:0x7a4d0
+
+fmt: points to location in 
+/var/db/uuidtext/AB/414C1EC0233A05AF22029CC5E160EA
+
+00014350  00 00 00 00 00 00 00 6f  70 65 6e 64 69 72 65 63  |.......opendirec|
+00014360  74 6f 72 79 64 20 28 62  75 69 6c 64 20 25 7b 70  |toryd (build %{p|
+00014370  75 62 6c 69 63 7d 73 29  20 6c 61 75 6e 63 68 65  |ublic}s) launche|
+00014380  64 2e 2e 2e 00 00 00 66  61 69 6c 65 64 20 74 6f  |d......failed to|
+
+    image uuid:     AB414C1E-C023-3A05-AF22-029CC5E160EA
+[000] AB414C1E-C023-3A05-AF22-029CC5E160EA
+
+    image path:     /usr/libexec/opendirectoryd
+    format:         opendirectoryd (build %{public}s) launched...
+    subsystem:      1 com.apple.opendirectoryd.default
+opendirectoryd (build 483.200) launched...
+
+0x00000030  a3 94 e8 e1 00 00 16 00                           ................
+
+0x00000030                                       01 00 02 01  ................
+0x00000040  22 04 00 00 08 00 34 38  33 2e 32 30 30 00 00 00  ".....483.200...
+
+0x00000050  04 10 02 02 50 2c 07 00  9d 02 00 00 00 00 00 00  ....P,..........
+0x00000060  a2 87 0e e3 00 00 14 00  af 2b 00 00 01 00 03 02  .........+......
+0x00000070  21 04 00 00 00 00 00 04  02 00 00 00 00 00 00 00  !...............
+0x00000080  04 00 03 02 a0 72 07 00  a4 02 00 00 00 00 00 00  .....r..........
+0x00000090  bb 79 72 e3 00 00 3b 00  40 00 00 00 00 00 00 80  .yr...;.@.......
+0x000000a0  c0 8e 02 00 02 00 02 02  42 04 00 00 1f 00 00 04  ........B.......
+0x000000b0  d0 07 00 00 4f 44 4e 6f  64 65 43 72 65 61 74 65  ....ODNodeCreate
+0x000000c0  57 69 74 68 4e 61 6d 65  41 6e 64 4f 70 74 69 6f  WithNameAndOptio
+0x000000d0  6e 73 00 00 00 00 00 00  04 10 02 02 50 2c 07 00  ns..........P,..
+0x000000e0  9f 02 00 00 00 00 00 00  fe 49 5d e5 00 00 14 00  .........I].....
+0x000000f0  af 2b 00 00 01 00 03 02  21 04 00 00 00 00 00 04  .+......!.......
+0x00000100  02 00 00 00 00 00 00 00  04 00 02 02 d0 8f 07 00  ................
+0x00000110  9f 02 00 00 00 00 00 00  f3 b0 5e e5 00 00 3f 00  ..........^...?.
+0x00000120  54 3c 04 00 02 00 02 04  20 04 00 00 01 00 20 04  T<...... ..... .
+0x00000130  01 00 01 00 42 04 02 00  12 00 20 04 14 00 0b 00  ....B..... .....
+0x00000140  00 00 2f 41 63 74 69 76  65 20 44 69 72 65 63 74  ../Active Direct
+0x00000150  6f 72 79 00 20 61 73 20  68 69 64 64 65 6e 00 00  ory. as hidden..
+0x00000160  04 10 02 02 50 2c 07 00  9f 02 00 00 00 00 00 00  ....P,..........
+0x00000170  a3 0c 86 e5 00 00 14 00  af 2b 00 00 01 00 03 02  .........+......
+0x00000180  21 04 00 00 00 00 00 04  02 00 00 00 00 00 00 00  !...............
+0x00000190  04 00 02 02 d0 8f 07 00  9f 02 00 00 00 00 00 00  ................
+0x000001a0  23 29 86 e5 00 00 34 00  54 3c 04 00 02 00 02 04  #)....4.T<......
+0x000001b0  20 04 00 00 01 00 20 04  01 00 01 00 42 04 02 00   ..... .....B...
+0x000001c0  07 00 20 04 09 00 0b 00  00 00 2f 4c 6f 63 61 6c  .. ......./Local
+0x000001d0  00 20 61 73 20 68 69 64  64 65 6e 00 00 00 00 00  . as hidden.....
+0x000001e0  04 10 02 02 50 2c 07 00  9f 02 00 00 00 00 00 00  ....P,..........
+0x000001f0  c1 03 99 e5 00 00 14 00  af 2b 00 00 01 00 03 02  .........+......
+0x00000200  21 04 00 00 00 00 00 04  02 00 00 00 00 00 00 00  !...............
+0x00000210  04 00 02 02 e0 95 07 00  9f 02 00 00 00 00 00 00  ................
+0x00000220  74 9c 99 e5 00 00 5c 00  69 f6 03 00 01 00 02 02  t.....\.i.......
+0x00000230  42 04 00 00 08 00 42 04  08 00 40 00 2f 53 65 61  B.....B...@./Sea
+0x00000240  72 63 68 00 2f 4c 69 62  72 61 72 79 2f 50 72 65  rch./Library/Pre
+0x00000250  66 65 72 65 6e 63 65 73  2f 4f 70 65 6e 44 69 72  ferences/OpenDir
+0x00000260  65 63 74 6f 72 79 2f 43  6f 6e 66 69 67 75 72 61  ectory/Configura
+0x00000270  74 69 6f 6e 73 2f 2f 53  65 61 72 63 68 2e 70 6c  tions//Search.pl
+0x00000280  69 73 74 00 00 00 00 00  04 00 02 02 d0 8f 07 00  ist.............
+
+....
+
+=== Notes
+
+....
+log raw-dump -f ${FILE}.tracev3
+....
+
+....
+tracev3_chunk_log_preamble
+tracev3_chunk_oversize
+tracev3_chunk_oversize_old
+tracev3_chunk_statedump
+....
+
+== [[timesync_database_file_format]]timesync database file format
+
+A timesync database file consists of:
+
+* one or more timesync boot or sync records
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | little-endian
+| Date and time values | number of nanoseconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
+|===
+
+=== timesync boot record
+
+The timesync boot record is 48 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | "\xb0\xbb\x30\x00" | [yellow-background]*Unknown (Signature?)*
+| 8 | 16 | | Boot identifier (boot UUID)
+| 24 | 4 | | [yellow-background]*Unknown (first number in timebase # / #)*
+| 28 | 4 | | [yellow-background]*Unknown (second number in timebase # / #)*
+| 32 | 8 | | [yellow-background]*Unknown timestamp (Boot time?)* +
+Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
+| 40 | 8 | | [yellow-background]*Unknown (time zone information?)*
+|===
+
+[NOTE]
+Timestamp appears to be stored in UTC but log tool shows time zone
+
+==== timesync sync record
+
+The timesync sync record is 32 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | "Ts\x20\x00" | [yellow-background]*Unknown (Signature?)*
+| 4 | 4 | | [yellow-background]*Unknown (flags?)* +
+Seen: 0 and 1
+| 8 | 8 | | Kernel time +
+Mach continuous timestamp
+| 16 | 8 | | Wall time +
+Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
+| 24 | 8 | | [yellow-background]*Unknown (timezone information?)*
+|===
+
+[NOTE]
+Timestamp appears to be stored in UTC but log tool shows time zone
+
+=== Notes
+
+....
+log raw-dump -t /var/db/diagnostics/timesync/
+....
+
+== [[shared_cache_strings_file_format]]Shared-Cache Strings (dsc) file format
+
+A Shared-Cache Strings (dsc) file consist of:
+
+* Shared-Cache Strings (dsc) file header
+* Range descriptors
+* UUID descriptors
+* path strings
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | little-endian
+|===
+
+=== Shared-Cache Strings (dsc) file header
+
+The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | "hcsd" | Signature
+| 4 | 2 | 1 | Format major version
+| 6 | 2 | 1 | Format minor version
+| 8 | 4 | | [yellow-background]*Unknown (range count)*
+| 12 | 4 | | [yellow-background]*Unknown (uuid count)*
+|===
+
+A range descriptor is 16 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown*
+| 4 | 4 | | Range start (offset?)
+| 8 | 4 | | Range size
+| 12 | 4 | | [yellow-background]*Unknown*
+|===
+
+An UUID descriptor is 28 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown*
+| 4 | 4 | | [yellow-background]*Unknown*
+| 8 | 16 | | [yellow-background]*Unknown (UUID)*
+| 24 | 4 | | [yellow-background]*Unknown (path offset)* +
+The offset is relative to the start of the file
+|===
+
+....
+00000000  68 63 73 64 01 00 00 00  21 07 00 00 50 05 00 00  |hcsd....!...P...|
+
+    dsc range:      0x00048a40 .. 0x0004a2d4 (6292)
+
+00000010  01 00 00 00 40 8a 04 00                           |....@...........|
+
+00000010                           e0 06 01 00              |....@...........|
+
+00000010                                       94 18 00 00  |....@...........|
+00000020  01 00 00 00 d4 a2 04 00  74 1f 01 00 49 1a 00 00  |........t...I...|
+...
+00007200  4e 05 00 00 b8 d3 6d 37  2e 59 1d 03 a8 0a 00 00  |N.....m7.Y......|
+00007210  4f 05 00 00 e4 3a 70 37  d6 63 1d 03 6c 49 00 00  |O....:p7.c..lI..|
+00007220  00 00 03 00 00 10 00 00                           |........M.A$..4.|
+
+uuid 0:             4DB84124-D5A9-3412-B501-0D8A9F7F0312
+00007220                           4d b8 41 24 d5 a9 34 12  |........M.A$..4.|
+00007230  b5 01 0d 8a 9f 7f 03 12                           |........B.......|
+
+00007230                           42 ad 1d 03 00 10 03 00  |........B.......|
+00007240  00 c0 01 00 fe 08 1c fb  5d 43 31 31 9e f6 b0 1a  |........]C11....|
+00007250  73 8b ea e5 a7 ad 1d 03  00 d0 04 00 00 20 00 00  |s............ ..|
+00007260  64 1c e2 55 98 d6 38 d0  b4 35 ba be 0c 5b a0 04  |d..U..8..5...[..|
+...
+000106c0  53 4d 1f 03 00 e0 6d 37  00 10 03 00 dc 50 f3 3e  |SM....m7.....P.>|
+000106d0  c4 7d 32 56 bf e0 f8 e9  b5 ae be 17 73 4d 1f 03  |.}2V........sM..|
+000106e0  25 73 20 55 6e 6b 6e 6f  77 6e 20 61 70 70 20 76  |%s Unknown app v|
+...
+
+== Shared Cache Strings ================================================
+uuid:               2576AD25-8753-3C11-9308-541E6149A88D
+size:               52383120
+version:            1.0
+uuid count:         1360
+range count:        1825
+
+== UUIDS ===============================================================
+uuid 0:             4DB84124-D5A9-3412-B501-0D8A9F7F0312
+    dsc text:       0x00030000 .. 0x00031000 (4096)
+    path:           /System/Library/AccessibilityBundles/AXSpeechImplementation.bundle/Versions/A/AXSpeechImplementation
+
+uuid 1:             FE081CFB-5D43-3131-9EF6-B01A738BEAE5
+    dsc text:       0x00031000 .. 0x0004d000 (114688)
+    path:           /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService
+
+    path:           /usr/lib/system/libxpc.dylib
+
+== Ranges ==============================================================
+Range 0:            
+    uuid 1:         FE081CFB-5D43-3131-9EF6-B01A738BEAE5
+    dsc range:      0x00048a40 .. 0x0004a2d4 (6292)
+    path:           /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService
+
+== Paths ===============================================================
+[0x031dad42] /System/Library/AccessibilityBundles/AXSpeechImplementation.bundle/Versions/A/AXSpeechImplementation
+[0x031dada7] /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService
+
+....
+
+=== Notes
+
+....
+log raw-dump -s /var/db/uuidtext/dsc/${FILE}
+....
+
+== Notes
+
+....
+plutil -p /var/db/diagnostics/version.plist
+{
+  "Identifier" => "9C956601-D721-47E0-BBB7-42AF4351FF4E"
+  "ttl01" => {
+    "ContinuousTime" => 393453185112398
+    "UUID" => "BBF90666-3E6D-4DD5-9A57-99F2A94F4955"
+  }
+  "ttl03" => {
+    "ContinuousTime" => 220653185112398
+    "UUID" => "BBF90666-3E6D-4DD5-9A57-99F2A94F4955"
+  }
+  "ttl07" => {
+    "ContinuousTime" => 211836946939114
+    "UUID" => "83C643BF-0E8A-466E-8EFC-156EEADBA2D5"
+  }
+  "ttl14" => {
+    "ContinuousTime" => 298223698807905
+    "UUID" => "862A1404-20FC-4C3B-84A7-FB03D37E0EA0"
+  }
+  "ttl30" => {
+    "ContinuousTime" => 406810835343916
+    "UUID" => "E1693458-8845-48EF-A9AE-E9C8CA37E46E"
+  }
+  "Version" => 7
+}
+....
+
+:numbered!:
+[appendix]
+== References
+
+`[REFERENCE]`
+
+[cols="1,5",options="header"]
+|===
+| Title: | Apple Developer: COMPRESSION_LZ4
+| URL: | https://developer.apple.com/documentation/compression/compression_lz4
+|===
+
+[appendix]
+== GNU Free Documentation License
+Version 1.3, 3 November 2008
+Copyright © 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc.
+<http://fsf.org/>
+
+Everyone is permitted to copy and distribute verbatim copies of this license
+document, but changing it is not allowed.
+
+=== 0. PREAMBLE
+The purpose of this License is to make a manual, textbook, or other functional
+and useful document "free" in the sense of freedom: to assure everyone the
+effective freedom to copy and redistribute it, with or without modifying it,
+either commercially or noncommercially. Secondarily, this License preserves for
+the author and publisher a way to get credit for their work, while not being
+considered responsible for modifications made by others.
+
+This License is a kind of "copyleft", which means that derivative works of the
+document must themselves be free in the same sense. It complements the GNU
+General Public License, which is a copyleft license designed for free software.
+
+We have designed this License in order to use it for manuals for free software,
+because free software needs free documentation: a free program should come with
+manuals providing the same freedoms that the software does. But this License is
+not limited to software manuals; it can be used for any textual work,
+regardless of subject matter or whether it is published as a printed book. We
+recommend this License principally for works whose purpose is instruction or
+reference.
+
+=== 1. APPLICABILITY AND DEFINITIONS
+This License applies to any manual or other work, in any medium, that contains
+a notice placed by the copyright holder saying it can be distributed under the
+terms of this License. Such a notice grants a world-wide, royalty-free license,
+unlimited in duration, to use that work under the conditions stated herein. The
+"Document", below, refers to any such manual or work. Any member of the public
+is a licensee, and is addressed as "you". You accept the license if you copy,
+modify or distribute the work in a way requiring permission under copyright law.
+
+A "Modified Version" of the Document means any work containing the Document or
+a portion of it, either copied verbatim, or with modifications and/or
+translated into another language.
+
+A "Secondary Section" is a named appendix or a front-matter section of the
+Document that deals exclusively with the relationship of the publishers or
+authors of the Document to the Document's overall subject (or to related
+matters) and contains nothing that could fall directly within that overall
+subject. (Thus, if the Document is in part a textbook of mathematics, a
+Secondary Section may not explain any mathematics.) The relationship could be a
+matter of historical connection with the subject or with related matters, or of
+legal, commercial, philosophical, ethical or political position regarding them.
+
+The "Invariant Sections" are certain Secondary Sections whose titles are
+designated, as being those of Invariant Sections, in the notice that says that
+the Document is released under this License. If a section does not fit the
+above definition of Secondary then it is not allowed to be designated as
+Invariant. The Document may contain zero Invariant Sections. If the Document
+does not identify any Invariant Sections then there are none.
+
+The "Cover Texts" are certain short passages of text that are listed, as
+Front-Cover Texts or Back-Cover Texts, in the notice that says that the
+Document is released under this License. A Front-Cover Text may be at most 5
+words, and a Back-Cover Text may be at most 25 words.
+
+A "Transparent" copy of the Document means a machine-readable copy, represented
+in a format whose specification is available to the general public, that is
+suitable for revising the document straightforwardly with generic text editors
+or (for images composed of pixels) generic paint programs or (for drawings)
+some widely available drawing editor, and that is suitable for input to text
+formatters or for automatic translation to a variety of formats suitable for
+input to text formatters. A copy made in an otherwise Transparent file format
+whose markup, or absence of markup, has been arranged to thwart or discourage
+subsequent modification by readers is not Transparent. An image format is not
+Transparent if used for any substantial amount of text. A copy that is not
+"Transparent" is called "Opaque".
+
+Examples of suitable formats for Transparent copies include plain ASCII without
+markup, Texinfo input format, LaTeX input format, SGML or XML using a publicly
+available DTD, and standard-conforming simple HTML, PostScript or PDF designed
+for human modification. Examples of transparent image formats include PNG, XCF
+and JPG. Opaque formats include proprietary formats that can be read and edited
+only by proprietary word processors, SGML or XML for which the DTD and/or
+processing tools are not generally available, and the machine-generated HTML,
+PostScript or PDF produced by some word processors for output purposes only.
+
+The "Title Page" means, for a printed book, the title page itself, plus such
+following pages as are needed to hold, legibly, the material this License
+requires to appear in the title page. For works in formats which do not have
+any title page as such, "Title Page" means the text near the most prominent
+appearance of the work's title, preceding the beginning of the body of the text.
+
+The "publisher" means any person or entity that distributes copies of the
+Document to the public.
+
+A section "Entitled XYZ" means a named subunit of the Document whose title
+either is precisely XYZ or contains XYZ in parentheses following text that
+translates XYZ in another language. (Here XYZ stands for a specific section
+name mentioned below, such as "Acknowledgements", "Dedications",
+"Endorsements", or "History".) To "Preserve the Title" of such a section when
+you modify the Document means that it remains a section "Entitled XYZ"
+according to this definition.
+
+The Document may include Warranty Disclaimers next to the notice which states
+that this License applies to the Document. These Warranty Disclaimers are
+considered to be included by reference in this License, but only as regards
+disclaiming warranties: any other implication that these Warranty Disclaimers
+may have is void and has no effect on the meaning of this License.
+
+=== 2. VERBATIM COPYING
+You may copy and distribute the Document in any medium, either commercially or
+noncommercially, provided that this License, the copyright notices, and the
+license notice saying this License applies to the Document are reproduced in
+all copies, and that you add no other conditions whatsoever to those of this
+License. You may not use technical measures to obstruct or control the reading
+or further copying of the copies you make or distribute. However, you may
+accept compensation in exchange for copies. If you distribute a large enough
+number of copies you must also follow the conditions in section 3.
+
+You may also lend copies, under the same conditions stated above, and you may
+publicly display copies.
+
+=== 3. COPYING IN QUANTITY
+If you publish printed copies (or copies in media that commonly have printed
+covers) of the Document, numbering more than 100, and the Document's license
+notice requires Cover Texts, you must enclose the copies in covers that carry,
+clearly and legibly, all these Cover Texts: Front-Cover Texts on the front
+cover, and Back-Cover Texts on the back cover. Both covers must also clearly
+and legibly identify you as the publisher of these copies. The front cover must
+present the full title with all words of the title equally prominent and
+visible. You may add other material on the covers in addition. Copying with
+changes limited to the covers, as long as they preserve the title of the
+Document and satisfy these conditions, can be treated as verbatim copying in
+other respects.
+
+If the required texts for either cover are too voluminous to fit legibly, you
+should put the first ones listed (as many as fit reasonably) on the actual
+cover, and continue the rest onto adjacent pages.
+
+If you publish or distribute Opaque copies of the Document numbering more than
+100, you must either include a machine-readable Transparent copy along with
+each Opaque copy, or state in or with each Opaque copy a computer-network
+location from which the general network-using public has access to download
+using public-standard network protocols a complete Transparent copy of the
+Document, free of added material. If you use the latter option, you must take
+reasonably prudent steps, when you begin distribution of Opaque copies in
+quantity, to ensure that this Transparent copy will remain thus accessible at
+the stated location until at least one year after the last time you distribute
+an Opaque copy (directly or through your agents or retailers) of that edition
+to the public.
+
+It is requested, but not required, that you contact the authors of the Document
+well before redistributing any large number of copies, to give them a chance to
+provide you with an updated version of the Document.
+
+=== 4. MODIFICATIONS
+You may copy and distribute a Modified Version of the Document under the
+conditions of sections 2 and 3 above, provided that you release the Modified
+Version under precisely this License, with the Modified Version filling the
+role of the Document, thus licensing distribution and modification of the
+Modified Version to whoever possesses a copy of it. In addition, you must do
+these things in the Modified Version:
+
+A. Use in the Title Page (and on the covers, if any) a title distinct from that
+of the Document, and from those of previous versions (which should, if there
+were any, be listed in the History section of the Document). You may use the
+same title as a previous version if the original publisher of that version
+gives permission.
+
+B. List on the Title Page, as authors, one or more persons or entities
+responsible for authorship of the modifications in the Modified Version,
+together with at least five of the principal authors of the Document (all of
+its principal authors, if it has fewer than five), unless they release you from
+this requirement.
+
+C. State on the Title page the name of the publisher of the Modified Version,
+as the publisher.
+
+D. Preserve all the copyright notices of the Document.
+
+E. Add an appropriate copyright notice for your modifications adjacent to the
+other copyright notices.
+
+F. Include, immediately after the copyright notices, a license notice giving
+the public permission to use the Modified Version under the terms of this
+License, in the form shown in the Addendum below.
+
+G. Preserve in that license notice the full lists of Invariant Sections and
+required Cover Texts given in the Document's license notice.
+
+H. Include an unaltered copy of this License.
+
+I. Preserve the section Entitled "History", Preserve its Title, and add to it
+an item stating at least the title, year, new authors, and publisher of the
+Modified Version as given on the Title Page. If there is no section Entitled
+"History" in the Document, create one stating the title, year, authors, and
+publisher of the Document as given on its Title Page, then add an item
+describing the Modified Version as stated in the previous sentence.
+
+J. Preserve the network location, if any, given in the Document for public
+access to a Transparent copy of the Document, and likewise the network
+locations given in the Document for previous versions it was based on. These
+may be placed in the "History" section. You may omit a network location for a
+work that was published at least four years before the Document itself, or if
+the original publisher of the version it refers to gives permission.
+
+K. For any section Entitled "Acknowledgements" or "Dedications", Preserve the
+Title of the section, and preserve in the section all the substance and tone of
+each of the contributor acknowledgements and/or dedications given therein.
+
+L. Preserve all the Invariant Sections of the Document, unaltered in their text
+and in their titles. Section numbers or the equivalent are not considered part
+of the section titles.
+
+M. Delete any section Entitled "Endorsements". Such a section may not be
+included in the Modified Version.
+
+N. Do not retitle any existing section to be Entitled "Endorsements" or to
+conflict in title with any Invariant Section.
+
+O. Preserve any Warranty Disclaimers.
+
+If the Modified Version includes new front-matter sections or appendices that
+qualify as Secondary Sections and contain no material copied from the Document,
+you may at your option designate some or all of these sections as invariant. To
+do this, add their titles to the list of Invariant Sections in the Modified
+Version's license notice. These titles must be distinct from any other section
+titles.
+
+You may add a section Entitled "Endorsements", provided it contains nothing but
+endorsements of your Modified Version by various parties—for example,
+statements of peer review or that the text has been approved by an organization
+as the authoritative definition of a standard.
+
+You may add a passage of up to five words as a Front-Cover Text, and a passage
+of up to 25 words as a Back-Cover Text, to the end of the list of Cover Texts
+in the Modified Version. Only one passage of Front-Cover Text and one of
+Back-Cover Text may be added by (or through arrangements made by) any one
+entity. If the Document already includes a cover text for the same cover,
+previously added by you or by arrangement made by the same entity you are
+acting on behalf of, you may not add another; but you may replace the old one,
+on explicit permission from the previous publisher that added the old one.
+
+The author(s) and publisher(s) of the Document do not by this License give
+permission to use their names for publicity for or to assert or imply
+endorsement of any Modified Version.
+
+=== 5. COMBINING DOCUMENTS
+You may combine the Document with other documents released under this License,
+under the terms defined in section 4 above for modified versions, provided that
+you include in the combination all of the Invariant Sections of all of the
+original documents, unmodified, and list them all as Invariant Sections of your
+combined work in its license notice, and that you preserve all their Warranty
+Disclaimers.
+
+The combined work need only contain one copy of this License, and multiple
+identical Invariant Sections may be replaced with a single copy. If there are
+multiple Invariant Sections with the same name but different contents, make the
+title of each such section unique by adding at the end of it, in parentheses,
+the name of the original author or publisher of that section if known, or else
+a unique number. Make the same adjustment to the section titles in the list of
+Invariant Sections in the license notice of the combined work.
+
+In the combination, you must combine any sections Entitled "History" in the
+various original documents, forming one section Entitled "History"; likewise
+combine any sections Entitled "Acknowledgements", and any sections Entitled
+"Dedications". You must delete all sections Entitled "Endorsements".
+
+=== 6. COLLECTIONS OF DOCUMENTS
+You may make a collection consisting of the Document and other documents
+released under this License, and replace the individual copies of this License
+in the various documents with a single copy that is included in the collection,
+provided that you follow the rules of this License for verbatim copying of each
+of the documents in all other respects.
+
+You may extract a single document from such a collection, and distribute it
+individually under this License, provided you insert a copy of this License
+into the extracted document, and follow this License in all other respects
+regarding verbatim copying of that document.
+
+=== 7. AGGREGATION WITH INDEPENDENT WORKS
+A compilation of the Document or its derivatives with other separate and
+independent documents or works, in or on a volume of a storage or distribution
+medium, is called an "aggregate" if the copyright resulting from the
+compilation is not used to limit the legal rights of the compilation's users
+beyond what the individual works permit. When the Document is included in an
+aggregate, this License does not apply to the other works in the aggregate
+which are not themselves derivative works of the Document.
+
+If the Cover Text requirement of section 3 is applicable to these copies of the
+Document, then if the Document is less than one half of the entire aggregate,
+the Document's Cover Texts may be placed on covers that bracket the Document
+within the aggregate, or the electronic equivalent of covers if the Document is
+in electronic form. Otherwise they must appear on printed covers that bracket
+the whole aggregate.
+
+=== 8. TRANSLATION
+Translation is considered a kind of modification, so you may distribute
+translations of the Document under the terms of section 4. Replacing Invariant
+Sections with translations requires special permission from their copyright
+holders, but you may include translations of some or all Invariant Sections in
+addition to the original versions of these Invariant Sections. You may include
+a translation of this License, and all the license notices in the Document, and
+any Warranty Disclaimers, provided that you also include the original English
+version of this License and the original versions of those notices and
+disclaimers. In case of a disagreement between the translation and the original
+version of this License or a notice or disclaimer, the original version will
+prevail.
+
+If a section in the Document is Entitled "Acknowledgements", "Dedications", or
+"History", the requirement (section 4) to Preserve its Title (section 1) will
+typically require changing the actual title.
+
+=== 9. TERMINATION
+You may not copy, modify, sublicense, or distribute the Document except as
+expressly provided under this License. Any attempt otherwise to copy, modify,
+sublicense, or distribute it is void, and will automatically terminate your
+rights under this License.
+
+However, if you cease all violation of this License, then your license from a
+particular copyright holder is reinstated (a) provisionally, unless and until
+the copyright holder explicitly and finally terminates your license, and (b)
+permanently, if the copyright holder fails to notify you of the violation by
+some reasonable means prior to 60 days after the cessation.
+
+Moreover, your license from a particular copyright holder is reinstated
+permanently if the copyright holder notifies you of the violation by some
+reasonable means, this is the first time you have received notice of violation
+of this License (for any work) from that copyright holder, and you cure the
+violation prior to 30 days after your receipt of the notice.
+
+Termination of your rights under this section does not terminate the licenses
+of parties who have received copies or rights from you under this License. If
+your rights have been terminated and not permanently reinstated, receipt of a
+copy of some or all of the same material does not give you any rights to use it.
+
+=== 10. FUTURE REVISIONS OF THIS LICENSE
+The Free Software Foundation may publish new, revised versions of the GNU Free
+Documentation License from time to time. Such new versions will be similar in
+spirit to the present version, but may differ in detail to address new problems
+or concerns. See http://www.gnu.org/copyleft/.
+
+Each version of the License is given a distinguishing version number. If the
+Document specifies that a particular numbered version of this License "or any
+later version" applies to it, you have the option of following the terms and
+conditions either of that specified version or of any later version that has
+been published (not as a draft) by the Free Software Foundation. If the
+Document does not specify a version number of this License, you may choose any
+version ever published (not as a draft) by the Free Software Foundation. If the
+Document specifies that a proxy can decide which future versions of this
+License can be used, that proxy's public statement of acceptance of a version
+permanently authorizes you to choose that version for the Document.
+
+=== 11. RELICENSING
+"Massive Multiauthor Collaboration Site" (or "MMC Site") means any World Wide
+Web server that publishes copyrightable works and also provides prominent
+facilities for anybody to edit those works. A public wiki that anybody can edit
+is an example of such a server. A "Massive Multiauthor Collaboration" (or
+"MMC") contained in the site means any set of copyrightable works thus
+published on the MMC site.
+
+"CC-BY-SA" means the Creative Commons Attribution-Share Alike 3.0 license
+published by Creative Commons Corporation, a not-for-profit corporation with a
+principal place of business in San Francisco, California, as well as future
+copyleft versions of that license published by that same organization.
+
+"Incorporate" means to publish or republish a Document, in whole or in part, as
+part of another Document.
+
+An MMC is "eligible for relicensing" if it is licensed under this License, and
+if all works that were first published under this License somewhere other than
+this MMC, and subsequently incorporated in whole or in part into the MMC, (1)
+had no cover texts or invariant sections, and (2) were thus incorporated prior
+to November 1, 2008.
+
+The operator of an MMC Site may republish an MMC contained in the site under
+CC-BY-SA on the same site at any time before August 1, 2009, provided the MMC
+is eligible for relicensing.
+
