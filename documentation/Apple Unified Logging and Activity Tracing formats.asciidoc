@@ -1,5 +1,4 @@
 = Apple Unified Logging and Activity Tracing formats
-Sub title
 
 :toc:
 :toclevels: 4
@@ -8,18 +7,26 @@ Sub title
 [abstract]
 == Summary
 
+The Apple Unified Logging and Activity Tracing formats are used to store
+system logs. This specification is based on the source code and documentation.
+
+This document is intended as a working document for the Apple Unified Logging
+and Activity Tracing file formats specification.
+
 [preface]
 == Document information
+
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: |
+| Abstract: | Apple Unified Logging and Activity Tracing formats
 | Classification: | Public
-| Keywords: |
+| Keywords: | Unified Logging, tracev3, uuidtext
 |===
 
 [preface]
 == License
+
 ....
 Copyright (C) 2019, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
@@ -31,6 +38,7 @@ in the section entitled "GNU Free Documentation License".
 
 [preface]
 == Revision history
+
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
@@ -69,7 +77,7 @@ And files:
 * shutdown.log
 * version.plist
 
-[yellow-background]*TODO describe what HighVolume sbu directory contains*
+[yellow-background]*TODO describe what HighVolume sub directory contains*
 
 The Persist, Signpost and Special sub directories can contain zero or more
 files with the extension .tracev3. These files are stored in the
@@ -106,7 +114,11 @@ The `[0-9A-F][0-9A-Z]` sub directory contains zero or more files:
 
 * `[0-9A-F]{30}`
 
-[yellow-background]*TODO complete section*
+This path relates to an UUID, for example:
+
+....
+AB/414C1EC0233A05AF22029CC5E160EA represents AB414C1E-C023-3A05-AF22-029CC5E160EA
+....
 
 === dsc sub directory
 
@@ -183,10 +195,8 @@ The Header chunk is 208 bytes of size and consists of:
 | 8 | 4 | | Chunk data size (length)
 | 12 | 4 | | [yellow-background]*Unknown (empty values?)*
 4+| _Chunk data_
-| 16 | 4 | | [yellow-background]*Unknown* +
-Seen: 1
-| 20 | 4 | | [yellow-background]*Unknown* +
-Seen: 1
+| 16 | 4 | | [yellow-background]*Unknown (first number in timebase # / #)*
+| 20 | 4 | | [yellow-background]*Unknown (second number in timebase # / #)*
 | 24 | 4 | | [yellow-background]*Unknown (related to starttime?)*
 | 28 | 4 | | [yellow-background]*Unknown (empty values?)*
 | 32 | 4 | | [yellow-background]*Unknown*
@@ -269,23 +279,60 @@ Contains an array of <<catalog_sub_chunk,Catalog sub chunks>>
 ....
 tracev3_chunk_catalog
 tracev3_chunk_catalog_v2
+CATALOG_V3
 ....
 
 ==== [[catalog_process_information_entry]]Catalog process information entry
 
-....
-[000]
-           proc id : 205@206
-               pid : 205
-              euid : 0
-             index : 29
-             flags : 0
-         main uuid : 5D668FA2-8B2B-3227-B83D-3C6B763D75E7
-          dsc uuid : 2576AD25-8753-3C11-9308-541E6149A88D
-         uuidinfos : 0
-        subsystems : 1
-                <        id :   1,  subsystem :  1402,   category :  1422>
-....
+The Catalog process information entry is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (entry index)*
+| 4 | 2 | | [yellow-background]*Unknown (Catalog UUID index of the main UUID)*
+| 6 | 2 | | [yellow-background]*Unknown (Catalog UUID index of the dsc UUID)**
+| 8 | 8 | | [yellow-background]*Unknown (process identifier (pid))*
+| 16 | 4 | | [yellow-background]*Unknown (second number in proc_id #@#)*
+| 20 | 4 | | [yellow-background]*Unknown (first number in proc_id #@#)*
+| 24 | 4 | | [yellow-background]*Unknown (effective user identifier (euid))*
+| 28 | 4 | | [yellow-background]*Unknown*
+| 40 | 4 | | Number of UUID information entries (uuidinfos)
+| 44 | 4 | | [yellow-background]*Unknown*
+| 48 | 16 x ... | | Sub systems array
+| ... | 4 | | Number of sub systems (subsystems)
+| ... | 4 | | [yellow-background]*Unknown*
+| ... | 6 x ... | | Sub systems array
+|===
+
+[NOTE]
+The Catalog process information entry is stored 64-bit aligned.
+
+===== Catalog process information UUID information entry
+
+The Catalog process information UUID information entry is 16 bytes of size
+and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (size)*
+| 4 | 4 | | [yellow-background]*Unknown*
+| 8 | 2 | | [yellow-background]*Unknown (Catalog UUID index)*
+| 10 | 6 | | [yellow-background]*Unknown (load address)*
+|===
+
+===== Catalog process information sub system
+
+The Catalog process information sub system is 6 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | [yellow-background]*Unknown (identifier)*
+| 2 | 2 | | [yellow-background]*Unknown (sub system)*
+| 4 | 2 | | [yellow-background]*Unknown (category)*
+|===
 
 ==== [[catalog_sub_chunk]]Catalog sub chunk
 
@@ -396,7 +443,7 @@ tracev3_chunk_firehose_old
 ....
 chunk 4:            tag:0x6001, subtag:0x0000, length:4064
 
-firehose chunk:     
+firehose chunk:
     proc_id:        74@75
     TTL:            0
     collapsed:      0
@@ -439,7 +486,7 @@ tp 16 + 46:         log default (main_exe, has_subsystem)
     walltime:       1545925575 - 2018-12-27 16:46:15 (Thursday)
     location:       pc:0x4b299 fmt:0x7a4d0
 
-fmt: points to location in 
+fmt: points to location in
 /var/db/uuidtext/AB/414C1EC0233A05AF22029CC5E160EA
 
 00014350  00 00 00 00 00 00 00 6f  70 65 6e 64 69 72 65 63  |.......opendirec|
@@ -671,7 +718,7 @@ uuid 1:             FE081CFB-5D43-3131-9EF6-B01A738BEAE5
     path:           /usr/lib/system/libxpc.dylib
 
 == Ranges ==============================================================
-Range 0:            
+Range 0:
     uuid 1:         FE081CFB-5D43-3131-9EF6-B01A738BEAE5
     dsc range:      0x00048a40 .. 0x0004a2d4 (6292)
     path:           /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService

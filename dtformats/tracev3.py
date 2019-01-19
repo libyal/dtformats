@@ -14,6 +14,23 @@ class TraceV3File(data_format.BinaryDataFile):
 
   _DEFINITION_FILE = 'tracev3.yaml'
 
+  _DEBUG_INFO_CATALOG = [
+      ('sub_system_strings_offset', 'Sub system strings offset',
+       '_FormatIntegerAsHexadecimal8'),
+      ('process_information_entries_offset',
+       'Process information entries offset', '_FormatIntegerAsHexadecimal8'),
+      ('number_of_process_information_entries',
+       'Number of process information entries', '_FormatIntegerAsDecimal'),
+      ('sub_chunks_offset', 'Sub chunks offset',
+       '_FormatIntegerAsHexadecimal8'),
+      ('number_of_sub_chunks', 'Number of sub chunks',
+       '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('uuids', 'UUIDs', '_FormatArrayOfUUIDS'),
+      ('sub_system_strings', 'Sub system strings', '_FormatArrayOfStrings')]
+
   _DEBUG_INFO_CHUNK_HEADER = [
       ('chunk_tag', 'Chunk tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
@@ -36,6 +53,32 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     super(TraceV3File, self).__init__(
         debug=debug, output_writer=output_writer)
+
+  def _FormatArrayOfStrings(self, array_of_strings):
+    """Formats an array of strings.
+
+    Args:
+      array_of_strings (list[str]): array of strings.
+
+    Returns:
+      str: formatted array of strings.
+    """
+    return '{0:s}\n'.format('\n'.join([
+        '\t[{0:03d}] {1:s}'.format(string_index, string)
+        for string_index, string in enumerate(array_of_strings)]))
+
+  def _FormatArrayOfUUIDS(self, array_of_uuids):
+    """Formats an array of UUIDs.
+
+    Args:
+      array_of_uuids (list[uuid]): array of UUIDs.
+
+    Returns:
+      str: formatted array of UUIDs.
+    """
+    return '{0:s}\n'.format('\n'.join([
+        '\t[{0:03d}] {1!s}'.format(uuid_index, uuid)
+        for uuid_index, uuid in enumerate(array_of_uuids)]))
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -73,6 +116,31 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return chunk_header
 
+  def _ReadCatalog(self, file_object, file_offset, chunk_header):
+    """Reads a catalog.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the catalog data relative to the start
+          of the file.
+      chunk_header (tracev3_chunk_header): the chunk header of the catalog.
+
+    Raises:
+      ParseError: if the chunk header cannot be read.
+    """
+    chunk_data = file_object.read(chunk_header.chunk_data_size)
+
+    # TODO: use chunk_data or remove
+    _ = chunk_data
+
+    data_type_map = self._GetDataTypeMap('tracev3_catalog')
+
+    catalog, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'Catalog')
+
+    if self._debug:
+      self._DebugPrintStructureObject(catalog, self._DEBUG_INFO_CATALOG)
+
   def _ReadChunkSet(self, file_object, file_offset, chunk_header):
     """Reads a chunk set.
 
@@ -85,7 +153,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the chunk header cannot be read.
     """
-    chunkset_data = file_object.read(chunk_header.chunk_data_size)
+    chunk_data = file_object.read(chunk_header.chunk_data_size)
 
     data_type_map = self._GetDataTypeMap('tracev3_lz4_block_header')
 
@@ -100,16 +168,16 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if lz4_block_header.signature == b'bv41':
       uncompressed_data = lz4.block.decompress(
-          chunkset_data[12:end_of_compressed_data_offset],
+          chunk_data[12:end_of_compressed_data_offset],
           uncompressed_size=lz4_block_header.uncompressed_data_size)
 
     elif lz4_block_header.signature == b'bv4-':
-      uncompressed_data = chunkset_data[12:end_of_compressed_data_offset]
+      uncompressed_data = chunk_data[12:end_of_compressed_data_offset]
 
     else:
       raise errors.ParseError('Unsupported start of compressed data marker')
 
-    end_of_compressed_data_identifier = chunkset_data[
+    end_of_compressed_data_identifier = chunk_data[
         end_of_compressed_data_offset:end_of_compressed_data_offset + 4]
 
     if end_of_compressed_data_identifier != b'bv4$':
@@ -158,7 +226,10 @@ class TraceV3File(data_format.BinaryDataFile):
       chunk_header = self._ReadChunkHeader(file_object, file_offset)
       file_offset += 16
 
-      if chunk_header.chunk_tag == 0x600d:
+      if chunk_header.chunk_tag == 0x600b:
+        self._ReadCatalog(file_object, file_offset, chunk_header)
+
+      elif chunk_header.chunk_tag == 0x600d:
         self._ReadChunkSet(file_object, file_offset, chunk_header)
 
       file_offset += chunk_header.chunk_data_size
