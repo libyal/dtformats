@@ -11,6 +11,7 @@ import sys
 
 from dtformats import output_writers
 from dtformats import tracev3
+from dtformats import uuidtext
 
 
 def Main():
@@ -52,15 +53,22 @@ def Main():
     print('')
     return False
 
-  tracev3_file = tracev3.TraceV3File(
-      debug=options.debug, output_writer=output_writer)
+  with open(options.source, 'rb') as file_object:
+    file_signature = file_object.read(4)
 
-  tracev3_file.Open(options.source)
+  if file_signature == b'\x99\x88\x77\x66':
+    unified_logging_file = uuidtext.UUIDTextFile(
+        debug=options.debug, output_writer=output_writer)
+  else:
+    unified_logging_file = tracev3.TraceV3File(
+        debug=options.debug, output_writer=output_writer)
+
+  unified_logging_file.Open(options.source)
 
   output_writer.WriteText(
       'Apple Unified Logging and Activity Tracing information:\n')
 
-  tracev3_file.Close()
+  unified_logging_file.Close()
 
   output_writer.Close()
 

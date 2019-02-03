@@ -81,6 +81,7 @@ utc
 utmp
 utmpx
 uuid
+uuidtext
 wmf
 wmi
 zlib

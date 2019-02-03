@@ -54,9 +54,9 @@ def Main():
 
   with open(options.source, 'rb') as file_object:
     file_object.seek(40, os.SEEK_SET)
-    emf_signature = file_object.read(4)
+    file_signature = file_object.read(4)
 
-  if emf_signature == b'FME ':
+  if file_signature == b'FME ':
     wemf_file = wemf.EMFFile(debug=options.debug, output_writer=output_writer)
   else:
     wemf_file = wemf.WMFFile(debug=options.debug, output_writer=output_writer)
