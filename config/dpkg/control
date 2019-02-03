@@ -28,6 +28,6 @@ Description: Python 3 module of dtFormats
 
 Package: dtformats-tools
 Architecture: all
-Depends: python-dtformats, python (>= 2.7~), ${python:Depends}, ${misc:Depends}
+Depends: python-dtformats, ${python:Depends}, ${misc:Depends}
 Description: Tools of dtFormats
  dtFormats is a collection of various file formats.
