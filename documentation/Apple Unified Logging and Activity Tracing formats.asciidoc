@@ -154,12 +154,11 @@ A tracev3 chunk (tracev3_chunk) is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-4+| _Chunk header (tracev3_chunk_header)_
+4+| _Chunk header (tracev3_chunk_preamble)_
 | 0 | 4 | | Chunk tag (tag) +
 See section: <<chunk_tag_types,Chunk tag types>>
 | 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 4 | | Chunk data size (length)
-| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 8 | 8 | | Chunk data size (length)
 4+| _Chunk data_
 | 16 | 4 | | Chunk data
 |===
@@ -176,6 +175,8 @@ The chunk header is stored 64-bit aligned.
 | | |
 | 0x6001 | Firehose |
 | | |
+| 0x6002 | Oversize |
+| | |
 | 0x6003 | StateDump |
 | | |
 | 0x600b | Catalog |
@@ -190,58 +191,53 @@ The Header chunk is 208 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-4+| _Chunk header (tracev3_chunk_header)_
+4+| _Chunk header (tracev3_chunk_preamble)_
 | 0 | 4 | 0x1000 | Chunk tag (tag)
 | 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 4 | | Chunk data size (length)
-| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
-4+| _Chunk data_
-| 16 | 4 | | [yellow-background]*Unknown (first number in timebase # / #)*
-| 20 | 4 | | [yellow-background]*Unknown (second number in timebase # / #)*
-| 24 | 4 | | [yellow-background]*Unknown (related to starttime?)*
-| 28 | 4 | | [yellow-background]*Unknown (empty values?)*
-| 32 | 4 | | [yellow-background]*Unknown*
-| 36 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 8 | 8 | | Chunk data size (length)
+4+| _Chunk data_ (tracev3_chunk_header)
+| 16 | 4 | | Mach timebase numerator
+| 20 | 4 | | Mach timebase denominator
+| 24 | 8 | | Continuous time
+| 32 | 8 | | Unix time (upper 4 bytes will be 0)
 | 40 | 4 | | [yellow-background]*Unknown*
-| 44 | 4 | | [yellow-background]*Unknown*
-| 48 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 44 | 4 | | Bias in minutes
+| 48 | 4 | | is_dst (1 = DST, 0 = no DST)
 | 52 | 4 | | [yellow-background]*Unknown (flags)* +
 (64bits) (is_boot)
-4+| _Unknown sub chunk (tracev3_subchunk_continuous)_
+4+| _tracev3_subchunk_preamble (for tracev3_subchunk_continuous)_
 | 56 | 4 | 0x6100 | Sub chunk tag
 | 60 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-| 64 | 4 | | [yellow-background]*Unknown (value data related to starttime?)*
-| 68 | 4 | | [yellow-background]*Unknown (empty values?)*
-4+| _Unknown sub chunk_
+4+| _tracev3_subchunk_continuous_
+| 64 | 8 | | Continuous time (value data related to starttime?)
+4+| _tracev3_subchunk_preamble (for tracev3_subchunk_systeminfo)_
 | 72 | 4 | 0x6101 | Sub chunk tag
 | 76 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
+4+| _tracev3_subchunk_systeminfo_
 | 80 | 4 | | [yellow-background]*Unknown*
 | 84 | 4 | | [yellow-background]*Unknown*
 | 88 | 16 | | Build version string
-| 104 | 16 | | Hardware model string
-| 120 | 16 | | [yellow-background]*Unknown (empty values?)*
-4+| _Unknown sub chunk_
+| 104 | 32 | | Hardware model string
+4+| _tracev3_subchunk_preamble (for tracev3_subchunk_generation)_
 | 124 | 4 | 0x6102 | Sub chunk tag
 | 128 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
+4+| _tracev3_subchunk_generation_
 | 132 | 16 | | Boot identifier (Boot UUID) +
 Contains a UUID stored in big-endian
 | 148 | 4 | | Process Identifier (PID) of logd
-| 152 | 4 | | Exit status (of logd?)
-4+| _Time zone sub chunk (tracev3_subchunk_timezone)_
+| 152 | 4 | | Exit status (of logd)
+4+| _tracev3_subchunk_preamble (for tracev3_subchunk_timezone)_
 | 156 | 4 | 0x6103 | Sub chunk tag
 | 164 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
+4+| _tracev3_subchunk_timezone_
 | 168 | 48 | | Path to timezone information file
 |===
 
-....
-tracev3_subchunk_preamble
-tracev3_subchunk_generation
-tracev3_subchunk_systeminfo
-....
+
 
 === Catalog chunk
 
@@ -250,12 +246,11 @@ The Catalog chunk is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-4+| _Chunk header (tracev3_chunk_header)_
+4+| _Chunk header (tracev3_chunk_preamble)_
 | 0 | 4 | 0x600b | Chunk tag (tag)
 | 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 4 | | Chunk data size (length)
-| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
-4+| _Chunk data_
+| 8 | 8 | | Chunk data size (length)
+4+| _Chunk data (tracev3_chunk_catalog_v2)_
 | 16 | 2 | | Offset of the catalog sub system strings +
 The offset is relative to the start of the catalog UUIDs
 | 18 | 2 | | Offset of the catalog process information entries +
@@ -263,10 +258,9 @@ The offset is relative to the start of the catalog UUIDs
 | 20 | 2 | | Number of process information entries +
 | 22 | 2 | | Offset of the catalog sub chunks +
 The offset is relative to the start of the catalog UUIDs
-| 24 | 4 | | Number of sub chunks
-| 28 | 4 | | [yellow-background]*Unknown*
-| 32 | 4 | | [yellow-background]*Unknown (earliest firehose timestamp?)*
-| 36 | 4 | | [yellow-background]*Unknown*
+| 24 | 2 | | Number of sub chunks
+| 26 | 6 | | Reserved/Padding
+| 32 | 8 | | Earliest firehose timestamp
 | 40 | 16 x ... | | Catalog UUIDs +
 Contains an array of UUIDs stored in big-endian
 | ... | ... | | Catalog sub system strings +
@@ -285,18 +279,19 @@ CATALOG_V3
 
 ==== [[catalog_process_information_entry]]Catalog process information entry
 
-The Catalog process information entry is variable of size and consists of:
+The Catalog process information entry is variable in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (entry index)*
-| 4 | 2 | | [yellow-background]*Unknown (Catalog UUID index of the main UUID)*
-| 6 | 2 | | [yellow-background]*Unknown (Catalog UUID index of the dsc UUID)**
-| 8 | 8 | | [yellow-background]*Unknown (process identifier (pid))*
-| 16 | 4 | | [yellow-background]*Unknown (second number in proc_id #@#)*
-| 20 | 4 | | [yellow-background]*Unknown (first number in proc_id #@#)*
-| 24 | 4 | | [yellow-background]*Unknown (effective user identifier (euid))*
+| 0 | 2 | | Entry index
+| 2 | 2 | | [yellow-background]*Unknown*
+| 4 | 2 | | Catalog UUID index of the main UUID
+| 6 | 2 | | Catalog UUID index of the dsc UUID*
+| 8 | 8 | | First number in proc_id #@#
+| 16 | 4 | | Second number in proc_id #@#
+| 20 | 4 | | Process identifier (pid)
+| 24 | 4 | | Effective user identifier (euid)
 | 28 | 4 | | [yellow-background]*Unknown*
 | 40 | 4 | | Number of UUID information entries (uuidinfos)
 | 44 | 4 | | [yellow-background]*Unknown*
@@ -317,10 +312,10 @@ and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (size)*
+| 0 | 4 | | Size
 | 4 | 4 | | [yellow-background]*Unknown*
-| 8 | 2 | | [yellow-background]*Unknown (Catalog UUID index)*
-| 10 | 6 | | [yellow-background]*Unknown (load address)*
+| 8 | 2 | | Catalog UUID index
+| 10 | 6 | | Load address
 |===
 
 ===== Catalog process information sub system
@@ -330,12 +325,28 @@ The Catalog process information sub system is 6 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | | [yellow-background]*Unknown (identifier)*
-| 2 | 2 | | [yellow-background]*Unknown (sub system)*
-| 4 | 2 | | [yellow-background]*Unknown (category)*
+| 0 | 2 | | Identifier
+| 2 | 2 | | Sub system offset (into subsystem strings)
+| 4 | 2 | | Category offset (into subsystem strings)
 |===
 
 ==== [[catalog_sub_chunk]]Catalog sub chunk
+
+The Catalog sub chunk describes metadata for the chunk to follow and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Start (earliest) continuous time
+| 8 | 8 | | End (latest) continuous time
+| 16 | 4 | | Uncompressed size of chunk
+| 20 | 4 | 0x100 | Compression algorithm used (0x100 = LZ4)
+| 24 | 4 | | Number of indexes (num_indexes)
+| 28 | 2*num_indexes | Indexes (2 bytes each) pointing to process info entry
+| ... | 4 | Number of string offsets (num_offsets)
+| ... | 2*num_offsets | Offsets (2 bytes each) into subsystem strings (used as cache?)
+| ... | ... | 0 | _Padding (align to 64 bit boundary)_
+|===
 
 ....
 [000]
@@ -349,6 +360,7 @@ The Catalog process information sub system is 6 bytes of size and consists of:
                    offsets : 0,337,177,113,33,259,308,228,132,422,70,375,296,248,216,41,25,442,394,348,158,62,431,223,191,
 ....
 
+
 === ChunkSet chunk
 
 The ChunkSet chunk is variable of size and consists of:
@@ -356,11 +368,10 @@ The ChunkSet chunk is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-4+| _Chunk header (tracev3_chunk_header)_
+4+| _Chunk header (tracev3_chunk_preamble)_
 | 0 | 4 | 0x600d | Chunk tag (tag)
 | 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 4 | | Chunk data size (length)
-| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 8 | 8 | | Chunk data size (length)
 4+| _Chunk data_
 | 16 | ... | | Contains compressed data +
 The compressed data contains chunks
@@ -368,7 +379,7 @@ The compressed data contains chunks
 
 === Compressed data
 
-The compressed data consists of
+The compressed data consists of:
 
 * start of compressed data marker
 * compressed data
@@ -425,15 +436,29 @@ The Firehose chunk is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-4+| _Chunk header (tracev3_chunk_header)_
+4+| _Chunk header (tracev3_chunk_preamble)_
 | 0 | 4 | 0x6001 | Chunk tag (tag)
 | 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 4 | | Chunk data size (length)
-| 12 | 4 | | [yellow-background]*Unknown (empty values?)*
-4+| _Chunk data_
-| 16 | 8 | | [yellow-background]*Unknown (first number in proc_id #@#)*
-| 24 | 8 | | [yellow-background]*Unknown (second number in proc_id #@#)*
-| 32 | 2 | | [yellow-background]*Unknown (public size)*
+| 8 | 8 | | Chunk data size (length)
+4+| _Chunk data_ (tracev3_chunk_log_preamble)
+| 16 | 8 | | First number in proc_id #@#
+| 24 | 4 | | Second number in proc_id #@#
+| 28 | 1 | | Collapsed
+| 29 | 3 | 0 | *Unused/Reserved*
+| 32 | 2 | | size of public data (size_pub_data)
+| 34 | 2 | | virtual offset of private data (if no private data, this is 0x1000)
+| 36 | 2 | | [yellow-background] *Unknown*
+| 38 | 2 | | [yellow-background] *Unknown*
+| 40 | 8 | | continuous time base
+| 48 | size_pub_data | | public data buffer (contains one or more tracev3_chunk_firehose events)
+| ... | ... | private data strings (can be zero bytes)
+
+[Note]
+It appears that the size of a firehose chunk can grow to 4096 bytes, with public data as the header of that 4096 block and private data at the end (as a footer). 'Collapsed' indicates if the empty bytes in between have been removed to shrink the block.
+Size of private data can be calculated by subtracting virtual offset from 4096.
+
+This chunk is usually 64-bit aligned with padding, but at times it is not! It is unknown if there is a flag to control this behavior. 
+
 |===
 
 ....
@@ -456,24 +481,20 @@ firehose chunk:
 0x00000010  d0 0f 00 10 00 00 00 03  00 00 00 00 00 00 00 00  ................
 ....
 
-A Firehose tracepoint (firehose_tracepoint) is variable of size and consists of:
+A Firehose tracepoint (tracev3_chunk_firehose) is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | 0x04 | [yellow-background]*Unknown*
-| 1 | 1 | | [yellow-background]*Unknown (Log level?)*
+| 0 | 2 | | [yellow-background]*Unknown (Log type?)*
 | 2 | 2 | | [yellow-background]*Unknown (Flags?)*
-| 4 | 4 | | [yellow-background]*Unknown (format string location?)*
-| 8 | 8 | | [yellow-background]*Unknown (thread identifier?)*
-| 16 | 8 | | [yellow-background]*Unknown (time related?)*
-| 24 | 4 | | [yellow-background]*Unknown (process information location?)*
-| 28 | 2 | | [yellow-background]*Unknown*
-| 30 | 2 | | [yellow-background]*Unknown*
-| 32 | 4 | | [yellow-background]*Unknown*
-| 36 | 2 | | [yellow-background]*Unknown (value string size)*
-| 38 | ... | | [yellow-background]*Unknown (value string)*
-| ... | ... | | Alignment padding
+| 4 | 4 | | Format string location
+| 8 | 8 | | Thread identifier
+| 16 | 6 | | Continuous time (relative to value in tracev3_chunk_log_preamble)
+| 22 | 2 | | Data size (to follow)
+| 24 | ... | | Variable size data consisting of various fields, depending on flags and log type
+| ... | ... | | Alignment padding (to 64 bit boundary)
+
 |===
 
 ....
@@ -547,6 +568,57 @@ opendirectoryd (build 483.200) launched...
 
 ....
 
+=== Oversize chunk
+
+The Oversize chunk is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_preamble)_
+| 0 | 4 | 0x6002 | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 8 | | Chunk data size (length)
+4+| _Chunk data (tracev3_chunk_oversize)_
+| 16 | 8 | | First number in proc_id #@#
+| 24 | 4 | | Second number in proc_id #@#
+| 28 | 1 | | TTL
+| 29 | 3 | 0 | *Unused/Reserved*
+| 32 | 8 | | Continuous time
+| 40 | 4 | | Data reference index
+| 44 | 4 | | Size of data (to follow)
+| 48 | ... | | Data
+|===
+Oversize chunks consist of data that is too large to fit into a single log record, hence it is stored in a seperate record here and referenced (by log entires in firehose).
+
+=== Statedump chunk
+
+The Statedump chunk is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_preamble)_
+| 0 | 4 | 0x6003 | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 8 | | Chunk data size (length)
+4+| _Chunk data (tracev3_chunk_statedump)_
+| 16 | 8 | | First number in proc_id #@#
+| 24 | 4 | | Second number in proc_id #@#
+| 28 | 1 | | TTL
+| 29 | 3 | 0 | *Unused/Reserved*
+| 32 | 8 | | Continuous time
+| 40 | 8 | | Activity Id
+| 48 | 16 | | UUID 
+| 64 | 4 | | Data Type (1=plist, 3=data)
+| 68 | 4 | | Size of data (to follow)
+| 72 | 64 | | *Unknown (Object type string 1)*
+| 136 | 64 | | *Unknown (Object type string 2)*
+| 200 | 64 | | Name
+| 264 | ... | | Data
+|===
+
+
 === Notes
 
 ....
@@ -554,8 +626,6 @@ log raw-dump -f ${FILE}.tracev3
 ....
 
 ....
-tracev3_chunk_log_preamble
-tracev3_chunk_oversize
 tracev3_chunk_oversize_old
 tracev3_chunk_statedump
 ....
@@ -580,13 +650,16 @@ The timesync boot record is 48 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | "\xb0\xbb\x30\x00" | [yellow-background]*Unknown (Signature?)*
+| 0 | 2 | "\xb0\xbb" | Signature
+| 2 | 2 | 0x30 | Size of header
+| 4 | 4 | | [yellow-background]*Unknown*
 | 8 | 16 | | Boot identifier (boot UUID)
-| 24 | 4 | | [yellow-background]*Unknown (first number in timebase # / #)*
-| 28 | 4 | | [yellow-background]*Unknown (second number in timebase # / #)*
-| 32 | 8 | | [yellow-background]*Unknown timestamp (Boot time?)* +
+| 24 | 4 | | timebase numerator
+| 28 | 4 | | timebase denominator
+| 32 | 8 | | Boot time +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
-| 40 | 8 | | [yellow-background]*Unknown (time zone information?)*
+| 40 | 4 | | time zone bias in minutes
+| 44 | 4 | | is_dst (1 = Daylight Savings Time was ON)
 |===
 
 [NOTE]
@@ -599,14 +672,15 @@ The timesync sync record is 32 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "Ts\x20\x00" | [yellow-background]*Unknown (Signature?)*
+| 0 | 4 | "Ts\x20\x00" | Signature
 | 4 | 4 | | [yellow-background]*Unknown (flags?)* +
 Seen: 0 and 1
 | 8 | 8 | | Kernel time +
 Mach continuous timestamp
 | 16 | 8 | | Wall time +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
-| 24 | 8 | | [yellow-background]*Unknown (timezone information?)*
+| 24 | 4 | | time zone bias in minutes
+| 28 | 4 | | is_dst (1 = Daylight Savings Time was ON)
 |===
 
 [NOTE]
@@ -643,19 +717,21 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 | 0 | 4 | "hcsd" | Signature
 | 4 | 2 | 1 | Format major version
 | 6 | 2 | 1 | Format minor version
-| 8 | 4 | | [yellow-background]*Unknown (range count)*
-| 12 | 4 | | [yellow-background]*Unknown (uuid count)*
+| 8 | 4 | | Range count
+| 12 | 4 | | Uuid count
 |===
+
+The header is immediately followed by Range descriptors and UUID descriptors.
 
 A range descriptor is 16 bytes of size and consist of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown*
-| 4 | 4 | | Range start (offset?)
-| 8 | 4 | | Range size
-| 12 | 4 | | [yellow-background]*Unknown*
+| 0 | 4 | | UUID descriptor index
+| 4 | 4 | | Range start (offset)
+| 8 | 4 | | Data offset (absolute)
+| 12 | 4 | | Range size
 |===
 
 An UUID descriptor is 28 bytes of size and consist of:
@@ -663,10 +739,10 @@ An UUID descriptor is 28 bytes of size and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown*
-| 4 | 4 | | [yellow-background]*Unknown*
-| 8 | 16 | | [yellow-background]*Unknown (UUID)*
-| 24 | 4 | | [yellow-background]*Unknown (path offset)* +
+| 0 | 4 | | Offset (virtual)
+| 4 | 4 | | Size
+| 8 | 16 | | UUID (for sender process/library)
+| 24 | 4 | | path offset
 The offset is relative to the start of the file
 |===
 
@@ -769,7 +845,7 @@ The UUID text (uuidtext) entry descriptor is 8 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (range start offset?)*
+| 0 | 4 | | Range start offset
 | 4 | 4 | | Entry size
 |===
 
@@ -778,7 +854,7 @@ The UUID text (uuidtext) entry descriptor is 8 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | ... | | *[yellow-background]*Unknown (library path?)* +
+| 0 | ... | | Path of sender process/library +
 Contains an UTF-8 formatted string with an end-of-string character
 |===
 
@@ -822,6 +898,8 @@ plutil -p /var/db/diagnostics/version.plist
 |===
 | Title: | Apple Developer: COMPRESSION_LZ4
 | URL: | https://developer.apple.com/documentation/compression/compression_lz4
+| Title: | Class dump from CDStructures.h
+| URL: | https://github.com/w0lfschild/macOS_headers/blob/master/macOS/PrivateFrameworks/LoggingSupport/906.250.3/CDStructures.h
 |===
 
 [appendix]
