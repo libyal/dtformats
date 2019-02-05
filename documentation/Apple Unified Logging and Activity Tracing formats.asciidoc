@@ -262,7 +262,7 @@ The offset is relative to the start of the catalog UUIDs
 | 22 | 2 | | Offset of the catalog sub chunks +
 The offset is relative to the start of the catalog UUIDs
 | 24 | 2 | | Number of sub chunks
-| 26 | 6 | | Reserved/Padding
+| 26 | 6 | | [yellow-background]*Unknown (Reserved or Padding)*
 | 32 | 8 | | Earliest firehose timestamp
 | 40 | 16 x ... | | Catalog UUIDs +
 Contains an array of UUIDs stored in big-endian
@@ -345,9 +345,9 @@ The Catalog sub chunk describes metadata for the chunk to follow and consists of
 | 16 | 4 | | Uncompressed size of chunk
 | 20 | 4 | 0x100 | Compression algorithm used (0x100 = LZ4)
 | 24 | 4 | | Number of indexes (num_indexes)
-| 28 | 2*num_indexes | Indexes (2 bytes each) pointing to process info entry
+| 28 | 2 x Number of indexes | Indexes (2 bytes each) pointing to process info entry
 | ... | 4 | Number of string offsets (num_offsets)
-| ... | 2*num_offsets | Offsets (2 bytes each) into subsystem strings (used as cache?)
+| ... | 2 x Number of string offsets | Offsets (2 bytes each) into subsystem strings (used as cache?)
 | ... | ... | 0 | _Padding (align to 64 bit boundary)_
 |===
 
