@@ -902,7 +902,11 @@ plutil -p /var/db/diagnostics/version.plist
 |===
 | Title: | Apple Developer: COMPRESSION_LZ4
 | URL: | https://developer.apple.com/documentation/compression/compression_lz4
-| Title: | Class dump from CDStructures.h
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | Class dump of CDStructures.h
 | URL: | https://github.com/w0lfschild/macOS_headers/blob/master/macOS/PrivateFrameworks/LoggingSupport/906.250.3/CDStructures.h
 |===
 
