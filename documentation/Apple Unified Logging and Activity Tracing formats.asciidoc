@@ -199,10 +199,13 @@ The Header chunk is 208 bytes of size and consists of:
 | 16 | 4 | | Mach timebase numerator
 | 20 | 4 | | Mach timebase denominator
 | 24 | 8 | | Continuous time
-| 32 | 8 | | Unix time (upper 4 bytes will be 0)
+| 32 | 8 | | [yellow-background]*Unknown time* +
+Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds where the upper 4 bytes should be 0
 | 40 | 4 | | [yellow-background]*Unknown*
 | 44 | 4 | | Bias in minutes
-| 48 | 4 | | is_dst (1 = DST, 0 = no DST)
+| 48 | 4 | | Daylight savings active +
+0 = daylight savings is not active (no-DST) +
+1 = daylight savings is active (DST)
 | 52 | 4 | | [yellow-background]*Unknown (flags)* +
 (64bits) (is_boot)
 4+| _tracev3_subchunk_preamble (for tracev3_subchunk_continuous)_
