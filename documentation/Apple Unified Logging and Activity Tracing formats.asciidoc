@@ -208,35 +208,35 @@ Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), dis
 1 = daylight savings is active (DST)
 | 52 | 4 | | [yellow-background]*Unknown (flags)* +
 (64bits) (is_boot)
-4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_continuous_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for the continous time sub chunk (tracev3_subchunk_continuous)_
 | 56 | 4 | 0x6100 | Sub chunk tag
 | 60 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _tracev3_subchunk_continuous_
+4+| _The continous time sub chunk (tracev3_subchunk_continuous)_
 | 64 | 8 | | Continuous time (value data related to starttime?)
-4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_systeminfo_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for the system information sub chunk (tracev3_subchunk_systeminfo)_
 | 72 | 4 | 0x6101 | Sub chunk tag
 | 76 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _tracev3_subchunk_systeminfo_
+4+| _The system information sub chunk (tracev3_subchunk_systeminfo)_
 | 80 | 4 | | [yellow-background]*Unknown*
 | 84 | 4 | | [yellow-background]*Unknown*
 | 88 | 16 | | Build version string
 | 104 | 32 | | Hardware model string
-4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_generation_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for the generation sub chunk (tracev3_subchunk_generation)_
 | 124 | 4 | 0x6102 | Sub chunk tag
 | 128 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _tracev3_subchunk_generation_
+4+| _The generation sub chunk (tracev3_subchunk_generation)_
 | 132 | 16 | | Boot identifier (Boot UUID) +
 Contains a UUID stored in big-endian
 | 148 | 4 | | Process Identifier (PID) of logd
 | 152 | 4 | | Exit status (of logd)
-4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_timezone_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for the time zone sub chunk (tracev3_subchunk_timezone)_
 | 156 | 4 | 0x6103 | Sub chunk tag
 | 164 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _tracev3_subchunk_timezone_
+4+| _The time zone sub chunk (tracev3_subchunk_timezone)_
 | 168 | 48 | | Path to timezone information file
 |===
 
