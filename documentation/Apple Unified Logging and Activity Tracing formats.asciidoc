@@ -208,13 +208,13 @@ Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), dis
 1 = daylight savings is active (DST)
 | 52 | 4 | | [yellow-background]*Unknown (flags)* +
 (64bits) (is_boot)
-4+| _tracev3_subchunk_preamble (for tracev3_subchunk_continuous)_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_continuous_
 | 56 | 4 | 0x6100 | Sub chunk tag
 | 60 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
 4+| _tracev3_subchunk_continuous_
 | 64 | 8 | | Continuous time (value data related to starttime?)
-4+| _tracev3_subchunk_preamble (for tracev3_subchunk_systeminfo)_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_systeminfo_
 | 72 | 4 | 0x6101 | Sub chunk tag
 | 76 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
@@ -223,7 +223,7 @@ The size value does not include the 8 bytes of the sub chunk tag and data size
 | 84 | 4 | | [yellow-background]*Unknown*
 | 88 | 16 | | Build version string
 | 104 | 32 | | Hardware model string
-4+| _tracev3_subchunk_preamble (for tracev3_subchunk_generation)_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_generation_
 | 124 | 4 | 0x6102 | Sub chunk tag
 | 128 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
@@ -232,7 +232,7 @@ The size value does not include the 8 bytes of the sub chunk tag and data size
 Contains a UUID stored in big-endian
 | 148 | 4 | | Process Identifier (PID) of logd
 | 152 | 4 | | Exit status (of logd)
-4+| _tracev3_subchunk_preamble (for tracev3_subchunk_timezone)_
+4+| _Sub chunk header (tracev3_subchunk_preamble) for tracev3_subchunk_timezone_
 | 156 | 4 | 0x6103 | Sub chunk tag
 | 164 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
