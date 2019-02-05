@@ -43,7 +43,8 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | January 2019 | Initial version.
-| 0.0.2 | J.B. Metz | February 2019 | Additional changes based on worky by Y. Khatri.
+| 0.0.2 | J.B. Metz | February 2019 | Additional changes based on work by Y. Khatri.
+| 0.0.3 | Y. Khatri | February 2019 | Additional changes based prior work.
 |===
 
 :numbered:
