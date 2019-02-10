@@ -197,10 +197,10 @@ The Header chunk is 208 bytes of size and consists of:
 | 4 | 4 | | Chunk sub tag (subtag)
 | 8 | 8 | | Chunk data size (length)
 4+| _Chunk data_ (tracev3_chunk_header)
-| 16 | 4 | | Mach timebase numerator
-| 20 | 4 | | Mach timebase denominator
+| 16 | 4 | | Mach timebase numerator (first number in timebase # / #)
+| 20 | 4 | | Mach timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Continuous time
-| 32 | 8 | | [yellow-background]*Unknown time* +
+| 32 | 8 | | [yellow-background]*Unknown time (related to starttime?)* +
 Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds where the upper 4 bytes should be 0
 | 40 | 4 | | [yellow-background]*Unknown*
 | 44 | 4 | | Bias in minutes
@@ -241,8 +241,6 @@ The size value does not include the 8 bytes of the sub chunk tag and data size
 | 168 | 48 | | Path to timezone information file
 |===
 
-
-
 === Catalog chunk
 
 The Catalog chunk is variable of size and consists of:
@@ -264,7 +262,8 @@ The offset is relative to the start of the catalog UUIDs
 The offset is relative to the start of the catalog UUIDs
 | 24 | 2 | | Number of sub chunks
 | 26 | 6 | | [yellow-background]*Unknown (Reserved or Padding)*
-| 32 | 8 | | Earliest firehose timestamp
+| 32 | 8 | | Earliest firehose timestamp +
+Contains continuous time
 | 40 | 16 x ... | | Catalog UUIDs +
 Contains an array of UUIDs stored in big-endian
 | ... | ... | | Catalog sub system strings +
@@ -283,7 +282,7 @@ CATALOG_V3
 
 ==== [[catalog_process_information_entry]]Catalog process information entry
 
-The Catalog process information entry is variable in size and consists of:
+The Catalog process information entry is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -330,8 +329,10 @@ The Catalog process information sub system is 6 bytes of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 2 | | Identifier
-| 2 | 2 | | Sub system offset (into subsystem strings)
-| 4 | 2 | | Category offset (into subsystem strings)
+| 2 | 2 | | Sub system offset +
+The offset is relative to the start of the catalog sub system strings
+| 4 | 2 | | Category offset +
+The offset is relative to the start of the catalog sub system strings
 |===
 
 ==== [[catalog_sub_chunk]]Catalog sub chunk
@@ -348,8 +349,9 @@ The Catalog sub chunk describes metadata for the chunk to follow and consists of
 | 24 | 4 | | Number of indexes (num_indexes)
 | 28 | 2 x Number of indexes | Indexes (2 bytes each) pointing to process info entry
 | ... | 4 | Number of string offsets (num_offsets)
-| ... | 2 x Number of string offsets | Offsets (2 bytes each) into subsystem strings (used as cache?)
-| ... | ... | 0 | _Padding (align to 64 bit boundary)_
+| ... | 2 x Number of string offsets | [yellow-background]*Unknown (offsets used as cache?)* +
+The offset is relative to the start of the catalog sub system strings
+| ... | ... | 0 | 64-bit alignment padding
 |===
 
 ....
@@ -363,7 +365,6 @@ The Catalog sub chunk describes metadata for the chunk to follow and consists of
                    subcats : 25
                    offsets : 0,337,177,113,33,259,308,228,132,422,70,375,296,248,216,41,25,442,394,348,158,62,431,223,191,
 ....
-
 
 === ChunkSet chunk
 
@@ -444,7 +445,7 @@ The Firehose chunk is variable of size and consists of:
 | 0 | 4 | 0x6001 | Chunk tag (tag)
 | 4 | 4 | | Chunk sub tag (subtag)
 | 8 | 8 | | Chunk data size (length)
-4+| _Chunk data_ (tracev3_chunk_log_preamble)
+4+| _Chunk data (tracev3_chunk_log_preamble)_
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | Collapsed
@@ -497,9 +498,33 @@ A Firehose tracepoint (tracev3_chunk_firehose) is variable of size and consists 
 | 16 | 6 | | Continuous time (relative to value in tracev3_chunk_log_preamble)
 | 22 | 2 | | Data size (to follow)
 | 24 | ... | | Variable size data consisting of various fields, depending on flags and log type
-| ... | ... | | Alignment padding (to 64 bit boundary)
+| ... | ... | | 64-bit alignment padding
 
 |===
+
+....
+Old notes:
+
+A Firehose tracepoint (firehose_tracepoint) is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x04 | [yellow-background]*Unknown*
+| 1 | 1 | | [yellow-background]*Unknown (Log level?)*
+| 2 | 2 | | [yellow-background]*Unknown (Flags?)*
+| 4 | 4 | | [yellow-background]*Unknown (format string location?)*
+| 8 | 8 | | [yellow-background]*Unknown (thread identifier?)*
+| 16 | 8 | | [yellow-background]*Unknown (time related?)*
+| 24 | 4 | | [yellow-background]*Unknown (process information location?)*
+| 28 | 2 | | [yellow-background]*Unknown*
+| 30 | 2 | | [yellow-background]*Unknown*
+| 32 | 4 | | [yellow-background]*Unknown*
+| 36 | 2 | | [yellow-background]*Unknown (value string size)*
+| 38 | ... | | [yellow-background]*Unknown (value string)*
+| ... | ... | | Alignment padding
+|===
+....
 
 ....
 0x00000020        02 02                                       ........_.......
@@ -574,7 +599,7 @@ opendirectoryd (build 483.200) launched...
 
 === Oversize chunk
 
-The Oversize chunk is variable in size and consists of:
+The Oversize chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -587,17 +612,18 @@ The Oversize chunk is variable in size and consists of:
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | TTL
-| 29 | 3 | 0 | *Unused/Reserved*
+| 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 4 | | Data reference index
 | 44 | 4 | | Size of data (to follow)
 | 48 | ... | | Data
 |===
+
 Oversize chunks consist of data that is too large to fit into a single log record, hence it is stored in a seperate record here and referenced (by log entires in firehose).
 
 === Statedump chunk
 
-The Statedump chunk is variable in size and consists of:
+The Statedump chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -610,18 +636,17 @@ The Statedump chunk is variable in size and consists of:
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | TTL
-| 29 | 3 | 0 | *Unused/Reserved*
+| 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 8 | | Activity Id
 | 48 | 16 | | UUID 
-| 64 | 4 | | Data Type (1=plist, 3=data)
-| 68 | 4 | | Size of data (to follow)
-| 72 | 64 | | *Unknown (Object type string 1)*
-| 136 | 64 | | *Unknown (Object type string 2)*
-| 200 | 64 | | Name
-| 264 | ... | | Data
+| 64 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 3=data))*
+| 68 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
+| 72 | 64 | | [yellow-background]*Unknown (Object type string 1)*
+| 136 | 64 | | [yellow-background]*Unknown (Object type string 2)*
+| 200 | 64 | | [yellow-background]*Unknown (Name)*
+| 264 | ... | | [yellow-background]*Unknown (Data)*
 |===
-
 
 === Notes
 
@@ -658,16 +683,16 @@ The timesync boot record is 48 bytes of size and consists of:
 | 2 | 2 | 0x30 | Size of header
 | 4 | 4 | | [yellow-background]*Unknown*
 | 8 | 16 | | Boot identifier (boot UUID)
-| 24 | 4 | | timebase numerator
-| 28 | 4 | | timebase denominator
+| 24 | 4 | | timebase numerator (first number in timebase # / #)
+| 28 | 4 | | timebase denominator (second number in timebase # / #)
 | 32 | 8 | | Boot time +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
-| 40 | 4 | | time zone bias in minutes
-| 44 | 4 | | is_dst (1 = Daylight Savings Time was ON)
+| 40 | 4 | | Time zone offset in minutes
+| 44 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
 
 [NOTE]
-Timestamp appears to be stored in UTC but log tool shows time zone
+Timestamp appears to be stored in UTC but the log tool shows a time zone
 
 ==== timesync sync record
 
@@ -683,8 +708,8 @@ Seen: 0 and 1
 Mach continuous timestamp
 | 16 | 8 | | Wall time +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
-| 24 | 4 | | time zone bias in minutes
-| 28 | 4 | | is_dst (1 = Daylight Savings Time was ON)
+| 24 | 4 | | Time zone offset in minutes
+| 28 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
 
 [NOTE]
@@ -722,7 +747,7 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 | 4 | 2 | 1 | Format major version
 | 6 | 2 | 1 | Format minor version
 | 8 | 4 | | Range count
-| 12 | 4 | | Uuid count
+| 12 | 4 | | Number of UUIDs (uuid count)
 |===
 
 The header is immediately followed by Range descriptors and UUID descriptors.
@@ -734,7 +759,8 @@ A range descriptor is 16 bytes of size and consist of:
 | Offset | Size | Value | Description
 | 0 | 4 | | UUID descriptor index
 | 4 | 4 | | Range start (offset)
-| 8 | 4 | | Data offset (absolute)
+| 8 | 4 | | Data offset +
+The offset is relative to the start of the file
 | 12 | 4 | | Range size
 |===
 
