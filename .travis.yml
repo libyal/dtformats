@@ -100,6 +100,26 @@ matrix:
     python: 3.7
     services:
     - docker
+  - name: "Ubuntu Bionic (18.04) (Docker) with Python 2.7"
+    env: UBUNTU_VERSION="18.04"
+    os: linux
+    dist: xenial
+    sudo: required
+    group: edge
+    language: python
+    python: 2.7
+    services:
+    - docker
+  - name: "Ubuntu Bionic (18.04) (Docker) with Python 3.6"
+    env: UBUNTU_VERSION="18.04"
+    os: linux
+    dist: xenial
+    sudo: required
+    group: edge
+    language: python
+    python: 3.6
+    services:
+    - docker
   - name: "MacOS with Python 2.7.10"
     env: [TARGET="macos-python27", PYTHONPATH="/Library/Python/2.7/site-packages/"]
     os: osx

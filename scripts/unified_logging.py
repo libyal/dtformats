@@ -10,8 +10,7 @@ import logging
 import sys
 
 from dtformats import output_writers
-from dtformats import tracev3
-from dtformats import uuidtext
+from dtformats import unified_logging
 
 
 def Main():
@@ -56,11 +55,16 @@ def Main():
   with open(options.source, 'rb') as file_object:
     file_signature = file_object.read(4)
 
-  if file_signature == b'\x99\x88\x77\x66':
-    unified_logging_file = uuidtext.UUIDTextFile(
+  if file_signature == b'hcsd':
+    unified_logging_file = unified_logging.DSCFile(
         debug=options.debug, output_writer=output_writer)
+
+  elif file_signature == b'\x99\x88\x77\x66':
+    unified_logging_file = unified_logging.UUIDTextFile(
+        debug=options.debug, output_writer=output_writer)
+
   else:
-    unified_logging_file = tracev3.TraceV3File(
+    unified_logging_file = unified_logging.TraceV3File(
         debug=options.debug, output_writer=output_writer)
 
   unified_logging_file.Open(options.source)

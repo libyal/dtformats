@@ -45,6 +45,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.1 | J.B. Metz | January 2019 | Initial version.
 | 0.0.2 | J.B. Metz | February 2019 | Additional changes based on work by Y. Khatri.
 | 0.0.3 | Y. Khatri | February 2019 | Additional changes based prior work.
+| 0.0.4 | J.B. Metz | February 2019 | Additional changes based on format analysis.
 |===
 
 :numbered:
@@ -347,9 +348,9 @@ The Catalog sub chunk describes metadata for the chunk to follow and consists of
 | 16 | 4 | | Uncompressed size of chunk
 | 20 | 4 | 0x100 | Compression algorithm used (0x100 = LZ4)
 | 24 | 4 | | Number of indexes (num_indexes)
-| 28 | 2 x Number of indexes | Indexes (2 bytes each) pointing to process info entry
-| ... | 4 | Number of string offsets (num_offsets)
-| ... | 2 x Number of string offsets | [yellow-background]*Unknown (offsets used as cache?)* +
+| 28 | 2 x Number of indexes | | Indexes (2 bytes each) pointing to process info entry
+| ... | 4 | | Number of string offsets (num_offsets)
+| ... | 2 x Number of string offsets | | [yellow-background]*Unknown (offsets used as cache?)* +
 The offset is relative to the start of the catalog sub system strings
 | ... | ... | 0 | 64-bit alignment padding
 |===
@@ -745,96 +746,43 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | "hcsd" | Signature
 | 4 | 2 | 1 | Format major version
-| 6 | 2 | 1 | Format minor version
-| 8 | 4 | | Range count
+| 6 | 2 | 0 | Format minor version
+| 8 | 4 | | Number of ranges (range count)
 | 12 | 4 | | Number of UUIDs (uuid count)
 |===
 
-The header is immediately followed by Range descriptors and UUID descriptors.
+=== Shared-Cache Strings (dsc) range descriptor
 
-A range descriptor is 16 bytes of size and consist of:
+A Shared-Cache Strings (dsc) range descriptor is 16 bytes of size and consist
+of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | UUID descriptor index
-| 4 | 4 | | Range start (offset)
+| 4 | 4 | | (dsc) Range offset +
+The offset is relative to [yellow-background]*unknown*
 | 8 | 4 | | Data offset +
 The offset is relative to the start of the file
-| 12 | 4 | | Range size
+| 12 | 4 | | (dsc) Range size
 |===
 
-An UUID descriptor is 28 bytes of size and consist of:
+=== Shared-Cache Strings (dsc) UUID descriptor
+
+A Shared-Cache Strings (dsc) UUID descriptor is 28 bytes of size and consist of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset (virtual)
-| 4 | 4 | | Size
-| 8 | 16 | | UUID (for sender process/library)
-| 24 | 4 | | path offset
+| 0 | 4 | | (dsc) Text offset +
+The offset is relative to [yellow-background]*unknown*
+| 4 | 4 | | (dsc) Text size
+| 8 | 16 | | Sender (process or library) identifier +
+Contains a UUID stored in big-endian +
+[yellow-background]*Does this reference to the uuidtext file?*
+| 24 | 4 | | Path offset +
 The offset is relative to the start of the file
 |===
-
-....
-00000000  68 63 73 64 01 00 00 00  21 07 00 00 50 05 00 00  |hcsd....!...P...|
-
-    dsc range:      0x00048a40 .. 0x0004a2d4 (6292)
-
-00000010  01 00 00 00 40 8a 04 00                           |....@...........|
-
-00000010                           e0 06 01 00              |....@...........|
-
-00000010                                       94 18 00 00  |....@...........|
-00000020  01 00 00 00 d4 a2 04 00  74 1f 01 00 49 1a 00 00  |........t...I...|
-...
-00007200  4e 05 00 00 b8 d3 6d 37  2e 59 1d 03 a8 0a 00 00  |N.....m7.Y......|
-00007210  4f 05 00 00 e4 3a 70 37  d6 63 1d 03 6c 49 00 00  |O....:p7.c..lI..|
-00007220  00 00 03 00 00 10 00 00                           |........M.A$..4.|
-
-uuid 0:             4DB84124-D5A9-3412-B501-0D8A9F7F0312
-00007220                           4d b8 41 24 d5 a9 34 12  |........M.A$..4.|
-00007230  b5 01 0d 8a 9f 7f 03 12                           |........B.......|
-
-00007230                           42 ad 1d 03 00 10 03 00  |........B.......|
-00007240  00 c0 01 00 fe 08 1c fb  5d 43 31 31 9e f6 b0 1a  |........]C11....|
-00007250  73 8b ea e5 a7 ad 1d 03  00 d0 04 00 00 20 00 00  |s............ ..|
-00007260  64 1c e2 55 98 d6 38 d0  b4 35 ba be 0c 5b a0 04  |d..U..8..5...[..|
-...
-000106c0  53 4d 1f 03 00 e0 6d 37  00 10 03 00 dc 50 f3 3e  |SM....m7.....P.>|
-000106d0  c4 7d 32 56 bf e0 f8 e9  b5 ae be 17 73 4d 1f 03  |.}2V........sM..|
-000106e0  25 73 20 55 6e 6b 6e 6f  77 6e 20 61 70 70 20 76  |%s Unknown app v|
-...
-
-== Shared Cache Strings ================================================
-uuid:               2576AD25-8753-3C11-9308-541E6149A88D
-size:               52383120
-version:            1.0
-uuid count:         1360
-range count:        1825
-
-== UUIDS ===============================================================
-uuid 0:             4DB84124-D5A9-3412-B501-0D8A9F7F0312
-    dsc text:       0x00030000 .. 0x00031000 (4096)
-    path:           /System/Library/AccessibilityBundles/AXSpeechImplementation.bundle/Versions/A/AXSpeechImplementation
-
-uuid 1:             FE081CFB-5D43-3131-9EF6-B01A738BEAE5
-    dsc text:       0x00031000 .. 0x0004d000 (114688)
-    path:           /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService
-
-    path:           /usr/lib/system/libxpc.dylib
-
-== Ranges ==============================================================
-Range 0:
-    uuid 1:         FE081CFB-5D43-3131-9EF6-B01A738BEAE5
-    dsc range:      0x00048a40 .. 0x0004a2d4 (6292)
-    path:           /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService
-
-== Paths ===============================================================
-[0x031dad42] /System/Library/AccessibilityBundles/AXSpeechImplementation.bundle/Versions/A/AXSpeechImplementation
-[0x031dada7] /System/Library/Assistant/Plugins/ClientFlowService.assistantBundle/Contents/MacOS/ClientFlowService
-
-....
 
 === Notes
 

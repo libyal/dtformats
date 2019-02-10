@@ -42,13 +42,22 @@ elif test -n "${FEDORA_VERSION}";
 then
 	CONTAINER_NAME="fedora${FEDORA_VERSION}";
 
-	docker exec "${CONTAINER_NAME}" sh -c "git clone https://github.com/libyal/dtformats.git";
+	if test ${TRAVIS_PYTHON_VERSION} = "2.7";
+	then
+		docker exec ${CONTAINER_NAME} sh -c "export LANG=en_US.UTF-8; cd dtformats && python2 run_tests.py";
+	else
+		docker exec ${CONTAINER_NAME} sh -c "cd dtformats && python3 run_tests.py";
+	fi
+
+elif test -n "${UBUNTU_VERSION}";
+then
+	CONTAINER_NAME="ubuntu${UBUNTU_VERSION}";
 
 	if test ${TRAVIS_PYTHON_VERSION} = "2.7";
 	then
-		docker exec "${CONTAINER_NAME}" sh -c "cd dtformats && python2 run_tests.py";
+		docker exec ${CONTAINER_NAME} sh -c "export LANG=en_US.UTF-8; cd dtformats && python2 run_tests.py";
 	else
-		docker exec "${CONTAINER_NAME}" sh -c "cd dtformats && python3 run_tests.py";
+		docker exec ${CONTAINER_NAME} sh -c "cd dtformats && python3 run_tests.py";
 	fi
 
 elif test "${TRAVIS_OS_NAME}" = "linux";
