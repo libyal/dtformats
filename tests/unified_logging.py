@@ -40,7 +40,37 @@ class DSCFileTest(test_lib.BaseTestCase):
     test_file.Open(test_file_path)
 
 
-# TODO: add TraceV3File tests
+class TraceV3FileTest(test_lib.BaseTestCase):
+  """Apple Unified Logging and Activity Tracing (tracev3) file tests."""
+
+  # pylint: disable=protected-access
+
+  # TODO: add tests for _FormatArrayOfStrings
+  # TODO: add tests for _FormatArrayOfUUIDS
+  # TODO: add tests for _FormatStreamAsSignature
+
+  @test_lib.skipUnlessHasTestFile(['0000000000000030.tracev3'])
+  def testReadChunkHeader(self):
+    """Tests the _ReadChunkHeader function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath(['0000000000000030.tracev3'])
+    with open(test_file_path, 'rb') as file_object:
+      test_file._ReadChunkHeader(file_object, 0)
+
+  # TODO: add tests for _ReadCatalog
+  # TODO: add tests for _ReadChunkSet
+
+  @test_lib.skipUnlessHasTestFile(['0000000000000030.tracev3'])
+  def testReadFileObject(self):
+    """Tests the ReadFileObject function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(
+        debug=True, output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath(['0000000000000030.tracev3'])
+    test_file.Open(test_file_path)
 
 
 class UUIDTextFileTest(test_lib.BaseTestCase):

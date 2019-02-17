@@ -299,7 +299,7 @@ The Catalog process information entry is variable of size and consists of:
 | 28 | 4 | | [yellow-background]*Unknown*
 | 40 | 4 | | Number of UUID information entries (uuidinfos)
 | 44 | 4 | | [yellow-background]*Unknown*
-| 48 | 16 x ... | | Sub systems array
+| 48 | 16 x ... | | UUID information entries array
 | ... | 4 | | Number of sub systems (subsystems)
 | ... | 4 | | [yellow-background]*Unknown*
 | ... | 6 x ... | | Sub systems array
