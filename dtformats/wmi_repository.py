@@ -10,7 +10,6 @@ import os
 
 from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
@@ -96,43 +95,35 @@ class ObjectRecord(data_format.BinaryDataFormat):
     data_type (str): object record data type.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'wmi_repository.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
   # TODO: replace streams by block type
   # TODO: add more values.
 
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _CLASS_DEFINITION_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _CLASS_DEFINITION_HEADER = _FABRIC.CreateDataTypeMap(
       'class_definition_header')
 
-  _CLASS_DEFINITION_OBJECT_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _CLASS_DEFINITION_OBJECT_RECORD = _FABRIC.CreateDataTypeMap(
       'class_definition_object_record')
 
-  _CLASS_DEFINITION_METHODS = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _CLASS_DEFINITION_METHODS = _FABRIC.CreateDataTypeMap(
       'class_definition_methods')
 
-  _SUPER_CLASS_NAME_BLOCK = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'super_class_name_block')
+  _SUPER_CLASS_NAME_BLOCK = _FABRIC.CreateDataTypeMap('super_class_name_block')
 
-  _PROPERTY_NAME = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'property_name')
+  _PROPERTY_NAME = _FABRIC.CreateDataTypeMap('property_name')
 
-  _PROPERTY_DEFINITION = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'property_definition')
+  _PROPERTY_DEFINITION = _FABRIC.CreateDataTypeMap('property_definition')
 
-  _INTERFACE_OBJECT_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _INTERFACE_OBJECT_RECORD = _FABRIC.CreateDataTypeMap(
       'interface_object_record')
 
-  _REGISTRATION_OBJECT_RECORD = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _REGISTRATION_OBJECT_RECORD = _FABRIC.CreateDataTypeMap(
       'registration_object_record')
 
-  _PROPERTY_TYPES = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_property_types')
+  _PROPERTY_TYPES = _FABRIC.CreateDataTypeMap('cim_property_types')
 
   # A size of 0 indicates variable of size.
   _PROPERTY_TYPE_VALUE_SIZES = {
@@ -592,17 +583,11 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
     page_offset (int): page offset or None.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'wmi_repository.yaml')
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _OBJECT_DESCRIPTOR = _DATA_TYPE_FABRIC.CreateDataTypeMap(
-      'cim_object_descriptor')
+  _OBJECT_DESCRIPTOR = _FABRIC.CreateDataTypeMap('cim_object_descriptor')
 
   _OBJECT_DESCRIPTOR_SIZE = _OBJECT_DESCRIPTOR.GetByteSize()
 
@@ -778,30 +763,25 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 class IndexBinaryTreeFile(data_format.BinaryDataFile):
   """Index binary-tree (Index.btr) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'wmi_repository.yaml')
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _UINT16LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint16le')
+  _UINT16LE = _FABRIC.CreateDataTypeMap('uint16le')
 
   _UINT16LE_SIZE = _UINT16LE.GetByteSize()
 
   _PAGE_SIZE = 8192
 
-  _PAGE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_page_header')
+  _PAGE_HEADER = _FABRIC.CreateDataTypeMap('cim_page_header')
 
   _PAGE_HEADER_SIZE = _PAGE_HEADER.GetByteSize()
 
-  _PAGE_BODY = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_page_body')
+  _PAGE_BODY = _FABRIC.CreateDataTypeMap('cim_page_body')
 
-  _PAGE_KEY = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_page_key')
+  _PAGE_KEY = _FABRIC.CreateDataTypeMap('cim_page_key')
 
-  _STRING = _DATA_TYPE_FABRIC.CreateDataTypeMap('string')
+  _STRING = _FABRIC.CreateDataTypeMap('string')
 
   _PAGE_TYPES = {
       0xaccc: 'Is active',
@@ -1187,32 +1167,27 @@ class MappingFile(data_format.BinaryDataFile):
         or objects data file.
   """
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'wmi_repository.yaml')
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _UINT32LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
+  _UINT32LE = _FABRIC.CreateDataTypeMap('uint32le')
 
   _UINT32LE_SIZE = _UINT32LE.GetByteSize()
 
   _FILE_HEADER_SIGNATURE = 0x0000abcd
 
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_map_header')
+  _FILE_HEADER = _FABRIC.CreateDataTypeMap('cim_map_header')
 
   _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
 
   _FILE_FOOTER_SIGNATURE = 0x0000dcba
 
-  _FILE_FOOTER = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_map_footer')
+  _FILE_FOOTER = _FABRIC.CreateDataTypeMap('cim_map_footer')
 
   _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
 
-  _PAGE_NUMBERS = _DATA_TYPE_FABRIC.CreateDataTypeMap('cim_map_page_numbers')
+  _PAGE_NUMBERS = _FABRIC.CreateDataTypeMap('cim_map_page_numbers')
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a mappings file.
@@ -1662,16 +1637,11 @@ class ObjectsDataFile(data_format.BinaryDataFile):
 class CIMRepository(data_format.BinaryDataFormat):
   """A CIM repository."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'wmi_repository.yaml')
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _MAPPING_VER = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
+  _MAPPING_VER = _FABRIC.CreateDataTypeMap('uint32le')
 
   _MAPPING_VER_SIZE = _MAPPING_VER.GetByteSize()
 

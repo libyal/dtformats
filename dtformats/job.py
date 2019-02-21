@@ -3,21 +3,15 @@
 
 from __future__ import unicode_literals
 
-import os
-
-from dtfabric.runtime import fabric as dtfabric_fabric
-
 from dtformats import data_format
 
 
 class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
   """Windows Task Scheduler job (.job) file."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'job.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('job.yaml')
 
   # TODO: add format definition.
   # https://msdn.microsoft.com/en-us/library/cc248285.aspx
@@ -25,15 +19,12 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
   # TODO: add job signature
   # https://msdn.microsoft.com/en-us/library/cc248299.aspx
 
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _FIXED_LENGTH_DATA_SECTION = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _FIXED_LENGTH_DATA_SECTION = _FABRIC.CreateDataTypeMap(
       'job_fixed_length_data_section')
 
   _FIXED_LENGTH_DATA_SECTION_SIZE = _FIXED_LENGTH_DATA_SECTION.GetByteSize()
 
-  _VARIABLE_LENGTH_DATA_SECTION = _DATA_TYPE_FABRIC.CreateDataTypeMap(
+  _VARIABLE_LENGTH_DATA_SECTION = _FABRIC.CreateDataTypeMap(
       'job_variable_length_data_section')
 
   _DEBUG_INFO_FIXED_LENGTH_DATA_SECTION = [

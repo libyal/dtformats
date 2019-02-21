@@ -16,6 +16,51 @@ from dtformats import errors
 from tests import test_lib
 
 
+class TestBinaryDataFormat(data_format.BinaryDataFormat):
+  """Binary data format for testing."""
+
+  _DEFINITION = b"""\
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: point3d
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: x
+  data_type: uint32
+- name: y
+  data_type: uint32
+- name: z
+  data_type: uint32
+---
+name: shape3d
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_points
+  data_type: uint32
+- name: points
+  type: sequence
+  element_data_type: point3d
+  number_of_elements: shape3d.number_of_points
+"""
+
+  _FABRIC = dtfabric_fabric.DataTypeFabric(yaml_definition=_DEFINITION)
+
+  POINT3D = _FABRIC.CreateDataTypeMap('point3d')
+
+  POINT3D_SIZE = POINT3D.GetByteSize()
+
+  SHAPE3D = _FABRIC.CreateDataTypeMap('shape3d')
+
+
 class ErrorBytesIO(io.BytesIO):
   """Bytes IO that errors."""
 
@@ -80,53 +125,10 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  _DATA_TYPE_FABRIC_DEFINITION = b"""\
-name: uint32
-type: integer
-attributes:
-  format: unsigned
-  size: 4
-  units: bytes
----
-name: point3d
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: x
-  data_type: uint32
-- name: y
-  data_type: uint32
-- name: z
-  data_type: uint32
----
-name: shape3d
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: number_of_points
-  data_type: uint32
-- name: points
-  type: sequence
-  element_data_type: point3d
-  number_of_elements: shape3d.number_of_points
-"""
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _POINT3D = _DATA_TYPE_FABRIC.CreateDataTypeMap('point3d')
-
-  _POINT3D_SIZE = _POINT3D.GetByteSize()
-
-  _SHAPE3D = _DATA_TYPE_FABRIC.CreateDataTypeMap('shape3d')
-
   def testDebugPrintData(self):
     """Tests the _DebugPrintData function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
-        output_writer=output_writer)
+    test_format = TestBinaryDataFormat(output_writer=output_writer)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06'
     test_format._DebugPrintData('Description', data)
@@ -140,8 +142,7 @@ members:
   def testDebugPrintDecimalValue(self):
     """Tests the _DebugPrintDecimalValue function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
-        output_writer=output_writer)
+    test_format = TestBinaryDataFormat(output_writer=output_writer)
 
     test_format._DebugPrintDecimalValue('Description', 1)
 
@@ -154,8 +155,7 @@ members:
   def testDebugPrintValue(self):
     """Tests the _DebugPrintValue function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
-        output_writer=output_writer)
+    test_format = TestBinaryDataFormat(output_writer=output_writer)
 
     test_format._DebugPrintValue('Description', 'Value')
 
@@ -165,8 +165,7 @@ members:
   def testDebugPrintText(self):
     """Tests the _DebugPrintText function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
-        output_writer=output_writer)
+    test_format = TestBinaryDataFormat(output_writer=output_writer)
 
     test_format._DebugPrintText('Text')
 
@@ -175,7 +174,7 @@ members:
 
   def testFormatDataInHexadecimal(self):
     """Tests the _FormatDataInHexadecimal function."""
-    test_format = data_format.BinaryDataFormat()
+    test_format = TestBinaryDataFormat()
 
     data = b'\x00\x01\x02\x03\x04\x05\x06'
     expected_formatted_data = (
@@ -217,14 +216,14 @@ members:
 
   def testFormatPackedIPv4Address(self):
     """Tests the _FormatPackedIPv4Address function."""
-    test_format = data_format.BinaryDataFormat()
+    test_format = TestBinaryDataFormat()
 
     ip_address = test_format._FormatPackedIPv4Address([0xc0, 0xa8, 0xcc, 0x62])
     self.assertEqual(ip_address, '192.168.204.98')
 
   def testFormatPackedIPv6Address(self):
     """Tests the _FormatPackedIPv6Address function."""
-    test_format = data_format.BinaryDataFormat()
+    test_format = TestBinaryDataFormat()
 
     ip_address = test_format._FormatPackedIPv6Address([
         0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00,
@@ -236,60 +235,61 @@ members:
   def testReadData(self):
     """Tests the _ReadData function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
+    test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
-    test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
+    test_format._ReadData(file_object, 0, test_format.POINT3D_SIZE, 'point3d')
 
     # Test with missing file-like object.
     with self.assertRaises(ValueError):
-      test_format._ReadData(None, 0, self._POINT3D_SIZE, 'point3d')
+      test_format._ReadData(None, 0, test_format.POINT3D_SIZE, 'point3d')
 
     # Test with file-like object with insufficient data.
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00')
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
+      test_format._ReadData(file_object, 0, test_format.POINT3D_SIZE, 'point3d')
 
     # Test with file-like object that raises an IOError.
     file_object = ErrorBytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadData(file_object, 0, self._POINT3D_SIZE, 'point3d')
+      test_format._ReadData(file_object, 0, test_format.POINT3D_SIZE, 'point3d')
 
   # TODO: add tests for _ReadDefinitionFile
 
   def testReadStructure(self):
     """Tests the _ReadStructure function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
+    test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     test_format._ReadStructure(
-        file_object, 0, self._POINT3D_SIZE, self._POINT3D, 'point3d')
+        file_object, 0, test_format.POINT3D_SIZE, test_format.POINT3D,
+        'point3d')
 
   def testReadStructureFromByteStream(self):
     """Tests the _ReadStructureFromByteStream function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
+    test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
     test_format._ReadStructureFromByteStream(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
-        self._POINT3D, 'point3d')
+        test_format.POINT3D, 'point3d')
 
     # Test with missing byte stream.
     with self.assertRaises(ValueError):
       test_format._ReadStructureFromByteStream(
-          None, 0, self._POINT3D, 'point3d')
+          None, 0, test_format.POINT3D, 'point3d')
 
     # Test with missing data map type.
     with self.assertRaises(ValueError):
@@ -308,14 +308,14 @@ members:
   def testReadStructureFromFileObject(self):
     """Tests the _ReadStructureFromFileObject function."""
     output_writer = test_lib.TestOutputWriter()
-    test_format = data_format.BinaryDataFormat(
+    test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     test_format._ReadStructureFromFileObject(
-        file_object, 0, self._POINT3D, "point3d")
+        file_object, 0, test_format.POINT3D, "point3d")
 
     file_object = io.BytesIO(
         b'\x03\x00\x00\x00'
@@ -324,7 +324,7 @@ members:
         b'\x06\x00\x00\x00\x07\x00\x00\x00\x08\x00\x00\x00')
 
     test_format._ReadStructureFromFileObject(
-        file_object, 0, self._SHAPE3D, "shape3d")
+        file_object, 0, test_format.SHAPE3D, "shape3d")
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):

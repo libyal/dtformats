@@ -135,7 +135,7 @@ This filename relates to an UUID, for example:
 2576AD2587533C119308541E6149A88D represents 2576AD25-8753-3C11-9308-541E6149A88D
 ....
 
-These files are store in the <<shared_cache_strings_file_fomat,Shared-Cache strings (dsc) file format>>
+These files are store in the <<shared_cache_strings_file_format,Shared-Cache strings (dsc) file format>>
 
 == [[tracev3_file_format]]tracev3 file format
 
@@ -291,7 +291,7 @@ The Catalog process information entry is variable of size and consists of:
 | 0 | 2 | | Entry index
 | 2 | 2 | | [yellow-background]*Unknown*
 | 4 | 2 | | Catalog UUID index of the main UUID
-| 6 | 2 | | Catalog UUID index of the dsc UUID*
+| 6 | 2 | | Catalog UUID index of the dsc UUID
 | 8 | 8 | | First number in proc_id #@#
 | 16 | 4 | | Second number in proc_id #@#
 | 20 | 4 | | Process identifier (pid)

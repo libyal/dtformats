@@ -17,7 +17,9 @@ from dtformats import errors
 class GZipFile(data_format.BinaryDataFile):
   """GZip (.gz) file."""
 
-  _DEFINITION_FILE = 'gzipfile.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('gzipfile.yaml')
 
   _GZIP_SIGNATURE = 0x8b1f
 

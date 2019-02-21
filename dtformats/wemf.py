@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 import os
 
 from dtfabric import errors as dtfabric_errors
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
@@ -43,22 +42,17 @@ class EMFFile(data_format.BinaryDataFile):
 
   FILE_TYPE = 'Windows Enhanced Metafile'
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'emf.yaml')
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('emf.yaml')
 
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
+  _RECORD_TYPE = _FABRIC.CreateDataTypeMap('emf_record_type')
 
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _RECORD_TYPE = _DATA_TYPE_FABRIC.CreateDataTypeMap('emf_record_type')
-
-  _FILE_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('emf_file_header')
+  _FILE_HEADER = _FABRIC.CreateDataTypeMap('emf_file_header')
 
   _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
 
-  _RECORD_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('emf_record_header')
+  _RECORD_HEADER = _FABRIC.CreateDataTypeMap('emf_record_header')
 
   _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
 
@@ -66,10 +60,10 @@ class EMFFile(data_format.BinaryDataFile):
 
   # Here None represents that the record has no additional data.
   _EMF_RECORD_DATA_STRUCT_TYPES = {
-      0x0018: _DATA_TYPE_FABRIC.CreateDataTypeMap('emf_settextcolor'),
-      0x0025: _DATA_TYPE_FABRIC.CreateDataTypeMap('emf_selectobject')}
+      0x0018: _FABRIC.CreateDataTypeMap('emf_settextcolor'),
+      0x0025: _FABRIC.CreateDataTypeMap('emf_selectobject')}
 
-  _EMF_STOCK_OBJECT = _DATA_TYPE_FABRIC.CreateDataTypeMap('emf_stock_object')
+  _EMF_STOCK_OBJECT = _FABRIC.CreateDataTypeMap('emf_stock_object')
 
   def _DebugPrintFileHeader(self, file_header):
     """Prints file header debug information.
@@ -247,11 +241,9 @@ class WMFFile(data_format.BinaryDataFile):
 
   FILE_TYPE = 'Windows Metafile'
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'wmf.yaml')
-
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmf.yaml')
 
   # https://msdn.microsoft.com/en-us/library/cc250370.aspx
 
@@ -313,28 +305,25 @@ class WMFFile(data_format.BinaryDataFile):
       # TODO: map to wmf_map_mode
   ])
 
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_header')
+  _HEADER = _FABRIC.CreateDataTypeMap('wmf_header')
 
   _HEADER_SIZE = _HEADER.GetByteSize()
 
-  _PLACEABLE = _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_placeable')
+  _PLACEABLE = _FABRIC.CreateDataTypeMap('wmf_placeable')
 
   _PLACEABLE_SIZE = _PLACEABLE.GetByteSize()
 
-  _RECORD_TYPE = _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_record_type')
+  _RECORD_TYPE = _FABRIC.CreateDataTypeMap('wmf_record_type')
 
-  _RECORD_HEADER = _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_record_header')
+  _RECORD_HEADER = _FABRIC.CreateDataTypeMap('wmf_record_header')
 
   _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
 
   _WMF_PLACEABLE_SIGNATURE = b'\xd7\xcd\xc6\x9a'
 
-  _MAP_MODE = _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_map_mode')
+  _MAP_MODE = _FABRIC.CreateDataTypeMap('wmf_map_mode')
 
-  _STRETCH_MODE = _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_stretch_mode')
+  _STRETCH_MODE = _FABRIC.CreateDataTypeMap('wmf_stretch_mode')
 
   # record_size == ((record_type >> 8) + 3)
   # DIB: https://msdn.microsoft.com/en-us/library/cc250593.aspx
@@ -343,12 +332,12 @@ class WMFFile(data_format.BinaryDataFile):
   _WMF_RECORD_DATA_STRUCT_TYPES = {
       0x0000: None,
       0x001e: None,
-      0x0103: _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_setmapmode'),
-      0x0107: _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_setstretchbltmode'),
-      0x0127: _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_restoredc'),
-      0x020b: _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_setwindoworg'),
-      0x020c: _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_setwindowext'),
-      0x0b41: _DATA_TYPE_FABRIC.CreateDataTypeMap('wmf_dibstretchblt')}
+      0x0103: _FABRIC.CreateDataTypeMap('wmf_setmapmode'),
+      0x0107: _FABRIC.CreateDataTypeMap('wmf_setstretchbltmode'),
+      0x0127: _FABRIC.CreateDataTypeMap('wmf_restoredc'),
+      0x020b: _FABRIC.CreateDataTypeMap('wmf_setwindoworg'),
+      0x020c: _FABRIC.CreateDataTypeMap('wmf_setwindowext'),
+      0x0b41: _FABRIC.CreateDataTypeMap('wmf_dibstretchblt')}
 
   # Reverse Polish wmf_raster_operation_code
   _WMF_RASTER_OPERATIONS = {

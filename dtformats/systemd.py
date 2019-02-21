@@ -10,7 +10,9 @@ from dtformats import errors
 class SystemdJournalFile(data_format.BinaryDataFile):
   """Systemd journal file."""
 
-  _DEFINITION_FILE = 'systemd.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('systemd.yaml')
 
   _FILE_SIGNATURE = b'LPKSHHRH'
 

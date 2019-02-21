@@ -20,8 +20,9 @@ from dtformats import py2to3
 class BinaryDataFormat(object):
   """Binary data format."""
 
-  # The dtFabric definition file, which must be overwritten by a subclass.
-  _DEFINITION_FILE = None
+  # The dtFabric fabic, which must be set by a subclass using the
+  # ReadDefinitionFile class method.
+  _FABRIC = None
 
   # Preserve the absolute path value of __file__ in case it is changed
   # at run-time.
@@ -40,7 +41,6 @@ class BinaryDataFormat(object):
     super(BinaryDataFormat, self).__init__()
     self._data_type_maps = {}
     self._debug = debug
-    self._fabric = self._ReadDefinitionFile(self._DEFINITION_FILE)
     self._output_writer = output_writer
 
   def _DebugPrintData(self, description, data):
@@ -441,10 +441,16 @@ class BinaryDataFormat(object):
     Returns:
       dtfabric.DataTypeMap: data type map which contains a data type definition,
           such as a structure, that can be mapped onto binary data.
+
+    Raises:
+      RuntimeError: if '_FABRIC' is not set.
     """
+    if not getattr(self, '_FABRIC', None):
+      raise RuntimeError('Missing _FABRIC value')
+
     data_type_map = self._data_type_maps.get(name, None)
     if not data_type_map:
-      data_type_map = self._fabric.CreateDataTypeMap(name)
+      data_type_map = self._FABRIC.CreateDataTypeMap(name)
       self._data_type_maps[name] = data_type_map
 
     return data_type_map
@@ -488,26 +494,6 @@ class BinaryDataFormat(object):
           '{2:s}').format(description, file_offset, read_error))
 
     return data
-
-  def _ReadDefinitionFile(self, filename):
-    """Reads a dtFabric definition file.
-
-    Args:
-      filename (str): name of the dtFabric definition file.
-
-    Returns:
-      dtfabric.DataTypeFabric: data type fabric which contains the data format
-          data type maps of the data type definition, such as a structure, that
-          can be mapped onto binary data or None if no filename is provided.
-    """
-    if not filename:
-      return None
-
-    path = os.path.join(self._DEFINITION_FILES_PATH, filename)
-    with open(path, 'rb') as file_object:
-      definition = file_object.read()
-
-    return dtfabric_fabric.DataTypeFabric(yaml_definition=definition)
 
   # TODO: deprecate in favor of _ReadStructureFromFileObject
   def _ReadStructure(
@@ -645,6 +631,27 @@ class BinaryDataFormat(object):
     raise errors.ParseError(
         'Unable to read {0:s} at offset: 0x{1:08x}'.format(
             description, file_offset))
+
+  @classmethod
+  def ReadDefinitionFile(cls, filename):
+    """Reads a dtFabric definition file.
+
+    Args:
+      filename (str): name of the dtFabric definition file.
+
+    Returns:
+      dtfabric.DataTypeFabric: data type fabric which contains the data format
+          data type maps of the data type definition, such as a structure, that
+          can be mapped onto binary data or None if no filename is provided.
+    """
+    if not filename:
+      return None
+
+    path = os.path.join(cls._DEFINITION_FILES_PATH, filename)
+    with open(path, 'rb') as file_object:
+      definition = file_object.read()
+
+    return dtfabric_fabric.DataTypeFabric(yaml_definition=definition)
 
 
 class BinaryDataFile(BinaryDataFormat):

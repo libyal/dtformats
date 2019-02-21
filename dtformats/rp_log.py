@@ -9,7 +9,9 @@ from dtformats import data_format
 class RestorePointLogFile(data_format.BinaryDataFile):
   """Windows Restore Point rp.log file."""
 
-  _DEFINITION_FILE = 'rp_log.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('rp_log.yaml')
 
   # TODO: implement an item based lookup.
   _EVENT_TYPES = {

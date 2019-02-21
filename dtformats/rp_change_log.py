@@ -33,7 +33,9 @@ class ChangeLogEntry(object):
 class RestorePointChangeLogFile(data_format.BinaryDataFile):
   """Windows Restore Point change.log file."""
 
-  _DEFINITION_FILE = 'rp_change_log.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('rp_change_log.yaml')
 
   # TODO: refactor rp_change_log_volume_path_record in more generic
   # string record

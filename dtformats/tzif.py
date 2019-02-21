@@ -16,7 +16,9 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
     format_version (int): format version.
   """
 
-  _DEFINITION_FILE = 'tzif.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('tzif.yaml')
 
   # TODO: move path into structure.
 

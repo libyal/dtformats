@@ -10,7 +10,9 @@ from dtformats import errors
 class RecyclerInfo2File(data_format.BinaryDataFile):
   """Windows Recycler INFO2 file."""
 
-  _DEFINITION_FILE = 'recycler.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('recycler.yaml')
 
   _DEBUG_INFO_FILE_ENTRY = [
       ('original_filename', 'Original filename (ANSI)', '_FormatANSIString'),

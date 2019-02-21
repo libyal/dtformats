@@ -14,7 +14,9 @@ from dtformats import errors
 class CupsIppFile(data_format.BinaryDataFile):
   """CUPS Internet Printing Protocol (IPP) file."""
 
-  _DEFINITION_FILE = 'cups_ipp.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('cups_ipp.yaml')
 
   _DELIMITER_TAG_OPERATION_ATTRIBUTES = 0x01
   _DELIMITER_TAG_JOB_ATTRIBUTES = 0x02

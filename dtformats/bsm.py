@@ -10,7 +10,9 @@ from dtformats import errors
 class BSMEventAuditingFile(data_format.BinaryDataFile):
   """BSM event auditing file."""
 
-  _DEFINITION_FILE = 'bsm.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('bsm.yaml')
 
   _EVENT_TYPES = {
       0: 'indir system call',

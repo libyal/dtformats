@@ -10,7 +10,9 @@ from dtformats import errors
 class AppleSystemLogFile(data_format.BinaryDataFile):
   """Apple System Log (.asl) file."""
 
-  _DEFINITION_FILE = 'asl.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('asl.yaml')
 
   _FILE_SIGNATURE = b'ASL DB\x00\x00\x00\x00\x00\x00'
 

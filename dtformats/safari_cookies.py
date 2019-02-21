@@ -14,7 +14,9 @@ from dtformats import errors
 class BinaryCookiesFile(data_format.BinaryDataFile):
   """Safari Cookies (Cookies.binarycookies) file."""
 
-  _DEFINITION_FILE = 'safari_cookies.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('safari_cookies.yaml')
 
   _SIGNATURE = b'cook'
 

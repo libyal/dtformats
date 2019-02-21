@@ -53,7 +53,9 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     size (int): size of the CPIO file data.
   """
 
-  _DEFINITION_FILE = 'cpio.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('cpio.yaml')
 
   # TODO: move path into structure.
 

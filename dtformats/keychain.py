@@ -50,7 +50,9 @@ class KeychainDatabaseTable(object):
 class KeychainDatabaseFile(data_format.BinaryDataFile):
   """MacOS keychain database file."""
 
-  _DEFINITION_FILE = 'keychain.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('keychain.yaml')
 
   _FILE_SIGNATURE = b'kych'
 

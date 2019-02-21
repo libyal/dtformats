@@ -12,7 +12,10 @@ from dtformats import errors
 class DSCFile(data_format.BinaryDataFile):
   """Shared-Cache Strings (dsc) file."""
 
-  _DEFINITION_FILE = 'unified_logging.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'unified_logging.yaml')
 
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
@@ -120,7 +123,10 @@ class DSCFile(data_format.BinaryDataFile):
 class TraceV3File(data_format.BinaryDataFile):
   """Apple Unified Logging and Activity Tracing (tracev3) file."""
 
-  _DEFINITION_FILE = 'unified_logging.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'unified_logging.yaml')
 
   _DEBUG_INFO_CATALOG = [
       ('sub_system_strings_offset', 'Sub system strings offset',
@@ -352,7 +358,10 @@ class TraceV3File(data_format.BinaryDataFile):
 class UUIDTextFile(data_format.BinaryDataFile):
   """Apple Unified Logging and Activity Tracing (uuidtext) file."""
 
-  _DEFINITION_FILE = 'unified_logging.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'unified_logging.yaml')
 
   _DEBUG_INFO_FILE_FOOTER = [
       ('library_path', 'Library path', '_FormatString')]

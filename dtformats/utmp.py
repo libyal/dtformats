@@ -10,7 +10,9 @@ from dtformats import errors
 class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
   """A Linux libc6 utmp file."""
 
-  _DEFINITION_FILE = 'utmp.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('utmp.yaml')
 
   _EMPTY_IP_ADDRESS = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
@@ -126,7 +128,9 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
 class MacOSXUtmpxFile(data_format.BinaryDataFile):
   """A Mac OS X 10.5 utmpx file."""
 
-  _DEFINITION_FILE = 'utmp.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('utmp.yaml')
 
   _TYPES_OF_LOGIN = {
       0: 'EMPTY',

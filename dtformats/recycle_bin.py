@@ -18,7 +18,9 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
     original_size (int): original size of the deleted file.
   """
 
-  _DEFINITION_FILE = 'recycle_bin.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('recycle_bin.yaml')
 
   _SUPPORTED_FORMAT_VERSION = (1, 2)
 

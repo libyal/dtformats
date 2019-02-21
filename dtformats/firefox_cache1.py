@@ -12,7 +12,9 @@ from dtformats import errors
 class CacheMapFile(data_format.BinaryDataFile):
   """Firefox cache version 1 map file."""
 
-  _DEFINITION_FILE = 'firefox_cache1.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('firefox_cache1.yaml')
 
   _DEBUG_INFO_FILE_HEADER = [
       ('major_format_version', 'Major format version',
@@ -121,7 +123,9 @@ class CacheMapFile(data_format.BinaryDataFile):
 class CacheBlockFile(data_format.BinaryDataFile):
   """Firefox cache version 1 block file."""
 
-  _DEFINITION_FILE = 'firefox_cache1.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('firefox_cache1.yaml')
 
   _DEBUG_INFO_CACHE_ENTRY = [
       ('major_format_version', 'Major format version',

@@ -9,7 +9,6 @@ import logging
 import os
 
 from dtfabric import errors as dtfabric_errors
-from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import data_format
 from dtformats import errors
@@ -201,7 +200,9 @@ class DataBlockFile(data_format.BinaryDataFile):
     number_of_entries (int): number of entries.
   """
 
-  _DEFINITION_FILE = 'chrome_cache.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('chrome_cache.yaml')
 
   # TODO: update empty, hints, updating and user.
 
@@ -463,7 +464,9 @@ class IndexFile(data_format.BinaryDataFile):
     index_table (dict[str, object]): index table.
   """
 
-  _DEFINITION_FILE = 'chrome_cache.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('chrome_cache.yaml')
 
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
@@ -660,16 +663,11 @@ class IndexFile(data_format.BinaryDataFile):
 class ChromeCacheParser(object):
   """Chrome Cache parser."""
 
-  _DATA_TYPE_FABRIC_DEFINITION_FILE = os.path.join(
-      os.path.dirname(__file__), 'chrome_cache.yaml')
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('chrome_cache.yaml')
 
-  with open(_DATA_TYPE_FABRIC_DEFINITION_FILE, 'rb') as file_object:
-    _DATA_TYPE_FABRIC_DEFINITION = file_object.read()
-
-  _DATA_TYPE_FABRIC = dtfabric_fabric.DataTypeFabric(
-      yaml_definition=_DATA_TYPE_FABRIC_DEFINITION)
-
-  _UINT32LE = _DATA_TYPE_FABRIC.CreateDataTypeMap('uint32le')
+  _UINT32LE = _FABRIC.CreateDataTypeMap('uint32le')
 
   _UINT32LE_SIZE = _UINT32LE.GetByteSize()
 

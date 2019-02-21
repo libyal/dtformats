@@ -78,7 +78,9 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     recovered_entries (list[LNKFileEntry]): recovered LNK file entries.
   """
 
-  _DEFINITION_FILE = 'jump_list.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('jump_list.yaml')
 
   # TODO: debug print pin status.
   _DEBUG_INFO_DEST_LIST_ENTRY = [
@@ -299,7 +301,9 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     recovered_entries (list[LNKFileEntry]): recovered LNK file entries.
   """
 
-  _DEFINITION_FILE = 'jump_list.yaml'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('jump_list.yaml')
 
   _FILE_FOOTER_SIGNATURE = 0xbabffbab
 
