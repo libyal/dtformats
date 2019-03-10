@@ -20,7 +20,7 @@ from dtformats import py2to3
 class BinaryDataFormat(object):
   """Binary data format."""
 
-  # The dtFabric fabic, which must be set by a subclass using the
+  # The dtFabric fabric, which must be set by a subclass using the
   # ReadDefinitionFile class method.
   _FABRIC = None
 

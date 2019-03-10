@@ -21,6 +21,7 @@ decompressor
 dev
 dib
 dpkg
+dsc
 dtfabric
 dtformats
 fileio

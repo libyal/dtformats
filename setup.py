@@ -146,6 +146,7 @@ else:
           if python_package == 'python3':
             lines.extend([
                 '%{python3_sitelib}/dtformats/*.py',
+                '%{python3_sitelib}/dtformats/*.yaml',
                 '%{python3_sitelib}/dtformats*.egg-info/*',
                 '',
                 '%exclude %{_prefix}/share/doc/*',
@@ -154,6 +155,7 @@ else:
           else:
             lines.extend([
                 '%{python2_sitelib}/dtformats/*.py',
+                '%{python2_sitelib}/dtformats/*.yaml',
                 '%{python2_sitelib}/dtformats*.egg-info/*',
                 '',
                 '%exclude %{_prefix}/share/doc/*',
