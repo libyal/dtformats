@@ -46,6 +46,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.2 | J.B. Metz | February 2019 | Additional changes based on work by Y. Khatri.
 | 0.0.3 | Y. Khatri | February 2019 | Additional changes based prior work.
 | 0.0.4 | J.B. Metz | February 2019 | Additional changes based on format analysis.
+| 0.0.5 | J.B. Metz | March 2019 | Additional changes based on format analysis.
 |===
 
 :numbered:
@@ -435,9 +436,9 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 | "bv4$" | | end of LZ4 compressed or uncompressed block
 |===
 
-=== Firehose chunk
+=== [[tracev3_filehose_chunk]]Firehose chunk
 
-The Firehose chunk is variable of size and consists of:
+The firehose chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -450,22 +451,32 @@ The Firehose chunk is variable of size and consists of:
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | Collapsed
-| 29 | 3 | 0 | *Unused/Reserved*
-| 32 | 2 | | size of public data (size_pub_data)
-| 34 | 2 | | virtual offset of private data (if no private data, this is 0x1000)
-| 36 | 2 | | [yellow-background] *Unknown*
-| 38 | 2 | | [yellow-background] *Unknown*
-| 40 | 8 | | continuous time base
-| 48 | size_pub_data | | public data buffer (contains one or more tracev3_chunk_firehose events)
-| ... | ... | private data strings (can be zero bytes)
-
-[Note]
-It appears that the size of a firehose chunk can grow to 4096 bytes, with public data as the header of that 4096 block and private data at the end (as a footer). 'Collapsed' indicates if the empty bytes in between have been removed to shrink the block.
-Size of private data can be calculated by subtracting virtual offset from 4096.
-
-This chunk is usually 64-bit aligned with padding, but at times it is not! It is unknown if there is a flag to control this behavior. 
-
+| 29 | 3 | 0 | [yellow-background]*Unknown (Reserved)*
+| 32 | 2 | | Public data size (size_pub_data)
+| 34 | 2 | | Private data virtual offset +
+Contains 0x1000 if there is no private data
+| 36 | 2 | | [yellow-background]*Unknown*
+| 38 | 2 | | [yellow-background]*Unknown*
+| 40 | 8 | | Base continuous time for events in the firehose chunk
+4+|
+| 48 | public data size | | public data +
+Contains one or more tracev3_chunk_firehose events
+| ... | ... | Private strings
 |===
+
+[NOTE]
+It appears that the size of a firehose chunk can grow to 4096 bytes, with
+public data as the header of that 4096 block and private data at the end (as a
+footer).
+
+[NOTE]
+'Collapsed' indicates if the empty bytes in between have been removed to shrink
+the block. Size of private data can be calculated by subtracting virtual offset
+from 4096.
+
+[NOTE]
+This chunk is usually 64-bit aligned with padding, but at times it is not. It
+is unknown if there is a flag to control this behavior.
 
 ....
 tracev3_chunk_firehose
@@ -487,26 +498,122 @@ firehose chunk:
 0x00000010  d0 0f 00 10 00 00 00 03  00 00 00 00 00 00 00 00  ................
 ....
 
-A Firehose tracepoint (tracev3_chunk_firehose) is variable of size and consists of:
+=== [[tracev3_filehose_tracepoint]]Firehose tracepoint
+
+A firehose tracepoint (tracev3_chunk_firehose) is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | | [yellow-background]*Unknown (Log type?)*
-| 2 | 2 | | [yellow-background]*Unknown (Flags?)*
+| 0 | 1 | | [yellow-background]*Unknown*
+| 1 | 1 | | [yellow-background]*Unknown (Log type?)* +
+See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
+| 2 | 2 | | Flags +
+See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
 | 4 | 4 | | Format string location
 | 8 | 8 | | Thread identifier
-| 16 | 6 | | Continuous time (relative to value in tracev3_chunk_log_preamble)
-| 22 | 2 | | Data size (to follow)
-| 24 | ... | | Variable size data consisting of various fields, depending on flags and log type
+| 16 | 6 | | Continuous time delta +
+Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
+| 22 | 2 | | Data size
+4+| _Start of data_
+| 24 | ... | | Data which contents depends on various values such as log type and flags
+4+| _End of data_
 | ... | ... | | 64-bit alignment padding
-
 |===
+
+==== Activity firehose tracepoint
+
+An activity firehose tracepoint consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | [yellow-background]*Unknown*
+| 1 | 1 | | Log type +
+See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
+| 2 | 2 | | Flags +
+See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
+| 4 | 4 | | Format string location
+| 8 | 8 | | Thread identifier
+| 16 | 6 | | Continuous time delta +
+Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
+| 22 | 2 | | Data size
+4+| _Start of data_
+| 24 | 4 | | [yellow-background]*Unknown (activity identifier)*
+| 28 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+4+| _Flags 0x0010 is set_
+| ... | 8 | | Process identifier (PID)
+4+| _Flags 0x0001 is set_
+| ... | 4 | | [yellow-background]*Unknown (activity identifier)*
+| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+4+| _Flags 0x0200 is set_
+| ... | 4 | | [yellow-background]*Unknown (activity identifier)*
+| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+4+|
+| ... | 4 | | [yellow-background]*Unknown (Message string reference)*
+4+| _Flags 0x0002 and 0x0008 are set_
+| ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
+4+| _Flags 0x0008 is set_
+| ... | 16 | | [yellow-background]*Unknown (uuid)*
+4+|
+| ... | ... | | [yellow-background]*Unknown (data?)*
+4+| _End of data_
+| ... | ... | | 64-bit alignment padding
+|===
+
+==== Non-activity firehose tracepoint
+
+A non-activity firehose tracepoint (event) consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | [yellow-background]*Unknown*
+| 1 | 1 | | Log type +
+See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
+| 2 | 2 | | Flags +
+See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
+| 4 | 4 | | Format string location
+| 8 | 8 | | Thread identifier
+| 16 | 6 | | Continuous time delta +
+Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
+| 22 | 2 | | Data size
+4+| _Start of data_
+4+| _Flags 0x0001 is set_
+| ... | 4 | | [yellow-background]*Unknown (activity identifier)*
+| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+4+| _Flags 0x0100 is set_
+| ... | 2 | | Private strings offset
+Contains the offset relative to start of the private strings in the <<tracev3_filehose_chunk,Firehose chunk>>
+| ... | 2 | | Private strings size
+4+|
+| ... | 4 | | [yellow-background]*Unknown (Message string reference)*
+4+| _Flags 0x0002 and 0x0008 are set_
+| ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
+4+| _Flags 0x0008 is set_
+| ... | 16 | | [yellow-background]*Unknown (uuid)*
+4+| _Flags 0x0200 is set_
+| ... | 2 | | Sub system value
+4+| _Flags 0x0400 is set_
+| ... | 1 | | TTL value
+4+| _Flags 0x0800 is set_
+| ... | 2 | | Data reference value
+4+| _Log type 0x80 is set_
+| ... | 8 | | [yellow-background]*Unknown (signpost string size)*
+4+| _Flags 0x8000 is set_
+| ... | 4 | | Signpost name reference value
+4+|
+| ... | ... | | [yellow-background]*Unknown (data?)*
+4+| _End of data_
+| ... | ... | | 64-bit alignment padding
+|===
+
+==== Notes
 
 ....
 Old notes:
 
-A Firehose tracepoint (firehose_tracepoint) is variable of size and consists of:
+A firehose tracepoint (firehose_tracepoint) is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -598,6 +705,51 @@ opendirectoryd (build 483.200) launched...
 
 ....
 
+==== [[tracev3_firehose_tracepoint_log_type]]Firehose tracepoint log type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x01 | | [yellow-background]*Unknown (Info / Activity)*
+| 0x02 | | Debug
+| | |
+| 0x10 | | Error
+| 0x11 | | Fault
+| | |
+| 0x80 | | [yellow-background]*Unknown (Signpost flag? / Is event?)*
+| 0x81 | | [yellow-background]*Unknown (Process start)*
+| 0x82 | | [yellow-background]*Unknown (Process end)*
+| 0xc0 | | [yellow-background]*Unknown (System)*
+|===
+
+[yellow-background]*Other values are marked as "Default"?*
+
+==== [[tracev3_firehose_tracepoint_flags]]Firehose tracepoint flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0001 | | Has activity identifier or sub system value +
+An activity or non-activity firehose tracepoint has an activity identifier
+| 0x0002 | | Message strings are stored in an uuidtext file
+| 0x0004 | | Message strings are stored in a dsc file
+| 0x0008 | | Message strings are stored in an alternate uuidtext file
+| 0x0010 | | [yellow-background]*Unknown (has_unique_pid)*
+| | |
+| 0x0100 | | Has private string range value +
+A non-activity firehose tracepoint has a private string range value
+| 0x0200 | | Has other activity identifier or sub system value +
+An activity firehose tracepoint has an other activity identifier +
+A non-activity firehose tracepoint has a sub system value
+| 0x0400 | | Has TTL value +
+A non-activity firehose tracepoint has a TTL value
+| 0x0800 | | Has data reference value +
+A non-activity firehose tracepoint has a data reference value to a 0x0602 BLOB
+| | |
+| 0x8000 | | Has signpost name reference value +
+A non-activity firehose tracepoint has a signpost name reference value
+|===
+
 === Oversize chunk
 
 The Oversize chunk is variable of size and consists of:
@@ -640,7 +792,7 @@ The Statedump chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 8 | | Activity Id
-| 48 | 16 | | UUID 
+| 48 | 16 | | UUID
 | 64 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 3=data))*
 | 68 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
 | 72 | 64 | | [yellow-background]*Unknown (Object type string 1)*

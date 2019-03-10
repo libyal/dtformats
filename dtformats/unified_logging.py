@@ -128,6 +128,8 @@ class TraceV3File(data_format.BinaryDataFile):
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
       'unified_logging.yaml')
 
+  _CHUNK_TAG_FIREHOSE = 0x00006001
+
   _DEBUG_INFO_CATALOG = [
       ('sub_system_strings_offset', 'Sub system strings offset',
        '_FormatIntegerAsHexadecimal8'),
@@ -150,6 +152,31 @@ class TraceV3File(data_format.BinaryDataFile):
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
+
+  _DEBUG_INFO_FIREHOSE_HEADER = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('public_data_size', 'Public data size', '_FormatIntegerAsDecimal'),
+      ('private_data_virtual_offset', 'Private data virtual offset',
+       '_FormatIntegerAsHexadecimal4'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
+      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal4'),
+      ('base_continous_time', 'Base continous time', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_FIREHOSE_TRACEPOINT = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal2'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
+      ('format_string_location', 'Format string location',
+       '_FormatIntegerAsHexadecimal8'),
+      ('thread_identifier', 'Thread identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('continous_time_lower', 'Continous time (lower 32-bit)',
+       '_FormatIntegerAsDecimal'),
+      ('continous_time_upper', 'Continous time (upper 16-bit)',
+       '_FormatIntegerAsDecimal'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_LZ4_BLOCK_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
@@ -205,31 +232,6 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     return stream.decode('ascii')
 
-  def _ReadChunkHeader(self, file_object, file_offset):
-    """Reads a chunk header.
-
-    Args:
-      file_object (file): file-like object.
-      file_offset (int): offset of the chunk header relative to the start
-          of the file.
-
-    Returns:
-      tracev3_chunk_header: a chunk header.
-
-    Raises:
-      ParseError: if the chunk header cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('tracev3_chunk_header')
-
-    chunk_header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'chunk header')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          chunk_header, self._DEBUG_INFO_CHUNK_HEADER)
-
-    return chunk_header
-
   def _ReadCatalog(self, file_object, file_offset, chunk_header):
     """Reads a catalog.
 
@@ -254,6 +256,31 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintStructureObject(catalog, self._DEBUG_INFO_CATALOG)
+
+  def _ReadChunkHeader(self, file_object, file_offset):
+    """Reads a chunk header.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the chunk header relative to the start
+          of the file.
+
+    Returns:
+      tracev3_chunk_header: a chunk header.
+
+    Raises:
+      ParseError: if the chunk header cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('tracev3_chunk_header')
+
+    chunk_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'chunk header')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          chunk_header, self._DEBUG_INFO_CHUNK_HEADER)
+
+    return chunk_header
 
   def _ReadChunkSet(self, file_object, file_offset, chunk_header):
     """Reads a chunk set.
@@ -313,17 +340,81 @@ class TraceV3File(data_format.BinaryDataFile):
         self._DebugPrintStructureObject(
             chunkset_chunk_header, self._DEBUG_INFO_CHUNK_HEADER)
 
+      data_end_offset = data_offset + chunkset_chunk_header.chunk_data_size
+      chunkset_chunk_data = uncompressed_data[data_offset:data_end_offset]
       if self._debug:
-        self._DebugPrintData('Chunk data', uncompressed_data[
-            data_offset:data_offset + chunkset_chunk_header.chunk_data_size])
+        self._DebugPrintData('Chunk data', chunkset_chunk_data)
 
-      data_offset += chunkset_chunk_header.chunk_data_size
+      if chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_FIREHOSE:
+        self._ReadFirehoseChunkData(
+            chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
+            data_offset)
+
+      data_offset = data_end_offset
 
       _, alignment = divmod(data_offset, 8)
       if alignment > 0:
         alignment = 8 - alignment
 
       data_offset += alignment
+
+  def _ReadFirehoseChunkData(self, chunk_data, chunk_data_size, data_offset):
+    """Reads firehose chunk data.
+
+    Args:
+      chunk_data (bytes): firehost chunk data.
+      chunk_data_size (int): size of the firehost chunk data.
+      data_offset (int): offset of the firehose chunk relative to the start
+          of the chunk set.
+
+    Raises:
+      ParseError: if the firehost chunk cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('tracev3_firehose_header')
+
+    firehose_header = self._ReadStructureFromByteStream(
+        chunk_data, data_offset, data_type_map, 'firehose header')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          firehose_header, self._DEBUG_INFO_FIREHOSE_HEADER)
+
+    chunk_data_offset = 32
+    while chunk_data_offset < chunk_data_size:
+      firehose_tracepoint = self._ReadFirehoseTracepointData(
+          chunk_data[chunk_data_offset:], data_offset + chunk_data_offset)
+
+      test_data_offset = chunk_data_offset + 22
+      test_data_end_offset = test_data_offset + firehose_tracepoint.data_size
+      self._DebugPrintData(
+          'Data', chunk_data[test_data_offset:test_data_end_offset])
+
+      chunk_data_offset += 22 + firehose_tracepoint.data_size
+
+  def _ReadFirehoseTracepointData(self, tracepoint_data, data_offset):
+    """Reads firehose tracepoint data.
+
+    Args:
+      tracepoint_data (bytes): firehost tracepoint data.
+      data_offset (int): offset of the firehose tracepoint relative to
+          the start of the chunk set.
+
+    Returns:
+      tracev3_firehose_tracepoint: a firehose tracepoint.
+
+    Raises:
+      ParseError: if the firehost tracepoint cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint')
+
+    firehose_tracepoint = self._ReadStructureFromByteStream(
+        tracepoint_data, data_offset, data_type_map, 'firehose tracepoint')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          firehose_tracepoint, self._DEBUG_INFO_FIREHOSE_TRACEPOINT)
+
+    return firehose_tracepoint
 
   def ReadFileObject(self, file_object):
     """Reads a timezone information file-like object.
