@@ -1133,16 +1133,17 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the event record cannot be read.
     """
+    token_type = self._ReadTokenType(file_object, file_offset)
+    if token_type not in self._HEADER_TOKEN_TYPES:
+      raise errors.ParseError(
+          'Unsupported header token type: 0x{0:02x}'.format(token_type))
+
     token_type, token_data = self._ReadToken(file_object, file_offset)
 
     if self._debug:
       debug_information = self._DEBUG_INFO_TOKEN_DATA.get(token_type, None)
       if debug_information:
         self._DebugPrintStructureObject(token_data, debug_information)
-
-    if token_type not in self._HEADER_TOKEN_TYPES:
-      raise errors.ParseError(
-          'Unsupported header token type: 0x{0:02x}'.format(token_type))
 
     if token_data.format_version != 11:
       raise errors.ParseError('Unsupported format version type: {0:d}'.format(
@@ -1188,10 +1189,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       tuple[int, object]: token type and token data or None if the token
           type is not supported.
     """
-    data_type_map = self._GetDataTypeMap('uint8')
-
-    token_type, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'token type')
+    token_type = self._ReadTokenType(file_object, file_offset)
 
     if self._debug:
       token_type_string = self._TOKEN_TYPES.get(token_type, 'UNKNOWN')
@@ -1209,6 +1207,24 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
           file_object, file_offset + 1, data_type_map, description)
 
     return token_type, token_data
+
+  def _ReadTokenType(self, file_object, file_offset):
+    """Reads a token type.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the token relative to the start of
+          the file-like object.
+
+    Returns:
+      int: token type.
+    """
+    data_type_map = self._GetDataTypeMap('uint8')
+
+    token_type, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'token type')
+
+    return token_type
 
   def ReadFileObject(self, file_object):
     """Reads a BSM event auditing file.
