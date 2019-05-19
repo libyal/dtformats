@@ -11,19 +11,19 @@ L2TBINARIES_TEST_DEPENDENCIES="funcsigs mock pbr six";
 
 DPKG_PYTHON2_DEPENDENCIES="libfwsi-python liblnk-python libolecf-python python-backports.lzma python-dfdatetime python-dtfabric python-lz4 python-yaml";
 
-DPKG_PYTHON2_TEST_DEPENDENCIES="python-coverage python-funcsigs python-mock python-pbr python-six";
+DPKG_PYTHON2_TEST_DEPENDENCIES="python-coverage python-funcsigs python-mock python-pbr python-setuptools python-six";
 
 DPKG_PYTHON3_DEPENDENCIES="libfwsi-python3 liblnk-python3 libolecf-python3 python3-dfdatetime python3-dtfabric python3-lz4 python3-yaml";
 
-DPKG_PYTHON3_TEST_DEPENDENCIES="python3-mock python3-pbr python3-setuptools python3-six";
+DPKG_PYTHON3_TEST_DEPENDENCIES="python3-distutils python3-mock python3-pbr python3-setuptools python3-six";
 
 RPM_PYTHON2_DEPENDENCIES="libfwsi-python2 liblnk-python2 libolecf-python2 python2-backports-lzma python2-dfdatetime python2-dtfabric python2-lz4 python2-pyyaml";
 
-RPM_PYTHON2_TEST_DEPENDENCIES="python2-funcsigs python2-mock python2-pbr python2-six";
+RPM_PYTHON2_TEST_DEPENDENCIES="python2-funcsigs python2-mock python2-pbr python2-setuptools python2-six";
 
 RPM_PYTHON3_DEPENDENCIES="libfwsi-python3 liblnk-python3 libolecf-python3 python3-dfdatetime python3-dtfabric python3-lz4 python3-pyyaml";
 
-RPM_PYTHON3_TEST_DEPENDENCIES="python3-mock python3-pbr python3-six";
+RPM_PYTHON3_TEST_DEPENDENCIES="python3-mock python3-pbr python3-setuptools python3-six";
 
 # Exit on error.
 set -e;
@@ -96,7 +96,7 @@ then
 
 	# Install add-apt-repository and locale-gen.
 	docker exec ${CONTAINER_NAME} apt-get update -q;
-	docker exec ${CONTAINER_NAME} sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y locales software-properties-common";
+	docker exec -e "DEBIAN_FRONTEND=noninteractive" ${CONTAINER_NAME} sh -c "apt-get install -y locales software-properties-common";
 
 	# Add additional apt repositories.
 	if test -n "${TOXENV}";
@@ -119,11 +119,18 @@ then
 	if test -n "${TOXENV}";
 	then
 		DPKG_PACKAGES="build-essential liblzma-dev python${TRAVIS_PYTHON_VERSION} python${TRAVIS_PYTHON_VERSION}-dev tox";
-
 	else
 		DPKG_PACKAGES="";
 
-		if test ${TARGET} = "pylint";
+		if test "${TARGET}" = "coverage";
+		then
+			DPKG_PACKAGES="${DPKG_PACKAGES} curl git";
+
+		elif test "${TARGET}" = "jenkins2" || test "${TARGET}" = "jenkins3";
+		then
+			DPKG_PACKAGES="${DPKG_PACKAGES} sudo";
+
+		elif test ${TARGET} = "pylint";
 		then
 			DPKG_PACKAGES="${DPKG_PACKAGES} python3-distutils pylint";
 		fi
@@ -134,19 +141,7 @@ then
 			DPKG_PACKAGES="${DPKG_PACKAGES} python3 ${DPKG_PYTHON3_DEPENDENCIES} ${DPKG_PYTHON3_TEST_DEPENDENCIES}";
 		fi
 	fi
-	docker exec ${CONTAINER_NAME} sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y ${DPKG_PACKAGES}";
+	docker exec -e "DEBIAN_FRONTEND=noninteractive" ${CONTAINER_NAME} sh -c "apt-get install -y ${DPKG_PACKAGES}";
 
 	docker cp ../dtformats ${CONTAINER_NAME}:/
-
-elif test ${TRAVIS_OS_NAME} = "linux" && test ${TARGET} != "jenkins";
-then
-	sudo add-apt-repository ppa:gift/dev -y;
-	sudo apt-get update -q;
-
-	if test ${TRAVIS_PYTHON_VERSION} = "2.7";
-	then
-		sudo apt-get install -y ${DPKG_PYTHON2_DEPENDENCIES} ${DPKG_PYTHON2_TEST_DEPENDENCIES};
-	else
-		sudo apt-get install -y ${DPKG_PYTHON3_DEPENDENCIES} ${DPKG_PYTHON3_TEST_DEPENDENCIES};
-	fi
 fi
