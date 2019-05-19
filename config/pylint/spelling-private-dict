@@ -3,6 +3,7 @@ args
 asl
 automaticdestinations
 avalanching
+backports
 binarycookies
 bool
 boolean
@@ -28,6 +29,7 @@ fileio
 filename
 filenames
 filetime
+firehose
 gid
 gz
 gzip
@@ -42,6 +44,7 @@ keychaindatabasetable
 lnk
 lnkfileentry
 lru
+lzma
 macos
 mappingerror
 metadata
@@ -73,6 +76,7 @@ sys
 systemd
 systemtime
 timestamp
+tracepoint
 ttinfo
 tuple
 tzif

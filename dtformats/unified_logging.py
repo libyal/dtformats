@@ -362,13 +362,13 @@ class TraceV3File(data_format.BinaryDataFile):
     """Reads firehose chunk data.
 
     Args:
-      chunk_data (bytes): firehost chunk data.
-      chunk_data_size (int): size of the firehost chunk data.
+      chunk_data (bytes): firehose chunk data.
+      chunk_data_size (int): size of the firehose chunk data.
       data_offset (int): offset of the firehose chunk relative to the start
           of the chunk set.
 
     Raises:
-      ParseError: if the firehost chunk cannot be read.
+      ParseError: if the firehose chunk cannot be read.
     """
     data_type_map = self._GetDataTypeMap('tracev3_firehose_header')
 
@@ -395,7 +395,7 @@ class TraceV3File(data_format.BinaryDataFile):
     """Reads firehose tracepoint data.
 
     Args:
-      tracepoint_data (bytes): firehost tracepoint data.
+      tracepoint_data (bytes): firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint relative to
           the start of the chunk set.
 
@@ -403,7 +403,7 @@ class TraceV3File(data_format.BinaryDataFile):
       tracev3_firehose_tracepoint: a firehose tracepoint.
 
     Raises:
-      ParseError: if the firehost tracepoint cannot be read.
+      ParseError: if the firehose tracepoint cannot be read.
     """
     data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint')
 

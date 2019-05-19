@@ -1104,6 +1104,9 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     Returns:
       str: integer formatted as a net type .
+
+    Raises:
+      ParseError: if net type is not supported.
     """
     if integer not in (4, 16):
       raise errors.ParseError('Unsupported net type: {0:d}'.format(integer))
