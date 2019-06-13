@@ -7,6 +7,7 @@ Analysis of the Jump lists format
 :numbered!:
 [abstract]
 == Summary
+
 Jump lists are a Windows Taskbar feature, introduced in Windows 7, that gives
 the user quick access to recently accessed application files and actions.
 
@@ -15,6 +16,7 @@ specification.
 
 [preface]
 == Document information
+
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
@@ -25,8 +27,9 @@ specification.
 
 [preface]
 == License
+
 ....
-Copyright (C) 2014-2016, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2014-2019, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -36,6 +39,7 @@ in the section entitled "GNU Free Documentation License".
 
 [preface]
 == Revision history
+
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
@@ -44,10 +48,12 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.3 | J.B. Metz | August 2015 | Additional information about Jump lists stored in the Windows Registry.
 | 0.0.4 | J.B. Metz | February 2016 | Additional information about version 3 automatic destinations jump lists with thanks to E. Zimmerman.
 | 0.0.5 | J.B. Metz | March 2016 | Additional information about version 4 automatic destinations jump lists with thanks to E. Zimmerman.
+| 0.0.6 | J.B. Metz | June 2019 | Corrected typos and formatting changes.
 |===
 
 :numbered:
 == Overview
+
 The automatic and custom destinations Jump lists are a Windows Taskbar feature,
 introduced in Windows 7, that gives the user quick access to recently accessed
 application files and actions.
@@ -69,6 +75,7 @@ Additionally Jump lists can be stored in:
 * Explorer ProgramsCache Registry values see: https://github.com/libyal/winreg-kb/blob/master/documentation/Programs%20Cache%20values.asciidoc[[WINREG-KB\]].
 
 == Automatic destinations files
+
 The automatic destinations files are stored in the AutomaticDestinations sub
 directory and have the extension .automaticDestinations-ms. The automatic
 destinations file uses the Object Linking and Embedding (OLE) Compound File
@@ -80,18 +87,20 @@ The automatic destinations OLECF file contains the following streams:
 * Hexadecimal numbered streams in the form "^[1-9a-f][0-9a-f]*$"
 
 === DestList stream
+
 The DestList stream consists of:
 
 * A DestList header
 * An array of DestList entries
 
 ==== DestList header
+
 The DestList header is 32 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | 1 | Fomrat version +
+| 0 | 4 | 1 | Format version +
 See section: <<destlist_format_versions,Format versions>>
 | 4 | 4 | | Number of entries
 | 8 | 4 | | Number of pinned entries
@@ -117,6 +126,7 @@ See section: <<destlist_format_versions,Format versions>>
 ==== DestList entry
 
 ===== DestList entry - version 1
+
 The DestList entry - version 1 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -153,6 +163,7 @@ The path points to:
 * A XML .library-ms file
 
 ===== DestList entry - version 3
+
 The DestList entry - version 3 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -190,10 +201,12 @@ Contains a UTF-16 little-endian string without an end-of-string character
 The differences between the version 1 and 3 have been highlighted in bold.
 
 === Hexadecimal numbered streams
+
 A hexadecimal numbered streams contains a Windows Shortcut (LNK) file. For more
 information about the LNK format see: https://github.com/libyal/liblnk/blob/master/documentation/Windows%20Shortcut%20File%20(LNK)%20format.asciidoc[[LIBLNK\]].
 
 == Custom destinations files
+
 The custom destinations files are stored in the CustomDestinations sub
 directory and have the extension .customDestinations-ms.
 
@@ -205,6 +218,7 @@ The custom destinations file consists of:
 * [yellow-background]*Trailing data?*
 
 === File header
+
 The custom destinations file header is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -283,6 +297,7 @@ The file size in the Windows Shortcut (LNK) file data stream is not reliable
 for indicating the size of the data stream (file).
 
 === File footer
+
 The custom destinations file footer is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -292,6 +307,7 @@ The custom destinations file footer is 4 bytes of size and consists of:
 |===
 
 === Notes
+
 [yellow-background]*Trailing data?*
 
 [cols="1,1,1,5",options="header"]
@@ -311,7 +327,9 @@ Contains a Windows Shortcut (LNK) file. For more information about the LNK forma
 |===
 
 == Notes
+
 === .library-ms
+
 ....
 <?xml version="1.0" encoding="UTF-8"?>
 <libraryDescription xmlns="http://schemas.microsoft.com/windows/2009/library">
@@ -345,6 +363,7 @@ Contains a Windows Shortcut (LNK) file. For more information about the LNK forma
 ....
 
 === Application identifiers
+
 http://www.hexacorn.com/blog/2013/04/30/jumplists-file-names-and-appid-calculator/
 
 Where the filename starts with the identifier of the corresponding application e.g.
@@ -394,6 +413,7 @@ Where %ID% a 64-bit CRC of full path of executable file of the corresponding app
 
 [appendix]
 == GNU Free Documentation License
+
 Version 1.3, 3 November 2008
 Copyright © 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc.
 <http://fsf.org/>
@@ -402,6 +422,7 @@ Everyone is permitted to copy and distribute verbatim copies of this license
 document, but changing it is not allowed.
 
 === 0. PREAMBLE
+
 The purpose of this License is to make a manual, textbook, or other functional
 and useful document "free" in the sense of freedom: to assure everyone the
 effective freedom to copy and redistribute it, with or without modifying it,
@@ -422,6 +443,7 @@ recommend this License principally for works whose purpose is instruction or
 reference.
 
 === 1. APPLICABILITY AND DEFINITIONS
+
 This License applies to any manual or other work, in any medium, that contains
 a notice placed by the copyright holder saying it can be distributed under the
 terms of this License. Such a notice grants a world-wide, royalty-free license,
@@ -500,6 +522,7 @@ disclaiming warranties: any other implication that these Warranty Disclaimers
 may have is void and has no effect on the meaning of this License.
 
 === 2. VERBATIM COPYING
+
 You may copy and distribute the Document in any medium, either commercially or
 noncommercially, provided that this License, the copyright notices, and the
 license notice saying this License applies to the Document are reproduced in
@@ -513,6 +536,7 @@ You may also lend copies, under the same conditions stated above, and you may
 publicly display copies.
 
 === 3. COPYING IN QUANTITY
+
 If you publish printed copies (or copies in media that commonly have printed
 covers) of the Document, numbering more than 100, and the Document's license
 notice requires Cover Texts, you must enclose the copies in covers that carry,
@@ -546,6 +570,7 @@ well before redistributing any large number of copies, to give them a chance to
 provide you with an updated version of the Document.
 
 === 4. MODIFICATIONS
+
 You may copy and distribute a Modified Version of the Document under the
 conditions of sections 2 and 3 above, provided that you release the Modified
 Version under precisely this License, with the Modified Version filling the
@@ -638,6 +663,7 @@ permission to use their names for publicity for or to assert or imply
 endorsement of any Modified Version.
 
 === 5. COMBINING DOCUMENTS
+
 You may combine the Document with other documents released under this License,
 under the terms defined in section 4 above for modified versions, provided that
 you include in the combination all of the Invariant Sections of all of the
@@ -659,6 +685,7 @@ combine any sections Entitled "Acknowledgements", and any sections Entitled
 "Dedications". You must delete all sections Entitled "Endorsements".
 
 === 6. COLLECTIONS OF DOCUMENTS
+
 You may make a collection consisting of the Document and other documents
 released under this License, and replace the individual copies of this License
 in the various documents with a single copy that is included in the collection,
@@ -671,6 +698,7 @@ into the extracted document, and follow this License in all other respects
 regarding verbatim copying of that document.
 
 === 7. AGGREGATION WITH INDEPENDENT WORKS
+
 A compilation of the Document or its derivatives with other separate and
 independent documents or works, in or on a volume of a storage or distribution
 medium, is called an "aggregate" if the copyright resulting from the
@@ -687,6 +715,7 @@ in electronic form. Otherwise they must appear on printed covers that bracket
 the whole aggregate.
 
 === 8. TRANSLATION
+
 Translation is considered a kind of modification, so you may distribute
 translations of the Document under the terms of section 4. Replacing Invariant
 Sections with translations requires special permission from their copyright
@@ -704,6 +733,7 @@ If a section in the Document is Entitled "Acknowledgements", "Dedications", or
 typically require changing the actual title.
 
 === 9. TERMINATION
+
 You may not copy, modify, sublicense, or distribute the Document except as
 expressly provided under this License. Any attempt otherwise to copy, modify,
 sublicense, or distribute it is void, and will automatically terminate your
@@ -727,6 +757,7 @@ your rights have been terminated and not permanently reinstated, receipt of a
 copy of some or all of the same material does not give you any rights to use it.
 
 === 10. FUTURE REVISIONS OF THIS LICENSE
+
 The Free Software Foundation may publish new, revised versions of the GNU Free
 Documentation License from time to time. Such new versions will be similar in
 spirit to the present version, but may differ in detail to address new problems
@@ -744,6 +775,7 @@ License can be used, that proxy's public statement of acceptance of a version
 permanently authorizes you to choose that version for the Document.
 
 === 11. RELICENSING
+
 "Massive Multiauthor Collaboration Site" (or "MMC Site") means any World Wide
 Web server that publishes copyrightable works and also provides prominent
 facilities for anybody to edit those works. A public wiki that anybody can edit
