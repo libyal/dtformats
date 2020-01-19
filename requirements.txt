@@ -1,6 +1,5 @@
 pip >= 7.0.0
 PyYAML >= 3.10
-backports.lzma ; python_version < '3.0'
 dfdatetime >= 20180510
 dtfabric >= 20181128
 libfwsi-python >= 20150606
