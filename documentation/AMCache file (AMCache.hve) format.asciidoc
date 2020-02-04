@@ -54,7 +54,26 @@ On Windows 7 or Server 2008 R2 and later the AMCache can be found in:
 C:\Windows\AppCompat\Programs\Amcache.hve
 ....
 
-The AMCache is stored in a Windows NT Registry File (REGF) format
+The AMCache is stored in a Windows NT Registry File (REGF) format containing
+the following hierarchy of keys.
+
+* Root
+  * DeviceCensus
+  * DriverPackageExtended
+  * InventoryApplication
+  * InventoryApplicationAppV
+  * InventoryApplicationDriver
+  * InventoryApplicationFile
+  * InventoryApplicationFramework
+  * InventoryApplicationShortcut
+  * InventoryDeviceContainer
+  * InventoryDeviceInterface
+  * InventoryDeviceMediaClass
+  * InventoryDevicePnp
+  * InventoryDeviceUsbHubClass
+  * InventoryDriverBinary
+  * InventoryDriverPackage
+  * InventoryMiscellaneousUUPInfo
 
 === Test version
 
@@ -65,13 +84,30 @@ information within this document:
 * Windows 2008 Server R2
 * Windows 10
 
-=== Heading 2
+== DeviceCensus key
 
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Signature
-|===
+[yellow-background]*TODO: describe WritePermissionsCheck value*
+
+== DriverPackageExtended key
+
+[yellow-background]*TODO: describe ProviderVersion value*
+
+[yellow-background]*TODO: add information about keys*
+
+InventoryApplication key
+InventoryApplicationAppV key
+InventoryApplicationDriver key
+InventoryApplicationFile key
+InventoryApplicationFramework key
+InventoryApplicationShortcut key
+InventoryDeviceContainer key
+InventoryDeviceInterface key
+InventoryDeviceMediaClass key
+InventoryDevicePnp key
+InventoryDeviceUsbHubClass key
+InventoryDriverBinary key
+InventoryDriverPackage key
+InventoryMiscellaneousUUPInfo key
 
 :numbered!:
 [appendix]

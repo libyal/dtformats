@@ -3,9 +3,9 @@
 
 from __future__ import unicode_literals
 
-from dtformats import data_format
-
 import pyregf
+
+from dtformats import data_format
 
 
 class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
@@ -20,3 +20,4 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
+    _ = pyregf.file()
