@@ -867,7 +867,7 @@ Sub keys:
 | %ID% | Program identifier (ProgramId)
 |===
 
-=== Program Sub key
+=== Program sub key
 
 Values:
 
@@ -878,7 +878,7 @@ Values:
 | 1 | REG_SZ | Version
 | 2 | REG_SZ | Publisher
 | 3 | REG_SZ | Language code +
-Contains a LCID or an empty string if not set
+Contains a LCID or an empty string or "0" if not set
 3+|
 | 5 | REG_DWORD | [yellow-background]*Unknown?* +
 Seen: 1
