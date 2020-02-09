@@ -51,7 +51,7 @@ def Main():
     print('')
     return False
 
-  amcache_file = amcache.AMCacheFile(
+  amcache_file = amcache.WindowsAMCacheFile(
       debug=options.debug, output_writer=output_writer)
   amcache_file.Open(options.source)
 

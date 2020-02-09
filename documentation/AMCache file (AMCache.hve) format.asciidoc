@@ -144,8 +144,8 @@ Sub keys:
 [cols="1,5",options="header"]
 |===
 | Name | Description
-| %ID% | File system file refence +
-E.g. 100001605a on NTFS represents MFT entry 90202 (0x1605a) and with sequence number 1 or in shorthand 90202-1
+| %ID% | File system file reference +
+Where for NTFS the separator between the MFT entry and sequence number is "0000" e.g. 100001605a on NTFS represents MFT entry 90202 (0x1605a) and with sequence number 1 or in shorthand 90202-1
 |===
 
 [NOTE]
@@ -187,7 +187,8 @@ Contains a FILETIME
 Contains a FILETIME
 3+|
 | 100 | REG_SZ | Program identifier
-| 101 | REG_SZ | SHA-1 of the excutable file
+| 101 | REG_SZ | SHA-1 of the excutable file +
+The string consists of 4 leading zeros followed by a SHA-1
 |===
 
 == InventoryApplication key
