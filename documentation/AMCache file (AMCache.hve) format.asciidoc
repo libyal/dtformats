@@ -145,11 +145,12 @@ Sub keys:
 |===
 | Name | Description
 | %ID% | File system file reference +
-Where for NTFS the separator between the MFT entry and sequence number is "0000" e.g. 100001605a on NTFS represents MFT entry 90202 (0x1605a) and with sequence number 1 or in shorthand 90202-1
+Where for NTFS the separator between the MFT entry and sequence number is "0000" e.g. "100001605a" on NTFS represents MFT entry 90202 (0x1605a) and with sequence number 1 or in shorthand 90202-1
 |===
 
 [NOTE]
-The file reference is dependent on file system
+The file reference is dependent on file system, e.g. for a removable media
+presumably FAT "019c"
 
 ==== File sub key
 
@@ -160,30 +161,41 @@ Values:
 | Value | Data type | Description
 | 0 | REG_SZ | Product name
 | 1 | REG_SZ | Company name
-| 2 | REG_SZ | [yellow-background]*file version number only?*
+| 2 | REG_SZ | [yellow-background]*PE/COFF file or product version ?* +
+This corresponds with the file or product version in the PE/COFF file version information
 | 3 | REG_DWORD_LITTLE_ENDIAN | Language code
-| 4 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*SwitchBackContext?*
-| 5 | REG_SZ | File version
+| 4 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*Unknown (SwitchBackContext)?*
+| 5 | REG_SZ | [yellow-background]*PE/COFF file or product version ?* +
+This corresponds with the file or product version in the PE/COFF file version information
 | 6 | REG_DWORD_LITTLE_ENDIAN | File size
-| 7 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*SizeOfImage?*
+| 7 | REG_QWORD_LITTLE_ENDIAN | PE/COFF image size +
+This corresponds with the image size value in the PE/COFF PE/COFF header
 | 8 | REG_SZ | [yellow-background]*Hash of PE Header?*
-| 9 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*PE checksum?*
+| 9 | REG_DWORD_LITTLE_ENDIAN | PE/COFF checksum (or hash) +
+This corresponds with the checksum value in the PE/COFF PE/COFF header
 | a | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?*
 | b | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?*
-| c | REG_SZ | File description
-| d | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?*
+| c | REG_SZ | PE/COFF description +
+This corresponds with the FileDescription value in the PE/COFF file version information
+| d | REG_DWORD_LITTLE_ENDIAN | PE/COFF image version +
+This corresponds with the MajorImageVersion and MinorImageVersion values in the PE/COFF PE/COFF header
 3+|
-| f | REG_DWORD_LITTLE_ENDIAN | Linker (or compilation) date and time +
+| f | REG_DWORD_LITTLE_ENDIAN | Compilation (or Link) date and time +
+This corresponds with the creation time in the PE/COFF header +
 Contains a POSIX timestamp in seconds
-| 10 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?*
-| 11 | REG_QWORD_LITTLE_ENDIAN | Last modification date and time +
+| 10 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown (major operating system version)?* +
+Seen: 6
+| 11 | REG_QWORD_LITTLE_ENDIAN | File modification date and time +
+For NTFS this corresponds with the modification time in the $STANDARD_INFORMATION attribute +
 Contains a FILETIME
-| 12 | REG_QWORD_LITTLE_ENDIAN | Creation date and time +
+| 12 | REG_QWORD_LITTLE_ENDIAN | File creation date and time +
+For NTFS this corresponds with the creation time in the $STANDARD_INFORMATION attribute +
 Contains a FILETIME
 3+|
 | 15 | REG_SZ | Path
-| 16 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?*
-| 17 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*modification date and time?* +
+| 16 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?* +
+Seen: 0
+| 17 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*AEINV_WER modification date and time?* +
 Contains a FILETIME
 3+|
 | 100 | REG_SZ | Program identifier

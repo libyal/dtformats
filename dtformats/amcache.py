@@ -18,10 +18,13 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       '3': 'Language code',
       '5': 'File version',
       '6': 'File size',
+      '7': 'PE/COFF image size',
+      '9': 'PE/COFF checksum',
       'c': 'File description',
-      'f': 'Linker time',
-      '11': 'Modification time',
-      '12': 'Creation time',
+      'd': 'PE/COFF image version',
+      'f': 'PE/COFF compilation time',
+      '11': 'File modification time',
+      '12': 'File creation time',
       '15': 'Path',
       '100': 'Program identifier',
       '101': 'SHA-1'}
@@ -75,11 +78,14 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       file_reference_key (pyregf_key): file reference key.
     """
     if self._debug:
-      sequence_number, mft_entry = file_reference_key.name.split('0000')
-      mft_entry = int(mft_entry, 16)
-      sequence_number = int(sequence_number, 16)
-      self._DebugPrintText('{0:s} ({1:d}-{2:d})\n'.format(
-        file_reference_key.name, mft_entry, sequence_number))
+      if '0000' in file_reference_key.name:
+        sequence_number, mft_entry = file_reference_key.name.split('0000')
+        mft_entry = int(mft_entry, 16)
+        sequence_number = int(sequence_number, 16)
+        self._DebugPrintText('File: {0:s} ({1:d}-{2:d})\n'.format(
+          file_reference_key.name, mft_entry, sequence_number))
+      else:
+        self._DebugPrintText('File: {0:s}\n'.format(file_reference_key.name))
 
     for value in file_reference_key.values:
       description = self._FILE_REFERENCE_KEY_VALUES.get(
@@ -87,6 +93,10 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       value_data = self._GetValueDataAsObject(value)
 
       if self._debug:
+        if value.name == 'd':
+          value_data = '{0:d}.{1:d}'.format(
+              value_data >> 16, value_data & 0xffff)
+
         if value.name == 'f':
           self._DebugPrintPosixTimeValue(description, value_data)
         elif value.name in ('11', '12', '17'):
