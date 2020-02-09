@@ -109,6 +109,29 @@ Contains a FILETIME
 
 == DeviceCensus key
 
+Sub keys:
+
+[cols="1,5",options="header"]
+|===
+| Name | Description
+| App |
+| Battery |
+| Camera |
+| Enterprise |
+| Firmware |
+| Flighting |
+| Hardware |
+| Location |
+| Memory |
+| Network |
+| OS |
+| Processor |
+| Storage |
+| VM |
+| WU |
+| Xbox |
+|===
+
 Values:
 
 [cols="1,1,5",options="header"]
@@ -116,6 +139,266 @@ Values:
 | Value | Data type | Description
 | WritePermissionsCheck | |
 |===
+
+=== App sub key
+
+Values:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| CensusVersion | REG_BINARY |
+| IEVersion | REG_SZ |
+|===
+
+=== Battery sub key
+
+Values:
+
+....
+InternalBatteryCapablities
+InternalBatteryCapacityCurrent
+InternalBatteryCapacityDesign
+IsAlwaysOnAlwaysConnectedCapable
+....
+
+=== Camera sub key
+
+Values:
+
+....
+FrontFacingCameraResolution
+RearFacingCameraResolution
+....
+
+=== Enterprise sub key
+
+Values:
+
+....
+AzureOSIDPresent
+AzureVMType
+CDJType
+CommercialId
+HashedDomain
+IsCloudDomainJoined
+IsDERequirementMet
+IsDeviceProtected
+IsDomainJoined
+IsEDPEnabled
+IsMDMEnrolled
+MPNId
+SCCMClientId
+ServerFeatures
+SystemCenterID
+....
+
+=== Firmware sub key
+
+Values:
+
+....
+FirmwareManufacturer
+FirmwareReleaseDate
+FirmwareType
+FirmwareVersion
+....
+
+=== Flighting sub key
+
+Values:
+
+....
+DeviceSampleRate
+EnablePreviewBuilds
+FlightIds
+FlightingBranchName
+IsFlightsDisabled
+MSA_Accounts
+SSRK
+....
+
+=== Hardware sub key
+
+Values:
+
+....
+ChassisType
+ComputerHardwareID
+DeviceColor
+DeviceForm
+DeviceName
+DigitizerSupport
+DUID
+InventoryId
+OEMDigitalMarkerFileName
+OEMManufacturerName
+OEMModelBaseBoard
+OEMModelName
+OEMModelNumber
+OEMModelSKU
+OEMModelSystemFamily
+OEMOptionalIdentifier
+OEMSerialNumber
+PhoneManufacturer
+PowerPlatformRole
+SoCName
+StudyID
+TelemetryLevel
+TelemetrySettingAuthority
+TPMVersion
+VoiceSupported
+....
+
+=== Location sub key
+
+Values:
+
+....
+ActivationLocationConsent
+ActivationLocationLat
+ActivationLocationLong
+ActivationLocationRad
+....
+
+=== Memory sub key
+
+Values:
+
+....
+TotalPhysicalRAM
+TotalVisibleMemory
+....
+
+=== Network sub key
+
+Values:
+
+....
+IMEI0
+IMEI1
+MCC0
+MCC1
+MEID
+MNC0
+MNC1
+MobileOperatorBilling
+MobileOperatorCommercialized
+MobileOperatorNetwork0
+MobileOperatorNetwork1
+NetworkCost
+SPN0
+SPN1
+....
+
+=== OS sub key
+
+Values:
+
+....
+ActivationChannel
+CompactOS
+GenuineState
+InstallationType
+InstallLanguage
+IsDeviceRetailDemo
+IsEduData
+IsPortableOperatingSystem
+IsSecureBootEnabled
+LanguagePacks
+LicenseStateReason
+OA3xOriginalProductKey
+OSEdition
+OSInstallType
+OSOOBEDateTime
+OSSKU
+OSSubscriptionStatus
+OSSubscriptionTypeId
+OSTimeZoneBiasInMins
+OSUILocale
+ProductActivationResult
+ProductActivationTime
+ProductKeyID2
+RACw7Id
+ServiceMachineIP
+ServiceMachinePort
+ServiceProductKeyID
+SharedPCMode
+Signature
+SLICStatus
+SLICVersion
+....
+
+=== Processor sub key
+
+Values:
+
+....
+ProcessorArchitecture
+ProcessorClockSpeed
+ProcessorCores
+ProcessorManufacturer
+ProcessorModel
+ProcessorPhysicalCores
+SocketCount
+....
+
+=== Storage sub key
+
+Values:
+
+....
+PrimaryDiskTotalCapacity
+PrimaryDiskType
+SystemVolumeTotalCapacity
+....
+
+=== VM sub key
+
+Values:
+
+....
+HyperVisor
+IOMMUPresent
+IsVirtualDevice
+SLATSupported
+VirtualizationFirmwareEnabled
+....
+
+=== WU sub key
+
+Values:
+
+....
+AppraiserGatedStatus
+AppStoreAutoUpdate
+AppStoreAutoUpdateMDM
+AppStoreAutoUpdatePolicy
+DelayUpgrade
+OSRollbackCount
+OSRolledBack
+OSUninstalled
+OSWUAutoUpdateOptions
+UninstallActive
+UpdateServiceURLConfigured
+WUDeferUpdatePeriod
+WUDeferUpgradePeriod
+WUDODownloadMode
+WUMachineId
+WUPauseState
+WUServer
+....
+
+=== Xbox sub key
+
+Values:
+
+....
+XboxConsolePreferredLanguage
+XboxConsoleSerialNumber
+XboxLiveDeviceId
+XboxLiveSandboxId
+....
 
 == DriverPackageExtended key
 
@@ -163,7 +446,8 @@ Values:
 | 1 | REG_SZ | Company name
 | 2 | REG_SZ | [yellow-background]*PE/COFF file or product version ?* +
 This corresponds with the file or product version in the PE/COFF file version information
-| 3 | REG_DWORD_LITTLE_ENDIAN | Language code
+| 3 | REG_DWORD_LITTLE_ENDIAN | Language code +
+Contains a LCID
 | 4 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*Unknown (SwitchBackContext)?*
 | 5 | REG_SZ | [yellow-background]*PE/COFF file or product version ?* +
 This corresponds with the file or product version in the PE/COFF file version information
@@ -194,11 +478,11 @@ Contains a FILETIME
 3+|
 | 15 | REG_SZ | Path
 | 16 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown?* +
-Seen: 0
+Seen: 0 (PE/COFF information is also present), 1
 | 17 | REG_QWORD_LITTLE_ENDIAN | [yellow-background]*AEINV_WER modification date and time?* +
 Contains a FILETIME
 3+|
-| 100 | REG_SZ | Program identifier
+| 100 | REG_SZ | Program identifier (ProgramId)
 | 101 | REG_SZ | SHA-1 of the excutable file +
 The string consists of 4 leading zeros followed by a SHA-1
 |===
@@ -210,7 +494,7 @@ Sub keys:
 [cols="1,5",options="header"]
 |===
 | Name | Description
-| [yellow-background]*some identifier* |
+| %ID% | Program identifier (ProgramId)
 |===
 
 Values:
@@ -218,13 +502,49 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
-| WritePermissionsCheck | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider +
+Seen: "{1b5a86a8-5f1b-4032-8592-32113f1174e1}", "{0b4fdded-d2c2-4e11-b0b2-579bd34983ea}"
+| WritePermissionsCheck | REG_DWORD | +
+Seen: 1
 |===
 
-=== Sub key
+=== Application sub key
 
-[yellow-background]*TODO: describe*
+Values:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| HiddenArp | |
+| InboxModernApp | |
+| InstallDate | | Installation date and time +
+Contains a locale specific date and time value e.g. "07/16/2016 22:55:48"
+| InstallDateArpLastModified | REG_MULTI_SZ | +
+Seen: ["08/01/2017 13:14:28"]
+| InstallDateFromLinkFile | |
+| InstallDateMsi | REG_SZ | MSI installation date and time +
+Contains a locale specific date and time value e.g. "08/01/2017 13:08:04"
+| Language | REG_SZ | Language code +
+Contains a LCID or "0" if not set
+| MsiPackageCode | REG_SZ | +
+Contains "{%GUID%}" or empty if not set
+| MsiProductCode | REG_SZ | +
+Contains "{%GUID%}" or empty if not set
+| Name | REG_SZ |
+| OSVersionAtInstallTime | REG_SZ | Windows version at the time of installation +
+E.g. "10.0.0.14393"
+| PackageFullName | REG_SZ |
+| ProgramId | REG_SZ | Program identifier (ProgramId)
+| ProgramInstanceId | REG_SZ | Program instance identifier (ProgramId)
+| Publisher | REG_SZ |
+| RegistryKeyPath | REG_SZ |
+| RootDirPath | REG_SZ |
+| Source | REG_SZ | +
+Seen: "AppxPackage", "AddRemoveProgram", "Msi", "File"
+| UninstallString | REG_SZ |
+| Version | REG_SZ |
+|===
 
 == InventoryApplicationAppV key
 
@@ -243,7 +563,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | WritePermissionsCheck | |
 |===
 
@@ -254,7 +575,8 @@ Sub keys:
 [cols="1,5",options="header"]
 |===
 | Name | Description
-| `%NAME%|%IDENTIFIER%` |
+| `%NAME%|%IDENTIFIER%` +
+`0000%SHA1%` | Application
 |===
 
 Values:
@@ -262,11 +584,12 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | WritePermissionsCheck | |
 |===
 
-=== Executable sub key
+=== Application sub key
 
 Values:
 
@@ -286,7 +609,7 @@ Values:
 | Name | |
 | ProductName | |
 | ProductVersion | |
-| ProgramId | |
+| ProgramId | | Program identifier (ProgramId)
 | Publisher | |
 | Size | |
 | Usn | |
@@ -300,7 +623,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | WritePermissionsCheck | |
 |===
 
@@ -329,7 +653,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -372,7 +697,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -419,7 +745,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -442,7 +769,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -465,7 +793,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -487,7 +816,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -498,7 +828,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | ProviderVersion | |
 |===
 
@@ -517,7 +848,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| ProviderSyncId | |
+| ProviderSyncId | REG_SZ | Provider identifier +
+Contains a GUID of the provider
 | WritePermissionsCheck | |
 |===
 
@@ -532,7 +864,7 @@ Sub keys:
 [cols="1,5",options="header"]
 |===
 | Name | Description
-| %ID% | ProgramId
+| %ID% | Program identifier (ProgramId)
 |===
 
 === Program Sub key
@@ -542,32 +874,39 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| 0 | |
-| 1 | |
-| 2 | |
-| 3 | |
+| 0 | REG_SZ | Name
+| 1 | REG_SZ | Version
+| 2 | REG_SZ | Publisher
+| 3 | REG_SZ | Language code +
+Contains a LCID or an empty string if not set
 3+|
-| 5 | |
-| 6 | |
-| 7 | |
+| 5 | REG_DWORD | [yellow-background]*Unknown?* +
+Seen: 1
+| 6 | REG_SZ | Installation method (or source) +
+Seen: "AddRemoveProgram", "AddRemoveProgramPerUser", "Msi"
+| 7 | REG_MULTI_SZ | Uninstallation Registry key path(s)
 3+|
-| a | |
-| b | |
+| a | REG_QWORD | Installation date and time +
+Contains a POSIX timestamp in seconds
+| b | REG_QWORD | Uninstallation date and time +
+Contains a POSIX timestamp in seconds or 0 if program has not been uninstalled
 3+|
-| d | |
+| d | REG_MULTI_SZ | Installation directories (or DirectoryIndicators)
 3+|
-| f | |
-| 10 | |
-| 11 | |
-| 12 | |
-| 13 | |
-| 14 | |
-| 15 | |
-| 16 | |
-| 17 | |
-| 18 | |
+| f | REG_SZ | [yellow-background]*Unknown (Product Code)?*
+| 10 | REG_SZ | [yellow-background]*Unknown (Package Code)?*
+| 11 | REG_MULTI_SZ | [yellow-background]*Unknown (MSI Product Code)?*
+| 12 | REG_MULTI_SZ | [yellow-background]*Unknown (MSI Package Code)?*
+| 13 | REG_DWORD | [yellow-background]*Unknown?* +
+Seen: 0
+| 14 | REG_DWORD |
+| 15 | REG_DWORD |
+| 16 | REG_BINARY |
+| 17 | REG_QWORD | [yellow-background]*Unknown (uninstall key)?*
+| 18 | REG_DWORD |
 3+|
-| Files | |
+| Files | REG_MULTI_SZ | Identifiers of the corresponding file reference keys under the "\Root\File" key +
+Contains "%VOLUME_GUID%@%FILE_REFERENCE%
 |===
 
 :numbered!:

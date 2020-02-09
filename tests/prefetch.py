@@ -49,6 +49,7 @@ class PrefetchTest(test_lib.BaseTestCase):
     path = '\\DEVICE\\HARDDISKVOLUME2\\WINDOWS\\SYSTEM32\\TASKHOST.EXE'
 
     hash_value = prefetch.CalculatePrefetchHash2008(path)
+    _ = hash_value
     # TODO: fix
     # self.assertEqual(hash_value, 0x3ae259fc)
 
@@ -58,6 +59,7 @@ class PrefetchTest(test_lib.BaseTestCase):
     path = '\\VOLUME{01d08edc0cbccaad-3e0d2d25}\\WINDOWS\\SYSTEM32\\NOTEPAD.EXE'
 
     hash_value = prefetch.CalculatePrefetchHash10(path)
+    _ = hash_value
     # TODO: fix
     # self.assertEqual(hash_value, 0xd8414f97)
 

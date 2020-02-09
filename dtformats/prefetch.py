@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """Script to calculate Windows Prefetch hashes."""
 
-from __future__ import print_function
 from __future__ import unicode_literals
-
-import argparse
-import sys
 
 
 def CalculatePrefetchHashXP(path):
