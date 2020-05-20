@@ -47,7 +47,7 @@ class LNKFileEntry(object):
     Yields:
       pyfswi.item: shell item.
     """
-    if self._lnk_file.link_target_identifier_data:
+    if self._lnk_file.link_target_identifier_data:  # pylint: disable=using-constant-test
       shell_item_list = pyfwsi.item_list()
       shell_item_list.copy_from_byte_stream(
           self._lnk_file.link_target_identifier_data)
