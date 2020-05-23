@@ -968,7 +968,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     if page_header.page_type == 0xaccc:
       index_binary_tree_page.number_of_keys = page_body.number_of_keys
 
-      for page_number in iter(page_body.sub_pages):
+      for page_number in page_body.sub_pages:
         if page_number not in (0, 0xffffffff):
           index_binary_tree_page.sub_pages.append(page_number)
 

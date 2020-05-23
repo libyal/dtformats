@@ -701,7 +701,7 @@ class ChromeCacheParser(object):
 
     data_block_files = {}
     have_all_data_block_files = True
-    for cache_address in iter(index_file.index_table.values()):
+    for cache_address in index_file.index_table.values():
       if cache_address.filename not in data_block_files:
         data_block_file_path = os.path.join(path, cache_address.filename)
 
@@ -719,7 +719,7 @@ class ChromeCacheParser(object):
 
     if have_all_data_block_files:
       # TODO: read the cache entries from the data block files
-      for cache_address in iter(index_file.index_table.values()):
+      for cache_address in index_file.index_table.values():
         cache_address_chain_length = 0
         while cache_address.value != 0x00000000:
           if cache_address_chain_length >= 64:
@@ -763,7 +763,7 @@ class ChromeCacheParser(object):
           cache_address = cache_entry.next
           cache_address_chain_length += 1
 
-    for data_block_file in iter(data_block_files.values()):
+    for data_block_file in data_block_files.values():
       data_block_file.Close()
 
     index_file.Close()

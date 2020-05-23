@@ -81,7 +81,7 @@ def Main():
 
       object_record_keys[key_name].append(key)
 
-    for key_name, keys in iter(object_record_keys.items()):
+    for key_name, keys in object_record_keys.items():
       for key in keys:
         print(key)
         object_record = cim_repository.GetObjectRecordByKey(key)

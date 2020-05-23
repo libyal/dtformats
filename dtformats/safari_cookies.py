@@ -246,7 +246,7 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       if self._debug:
         self._DebugPrintText('\n')
 
-    for record_offset in iter(record_offsets):
+    for record_offset in record_offsets:
       self._ReadRecord(page_data, record_offset)
 
   def _ReadPages(self, file_object):
@@ -256,7 +256,7 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       file_object (file): file-like object.
     """
     file_offset = file_object.tell()
-    for page_size in iter(self._page_sizes):
+    for page_size in self._page_sizes:
       self._ReadPage(file_object, file_offset, page_size)
       file_offset += page_size
 
