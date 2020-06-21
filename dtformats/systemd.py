@@ -14,8 +14,6 @@ class SystemdJournalFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('systemd.yaml')
 
-  _FILE_SIGNATURE = b'LPKSHHRH'
-
   _OBJECT_COMPRESSED_XZ = 1
   _OBJECT_COMPRESSED_LZ4 = 2
 
@@ -345,9 +343,6 @@ class SystemdJournalFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
-
-    if file_header.signature != self._FILE_SIGNATURE:
-      raise errors.ParseError('Invalid file signature.')
 
     if file_header.header_size not in self._SUPPORTED_FILE_HEADER_SIZES:
       raise errors.ParseError('Unsupported file header size: {0:d}.'.format(

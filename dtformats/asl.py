@@ -14,8 +14,6 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('asl.yaml')
 
-  _FILE_SIGNATURE = b'ASL DB\x00\x00\x00\x00\x00\x00'
-
   # Most significant bit of a 64-bit string offset.
   _STRING_OFFSET_MSB = 1 << 63
 
@@ -126,9 +124,6 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
-
-    if file_header.signature != self._FILE_SIGNATURE:
-      raise errors.ParseError('Invalid file signature.')
 
     return file_header
 

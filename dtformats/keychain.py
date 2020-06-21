@@ -54,8 +54,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('keychain.yaml')
 
-  _FILE_SIGNATURE = b'kych'
-
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO = 0x00000000
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INDEXES = 0x00000001
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_ATTRIBUTES = 0x00000002
@@ -422,9 +420,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
-
-    if file_header.signature != self._FILE_SIGNATURE:
-      raise errors.ParseError('Unsupported file signature.')
 
     return file_header
 

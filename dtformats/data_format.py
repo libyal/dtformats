@@ -14,7 +14,6 @@ from dtfabric.runtime import data_maps as dtfabric_data_maps
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import errors
-from dtformats import py2to3
 
 
 class BinaryDataFormat(object):
@@ -104,8 +103,7 @@ class BinaryDataFormat(object):
       if value_format_function:
         attribute_value = value_format_function(attribute_value)
 
-      if (isinstance(attribute_value, py2to3.STRING_TYPES) and
-          '\n' in attribute_value):
+      if isinstance(attribute_value, str) and '\n' in attribute_value:
         self._output_writer.WriteText('{0:s}:\n'.format(description))
         self._output_writer.WriteText(attribute_value)
       else:
@@ -173,7 +171,7 @@ class BinaryDataFormat(object):
       hexadecimal_byte_values = []
       printable_values = []
       for byte_value in data_string:
-        if isinstance(byte_value, py2to3.STRING_TYPES):
+        if isinstance(byte_value, str):
           byte_value = ord(byte_value)
 
         hexadecimal_byte_value = '{0:02x}'.format(byte_value)

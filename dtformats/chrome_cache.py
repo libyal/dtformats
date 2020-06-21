@@ -12,7 +12,6 @@ from dtfabric import errors as dtfabric_errors
 
 from dtformats import data_format
 from dtformats import errors
-from dtformats import py2to3
 
 
 def SuperFastHash(key):
@@ -32,7 +31,7 @@ def SuperFastHash(key):
   remainder = key_length & 0x00000003
   key_length -= remainder
 
-  if isinstance(key[0], py2to3.STRING_TYPES):
+  if isinstance(key[0], str):
     key = [ord(byte_value) for byte_value in key]
 
   for key_index in range(0, key_length, 4):
@@ -380,11 +379,6 @@ class DataBlockFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
-    if file_header.signature != self.SIGNATURE:
-      raise errors.ParseError(
-          'Unsupported data block file signature: 0x{0:08x}'.format(
-              file_header.signature))
-
     self.format_version = '{0:d}.{1:d}'.format(
         file_header.major_version, file_header.minor_version)
 
@@ -574,11 +568,6 @@ class IndexFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
-
-    if file_header.signature != self.SIGNATURE:
-      raise errors.ParseError(
-          'Unsupported index file signature: 0x{0:08x}'.format(
-              file_header.signature))
 
     self.format_version = '{0:d}.{1:d}'.format(
         file_header.major_version, file_header.minor_version)

@@ -838,8 +838,6 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
   _TRAILER_TOKEN_TYPE = 0x13
 
-  _TRAILER_TOKEN_SIGNATURE = 0xb105
-
   # AUT_ARG32 or AUT_ARG64 token data debug information.
   _DEBUG_INFO_TOKEN_DATA_ARG = [
       ('argument_index', 'Argument index', '_FormatIntegerAsDecimal'),
@@ -1172,9 +1170,6 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
       if token_type == self._TRAILER_TOKEN_TYPE:
         break
-
-    if token_data.signature != self._TRAILER_TOKEN_SIGNATURE:
-      raise errors.ParseError('Unsupported signature in trailer token.')
 
     if token_data.record_size != header_record_size:
       raise errors.ParseError(

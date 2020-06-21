@@ -53,9 +53,6 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the string could not be decoded.
     """
-    # The string can contain remnant data after the end-of-string character.
-    string = string.split(b'\x00')[0]
-
     try:
       return string.decode(self._codepage)
     except UnicodeDecodeError as exception:

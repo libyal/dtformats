@@ -18,8 +18,6 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('safari_cookies.yaml')
 
-  _SIGNATURE = b'cook'
-
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Safari Cookies (Cookies.binarycookies) file.
 
@@ -152,9 +150,6 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
-
-    if file_header.signature != self._SIGNATURE:
-      raise errors.ParseError('Unsupported signature')
 
     file_offset = file_header_data_size
 
