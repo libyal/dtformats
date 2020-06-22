@@ -40,7 +40,7 @@ in the section entitled "GNU Free Documentation License".
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | June 2018 | Initial version.
 | 0.0.2 | J.B. Metz | August 2018 | Additional information.
-| 0.0.3 | J. Aguilar  | July 2019 | Add X509 attribute information.
+| 0.0.3 | J. Aguilar | July 2019 | Additional information about X509 certificate record (CSSM_DL_DB_RECORD_X509_CERTIFICATE).
 |===
 
 :numbered:
