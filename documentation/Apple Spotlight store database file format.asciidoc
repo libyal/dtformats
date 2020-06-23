@@ -73,7 +73,9 @@ A store database (store.db) file consists of:
 * file header
 * map
 * property tables
-  * metadata attributes
+  * metadata attribute types
+  * metadata attribute values
+  * data records
 
 === File header
 
@@ -95,11 +97,11 @@ Seen: 0x0c
 | 36 | 4 | | Map offset
 | 40 | 4 | | Map size
 | 44 | 4 | | Page size
-| 48 | 4 | | Metadata attribute keys (property table) block number
+| 48 | 4 | | Metadata attribute types (property table) block number
 | 52 | 4 | | Metadata attribute values (property table) block number
 | 56 | 4 | | [yellow-background]*Unknown* (property table) block number
-| 60 | 4 | | [yellow-background]*Unknown* (property table) block number
-| 64 | 4 | | [yellow-background]*Unknown* (property table) block number
+| 60 | 4 | | Metadata attribute lists (property table) block number
+| 64 | 4 | | Metadata attribute localized strings (property table) block number
 | 68 | 256 | | [yellow-background]*Unknown*
 | 324 | 256 | | Path
 | 580 | 140 | | [yellow-background]*Unknown*
@@ -137,14 +139,16 @@ The map page header is 20 bytes in size and consists of:
 The signature is "dbm1" or "dbm2" in little-endian, which cloud represention
 something in line of "database map".
 
-Contains page values of 16 byte of size
+==== Map page value
+
+The map page value is 16 bytes in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 8 | | [yellow-background]*Unknown*
-| 8 | 4 | | [yellow-background]*Unknown*
-| 12 | 4 | | [yellow-background]*Unknown*
+| 8 | 4 | | Data record block number
+| 12 | 4 | | [yellow-background]*Unknown (page size and flags?)*
 |===
 
 ....
@@ -163,7 +167,7 @@ TODO what about "1mbd"
 
 ==== Property table page header
 
-The properpery table page header is 20 bytes in size and consists of:
+The property table page header is 20 bytes in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -173,7 +177,7 @@ The properpery table page header is 20 bytes in size and consists of:
 | 8 | 4 | | Used page size +
 Contains the size of the space in the page that is in use, which includes this header
 | 12 | 4 | | Property table type [yellow-background]*(or flags?)* +
-See section: <<property_table_type,Property table type>>
+See section: <<property_table_types,Property table types>>
 | 16 | 4 | | Uncompressed page size +
 Contains the size of the uncompressed page, which includes this header, or 0 if the page is not compressed
 |===
@@ -182,19 +186,26 @@ Contains the size of the uncompressed page, which includes this header, or 0 if 
 The signature is "dbp2" in little-endian, which cloud represention something
 in line of "database property".
 
-==== [[property_table_type]]Property table type
+==== [[property_table_types]]Property table types
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x09 | | zlib compressed data
-| 0x11 | | metadata attribute keys
-| 0x21 | | metadata attribute values
-| 0x41 | | [yellow-background]*Unknown*
-| 0x81 | | [yellow-background]*Unknown (index)*
+| 0x09 | | data records +
+Page contains compressed data
+| 0x11 | | Metadata attribute types +
+Page contains a property table header
+| 0x21 | | Metadata attribute values +
+Page contains a property table header
+| 0x41 | | [yellow-background]*Unknown* +
+Page contains a property table header
+| 0x81 | | Metadata lists or localized strings +
+Page contains a property table header
 |===
 
 ==== Property table header
+
+The property table header is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -204,24 +215,63 @@ Contains the offset of the next property table page relative to the start of the
 | 4 | 8 | | [yellow-background]*Unknown (checksum?)*
 |===
 
-==== Property value type 0x11
+==== Data record (type 0x09)
+
+The data record (type 0x09) is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Record data size
+4+| _Record data_
+| 4 | ... | | Identifier +
+Contains a variable size integer
+| ... | 1 | | Flags
+| ... | ... | | Item identifier +
+Contains a variable size integer
+| ... | ... | | Parent identifier +
+Contains a variable size integer
+| ... | ... | | Last updated time +
+Contains a variable size integer that contains the number of microseconds since January 1, 1970 00:00:00 +
+[yellow-background]*Assuming this is UTC*
+| ... | ... | | Properties array
+|===
+
+TODO: describe property
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | Property data size +
+Contains a variable size integer
+|===
+
+==== Metadata attribute types property table (type 0x11) value
+
+The metadata attribute types property table (type 0x11) value is variable of
+size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Table index
-| 4 | 2 | | [yellow-background]*Unknown*
-| 6 | 4 | | Metadata attribute key name +
+| 4 | 1 | | Value type +
+See section: <<metadata_attribute_value_types,Metadata attribute value types>>
+| 5 | 1 | | Property type
+| 6 | ... | | Key name +
 Contains an UTF-8 encoded string with an end-of-string character
 |===
 
-==== Property value type 0x21
+==== Metadata attribute values property table (type 0x21) value
+
+The metadata attribute values property table (type 0x21) value is variable of
+size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Table index
-| 4 | 4 | | Metadata attribute value name +
+| 4 | ... | | Metadata attribute value name +
 Contains an UTF-8 encoded string with an end-of-string character
 |===
 
@@ -229,7 +279,7 @@ Contains an UTF-8 encoded string with an end-of-string character
 Some value names contain "\x16\x02" (SYN, STX), followed by a language
 identifier.
 
-==== Property value type 0x41
+==== Unknown property table (type 0x41) value
 
 ....
 0x00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
@@ -237,7 +287,10 @@ identifier.
 0x00003fd0  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
 ....
 
-==== Property value type 0x81
+==== Metadata lists or localized strings property table (type 0x81) value
+
+The metadata lists or localized strings property table (type 0x81) value is
+variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -245,11 +298,114 @@ identifier.
 | 0 | 4 | | Table index
 | 4 | ... | | Index data size +
 Contains a variable size integer
-| ... | ... | | Index data +
+4+| __Index data__
+| ... | ... | | [yellow-background]*Unknown (Index data padding?)* +
+If the index data size is not a multitude of 4 (32-bit) additional bytes are stored before the index array
+| ... | ... | | Index array +
 Contains an array of 32-bit integer values
 |===
 
+=== Metadata attributes
+
+The metadata attributes are stored using several property tables.
+
+* The metadata attribute types table, contain the key names, value types and property types of the metadata attributes
+* The metadata attribute values table, contains the values used by the metadata attributes
+* The metadata attribute lists table, contains the lists of values used by the metadata attributes
+* The metadata attribute localized string table, contains the lists of localized string values used by the metadata attributes
+
+==== [[metadata_attribute_value_types]]Metadata attribute value types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00 | | Boolean +
+Contains a variable size integer +
+See section: <<variable_size_integer,Variable size integer>> +
+| 0x01 | | [yellow-background]*Unknown*
+| 0x02 | | [yellow-background]*Unknown* +
+Contains a variable size integer +
+See section: <<variable_size_integer,Variable size integer>> +
+Seen in combination with "_kMDItemGroupId"
+| 0x03 | | [yellow-background]*Unknown*
+| 0x04 | | [yellow-background]*Unknown*
+| 0x05 | | [yellow-background]*Unknown*
+| 0x06 | | [yellow-background]*Unknown* +
+Contains a variable size integer +
+See section: <<variable_size_integer,Variable size integer>> +
+Seen in combination with "_kStoreMetadataVersion"
+| 0x07 | | Variable size integer +
+See section: <<variable_size_integer,Variable size integer>> +
+If the 2nd LSB of the property type is set the value data contains a multi-value. See section <<multi_value,Multi-value>>
+| 0x08 | | [yellow-background]*Unknown (Byte or 8-bit integer)*
+| 0x09 | | Floating-point 32-bit +
+If the 2nd LSB of the property type is set the value data contains a multi-value. See section <<multi_value,Multi-value>>
+| 0x0a | | Floating-point 64-bit +
+If the 2nd LSB of the property type is set the value data contains a multi-value. See section <<multi_value,Multi-value>>
+| 0x0b | | String +
+Contains strings data +
+See section: <<strings_data,Strings data>> +
+[yellow-background]*The 2 LSB of the property type indicate if the value is a list of localized strings (0x3), list of strings (0x2) or single string (0x1, 0x0)*
+| 0x0c | | Date and time +
+Contains a floating-point 64-bit values of a Cocoa timestamp +
+If the 2nd LSB of the property type is set the value data contains a multi-value. See section <<multi_value,Multi-value>>
+| 0x0e | | Binary data +
+See section: <<binary_data,Binary data>>
+| 0x0f | | Metadata attribute value or list reference +
+[yellow-background]*The 2 LSB of the property type indicate if the value references a localized string (0x3), list (0x2) or value (0x1) type*
+|===
+
+==== [[variable_size_integer]]Variable size integer
+
+==== [[multi_value]]Multi-value
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | Values data size +
+Contains a variable size integer
+| ... | ... | | Values data +
+Contains data dependent on the value type
+|===
+
+==== [[strings_data]]Strings data
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | Strings data size +
+Contains a variable size integer
+| ... | ... | | Strings data +
+Contains one or more UTF-8 encoded strings with an end-of-string character
+|===
+
+==== [[binary_data]]Binary data
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | Binary data size +
+Contains a variable size integer
+| ... | ... | | Binary data
+|===
+
 == Notes
+
+kMDStoreAccumulatedSizes and value type 0x08
+
+....
+Relative metadata attribute: 3 type index                               : 38
+Metadata attribute: 3 type index                                        : 67
+Key name                                                                : kMDStoreAccumulatedSizes
+Property type                                                           : 0x0e
+Value type                                                              : 0x08
+
+0x000008e0                           26 80 98 00 00 a0 00 e5          &.......
+0x000008f0  67 20 00 f0 1f 9d 11 44  00 83 1b f0 12 5a c0 00  g .....D.....Z..
+0x00000900  f0 ae f4 31 6d 00 f0 52  fc 0a 60 e3 8d df 39 c1  ...1m..R..`...9.
+0x00000910  07 3a f0 45 57 00 f8 ea  2f 23 54 f0 81 cc d2 e2  .:.EW.../#T.....
+0x00000920  a2 00 00 f8 0a                                    .....
+....
 
 ....
 /.Spotlight-V100/Store-V2/${STORE_UUID}/store.updates

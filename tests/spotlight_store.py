@@ -86,7 +86,7 @@ class AppleSpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
 
     output_writer = test_lib.TestOutputWriter()
     test_file = spotlight_store.AppleSpotlightStoreDatabaseFile(
-        debug=True, output_writer=output_writer)
+        debug=False, output_writer=output_writer)
 
     test_file.Open(test_file_path)
 

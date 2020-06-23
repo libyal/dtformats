@@ -17,6 +17,13 @@ attributes:
   size: 1
   units: bytes
 ---
+name: uint8
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
 name: uint16
 type: integer
 attributes:
@@ -45,6 +52,39 @@ attributes:
   format: unsigned
   size: 8
   units: bytes
+---
+name: float32
+type: floating-point
+attributes:
+  size: 4
+  units: bytes
+---
+name: float64
+type: floating-point
+attributes:
+  size: 8
+  units: bytes
+---
+name: cstring
+type: string
+encoding: utf8
+element_data_type: char
+elements_terminator: "\x00"
+---
+name: array_of_float32
+type: sequence
+element_data_type: float32
+elements_data_size: elements_data_size
+---
+name: array_of_float64
+type: sequence
+element_data_type: float64
+elements_data_size: elements_data_size
+---
+name: array_of_cstring
+type: sequence
+element_data_type: cstring
+elements_data_size: elements_data_size
 ---
 name: spotlight_store_db_file_header
 type: structure
@@ -78,15 +118,15 @@ members:
   data_type: uint32
 - name: page_size
   data_type: uint32
-- name: metadata_keys_block_number
+- name: metadata_types_block_number
   data_type: uint32
 - name: metadata_values_block_number
   data_type: uint32
-- name: attribute_table_block_number3
+- name: unknown_values41_block_number
   data_type: uint32
-- name: attribute_table_block_number4
+- name: metadata_lists_block_number
   data_type: uint32
-- name: attribute_table_block_number5
+- name: metadata_localized_strings_block_number
   data_type: uint32
 - name: unknown8
   type: sequence
@@ -114,6 +154,18 @@ members:
 - name: number_of_map_values
   data_type: uint32
 - name: unknown1
+  data_type: uint32
+- name: unknown2
+  data_type: uint32
+---
+name: spotlight_store_db_map_page_value
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: unknown1
+  data_type: uint64
+- name: block_number
   data_type: uint32
 - name: unknown2
   data_type: uint32
@@ -154,11 +206,13 @@ attributes:
 members:
 - name: table_index
   data_type: uint32
-- name: unknown1
-  data_type: uint16
+- name: value_type
+  data_type: uint8
+- name: property_type
+  data_type: uint8
 - name: key_name
   type: string
-  encoding: "utf8"
+  encoding: utf8
   element_data_type: char
   elements_terminator: "\x00"
 ---
@@ -171,7 +225,7 @@ members:
   data_type: uint32
 - name: value_name
   type: string
-  encoding: "utf8"
+  encoding: utf8
   element_data_type: char
   elements_terminator: "\x00"
 ---
@@ -187,3 +241,11 @@ name: spotlight_store_db_index_values
 type: sequence
 element_data_type: uint32le
 elements_data_size: index_size
+---
+name: spotlight_store_db_record
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: data_size
+  data_type: uint32
