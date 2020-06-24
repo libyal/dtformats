@@ -71,6 +71,16 @@ encoding: utf8
 element_data_type: char
 elements_terminator: "\x00"
 ---
+name: array_of_byte
+type: sequence
+element_data_type: byte
+elements_data_size: elements_data_size
+---
+name: array_of_cstring
+type: sequence
+element_data_type: cstring
+elements_data_size: elements_data_size
+---
 name: array_of_float32
 type: sequence
 element_data_type: float32
@@ -79,11 +89,6 @@ elements_data_size: elements_data_size
 name: array_of_float64
 type: sequence
 element_data_type: float64
-elements_data_size: elements_data_size
----
-name: array_of_cstring
-type: sequence
-element_data_type: cstring
 elements_data_size: elements_data_size
 ---
 name: spotlight_store_db_file_header
@@ -184,7 +189,7 @@ members:
   data_type: uint32
 - name: used_page_size
   data_type: uint32
-- name: page_content_type
+- name: property_table_type
   data_type: uint32
 - name: uncompressed_page_size
   data_type: uint32

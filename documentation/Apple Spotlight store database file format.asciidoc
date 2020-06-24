@@ -225,16 +225,31 @@ The data record (type 0x09) is variable of size and consists of:
 | 0 | 4 | | Record data size
 4+| _Record data_
 | 4 | ... | | Identifier +
-Contains a variable size integer
+A variable size integer that contains the file system identifier, e.g. CNID on HFS, of the corresponding file (system) entry
 | ... | 1 | | Flags
 | ... | ... | | Item identifier +
 Contains a variable size integer
 | ... | ... | | Parent identifier +
-Contains a variable size integer
+A variable size integer that contains the file system identifier, e.g. CNID on HFS, of the parent file (system) entry
 | ... | ... | | Last updated time +
 Contains a variable size integer that contains the number of microseconds since January 1, 1970 00:00:00 +
 [yellow-background]*Assuming this is UTC*
 | ... | ... | | Properties array
+|===
+
+TODO: describe flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x01 | | [yellow-background]*Unknown (Is metadata?)* +
+Seen in record with identifier 0 *
+Does this influence the behavior of the value type of kMDStoreAccumulatedSizes ?
+| 0x02 | |
+3+|
+| 0x10 | |
+| 0x20 | |
+| 0x40 | |
 |===
 
 TODO: describe property
@@ -389,23 +404,116 @@ Contains a variable size integer
 | ... | ... | | Binary data
 |===
 
-== Notes
+=== Metadata item (MDItem)
 
-kMDStoreAccumulatedSizes and value type 0x08
+==== Metadata item 0x01
+
+Metadata attributes:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Value | Property type | Value type | Description
+| _kStoreMetadataVersion | 0x0c | 0x06 | Contains a 32-bit integer with version information where the upper 16-bit contains the major version and the lower 16-bit the minor version, for example 0x0001000d represents "1.13"
+| kMDStoreProperties | 0x0c | 0x0e | Contains a XML plist
+| kMDStoreUUID | 0x0c | 0x0e | Contains the store UUID +
+[yellow-background]*Is the UUID stored in big-endian?*
+| kMDStoreAccumulatedSizes | 0x0e | 0x08 | [yellow-background]*Unknown, does not follow the normal behavior of value type 0x08, could this be due to flags 0x01?*
+|===
 
 ....
-Relative metadata attribute: 3 type index                               : 38
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>CabGroupsConverted</key>
+        <string>23</string>
+        <key>MLMailFlagsFixUp</key>
+        <string>14F27</string>
+        <key>MLMailReadFixUp</key>
+        <string>14F27</string>
+        <key>MLReimportedApps</key>
+        <true/>
+        <key>MLReimportedChats</key>
+        <true/>
+        <key>MLReimportedFailures</key>
+        <string>14F27</string>
+        <key>MLReimportedMail</key>
+        <true/>
+        <key>ReimportedAltNames</key>
+        <string>14F27</string>
+        <key>ReimportedPhotoLibraries</key>
+        <true/>
+        <key>SDBConsistencyCheck</key>
+        <string>14F27</string>
+        <key>database.diskstoreversion</key>
+        <integer>2</integer>
+        <key>database.fseventsuuid</key>
+        <string>B3F639AD-3C93-4970-9D7E-EAD2B0875FDA</string>
+        <key>database.fullyindexbysnowleopard</key>
+        <true/>
+        <key>database.localizedtermsuuid</key>
+        <data>
+        9RsNbp5KQI+fBJGSuOkzSQ==
+        </data>
+        <key>database.recoverscantime</key>
+        <integer>1442686011</integer>
+        <key>database.shutdowntime</key>
+        <integer>1440532242</integer>
+        <key>database.volumeuuid</key>
+        <string>8C76D365-800A-3B5C-8320-55C3E6032D70</string>
+        <key>kCabReimportedMail</key>
+        <true/>
+        <key>kIndexCheckDupOids</key>
+        <string>14F27</string>
+        <key>kIndexRemappingData</key>
+        <key>kIndexRemappingData</key>
+        <dict>
+                <key>kIndexRemappingIndex</key>
+                <integer>4</integer>
+                <key>kIndexRemappings</key>
+                <array/>
+        </dict>
+        <key>kMDSIndexSyncCount</key>
+        <integer>41</integer>
+        <key>kSIConsistencyCheck</key>
+        <string>14F27</string>
+        <key>kSIRepairSizes</key>
+        <string>14F27</string>
+        <key>kSIRepairedIndex</key>
+        <true/>
+        <key>scan.fullscancomplete</key>
+        <true/>
+        <key>scan.fullscanrequesttime</key>
+        <integer>1435155044</integer>
+        <key>scan.scancompletetime</key>
+        <integer>1435157167</integer>
+</dict>
+</plist>
+....
+
+....
+Metadata attribute: 3 type index                                        : 21
+Key name                                                                : kMDStoreAccumulatedSizes
+Property type                                                           : 0x0e
+Value type                                                              : 0x08
+Data:
+0x00000000  80 98 00 e0 30 a2 44 c0  50 00 f0 25 18 20 00 f0  ....0.D.P..%. ..
+0x00000010  3b ae 04 e0 d9 c0 00 83  1b e2 ca d0 00 f3 66 f6  ;.............f.
+0x00000020  40 00 00 e3 a6 9e 00 e2  22 91 28 c0 5e 74 f0 37  @.......".(.^t.7
+0x00000030  e5 a8 81 e4 7a 42 c3 f0  38 6f 18 7e a2 00 00 f0  ....zB..8o.~....
+
 Metadata attribute: 3 type index                                        : 67
 Key name                                                                : kMDStoreAccumulatedSizes
 Property type                                                           : 0x0e
 Value type                                                              : 0x08
-
-0x000008e0                           26 80 98 00 00 a0 00 e5          &.......
-0x000008f0  67 20 00 f0 1f 9d 11 44  00 83 1b f0 12 5a c0 00  g .....D.....Z..
-0x00000900  f0 ae f4 31 6d 00 f0 52  fc 0a 60 e3 8d df 39 c1  ...1m..R..`...9.
-0x00000910  07 3a f0 45 57 00 f8 ea  2f 23 54 f0 81 cc d2 e2  .:.EW.../#T.....
-0x00000920  a2 00 00 f8 0a                                    .....
+Data:
+0x00000000  80 98 00 00 a0 00 e5 67  20 00 f0 1f 9d 11 44 00  .......g .....D.
+0x00000010  83 1b f0 12 5a c0 00 f0  ae f4 31 6d 00 f0 52 fc  ....Z.....1m..R.
+0x00000020  0a 60 e3 8d df 39 c1 07  3a f0 45 57 00 f8 ea 2f  .`...9..:.EW.../
+0x00000030  23 54 f0 81 cc d2 e2 a2  00 00 f8 0a              #T..........    
 ....
+
+== Notes
 
 ....
 /.Spotlight-V100/Store-V2/${STORE_UUID}/store.updates

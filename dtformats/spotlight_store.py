@@ -14,6 +14,101 @@ from dtformats import data_format
 from dtformats import errors
 
 
+class MetadataAttribute(object):
+  """Metadata attribute.
+
+  Attributes:
+    key (str): key or name of the metadata attribute.
+    property_type (int): metadata attribute property type.
+    value (object): metadata attribute value.
+    value_type (int): metadata attribute value type.
+  """
+
+  def __init__(self):
+    """Initializes a metadata attribute."""
+    super(MetadataAttribute, self).__init__()
+    self.key = None
+    self.property_type = None
+    self.value = None
+    self.value_type = None
+
+
+class RecordDescriptor(object):
+  """Record descriptor.
+
+  Attributes:
+    identifier (int): record identifier.
+    item_identifier (int): item identifier.
+    last_updated_time (int): record last updated time.
+    page_offset (int): offset of the page containing the record, relative to
+        the start of the file.
+    page_value_offset (int): offset of the page value containing the record,
+        relative to the start of the page.
+    parent_identifier (int): parent identifier.
+  """
+
+  def __init__(self, page_offset, page_value_offset):
+    """Initializes a record descriptor.
+
+    Args:
+      page_offset (int): offset of the page containing the record, relative to
+          the start of the file.
+      page_value_offset (int): offset of the page value containing the record,
+          relative to the start of the page.
+    """
+    super(RecordDescriptor, self).__init__()
+    self.identifier = 0
+    self.item_identifier = 0
+    self.last_updated_time = 0
+    self.page_offset = page_offset
+    self.page_value_offset = page_value_offset
+    self.parent_identifier = 0
+
+
+class RecordHeader(object):
+  """Record header.
+
+  Attributes:
+    data_size (int): size of the record data.
+    flags (int): record flags.
+    identifier (int): record identifier.
+    item_identifier (int): item identifier.
+    last_updated_time (int): record last updated time.
+    parent_identifier (int): parent identifier.
+  """
+
+  def __init__(self):
+    """Initializes a record header."""
+    super(RecordHeader, self).__init__()
+    self.data_size = 0
+    self.flags = 0
+    self.identifier = 0
+    self.item_identifier = 0
+    self.last_updated_time = 0
+    self.parent_identifier = 0
+
+
+class Record(object):
+  """Record.
+
+  Attributes:
+    attributes (dict[str, MetadataAttribute]): metadata attributes.
+    identifier (int): record identifier.
+    item_identifier (int): item identifier.
+    last_updated_time (int): record last updated time.
+    parent_identifier (int): parent identifier.
+  """
+
+  def __init__(self):
+    """Initializes a record."""
+    super(Record, self).__init__()
+    self.attributes = {}
+    self.identifier = 0
+    self.item_identifier = 0
+    self.last_updated_time = 0
+    self.parent_identifier = 0
+
+
 class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
   """Apple Spotlight store database file."""
 
@@ -65,7 +160,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       ('signature', 'Signature', '_FormatStreamAsSignature'),
       ('page_size', 'Page size', '_FormatIntegerAsDecimal'),
       ('used_page_size', 'Used page size', '_FormatIntegerAsDecimal'),
-      ('page_content_type', 'Page content type',
+      ('property_table_type', 'Property table type',
        '_FormatIntegerAsHexadecimal8'),
       ('uncompressed_page_size', 'Uncompressed page size',
        '_FormatIntegerAsDecimal')]
@@ -98,6 +193,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     self._metadata_localized_strings = {}
     self._metadata_types = {}
     self._metadata_values = {}
+    self._record_descriptors = {}
+    self._record_pages_cache = {}
 
   def _DebugPrintCocoaTimeValue(self, description, value):
     """Prints a Cocoa timestamp value for debugging.
@@ -117,6 +214,92 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         date_time_string = '0x{0:08x}'.format(value)
 
     self._DebugPrintValue(description, date_time_string)
+
+  def _DebugPrintMetadataAttribute(self, metadata_attribute):
+    """Prints a metadata attribute for debugging.
+
+    Args:
+      metadata_attribute (MetadataAttribute): metadata attribute.
+    """
+    if metadata_attribute.key == 'kMDStoreAccumulatedSizes':
+      self._DebugPrintData('Data', metadata_attribute.value)
+
+    elif metadata_attribute.value_type == 0x00:
+      self._DebugPrintDecimalValue('Integer', metadata_attribute.value)
+      value_string = '{0!s}'.format(bool(metadata_attribute.value))
+      self._DebugPrintValue('Boolean', value_string)
+
+    elif metadata_attribute.value_type in (0x02, 0x06):
+      value_string = self._FormatIntegerAsHexadecimal8(metadata_attribute.value)
+      self._DebugPrintValue('Integer', value_string)
+
+    elif metadata_attribute.value_type == 0x07:
+      if metadata_attribute.property_type & 0x02 == 0x00:
+        self._DebugPrintDecimalValue('Integer', metadata_attribute.value)
+      else:
+        for array_index, array_value in enumerate(metadata_attribute.value):
+          description = 'Integer: {0:d}'.format(array_index)
+          self._DebugPrintDecimalValue(description, array_value)
+
+    elif metadata_attribute.value_type == 0x08:
+      if metadata_attribute.property_type & 0x02 == 0x00:
+        self._DebugPrintDecimalValue('Byte', metadata_attribute.value)
+      else:
+        for array_index, array_value in enumerate(metadata_attribute.value):
+          description = 'Byte: {0:d}'.format(array_index)
+          self._DebugPrintDecimalValue(description, array_value)
+
+    elif metadata_attribute.value_type in (0x09, 0x0a):
+      if metadata_attribute.property_type & 0x02 == 0x00:
+        value_string = self._FormatFloatingPoint(metadata_attribute.value)
+        self._DebugPrintValue('Floating-point', value_string)
+      else:
+        for array_index, array_value in enumerate(metadata_attribute.value):
+          description = 'Floating-point: {0:d}'.format(array_index)
+          value_string = self._FormatFloatingPoint(array_value)
+          self._DebugPrintValue(description, value_string)
+
+    elif metadata_attribute.value_type == 0x0b:
+      if metadata_attribute.property_type & 0x02 == 0x00:
+        self._DebugPrintValue('String', metadata_attribute.value)
+      else:
+        for array_index, array_value in enumerate(metadata_attribute.value):
+          description = 'String: {0:d}'.format(array_index)
+          self._DebugPrintValue(description, array_value)
+
+    elif metadata_attribute.value_type == 0x0c:
+      if metadata_attribute.property_type & 0x02 == 0x00:
+        if metadata_attribute.value < 7500000000.0:
+          self._DebugPrintCocoaTimeValue(
+              'Date and time', metadata_attribute.value)
+        else:
+          value_string = self._FormatFloatingPoint(metadata_attribute.value)
+          self._DebugPrintValue('Floating-point', value_string)
+
+      else:
+        for array_index, array_value in enumerate(metadata_attribute.value):
+          if array_value < 7500000000.0:
+            description = 'Date and time: {0:d}'.format(array_index)
+            self._DebugPrintCocoaTimeValue(description, array_value)
+          else:
+            description = 'Floating-point: {0:d}'.format(array_index)
+            value_string = self._FormatFloatingPoint(array_value)
+            self._DebugPrintValue(description, value_string)
+
+    elif metadata_attribute.value_type == 0x0e:
+      self._DebugPrintData('Binary data', metadata_attribute.value)
+
+    elif metadata_attribute.value_type == 0x0f:
+      if metadata_attribute.property_type & 0x03 == 0x03:
+        self._DebugPrintValue('Localized string', metadata_attribute.value)
+
+      elif metadata_attribute.property_type & 0x03 == 0x02:
+        self._DebugPrintValue('Values list', metadata_attribute.value)
+
+      else:
+        self._DebugPrintValue('Value', metadata_attribute.value)
+
+    self._DebugPrintText('\n')
 
   def _DebugPrintPosixTimeValue(self, description, value):
     """Prints a POSIX timestamp value for debugging.
@@ -342,259 +525,134 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       file_offset += map_value_size
 
-  def _ReadPropertyPage(self, file_object, file_offset, property_table):
-    """Reads a property page.
+  def _ReadMetadataAttribute(self, metadata_type, data):
+    """Reads a metadata attribute.
 
     Args:
-      file_object (file): file-like object.
-      file_offset (int): file offset.
-      property_table (dict[int, object]): property table in which to store the
-          property page values.
+      metadata_type (spotlight_store_db_property_value11): metadata type
+          property value.
+      data (bytes): data.
 
     Returns:
-      spotlight_store_db_property_page_header: page header.
-
-    Raises:
-      ParseError: if the property page cannot be read.
+      tuple[MetadataAttribute, int]: metadata attribute and number of bytes
+          read.
     """
-    data_type_map = self._GetDataTypeMap(
-        'spotlight_store_db_property_page_header')
+    value_type = getattr(metadata_type, 'value_type', None)
+    if value_type is None:
+      return None, 0
 
-    page_header, page_header_size = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'property page header')
+    key_name = getattr(metadata_type, 'key_name', None)
+    property_type = getattr(metadata_type, 'property_type', None)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          page_header, self._DEBUG_INFO_PROPERTY_PAGE_HEADER)
+      self._DebugPrintValue('Key name', key_name or '')
+
+      value_string = self._FormatIntegerAsHexadecimal2(property_type or 0)
+      self._DebugPrintValue('Property type', value_string)
+
+      value_string = self._FormatIntegerAsHexadecimal2(value_type or 0)
+      self._DebugPrintValue('Value type', value_string)
+
+    if key_name == 'kMDStoreAccumulatedSizes':
+      bytes_read = 4 * 16
+      value = data[:bytes_read]
+
+    elif value_type in (0x00, 0x02, 0x06):
+      value, bytes_read = self._ReadVariableSizeInteger(data)
+
+    elif value_type == 0x07:
+      value, bytes_read = self._ReadMetadataAttributeVariableSizeIntegerValue(
+          property_type, data)
+
+    elif value_type == 0x08:
+      value, bytes_read = self._ReadMetadataAttributeByteValue(
+          property_type, data)
+
+    elif value_type == 0x09:
+      value, bytes_read = self._ReadMetadataAttributeFloat32Value(
+          property_type, data)
+
+    elif value_type in (0x0a, 0x0c):
+      value, bytes_read = self._ReadMetadataAttributeFloat64Value(
+          property_type, data)
+
+    elif value_type == 0x0b:
+      value, bytes_read = self._ReadMetadataAttributeStringValue(
+          property_type, data)
+
+    elif value_type == 0x0e:
+      data_size, bytes_read = self._ReadVariableSizeInteger(data)
+
+      if self._debug:
+        self._DebugPrintDecimalValue('Data size', data_size)
+
+      value = data[bytes_read:bytes_read + data_size]
+      bytes_read += data_size
+
+      # TODO: decode binary data e.g. UUID
+
+    elif value_type == 0x0f:
+      value, bytes_read = self._ReadMetadataAttributeReferenceValue(
+          property_type, data)
+
+    else:
+      # TODO: value type 0x01, 0x03, 0x04, 0x05, 0x0d
+      value, bytes_read = None, 0
+
+    metadata_attribute = MetadataAttribute()
+    metadata_attribute.key = getattr(metadata_type, 'key_name', None)
+    metadata_attribute.property_type = property_type
+    metadata_attribute.value = value
+    metadata_attribute.value_type = value_type
 
     if self._debug:
-      self._DebugPrintDecimalValue('Block number', int(file_offset / 0x1000))
-      self._DebugPrintDecimalValue(
-          'Page number', int(file_offset / page_header.page_size))
+      self._DebugPrintMetadataAttribute(metadata_attribute)
 
-    page_data = file_object.read(page_header.page_size - page_header_size)
+    return metadata_attribute, bytes_read
 
-    file_offset += page_header_size
-
-    next_block_number = 0
-    if page_header.page_content_type in (
-        0x00000011, 0x00000021, 0x00000041, 0x00000081):
-      data_type_map = self._GetDataTypeMap(
-          'spotlight_store_db_property_values_header')
-
-      page_values_header = self._ReadStructureFromByteStream(
-          page_data, file_offset, data_type_map, 'property values header')
-
-      if self._debug:
-        self._DebugPrintStructureObject(
-            page_values_header, self._DEBUG_INFO_PROPERTY_VALUES_HEADER)
-
-      next_block_number = page_values_header.next_block_number
-
-    if page_header.page_content_type == 0x00000009:
-      self._ReadRecordPageValues(page_header, page_data, property_table)
-
-    elif page_header.page_content_type in (0x00000011, 0x00000021):
-      self._ReadPropertyPageValues(page_header, page_data, property_table)
-
-    elif page_header.page_content_type == 0x00000081:
-      self._ReadIndexPageValues(page_header, page_data, property_table)
-
-    elif self._debug:
-      self._DebugPrintData('Page data', page_data)
-
-    return page_header, next_block_number
-
-  def _ReadPropertyPages(self, file_object, block_number, property_table):
-    """Reads the property pages.
+  def _ReadMetadataAttributeByteValue(self, property_type, data):
+    """Reads a metadata attribute byte value.
 
     Args:
-      file_object (file): file-like object.
-      block_number (int): block number.
-      property_table (dict[int, object]): property table in which to store the
-          property page values.
+      property_type (int): metadata attribute property type.
+      data (bytes): data.
+
+    Returns:
+      tuple[object, int]: value and number of bytes read.
 
     Raises:
-      ParseError: if the property pages cannot be read.
+      ParseError: if the metadata attribute byte value cannot be read.
     """
-    file_offset = block_number * 0x1000
+    if property_type & 0x02 == 0x00:
+      data_size, bytes_read = 1, 0
+    else:
+      data_size, bytes_read = self._ReadVariableSizeInteger(data)
 
-    while file_offset < self._file_size:
-      _, next_block_number = self._ReadPropertyPage(
-          file_object, file_offset, property_table)
+    if self._debug and bytes_read != 0:
+      self._DebugPrintDecimalValue('Data size', data_size)
 
-      if next_block_number == 0:
-        break
+    data_type_map = self._GetDataTypeMap('array_of_byte')
 
-      file_offset = next_block_number * 0x1000
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'elements_data_size': data_size})
 
-  def _ReadPropertyPageValues(self, page_header, page_data, property_table):
-    """Reads the property page values.
+    try:
+      array_of_values = data_type_map.MapByteStream(
+          data[bytes_read:bytes_read + data_size], context=context)
 
-    Args:
-      page_header (spotlight_store_db_property_page_header): page header.
-      page_data (bytes): page data.
-      property_table (dict[int, object]): property table in which to store the
-          property page values.
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError(
+          'Unable to parse array of byte values with error: {0!s}'.format(
+              exception))
 
-    Raises:
-      ParseError: if the property page values cannot be read.
-    """
-    if page_header.page_content_type == 0x00000011:
-      data_type_map = self._GetDataTypeMap(
-          'spotlight_store_db_property_value11')
+    if bytes_read == 0:
+      value = array_of_values[0]
+    else:
+      value = array_of_values
 
-    elif page_header.page_content_type == 0x00000021:
-      data_type_map = self._GetDataTypeMap(
-          'spotlight_store_db_property_value21')
+    bytes_read += data_size
 
-    page_data_offset = 12
-    page_data_size = page_header.used_page_size - 20
-    page_value_index = 0
-
-    while page_data_offset < page_data_size:
-      context = dtfabric_data_maps.DataTypeMapContext()
-
-      try:
-        property_value = data_type_map.MapByteStream(
-            page_data[page_data_offset:], context=context)
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError((
-            'Unable to map property value data at offset: 0x{0:08x} with '
-            'error: {1!s}').format(page_data_offset, exception))
-
-      if self._debug:
-        self._DebugPrintData(
-            'Page value: {0:d} data'.format(page_value_index),
-            page_data[page_data_offset:page_data_offset + context.byte_size])
-
-        if page_header.page_content_type == 0x00000011:
-          debug_info = self._DEBUG_INFO_PROPERTY_VALUE11
-        elif page_header.page_content_type == 0x00000021:
-          debug_info = self._DEBUG_INFO_PROPERTY_VALUE21
-
-        self._DebugPrintStructureObject(property_value, debug_info)
-
-      property_table[property_value.table_index] = property_value
-
-      page_data_offset += context.byte_size
-      page_value_index += 1
-
-  def _ReadRecordPageValues(self, page_header, page_data, property_table):
-    """Reads the record page values.
-
-    Args:
-      page_header (spotlight_store_db_property_page_header): page header.
-      page_data (bytes): page data.
-      property_table (dict[int, object]): property table in which to store the
-          property page values.
-
-    Raises:
-      ParseError: if the property page values cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('spotlight_store_db_record')
-
-    if page_header.uncompressed_page_size > 0:
-      page_data = zlib.decompress(page_data)
-
-    page_value_index = 0
-    page_data_offset = 0
-    page_data_size = len(page_data)
-
-    while page_data_offset < page_data_size:
-      context = dtfabric_data_maps.DataTypeMapContext()
-
-      try:
-        record = data_type_map.MapByteStream(
-            page_data[page_data_offset:], context=context)
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError((
-            'Unable to map record at offset: 0x{0:08x} with error: '
-            '{1!s}').format(page_data_offset, exception))
-
-      if self._debug:
-        self._DebugPrintText('Record at offset: 0x{0:08x}\n'.format(
-            page_data_offset + 20))
-        self._DebugPrintData(
-            'Page value: {0:d} data'.format(page_value_index),
-            page_data[page_data_offset:page_data_offset + record.data_size])
-
-      page_value_offset = page_data_offset + context.byte_size
-
-      identifier, bytes_read = self._ReadVariableSizeInteger(
-          page_data[page_value_offset:])
-
-      page_value_offset += bytes_read
-      record_data_offset = bytes_read
-
-      flags = page_data[page_value_offset]
-
-      page_value_offset += 1
-      record_data_offset += 1
-
-      value_names = ['item_identifier', 'parent_identifier', 'updated_time']
-      values, bytes_read = self._ReadVariableSizeIntegers(
-          page_data[page_value_offset:], value_names)
-
-      page_value_offset += bytes_read
-      record_data_offset += bytes_read
-
-      if self._debug:
-        self._DebugPrintDecimalValue('Data size', record.data_size)
-        self._DebugPrintDecimalValue('Identifier', identifier)
-
-        value_string = self._FormatIntegerAsHexadecimal2(flags)
-        self._DebugPrintValue('Flags', value_string)
-
-        self._DebugPrintDecimalValue(
-            'Item identifier', values.get('item_identifier'))
-        self._DebugPrintDecimalValue(
-            'Parent identifier', values.get('parent_identifier'))
-        self._DebugPrintPosixTimeValue(
-            'Updated time', values.get('updated_time'))
-        self._DebugPrintText('\n')
-
-      metadata_attribute_index = 0
-      metadata_type_index = 0
-
-      while record_data_offset < record.data_size:
-        if self._debug:
-          value_string = self._FormatIntegerAsHexadecimal8(
-              record_data_offset + 4)
-          self._DebugPrintValue('Record data offset', value_string)
-
-        relative_metadata_type_index, bytes_read = (
-            self._ReadVariableSizeInteger(page_data[page_value_offset:]))
-
-        page_value_offset += bytes_read
-        record_data_offset += bytes_read
-
-        metadata_type_index += relative_metadata_type_index
-
-        if self._debug:
-          description = 'Relative metadata attribute: {0:d} type index'.format(
-              metadata_attribute_index)
-          self._DebugPrintDecimalValue(
-              description, relative_metadata_type_index)
-
-          description = 'Metadata attribute: {0:d} type index'.format(
-              metadata_attribute_index)
-          self._DebugPrintDecimalValue(description, metadata_type_index)
-
-        metadata_type = self._metadata_types.get(metadata_type_index, None)
-        _, bytes_read = self._ReadMetadataAttributeValue(
-            metadata_type, page_data[page_value_offset:])
-
-        page_value_offset += bytes_read
-        record_data_offset += bytes_read
-
-        if self._debug:
-          self._DebugPrintText('\n')
-
-        metadata_attribute_index += 1
-
-      page_data_offset += context.byte_size + record.data_size
-      page_value_index += 1
+    return value, bytes_read
 
   def _ReadMetadataAttributeFloat32Value(self, property_type, data):
     """Reads a metadata attribute 32-bit floating-point value.
@@ -686,6 +744,52 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     return value, bytes_read
 
+  def _ReadMetadataAttributeReferenceValue(self, property_type, data):
+    """Reads a metadata attribute reference value.
+
+    Args:
+      property_type (int): metadata attribute property type.
+      data (bytes): data.
+
+    Returns:
+      tuple[object, int]: value and number of bytes read.
+
+    Raises:
+      ParseError: if the metadata attribute reference value cannot be read.
+    """
+    table_index, bytes_read = self._ReadVariableSizeInteger(data)
+
+    if property_type & 0x03 == 0x03:
+      if self._debug:
+        self._DebugPrintDecimalValue(
+            'Localized strings table index', table_index)
+
+      metadata_localized_strings = self._metadata_localized_strings.get(
+          table_index, None)
+      value_list = getattr(metadata_localized_strings, 'values_list', [])
+
+      value = '(null)'
+      if value_list:
+        value = value_list[0]
+        if '\x16\x02' in value:
+          value = value.split('\x16\x02')[0]
+
+    elif property_type & 0x03 == 0x02:
+      if self._debug:
+        self._DebugPrintDecimalValue('Values list table index', table_index)
+
+      metadata_list = self._metadata_lists.get(table_index, None)
+      value = getattr(metadata_list, 'values_list', [])
+
+    else:
+      if self._debug:
+        self._DebugPrintDecimalValue('Values table index', table_index)
+
+      metadata_value = self._metadata_values.get(table_index, None)
+      value = getattr(metadata_value, 'value_name', '(null)')
+
+    return value, bytes_read
+
   def _ReadMetadataAttributeStringValue(self, property_type, data):
     """Reads a metadata attribute string value.
 
@@ -715,8 +819,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           data[bytes_read:bytes_read + data_size], context=context)
 
     except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          'Unable to parse array of string values with error: {0!s}').format(
+      raise errors.ParseError(
+          'Unable to parse array of string values with error: {0!s}'.format(
               exception))
 
     if property_type & 0x02 == 0x00:
@@ -760,182 +864,374 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     return array_of_values, bytes_read
 
-  def _ReadMetadataAttributeValue(self, metadata_type, data):
-    """Reads a metadata attribute value.
+  def _ReadPropertyPage(self, file_object, file_offset, property_table):
+    """Reads a property page.
 
     Args:
-      metadata_type (spotlight_store_db_property_value11): metadata type
-          property value.
-      data (bytes): data.
+      file_object (file): file-like object.
+      file_offset (int): file offset.
+      property_table (dict[int, object]): property table in which to store the
+          property page values.
 
     Returns:
-      tuple[object, int]: value and number of bytes read.
+      tuple[spotlight_store_db_property_page_header, int]: page header and next
+          property page block number.
+
+    Raises:
+      ParseError: if the property page cannot be read.
     """
-    property_type = getattr(metadata_type, 'property_type', None)
-    value_type = getattr(metadata_type, 'value_type', None)
-    if value_type is None:
-      return None, 0
+    page_header, bytes_read = self._ReadPropertyPageHeader(
+        file_object, file_offset)
+
+    if page_header.property_table_type not in (
+        0x00000011, 0x00000021, 0x00000041, 0x00000081):
+      raise errors.ParseError(
+          'Unsupported property table type: 0x{0:08x}'.format(
+              page_header.property_table_type))
+
+    page_data = file_object.read(page_header.page_size - bytes_read)
+
+    data_type_map = self._GetDataTypeMap(
+        'spotlight_store_db_property_values_header')
+
+    file_offset += bytes_read
+
+    page_values_header = self._ReadStructureFromByteStream(
+        page_data, file_offset, data_type_map, 'property values header')
 
     if self._debug:
-      key_name = getattr(metadata_type, 'key_name', '')
-      self._DebugPrintValue('Key name', key_name)
+      self._DebugPrintStructureObject(
+          page_values_header, self._DEBUG_INFO_PROPERTY_VALUES_HEADER)
 
-      value_string = self._FormatIntegerAsHexadecimal2(property_type or 0)
-      self._DebugPrintValue('Property type', value_string)
+    if page_header.property_table_type in (0x00000011, 0x00000021):
+      self._ReadPropertyPageValues(page_header, page_data, property_table)
 
-      value_string = self._FormatIntegerAsHexadecimal2(value_type or 0)
-      self._DebugPrintValue('Value type', value_string)
+    elif page_header.property_table_type == 0x00000081:
+      self._ReadIndexPageValues(page_header, page_data, property_table)
 
-    if value_type in (0x00, 0x02, 0x06):
-      value, bytes_read = self._ReadVariableSizeInteger(data)
+    elif self._debug:
+      self._DebugPrintData('Page data', page_data)
 
-    elif value_type == 0x07:
-      value, bytes_read = self._ReadMetadataAttributeVariableSizeIntegerValue(
-          property_type, data)
+    return page_header, page_values_header.next_block_number
 
-    elif value_type == 0x08:
-      if property_type & 0x02 == 0x00:
-        value, bytes_read = 1, 0
-      else:
-        value, bytes_read = self._ReadVariableSizeInteger(data)
+  def _ReadPropertyPageHeader(self, file_object, file_offset):
+    """Reads a property page header.
 
-      if self._debug and bytes_read != 0:
-        self._DebugPrintDecimalValue('Binary data size', value)
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): file offset.
+
+    Returns:
+      tuple[spotlight_store_db_property_page_header, int]: page header and next
+          property page block number.
+
+    Raises:
+      ParseError: if the property page header cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap(
+        'spotlight_store_db_property_page_header')
+
+    page_header, bytes_read = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'property page header')
+
+    if self._debug:
+      block_number = int(file_offset / 0x1000)
+      self._DebugPrintDecimalValue('Block number', block_number)
+
+      page_number = int(file_offset / page_header.page_size)
+      self._DebugPrintDecimalValue('Page number', page_number)
+
+      self._DebugPrintText('\n')
+
+      self._DebugPrintStructureObject(
+          page_header, self._DEBUG_INFO_PROPERTY_PAGE_HEADER)
+
+    return page_header, bytes_read
+
+  def _ReadPropertyPages(self, file_object, block_number, property_table):
+    """Reads the property pages.
+
+    Args:
+      file_object (file): file-like object.
+      block_number (int): block number.
+      property_table (dict[int, object]): property table in which to store the
+          property page values.
+
+    Raises:
+      ParseError: if the property pages cannot be read.
+    """
+    file_offset = block_number * 0x1000
+
+    while file_offset < self._file_size:
+      _, next_block_number = self._ReadPropertyPage(
+          file_object, file_offset, property_table)
+
+      if next_block_number == 0:
+        break
+
+      file_offset = next_block_number * 0x1000
+
+  def _ReadPropertyPageValues(self, page_header, page_data, property_table):
+    """Reads the property page values.
+
+    Args:
+      page_header (spotlight_store_db_property_page_header): page header.
+      page_data (bytes): page data.
+      property_table (dict[int, object]): property table in which to store the
+          property page values.
+
+    Raises:
+      ParseError: if the property page values cannot be read.
+    """
+    if page_header.property_table_type == 0x00000011:
+      data_type_map = self._GetDataTypeMap(
+          'spotlight_store_db_property_value11')
+
+    elif page_header.property_table_type == 0x00000021:
+      data_type_map = self._GetDataTypeMap(
+          'spotlight_store_db_property_value21')
+
+    page_data_offset = 12
+    page_data_size = page_header.used_page_size - 20
+    page_value_index = 0
+
+    while page_data_offset < page_data_size:
+      context = dtfabric_data_maps.DataTypeMapContext()
+
+      try:
+        property_value = data_type_map.MapByteStream(
+            page_data[page_data_offset:], context=context)
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            'Unable to map property value data at offset: 0x{0:08x} with '
+            'error: {1!s}').format(page_data_offset, exception))
 
       if self._debug:
         self._DebugPrintData(
-            'Binary data', data[bytes_read:bytes_read + value])
+            'Page value: {0:d} data'.format(page_value_index),
+            page_data[page_data_offset:page_data_offset + context.byte_size])
 
-      # TODO: handle as array of bytes?
+        if page_header.property_table_type == 0x00000011:
+          debug_info = self._DEBUG_INFO_PROPERTY_VALUE11
+        elif page_header.property_table_type == 0x00000021:
+          debug_info = self._DEBUG_INFO_PROPERTY_VALUE21
 
-      bytes_read += value
+        self._DebugPrintStructureObject(property_value, debug_info)
 
-    elif value_type == 0x09:
-      value, bytes_read = self._ReadMetadataAttributeFloat32Value(
-          property_type, data)
+      property_table[property_value.table_index] = property_value
 
-    elif value_type in (0x0a, 0x0c):
-      value, bytes_read = self._ReadMetadataAttributeFloat64Value(
-          property_type, data)
+      page_data_offset += context.byte_size
+      page_value_index += 1
 
-    elif value_type == 0x0b:
-      value, bytes_read = self._ReadMetadataAttributeStringValue(
-          property_type, data)
+  def _ReadRecord(self, page_data, page_value_offset):
+    """Reads a record.
 
-    elif value_type == 0x0e:
-      value, bytes_read = self._ReadVariableSizeInteger(data)
+    Args:
+      page_data (bytes): page data.
+      page_value_offset (int): offset of the page value relative to the start
+          of the page data.
+
+    Returns:
+      Record: record matching the identifier or None if no such record.
+
+    Raises:
+      ParseError: if the record page cannot be read.
+    """
+    if self._debug:
+      value_string = self._FormatIntegerAsHexadecimal8(
+          page_value_offset)
+      self._DebugPrintValue('Record data offset', value_string)
+
+    page_data_offset = page_value_offset - 20
+    record_header, bytes_read = self._ReadRecordHeader(
+        page_data[page_data_offset:], page_data_offset)
+
+    page_data_offset += bytes_read
+    record_data_offset = bytes_read
+
+    record = Record()
+    record.identifier = record_header.identifier
+    record.item_identifier = record_header.item_identifier
+    record.last_updated_time = record_header.last_updated_time
+    record.parent_identifier = record_header.parent_identifier
+
+    metadata_attribute_index = 0
+    metadata_type_index = 0
+
+    while record_data_offset < record_header.data_size:
+      relative_metadata_type_index, bytes_read = (
+          self._ReadVariableSizeInteger(page_data[page_data_offset:]))
+
+      page_data_offset += bytes_read
+      record_data_offset += bytes_read
+
+      metadata_type_index += relative_metadata_type_index
 
       if self._debug:
-        self._DebugPrintDecimalValue('Binary data size', value)
-        self._DebugPrintData(
-            'Binary data', data[bytes_read:bytes_read + value])
+        description = 'Relative metadata attribute: {0:d} type index'.format(
+            metadata_attribute_index)
+        self._DebugPrintDecimalValue(
+            description, relative_metadata_type_index)
 
-      # TODO: decode binary data
+        description = 'Metadata attribute: {0:d} type index'.format(
+            metadata_attribute_index)
+        self._DebugPrintDecimalValue(description, metadata_type_index)
 
-      bytes_read += value
+      metadata_type = self._metadata_types.get(metadata_type_index, None)
+      metadata_attribute, bytes_read = self._ReadMetadataAttribute(
+          metadata_type, page_data[page_data_offset:])
 
-    elif value_type == 0x0f:
-      value, bytes_read = self._ReadVariableSizeInteger(data)
+      page_data_offset += bytes_read
+      record_data_offset += bytes_read
 
-      if property_type & 0x03 == 0x03:
-        metadata_localized_strings = self._metadata_localized_strings.get(
-            value, None)
-        value_list = getattr(metadata_localized_strings, 'values_list', [])
+      record.attributes[metadata_attribute.key] = metadata_attribute
+      metadata_attribute_index += 1
 
-        value_string = '(null)'
-        if value_list:
-          value_string = value_list[0]
-          if '\x16\x02' in value_string:
-            value_string = value_string.split('\x16\x02')[0]
+    return record
 
-        if self._debug:
-          description = 'Metadata localized strings: {0:d}'.format(value)
-          self._DebugPrintValue(description, value_string)
+  def _ReadRecordHeader(self, data, page_data_offset):
+    """Reads a record header.
 
-        value = value_string
+    Args:
+      data (bytes): data.
+      page_data_offset (int): offset of the page value relative to the start
+          of the page data.
 
-      elif property_type & 0x03 == 0x02:
-        metadata_list = self._metadata_lists.get(value, None)
-        value_list = getattr(metadata_list, 'values_list', [])
+    Returns:
+      tuple[RecordHeader, int]: record header and number of bytes read.
 
-        if self._debug:
-          description = 'Metadata list: {0:d}'.format(value)
-          value_string = '{0!s}'.format(value_list)
-          self._DebugPrintValue(description, value_string)
+    Raises:
+      ParseError: if the record page cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('spotlight_store_db_record')
 
-        value = value_list
+    context = dtfabric_data_maps.DataTypeMapContext()
 
-      else:
-        metadata_value = self._metadata_values.get(value, None)
-        value_name = getattr(metadata_value, 'value_name', '(null)')
+    try:
+      record = data_type_map.MapByteStream(data, context=context)
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError((
+          'Unable to map record at offset: 0x{0:08x} with error: '
+          '{1!s}').format(page_data_offset, exception))
 
-        if self._debug:
-          description = 'Metadata value: {0:d}'.format(value)
-          self._DebugPrintValue(description, value_name)
+    data_offset = context.byte_size
 
-        value = value_name
+    identifier, bytes_read = self._ReadVariableSizeInteger(data[data_offset:])
 
-    else:
-      value, bytes_read = None, 0
+    data_offset += bytes_read
+
+    flags = data[data_offset]
+
+    data_offset += 1
+
+    value_names = ['item_identifier', 'parent_identifier', 'last_updated_time']
+    values, bytes_read = self._ReadVariableSizeIntegers(
+        data[data_offset:], value_names)
+
+    data_offset += bytes_read
 
     if self._debug:
-      if value_type == 0x00:
-        self._DebugPrintDecimalValue('Integer', value)
-        value_string = '{0!s}'.format(bool(value))
-        self._DebugPrintValue('Boolean', value_string)
+      self._DebugPrintDecimalValue('Record data size', record.data_size)
 
-      elif value_type in (0x02, 0x06):
-        value_string = self._FormatIntegerAsHexadecimal8(value)
-        self._DebugPrintValue('Integer', value_string)
+    record_header = RecordHeader()
+    record_header.data_size = record.data_size
+    record_header.identifier = identifier
+    record_header.flags = flags
+    record_header.item_identifier = values.get('item_identifier')
+    record_header.parent_identifier = values.get('parent_identifier')
+    record_header.last_updated_time = values.get('last_updated_time')
 
-      elif value_type == 0x07:
-        if property_type & 0x02 == 0x00:
-          self._DebugPrintDecimalValue('Integer', value)
-        else:
-          for array_index, array_value in enumerate(value):
-            description = 'Integer: {0:d}'.format(array_index)
-            self._DebugPrintDecimalValue(description, array_value)
+    return record_header, data_offset
 
-      elif value_type == 0x08:
-        pass
+  def _ReadRecordPage(self, file_object, file_offset):
+    """Reads a record page.
 
-      elif value_type in (0x09, 0x0a):
-        if property_type & 0x02 == 0x00:
-          value_string = self._FormatFloatingPoint(value)
-          self._DebugPrintValue('Floating-point', value_string)
-        else:
-          for array_index, array_value in enumerate(value):
-            description = 'Floating-point: {0:d}'.format(array_index)
-            value_string = self._FormatFloatingPoint(array_value)
-            self._DebugPrintValue(description, value_string)
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): file offset.
 
-      elif value_type == 0x0b:
-        if property_type & 0x02 == 0x00:
-          self._DebugPrintValue('String', value)
-        else:
-          for array_index, array_value in enumerate(value):
-            description = 'String: {0:d}'.format(array_index)
-            self._DebugPrintValue(description, array_value)
+    Returns:
+      tuple[spotlight_store_db_property_page_header, bytes]: page header and
+          page data.
 
-      elif value_type == 0x0c:
-        if property_type & 0x02 == 0x00:
-          if value < 7500000000.0:
-            self._DebugPrintCocoaTimeValue('Date and time', value)
-          else:
-            value_string = self._FormatFloatingPoint(value)
-            self._DebugPrintValue('Floating-point', value_string)
+    Raises:
+      ParseError: if the property page cannot be read.
+    """
+    page_header, bytes_read = self._ReadPropertyPageHeader(
+        file_object, file_offset)
 
-        else:
-          for array_index, array_value in enumerate(value):
-            if array_value < 7500000000.0:
-              description = 'Date and time: {0:d}'.format(array_index)
-              self._DebugPrintCocoaTimeValue(description, array_value)
-            else:
-              description = 'Floating-point: {0:d}'.format(array_index)
-              value_string = self._FormatFloatingPoint(array_value)
-              self._DebugPrintValue(description, value_string)
+    if page_header.property_table_type != 0x00000009:
+      raise errors.ParseError(
+          'Unsupported property table type: 0x{0:08x}'.format(
+              page_header.property_table_type))
 
-    return value, bytes_read
+    page_data = file_object.read(page_header.page_size - bytes_read)
+
+    if page_header.uncompressed_page_size > 0:
+      # TODO: add support for other compression types.
+      if page_data[0] != 0x78:
+        raise errors.ParseError('Unsupported compression type')
+
+      page_data = zlib.decompress(page_data)
+
+    return page_header, page_data
+
+  def _ReadRecordPageValues(self, page_data, page_offset):
+    """Reads the record page values.
+
+    Args:
+      page_data (bytes): page data.
+      page_offset (int): file offset of the page.
+
+    Raises:
+      ParseError: if the property page values cannot be read.
+    """
+    page_data_offset = 0
+    page_data_size = len(page_data)
+
+    while page_data_offset < page_data_size:
+      if self._debug:
+        value_string = self._FormatIntegerAsHexadecimal8(
+            page_data_offset + 20)
+        self._DebugPrintValue('Record data offset', value_string)
+
+      record_header, _ = self._ReadRecordHeader(
+          page_data[page_data_offset:], page_data_offset)
+
+      if self._debug:
+        record_data = page_data[
+            page_data_offset + 4:page_data_offset + record_header.data_size]
+        self._DebugPrintData('Record data', record_data)
+
+      if self._debug:
+        value_string = self._FormatIntegerAsHexadecimal2(
+            record_header.identifier)
+        self._DebugPrintValue('Identifier', value_string)
+
+        value_string = self._FormatIntegerAsHexadecimal2(record_header.flags)
+        self._DebugPrintValue('Flags', value_string)
+
+        value_string = self._FormatIntegerAsHexadecimal2(
+            record_header.item_identifier)
+        self._DebugPrintValue('Item identifier', value_string)
+
+        value_string = self._FormatIntegerAsHexadecimal2(
+            record_header.parent_identifier)
+        self._DebugPrintValue('Parent identifier', value_string)
+
+        self._DebugPrintPosixTimeValue(
+            'Last updated time', record_header.last_updated_time)
+        self._DebugPrintText('\n')
+
+      record_descriptor = RecordDescriptor(page_offset, page_data_offset + 20)
+      record_descriptor.last_updated_time = record_header.last_updated_time
+      record_descriptor.identifier = record_header.identifier
+      record_descriptor.item_identifier = record_header.item_identifier
+      record_descriptor.parent_identifier = record_header.parent_identifier
+
+      self._record_descriptors[record_header.identifier] = record_descriptor
+
+      page_data_offset += 4 + record_header.data_size
 
   def _ReadVariableSizeInteger(self, data):
     """Reads a variable size integer.
@@ -995,6 +1291,38 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     return values, data_offset
 
+  def GetRecordByIdentifier(self, identifier):
+    """Retrieves a specific record.
+
+    Args:
+      identifier (int): record identifier.
+
+    Returns:
+      Record: record matching the identifier or None if no such record.
+    """
+    record_descriptor = self._record_descriptors.get(identifier, None)
+    if not record_descriptor:
+      return None
+
+    if self._debug:
+      self._DebugPrintText((
+          'Retrieving record: 0x{0:02x} in page: 0x{1:08x} at offset: '
+          '0x{2:04x}\n').format(
+              identifier, record_descriptor.page_offset,
+              record_descriptor.page_value_offset))
+      self._DebugPrintText('\n')
+
+    page_data = self._record_pages_cache.get(
+        record_descriptor.page_offset, None)
+    if not page_data:
+      _, page_data = self._ReadRecordPage(
+          self._file_object, record_descriptor.page_offset)
+
+      # TODO: remove page from cache if full.
+      self._record_pages_cache[record_descriptor.page_offset] = page_data
+
+    return self._ReadRecord(page_data, record_descriptor.page_value_offset)
+
   def ReadFileObject(self, file_object):
     """Reads an Apple Spotlight database file-like object.
 
@@ -1030,4 +1358,19 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     for map_value in self._map_values:
       file_offset = map_value.block_number * 0x1000
-      self._ReadPropertyPage(file_object, file_offset, {})
+      _, page_data = self._ReadRecordPage(file_object, file_offset)
+
+      # TODO: remove page from cache if full.
+      self._record_pages_cache[file_offset] = page_data
+
+      self._ReadRecordPageValues(page_data, file_offset)
+
+    self.GetRecordByIdentifier(1)
+
+    # TODO: do something with metadata
+    # record = self.GetRecordByIdentifier(1)
+    # metadata_attribute = record.attributes.get('kMDStoreProperties', None)
+    # print(metadata_attribute.value.decode('utf8'))
+
+    # for record_identifier in sorted(self._record_descriptors.keys()):
+    #   record = self.GetRecordByIdentifier(record_identifier)
