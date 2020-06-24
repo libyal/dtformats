@@ -14,7 +14,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class MetadataAttribute(object):
+class SpotlightStoreMetadataAttribute(object):
   """Metadata attribute.
 
   Attributes:
@@ -26,20 +26,41 @@ class MetadataAttribute(object):
 
   def __init__(self):
     """Initializes a metadata attribute."""
-    super(MetadataAttribute, self).__init__()
+    super(SpotlightStoreMetadataAttribute, self).__init__()
     self.key = None
     self.property_type = None
     self.value = None
     self.value_type = None
 
 
-class RecordDescriptor(object):
+class SpotlightStoreMetadataItem(object):
+  """Metadata item.
+
+  Attributes:
+    attributes (dict[str, MetadataAttribute]): metadata attributes.
+    identifier (int): file (system) entry identifier.
+    item_identifier (int): item identifier.
+    last_update_time (int): last update time.
+    parent_identifier (int): parent file (system) entry identifier.
+  """
+
+  def __init__(self):
+    """Initializes a record."""
+    super(SpotlightStoreMetadataItem, self).__init__()
+    self.attributes = {}
+    self.identifier = 0
+    self.item_identifier = 0
+    self.last_update_time = 0
+    self.parent_identifier = 0
+
+
+class SpotlightStoreRecordDescriptor(object):
   """Record descriptor.
 
   Attributes:
     identifier (int): record identifier.
     item_identifier (int): item identifier.
-    last_updated_time (int): record last updated time.
+    last_update_time (int): record last update time.
     page_offset (int): offset of the page containing the record, relative to
         the start of the file.
     page_value_offset (int): offset of the page value containing the record,
@@ -56,16 +77,16 @@ class RecordDescriptor(object):
       page_value_offset (int): offset of the page value containing the record,
           relative to the start of the page.
     """
-    super(RecordDescriptor, self).__init__()
+    super(SpotlightStoreRecordDescriptor, self).__init__()
     self.identifier = 0
     self.item_identifier = 0
-    self.last_updated_time = 0
+    self.last_update_time = 0
     self.page_offset = page_offset
     self.page_value_offset = page_value_offset
     self.parent_identifier = 0
 
 
-class RecordHeader(object):
+class SpotlightStoreRecordHeader(object):
   """Record header.
 
   Attributes:
@@ -73,39 +94,18 @@ class RecordHeader(object):
     flags (int): record flags.
     identifier (int): record identifier.
     item_identifier (int): item identifier.
-    last_updated_time (int): record last updated time.
+    last_update_time (int): record last update time.
     parent_identifier (int): parent identifier.
   """
 
   def __init__(self):
     """Initializes a record header."""
-    super(RecordHeader, self).__init__()
+    super(SpotlightStoreRecordHeader, self).__init__()
     self.data_size = 0
     self.flags = 0
     self.identifier = 0
     self.item_identifier = 0
-    self.last_updated_time = 0
-    self.parent_identifier = 0
-
-
-class Record(object):
-  """Record.
-
-  Attributes:
-    attributes (dict[str, MetadataAttribute]): metadata attributes.
-    identifier (int): record identifier.
-    item_identifier (int): item identifier.
-    last_updated_time (int): record last updated time.
-    parent_identifier (int): parent identifier.
-  """
-
-  def __init__(self):
-    """Initializes a record."""
-    super(Record, self).__init__()
-    self.attributes = {}
-    self.identifier = 0
-    self.item_identifier = 0
-    self.last_updated_time = 0
+    self.last_update_time = 0
     self.parent_identifier = 0
 
 
@@ -115,7 +115,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
-      'spotlight_store.yaml')
+      'spotlight_storedb.yaml')
 
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
@@ -331,6 +331,40 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     """
     return stream.decode('ascii').replace('\x00', '\\x00')
 
+  def _GetMetadataItemByIdentifier(self, file_object, identifier):
+    """Retrieves a specific metadata item.
+
+    Args:
+      file_object (file): file-like object.
+      identifier (int): file (system) entry identifier of the metadata item.
+
+    Returns:
+      SpotlightStoreMetadataItem: metadata item matching the identifier or None
+          if no such item.
+    """
+    record_descriptor = self._record_descriptors.get(identifier, None)
+    if not record_descriptor:
+      return None
+
+    if self._debug:
+      self._DebugPrintText((
+          'Retrieving record: 0x{0:02x} in page: 0x{1:08x} at offset: '
+          '0x{2:04x}\n').format(
+              identifier, record_descriptor.page_offset,
+              record_descriptor.page_value_offset))
+      self._DebugPrintText('\n')
+
+    page_data = self._record_pages_cache.get(
+        record_descriptor.page_offset, None)
+    if not page_data:
+      _, page_data = self._ReadRecordPage(
+          file_object, record_descriptor.page_offset)
+
+      # TODO: remove page from cache if full.
+      self._record_pages_cache[record_descriptor.page_offset] = page_data
+
+    return self._ReadRecord(page_data, record_descriptor.page_value_offset)
+
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
 
@@ -432,12 +466,6 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintValue('Index values', value_string)
         self._DebugPrintText('\n')
 
-        metadata_type_index = property_value.table_index
-        metadata_type = self._metadata_types.get(metadata_type_index, None)
-        value_string = getattr(metadata_type, 'key_name', '')
-        self._DebugPrintValue(
-            'Key: {0:d}'.format(metadata_type_index), value_string)
-
         for metadata_value_index in index_values:
           metadata_value = self._metadata_values.get(metadata_value_index, None)
           value_string = getattr(metadata_value, 'value_name', '')
@@ -534,8 +562,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       data (bytes): data.
 
     Returns:
-      tuple[MetadataAttribute, int]: metadata attribute and number of bytes
-          read.
+      tuple[SpotlightStoreMetadataAttribute, int]: metadata attribute and
+          number of bytes read.
     """
     value_type = getattr(metadata_type, 'value_type', None)
     if value_type is None:
@@ -599,7 +627,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       # TODO: value type 0x01, 0x03, 0x04, 0x05, 0x0d
       value, bytes_read = None, 0
 
-    metadata_attribute = MetadataAttribute()
+    metadata_attribute = SpotlightStoreMetadataAttribute()
     metadata_attribute.key = getattr(metadata_type, 'key_name', None)
     metadata_attribute.property_type = property_type
     metadata_attribute.value = value
@@ -961,13 +989,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       ParseError: if the property pages cannot be read.
     """
     file_offset = block_number * 0x1000
-
-    while file_offset < self._file_size:
+    while file_offset != 0:
       _, next_block_number = self._ReadPropertyPage(
           file_object, file_offset, property_table)
-
-      if next_block_number == 0:
-        break
 
       file_offset = next_block_number * 0x1000
 
@@ -1032,10 +1056,10 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           of the page data.
 
     Returns:
-      Record: record matching the identifier or None if no such record.
+      SpotlightStoreMetadataItem: metadata item.
 
     Raises:
-      ParseError: if the record page cannot be read.
+      ParseError: if the record cannot be read.
     """
     if self._debug:
       value_string = self._FormatIntegerAsHexadecimal8(
@@ -1049,11 +1073,11 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     page_data_offset += bytes_read
     record_data_offset = bytes_read
 
-    record = Record()
-    record.identifier = record_header.identifier
-    record.item_identifier = record_header.item_identifier
-    record.last_updated_time = record_header.last_updated_time
-    record.parent_identifier = record_header.parent_identifier
+    metadata_item = SpotlightStoreMetadataItem()
+    metadata_item.identifier = record_header.identifier
+    metadata_item.item_identifier = record_header.item_identifier
+    metadata_item.last_update_time = record_header.last_update_time
+    metadata_item.parent_identifier = record_header.parent_identifier
 
     metadata_attribute_index = 0
     metadata_type_index = 0
@@ -1084,10 +1108,10 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       page_data_offset += bytes_read
       record_data_offset += bytes_read
 
-      record.attributes[metadata_attribute.key] = metadata_attribute
+      metadata_item.attributes[metadata_attribute.key] = metadata_attribute
       metadata_attribute_index += 1
 
-    return record
+    return metadata_item
 
   def _ReadRecordHeader(self, data, page_data_offset):
     """Reads a record header.
@@ -1098,7 +1122,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           of the page data.
 
     Returns:
-      tuple[RecordHeader, int]: record header and number of bytes read.
+      tuple[SpotlightStoreRecordHeader, int]: record header and number of bytes
+          read.
 
     Raises:
       ParseError: if the record page cannot be read.
@@ -1124,7 +1149,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     data_offset += 1
 
-    value_names = ['item_identifier', 'parent_identifier', 'last_updated_time']
+    value_names = ['item_identifier', 'parent_identifier', 'last_update_time']
     values, bytes_read = self._ReadVariableSizeIntegers(
         data[data_offset:], value_names)
 
@@ -1133,13 +1158,13 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintDecimalValue('Record data size', record.data_size)
 
-    record_header = RecordHeader()
+    record_header = SpotlightStoreRecordHeader()
     record_header.data_size = record.data_size
     record_header.identifier = identifier
     record_header.flags = flags
     record_header.item_identifier = values.get('item_identifier')
     record_header.parent_identifier = values.get('parent_identifier')
-    record_header.last_updated_time = values.get('last_updated_time')
+    record_header.last_update_time = values.get('last_update_time')
 
     return record_header, data_offset
 
@@ -1220,11 +1245,12 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintValue('Parent identifier', value_string)
 
         self._DebugPrintPosixTimeValue(
-            'Last updated time', record_header.last_updated_time)
+            'Last update time', record_header.last_update_time)
         self._DebugPrintText('\n')
 
-      record_descriptor = RecordDescriptor(page_offset, page_data_offset + 20)
-      record_descriptor.last_updated_time = record_header.last_updated_time
+      record_descriptor = SpotlightStoreRecordDescriptor(
+          page_offset, page_data_offset + 20)
+      record_descriptor.last_update_time = record_header.last_update_time
       record_descriptor.identifier = record_header.identifier
       record_descriptor.item_identifier = record_header.item_identifier
       record_descriptor.parent_identifier = record_header.parent_identifier
@@ -1291,37 +1317,17 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     return values, data_offset
 
-  def GetRecordByIdentifier(self, identifier):
-    """Retrieves a specific record.
+  def GetMetadataItemByIdentifier(self, identifier):
+    """Retrieves a specific metadata item.
 
     Args:
-      identifier (int): record identifier.
+      identifier (int): file (system) entry identifier of the metadata item.
 
     Returns:
-      Record: record matching the identifier or None if no such record.
+      SpotlightStoreMetadataItem: metadata item matching the identifier or None
+          if no such item.
     """
-    record_descriptor = self._record_descriptors.get(identifier, None)
-    if not record_descriptor:
-      return None
-
-    if self._debug:
-      self._DebugPrintText((
-          'Retrieving record: 0x{0:02x} in page: 0x{1:08x} at offset: '
-          '0x{2:04x}\n').format(
-              identifier, record_descriptor.page_offset,
-              record_descriptor.page_value_offset))
-      self._DebugPrintText('\n')
-
-    page_data = self._record_pages_cache.get(
-        record_descriptor.page_offset, None)
-    if not page_data:
-      _, page_data = self._ReadRecordPage(
-          self._file_object, record_descriptor.page_offset)
-
-      # TODO: remove page from cache if full.
-      self._record_pages_cache[record_descriptor.page_offset] = page_data
-
-    return self._ReadRecord(page_data, record_descriptor.page_value_offset)
+    return self._GetMetadataItemByIdentifier(self._file_object, identifier)
 
   def ReadFileObject(self, file_object):
     """Reads an Apple Spotlight database file-like object.
@@ -1365,12 +1371,13 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       self._ReadRecordPageValues(page_data, file_offset)
 
-    self.GetRecordByIdentifier(1)
+    self._GetMetadataItemByIdentifier(file_object, 1)
 
     # TODO: do something with metadata
-    # record = self.GetRecordByIdentifier(1)
+    # record = self._GetMetadataItemByIdentifier(file_object, 1)
     # metadata_attribute = record.attributes.get('kMDStoreProperties', None)
     # print(metadata_attribute.value.decode('utf8'))
 
     # for record_identifier in sorted(self._record_descriptors.keys()):
-    #   record = self.GetRecordByIdentifier(record_identifier)
+    #   metadata_item = self._GetMetadataItemByIdentifier(
+    #       file_object, record_identifier)

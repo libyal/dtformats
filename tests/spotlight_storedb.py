@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from dtformats import spotlight_store
+from dtformats import spotlight_storedb
 
 from tests import test_lib
 
@@ -24,7 +24,7 @@ class AppleSpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
 
   def testReadVariableSizeInteger(self):
     """Tests the _ReadVariableSizeInteger function."""
-    test_file = spotlight_store.AppleSpotlightStoreDatabaseFile()
+    test_file = spotlight_storedb.AppleSpotlightStoreDatabaseFile()
 
     integer_value, bytes_read = test_file._ReadVariableSizeInteger(b'\x24')
     self.assertEqual(integer_value, 36)
@@ -85,7 +85,7 @@ class AppleSpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     output_writer = test_lib.TestOutputWriter()
-    test_file = spotlight_store.AppleSpotlightStoreDatabaseFile(
+    test_file = spotlight_storedb.AppleSpotlightStoreDatabaseFile(
         debug=False, output_writer=output_writer)
 
     test_file.Open(test_file_path)

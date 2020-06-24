@@ -9,7 +9,7 @@ import argparse
 import logging
 import sys
 
-from dtformats import spotlight_store
+from dtformats import spotlight_storedb
 from dtformats import output_writers
 
 
@@ -51,7 +51,7 @@ def Main():
     print('')
     return False
 
-  spotlight_store_database = spotlight_store.AppleSpotlightStoreDatabaseFile(
+  spotlight_store_database = spotlight_storedb.AppleSpotlightStoreDatabaseFile(
       debug=options.debug, output_writer=output_writer)
   spotlight_store_database.Open(options.source)
 
