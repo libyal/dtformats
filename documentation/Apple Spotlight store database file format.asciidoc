@@ -511,6 +511,14 @@ Data:
 0x00000010  83 1b f0 12 5a c0 00 f0  ae f4 31 6d 00 f0 52 fc  ....Z.....1m..R.
 0x00000020  0a 60 e3 8d df 39 c1 07  3a f0 45 57 00 f8 ea 2f  .`...9..:.EW.../
 0x00000030  23 54 f0 81 cc d2 e2 a2  00 00 f8 0a              #T..........    
+
+Relative metadata attribute: 3 type index                               : 1
+Metadata attribute: 3 type index                                        : 23
+Key name                                                                : kMDStoreAccumulatedSizes
+Property type                                                           : 0x0e
+Value type                                                              : 0x08
+Data:
+0x00000000  80 88 00 00 00 00 00 00  00 00 00 00 00 00 00     ...............
 ....
 
 ==== Metadata item
@@ -518,7 +526,7 @@ Data:
 [cols="1,1,1,5",options="header"]
 |===
 | Value | Property type | Value type | Description
-| `_kMDItemAppStoreRefID` | |
+| `_kMDItemAppStoreRefID` | | |
 | `_kMDItemContentChangeDate` | | 0x0c |
 | `_kMDItemCreationDate` | | 0x0c | Creation date and time of [yellow-background]*the corresponding file (system) entry?*
 | `_kMDItemCreatorCode` | | 0x07 |
@@ -527,113 +535,120 @@ Data:
 | `_kMDItemFinderFlags` | | 0x07 |
 | `_kMDItemFinderLabel` | | 0x07 |
 | `_kMDItemGroupId` | | 0x02 |
-| `_kMDItemImporterResult` | |
+| `_kMDItemImporterResult` | | |
+| `_kMDItemIndexedByBackup` | | |
 | `_kMDItemIsExtensionHidden` | | 0x00 |
-| `_kMDItemLocked` | |
-| `_kMDItemNodeCount` | |
+| `_kMDItemLocked` | | |
+| `_kMDItemNodeCount` | | |
 | `_kMDItemOwnerGroupID` | | 0x07 |
 | `_kMDItemOwnerUserID` | | 0x07 |
-| `_kMDItemPrescanCandidate` | |
-| `_kMDItemSizingIsNeeded` | |
+| `_kMDItemPrescanCandidate` | | |
+| `_kMDItemSizingIsNeeded` | | |
 | `_kMDItemStaticInterestScore` | | 0x09 |
-| `_kMDItemTextContentIndexExists` | |
-| `_kMDItemTextEncodingHint` | |
-| `_kMDItemTimeMachinePath` | |
+| `_kMDItemTextContentIndexExists` | | |
+| `_kMDItemTextEncodingHint` | | |
+| `_kMDItemTimeMachinePath` | | |
 | `_kMDItemTypeCode` | | 0x07 |
-| `_kMDItemUpgraded` | |
-| `_kMDXXXX___DUMMY`` | |
-| com_apple_ats_name_family | |
-| com_apple_ats_name_fond | |
-| com_apple_ats_name_full | |
-| com_apple_ats_name_postscript | |
-| com_apple_ats_names | |
-| com_apple_ats_name_style | |
-| com_apple_backup_excludeItem | |
-| com_apple_mail_attachmentKinds | |
-| com_apple_mail_attachmentNames | |
-| com_apple_mail_attachmentSpecificTypes | |
-| com_apple_mail_attachmentTypes | |
-| com_apple_mail_dateLastViewed | |
-| com_apple_mail_dateReceived | |
-| com_apple_mail_flagged | |
-| com_apple_mail_messageID | |
-| com_apple_mail_priority | |
-| com_apple_mail_read | |
-| com_apple_mail_repliedTo | |
-| com_apple_system_prefs_keywords | |
-| kMDItemAlternateNames | |
-| kMDItemAppStoreAdamID | |
-| kMDItemAppStoreCategory | |
-| kMDItemAppStoreCategoryType | |
-| kMDItemAppStoreHasReceipt | |
-| kMDItemAppStoreInstallerVersionID | |
-| kMDItemAppStoreIsAppleSigned | |
-| kMDItemAppStorePurchaseDate | 0x0c |
-| kMDItemAppStoreReceiptIsRevoked | |
-| kMDItemAppStoreReceiptIsVPPLicensed | |
-| kMDItemAppStoreReceiptType | |
-| kMDItemAudioBitRate | |
-| kMDItemAudioChannelCount | |
-| kMDItemAudioSampleRate | |
-| kMDItemAuthorEmailAddresses | |
-| kMDItemAuthors | |
-| kMDItemBitsPerSample | |
-| kMDItemCFBundleIdentifier | |
-| kMDItemCity | |
-| kMDItemColorSpace | |
-| kMDItemComment | |
+| `_kMDItemUpgraded` | | |
+| `_kMDXXXX___DUMMY`` | | |
+| `_kTimeMachineNewestSnapshot` | | 0x0c |
+| `_kTimeMachineOldestSnapshot` | | 0x0c |
+| com_apple_ats_name_family | | |
+| com_apple_ats_name_fond | | |
+| com_apple_ats_name_full | | |
+| com_apple_ats_name_postscript | | |
+| com_apple_ats_names | | |
+| com_apple_ats_name_style | | |
+| com_apple_backup_excludeItem | | |
+| com_apple_iCal_Bookmark_FullDay | | |
+| com_apple_iCal_Bookmark_SharedUID | | |
+| com_apple_mail_attachmentKinds | | |
+| com_apple_mail_attachmentNames | | |
+| com_apple_mail_attachmentSpecificTypes | | |
+| com_apple_mail_attachmentTypes | | |
+| com_apple_mail_dateLastViewed | | |
+| com_apple_mail_dateReceived | | |
+| com_apple_mail_flagged | | |
+| com_apple_mail_messageID | | |
+| com_apple_mail_priority | | |
+| com_apple_mail_read | | |
+| com_apple_mail_repliedTo | | |
+| com_apple_system_prefs_keywords | | |
+| kMDItemAlternateNames | | |
+| kMDItemAppStoreAdamID | | |
+| kMDItemAppStoreCategory | | |
+| kMDItemAppStoreCategoryType | | |
+| kMDItemAppStoreHasReceipt | | |
+| kMDItemAppStoreInstallerVersionID | | |
+| kMDItemAppStoreIsAppleSigned | | |
+| kMDItemAppStorePurchaseDate | | 0x0c |
+| kMDItemAppStoreReceiptIsRevoked | | |
+| kMDItemAppStoreReceiptIsVPPLicensed | | |
+| kMDItemAppStoreReceiptType | | |
+| kMDItemAttributeChangeDate | | |
+| kMDItemAudioBitRate | | |
+| kMDItemAudioChannelCount | | |
+| kMDItemAudioSampleRate | | |
+| kMDItemAuthorEmailAddresses | | |
+| kMDItemAuthors | | |
+| kMDItemBitsPerSample | | |
+| kMDItemCFBundleIdentifier | | |
+| kMDItemCity | | |
+| kMDItemColorSpace | | |
+| kMDItemComment | | |
 | kMDItemContentCreationDate | | 0x0c |
 | kMDItemContentModificationDate | | 0x0c |
 | kMDItemContentType | | 0x0f | Value string
 | kMDItemContentTypeTree | | 0x0f | Value list
-| kMDItemCopyright | |
-| kMDItemCountry | |
-| kMDItemCreator | |
+| kMDItemCopyright | | |
+| kMDItemCountry | | |
+| kMDItemCoverage | | |
+| kMDItemCreator | | |
 | kMDItemDateAdded | | 0x09 |
 | kMDItemDisplayName | | 0x0b |
 | kMDItemDownloadedDate | 0x0c |
-| kMDItemDurationSeconds | |
-| kMDItemEditors | |
-| kMDItemEncodingApplications | |
-| kMDItemExecutableArchitectures | |
-| kMDItemFonts | |
-| kMDItemHasAlphaChannel | |
-| kMDItemInvisibleFileType | |
-| kMDItemIsApplicationManaged | |
-| kMDItemIsLikelyJunk | |
-| kMDItemKeywords | |
+| kMDItemDurationSeconds | | |
+| kMDItemEditors | | |
+| kMDItemEncodingApplications | | |
+| kMDItemExecutableArchitectures | | |
+| kMDItemFonts | | |
+| kMDItemHasAlphaChannel | | |
+| kMDItemInvisibleFileType | | |
+| kMDItemIsApplicationManaged | | |
+| kMDItemIsLikelyJunk | | |
+| kMDItemKeywords | | |
 | kMDItemKind | | 0x0f | Localized string
-| kMDItemLanguages | |
-| kMDItemLastUsedDate | 0x0c |
+| kMDItemLanguages | | |
+| kMDItemLastUsedDate | | 0x0c |
 | kMDItemLogicalSize | | 0x07 |
-| kMDItemMediaTypes | |
-| kMDItemNumberOfPages | |
-| kMDItemOrientation | |
-| kMDItemPageHeight | |
-| kMDItemPageWidth | |
-| kMDItemPhoneNumbers | |
+| kMDItemMediaTypes | | |
+| kMDItemNumberOfPages | | |
+| kMDItemOrientation | | |
+| kMDItemPageHeight | | |
+| kMDItemPageWidth | | |
+| kMDItemPhoneNumbers | | |
 | kMDItemPhysicalSize | | 0x07 |
-| kMDItemPixelCount | |
-| kMDItemPixelHeight | |
-| kMDItemPixelWidth | |
-| kMDItemProfileName | |
-| kMDItemPublishers | |
-| kMDItemRecipientEmailAddresses | |
-| kMDItemRecipients | |
-| kMDItemResolutionHeightDPI | |
-| kMDItemResolutionWidthDPI | |
-| kMDItemSecurityMethod | |
-| kMDItemStateOrProvince | |
-| kMDItemSubject | |
-| kMDItemSupportFileType | |
-| kMDItemTitle | |
-| kMDItemTotalBitRate | |
-| kMDItemURL | |
+| kMDItemPixelCount | | |
+| kMDItemPixelHeight | | |
+| kMDItemPixelWidth | | |
+| kMDItemProfileName | | |
+| kMDItemPublishers | | |
+| kMDItemRecipientEmailAddresses | | |
+| kMDItemRecipients | | |
+| kMDItemResolutionHeightDPI | | |
+| kMDItemResolutionWidthDPI | | |
+| kMDItemSecurityMethod | | |
+| kMDItemStateOrProvince | | |
+| kMDItemSubject | | |
+| kMDItemSupportFileType | | |
+| kMDItemTitle | | |
+| kMDItemTotalBitRate | | |
+| kMDItemURL | | |
 | kMDItemURL | | 0x0b |
-| kMDItemUseCount | |
+| kMDItemUseCount | | |
 | kMDItemUsedDates | 0x0c | Contains an array of date and time values
-| kMDItemVersion | |
-| kMDItemWhereFroms | |
+| kMDItemVersion | | |
+| kMDItemWhereFroms | | |
 |===
 
 == Notes

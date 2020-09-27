@@ -196,6 +196,11 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     self._record_descriptors = {}
     self._record_pages_cache = {}
 
+  @property
+  def number_of_metadata_items(self):
+    """int: number of metadata items in the database."""
+    return len(self._record_descriptors)
+
   def _DebugPrintCocoaTimeValue(self, description, value):
     """Prints a Cocoa timestamp value for debugging.
 
@@ -260,7 +265,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           self._DebugPrintValue(description, value_string)
 
     elif metadata_attribute.value_type == 0x0b:
-      if metadata_attribute.property_type & 0x02 == 0x00:
+      if metadata_attribute.property_type & 0x03 != 0x02:
         self._DebugPrintValue('String', metadata_attribute.value)
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
@@ -348,7 +353,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintText((
-          'Retrieving record: 0x{0:02x} in page: 0x{1:08x} at offset: '
+          'Retrieving record: {0:d} in page: 0x{1:08x} at offset: '
           '0x{2:04x}\n').format(
               identifier, record_descriptor.page_offset,
               record_descriptor.page_value_offset))
@@ -851,10 +856,14 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           'Unable to parse array of string values with error: {0!s}'.format(
               exception))
 
-    if property_type & 0x02 == 0x00:
+    if property_type & 0x03 == 0x03:
       value = array_of_values[0]
-    else:
+      if '\x16\x02' in value:
+        value = value.split('\x16\x02')[0]
+    elif property_type & 0x03 == 0x02:
       value = array_of_values
+    else:
+      value = array_of_values[0]
 
     bytes_read += data_size
 
@@ -1229,9 +1238,11 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintData('Record data', record_data)
 
       if self._debug:
-        value_string = self._FormatIntegerAsHexadecimal2(
-            record_header.identifier)
-        self._DebugPrintValue('Identifier', value_string)
+        if record_header.identifier <= 1:
+          description = 'Identifier'
+        else:
+          description = 'File system identifier'
+        self._DebugPrintDecimalValue(description, record_header.identifier)
 
         value_string = self._FormatIntegerAsHexadecimal2(record_header.flags)
         self._DebugPrintValue('Flags', value_string)
@@ -1240,9 +1251,12 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             record_header.item_identifier)
         self._DebugPrintValue('Item identifier', value_string)
 
-        value_string = self._FormatIntegerAsHexadecimal2(
-            record_header.parent_identifier)
-        self._DebugPrintValue('Parent identifier', value_string)
+        if record_header.parent_identifier <= 1:
+          description = 'Parent identifier'
+        else:
+          description = 'Parent file system identifier'
+        self._DebugPrintDecimalValue(
+            description, record_header.parent_identifier)
 
         self._DebugPrintPosixTimeValue(
             'Last update time', record_header.last_update_time)
@@ -1371,13 +1385,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       self._ReadRecordPageValues(page_data, file_offset)
 
-    self._GetMetadataItemByIdentifier(file_object, 1)
-
-    # TODO: do something with metadata
-    # record = self._GetMetadataItemByIdentifier(file_object, 1)
-    # metadata_attribute = record.attributes.get('kMDStoreProperties', None)
-    # print(metadata_attribute.value.decode('utf8'))
-
-    # for record_identifier in sorted(self._record_descriptors.keys()):
-    #   metadata_item = self._GetMetadataItemByIdentifier(
-    #       file_object, record_identifier)
+    if self._debug:
+      for record_identifier in sorted(self._record_descriptors.keys()):
+        metadata_item = self._GetMetadataItemByIdentifier(
+            file_object, record_identifier)
