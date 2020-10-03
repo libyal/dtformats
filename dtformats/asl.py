@@ -94,17 +94,6 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
     """
     return stream.decode('ascii').replace('\x00', '\\x00')
 
-  def _FormatString(self, string):
-    """Formats a string.
-
-    Args:
-      string (str): string.
-
-    Returns:
-      str: formatted string.
-    """
-    return string.rstrip('\x00')
-
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
 

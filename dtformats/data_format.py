@@ -91,26 +91,8 @@ class BinaryDataFormat(object):
       structure_object (object): structure object.
       debug_info (list[tuple[str, str, int]]): debug information.
     """
-    attribute_value = ''
-    for attribute_name, description, value_format_callback in debug_info:
-      attribute_value = getattr(structure_object, attribute_name, None)
-      if attribute_value is None:
-        continue
-
-      value_format_function = None
-      if value_format_callback:
-        value_format_function = getattr(self, value_format_callback, None)
-      if value_format_function:
-        attribute_value = value_format_function(attribute_value)
-
-      if isinstance(attribute_value, str) and '\n' in attribute_value:
-        self._output_writer.WriteText('{0:s}:\n'.format(description))
-        self._output_writer.WriteText(attribute_value)
-      else:
-        self._DebugPrintValue(description, attribute_value)
-
-    if not attribute_value or attribute_value[:-2] != '\n\n':
-      self._DebugPrintText('\n')
+    text = self._FormatStructureObject(structure_object, debug_info)
+    self._output_writer.WriteText(text)
 
   def _DebugPrintPosixTimeValue(self, description, value):
     """Prints a POSIX timestamp value for debugging.
@@ -402,6 +384,53 @@ class BinaryDataFormat(object):
     # TODO: omit ":0000" from the string.
     return ':'.join([
         '{0:04x}'.format(octet_pair) for octet_pair in octet_pairs])
+
+  def _FormatString(self, string):
+    """Formats a string.
+
+    Args:
+      string (str): string.
+
+    Returns:
+      str: formatted string.
+    """
+    return string.rstrip('\x00')
+
+  def _FormatStructureObject(self, structure_object, debug_info):
+    """Formats a structure object debug information.
+
+    Args:
+      structure_object (object): structure object.
+      debug_info (list[tuple[str, str, int]]): debug information.
+
+    Returns:
+      str: structure object debug information.
+    """
+    lines = []
+
+    attribute_value = ''
+    for attribute_name, description, value_format_callback in debug_info:
+      attribute_value = getattr(structure_object, attribute_name, None)
+      if attribute_value is None:
+        continue
+
+      value_format_function = None
+      if value_format_callback:
+        value_format_function = getattr(self, value_format_callback, None)
+      if value_format_function:
+        attribute_value = value_format_function(attribute_value)
+
+      if isinstance(attribute_value, str) and '\n' in attribute_value:
+        text = '{0:s}:\n{1:s}'.format(description, attribute_value)
+      else:
+        text = self._FormatValue(description, attribute_value)
+
+      lines.append(text)
+
+    if not attribute_value or attribute_value[:-2] != '\n\n':
+      lines.append('\n')
+
+    return ''.join(lines)
 
   def _FormatUUIDAsString(self, uuid):
     """Formats an UUID as string.

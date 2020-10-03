@@ -1112,17 +1112,6 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     # TODO: print net type as descriptive string.
     return self._FormatIntegerAsDecimal(integer)
 
-  def _FormatString(self, string):
-    """Formats a string.
-
-    Args:
-      string (str): string.
-
-    Returns:
-      str: formatted string.
-    """
-    return string.rstrip('\x00')
-
   def _ReadRecord(self, file_object, file_offset):
     """Reads an event record.
 

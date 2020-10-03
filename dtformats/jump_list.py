@@ -142,17 +142,6 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     """
     return '{0:d} characters ({1:d} bytes)'.format(integer, integer * 2)
 
-  def _FormatString(self, string):
-    """Formats a string.
-
-    Args:
-      string (str): string.
-
-    Returns:
-      str: formatted string.
-    """
-    return string.rstrip('\x00')
-
   def _ReadDestList(self, olecf_file):
     """Reads the DestList stream.
 
