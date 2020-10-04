@@ -23,17 +23,17 @@ class GZipFileTest(test_lib.BaseTestCase):
   # TODO: test _ReadMemberCompressedData function
   # TODO: test _ReadMemberFooter function
 
-  @test_lib.skipUnlessHasTestFile(['syslog.gz'])
   def testReadMemberHeader(self):
     """Tests the _ReadMemberHeader function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = gzipfile.GZipFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['syslog.gz'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadMemberHeader(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['syslog.gz'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
@@ -41,6 +41,8 @@ class GZipFileTest(test_lib.BaseTestCase):
     test_file = gzipfile.GZipFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['syslog.gz'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

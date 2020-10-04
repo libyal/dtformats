@@ -103,13 +103,14 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
     with self.assertRaises(errors.ParseError):
       test_file._ReadCString(page_data[:-1], 0)
 
-  @test_lib.skipUnlessHasTestFile(['Cookies.binarycookies'])
   def testReadFileFooter(self):
     """Tests the _ReadFileFooter function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = safari_cookies.BinaryCookiesFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['Cookies.binarycookies'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       file_object.seek(-8, os.SEEK_END)
       test_file._ReadFileFooter(file_object)
@@ -133,13 +134,14 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
     with self.assertRaises(errors.ParseError):
       test_file._ReadFileHeader(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['Cookies.binarycookies'])
   def testReadPage(self):
     """Tests the _ReadPage function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = safari_cookies.BinaryCookiesFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['Cookies.binarycookies'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
       test_file._ReadPage(
@@ -147,13 +149,14 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
 
     # TODO: test errors.ParseError exception being raised.
 
-  @test_lib.skipUnlessHasTestFile(['Cookies.binarycookies'])
   def testReadPages(self):
     """Tests the _ReadPages function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = safari_cookies.BinaryCookiesFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['Cookies.binarycookies'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
       test_file._ReadPages(file_object)
@@ -168,7 +171,6 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
     with self.assertRaises(errors.ParseError):
       test_file._ReadRecord(self._PAGE_DATA[:-1], 0)
 
-  @test_lib.skipUnlessHasTestFile(['Cookies.binarycookies'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
@@ -176,6 +178,8 @@ class BinaryCookiesFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['Cookies.binarycookies'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

@@ -42,28 +42,29 @@ class RestorePointLogFileTest(test_lib.BaseTestCase):
 
     test_file._DebugPrintFileHeader(file_header)
 
-  @test_lib.skipUnlessHasTestFile(['rp.log'])
   def testReadFileFooter(self):
     """Tests the _ReadFileFooter function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = rp_log.RestorePointLogFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['rp.log'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._file_size = 536
       test_file._ReadFileFooter(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['rp.log'])
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = rp_log.RestorePointLogFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['rp.log'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['rp.log'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
@@ -71,6 +72,8 @@ class RestorePointLogFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['rp.log'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

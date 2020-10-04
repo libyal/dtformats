@@ -22,13 +22,14 @@ class KeychainDatabaseFileTest(test_lib.BaseTestCase):
 
   # TODO: add test for _FormatStreamAsSignature
 
-  @test_lib.skipUnlessHasTestFile(['login.keychain'])
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = keychain.KeychainDatabaseFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['login.keychain'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
 
@@ -38,7 +39,6 @@ class KeychainDatabaseFileTest(test_lib.BaseTestCase):
   # TODO: add test for _ReadTable
   # TODO: add test for _ReadTableHeader
 
-  @test_lib.skipUnlessHasTestFile(['login.keychain'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
@@ -46,6 +46,8 @@ class KeychainDatabaseFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['login.keychain'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

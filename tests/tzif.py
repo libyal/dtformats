@@ -39,13 +39,14 @@ class TimeZoneInformationFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _DebugPrintTransitionTimeIndex
   # TODO: add tests for _DebugPrintTransitionTimes
 
-  @test_lib.skipUnlessHasTestFile(['localtime.tzif'])
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = tzif.TimeZoneInformationFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['localtime.tzif'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
 
@@ -60,7 +61,6 @@ class TimeZoneInformationFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadTransitionTimes64bit
   # TODO: add tests for _ReadUTCTimeIndicators
 
-  @test_lib.skipUnlessHasTestFile(['localtime.tzif'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
@@ -68,6 +68,8 @@ class TimeZoneInformationFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['localtime.tzif'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

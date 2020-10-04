@@ -1389,3 +1389,5 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       for record_identifier in sorted(self._record_descriptors.keys()):
         metadata_item = self._GetMetadataItemByIdentifier(
             file_object, record_identifier)
+      # TODO: do something with metadata_item or remove.
+      _ = metadata_item

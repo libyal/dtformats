@@ -94,13 +94,14 @@ class DataBlockFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadFileHeader.
   # TODO: add tests for ReadCacheEntry.
 
-  @test_lib.skipUnlessHasTestFile(['chrome_cache', 'data_0'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = chrome_cache.DataBlockFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['chrome_cache', 'data_0'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 
@@ -115,13 +116,14 @@ class IndexFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadLRUData.
   # TODO: add tests for _ReadIndexTable.
 
-  @test_lib.skipUnlessHasTestFile(['chrome_cache', 'index'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = chrome_cache.IndexFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['chrome_cache', 'index'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

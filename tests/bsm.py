@@ -60,30 +60,31 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
     formatted_string = test_file._FormatString('string\x00')
     self.assertEqual(formatted_string, 'string')
 
-  @test_lib.skipUnlessHasTestFile(['openbsm.bsm'])
   def testReadRecord(self):
     """Tests the _ReadRecord function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = bsm.BSMEventAuditingFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['openbsm.bsm'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadRecord(file_object, 0)
 
-  @test_lib.skipUnlessHasTestFile(['openbsm.bsm'])
   def testReadToken(self):
     """Tests the _ReadToken function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = bsm.BSMEventAuditingFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['openbsm.bsm'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       token_type, token_data = test_file._ReadToken(file_object, 0)
 
       self.assertEqual(token_type, 20)
       self.assertIsNotNone(token_data)
 
-  @test_lib.skipUnlessHasTestFile(['openbsm.bsm'])
   def testReadFileObjectWithOpenBSM(self):
     """Tests the ReadFileObject function with an Open BSM file ."""
     output_writer = test_lib.TestOutputWriter()
@@ -91,9 +92,10 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['openbsm.bsm'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
-  @test_lib.skipUnlessHasTestFile(['apple.bsm'])
   def testReadFileObjectWithAppleBSM(self):
     """Tests the ReadFileObject function with an Apple BSM file."""
     output_writer = test_lib.TestOutputWriter()
@@ -101,6 +103,8 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['apple.bsm'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

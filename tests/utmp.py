@@ -46,23 +46,25 @@ class LinuxLibc6UtmpFileTest(test_lib.BaseTestCase):
     string = test_file._DecodeString(b'test\x00')
     self.assertEqual(string, 'test')
 
-  @test_lib.skipUnlessHasTestFile(['utmp-linux_libc6'])
   def testReadEntries(self):
     """Tests the _ReadEntries function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = utmp.LinuxLibc6UtmpFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['utmp-linux_libc6'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadEntries(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['utmp-linux_libc6'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
     test_file = utmp.LinuxLibc6UtmpFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['utmp-linux_libc6'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 
@@ -99,23 +101,25 @@ class MacOSXUtmpxFileTest(test_lib.BaseTestCase):
     string = test_file._DecodeString(b'test\x00')
     self.assertEqual(string, 'test')
 
-  @test_lib.skipUnlessHasTestFile(['utmpx-macosx10.5'])
   def testReadEntries(self):
     """Tests the _ReadEntries function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = utmp.MacOSXUtmpxFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['utmpx-macosx10.5'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadEntries(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['utmpx-macosx10.5'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
     test_file = utmp.MacOSXUtmpxFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['utmpx-macosx10.5'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

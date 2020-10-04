@@ -25,7 +25,6 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
   # TODO: add test for _FormatSystemTime
   # TODO: add test for _FormatTime
 
-  @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadFixedLengthDataSection(self):
     """Tests the _ReadFixedLengthDataSection function."""
     output_writer = test_lib.TestOutputWriter()
@@ -33,10 +32,11 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
         output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['wintask.job'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFixedLengthDataSection(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadVariableLengthDataSection(self):
     """Tests the _ReadVariableLengthDataSection function."""
     output_writer = test_lib.TestOutputWriter()
@@ -45,12 +45,13 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
     test_file._file_size = 896
 
     test_file_path = self._GetTestFilePath(['wintask.job'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       file_object.seek(test_file._FIXED_LENGTH_DATA_SECTION_SIZE, os.SEEK_SET)
 
       test_file._ReadVariableLengthDataSection(file_object)
 
-  @test_lib.skipUnlessHasTestFile(['wintask.job'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
@@ -58,6 +59,8 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['wintask.job'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

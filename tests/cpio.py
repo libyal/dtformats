@@ -76,7 +76,6 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
 
     test_file._DebugPrintFileEntry(file_entry)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testReadFileEntryOnBinary(self):
     """Tests the _ReadFileEntry function on binary format."""
     output_writer = test_lib.TestOutputWriter()
@@ -84,12 +83,13 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     test_file.file_format = 'bin-little-endian'
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       file_entry = test_file._ReadFileEntry(file_object, 0)
 
     self.assertEqual(file_entry.data_size, 1247)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.newc.cpio'])
   def testReadFileEntryOnNewASCII(self):
     """Tests the _ReadFileEntry function on new ASCII format."""
     output_writer = test_lib.TestOutputWriter()
@@ -97,12 +97,13 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     test_file.file_format = 'newc'
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.newc.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       file_entry = test_file._ReadFileEntry(file_object, 0)
 
     self.assertEqual(file_entry.data_size, 1247)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.crc.cpio'])
   def testReadFileEntryOnNewASCIIWithCRC(self):
     """Tests the _ReadFileEntry function on new ASCII with CRC format."""
     output_writer = test_lib.TestOutputWriter()
@@ -110,12 +111,13 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     test_file.file_format = 'crc'
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.crc.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       file_entry = test_file._ReadFileEntry(file_object, 0)
 
     self.assertEqual(file_entry.data_size, 1247)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.odc.cpio'])
   def testReadFileEntryOnPortableASCII(self):
     """Tests the _ReadFileEntry function on portable ASCII format."""
     output_writer = test_lib.TestOutputWriter()
@@ -123,12 +125,13 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     test_file.file_format = 'odc'
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.odc.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       file_entry = test_file._ReadFileEntry(file_object, 0)
 
     self.assertEqual(file_entry.data_size, 1247)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testReadFileEntriesOnBinary(self):
     """Tests the _ReadFileEntries function on binary format."""
     output_writer = test_lib.TestOutputWriter()
@@ -136,18 +139,21 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     test_file.file_format = 'bin-little-endian'
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileEntries(file_object)
 
     self.assertEqual(len(test_file._file_entries), 1)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testFileEntryExistsByPathOnBinary(self):
     """Tests the FileEntryExistsByPath function on binary format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     result = test_file.FileEntryExistsByPath('syslog')
@@ -158,13 +164,14 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
 
     test_file.Close()
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testGetFileEntriesOnBinary(self):
     """Tests the GetFileEntries function on binary format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     file_entries = list(test_file.GetFileEntries())
@@ -175,13 +182,14 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
     file_entries = list(test_file.GetFileEntries())
     self.assertEqual(len(file_entries), 0)
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testGetFileEntryByPathOnBinary(self):
     """Tests the GetFileEntryByPath function on binary format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     file_entry = test_file.GetFileEntryByPath('syslog')
@@ -192,52 +200,56 @@ class CPIOArchiveFileTest(test_lib.BaseTestCase):
 
     test_file.Close()
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.bin.cpio'])
   def testReadFileObjectOnBinary(self):
     """Tests the ReadFileObject function on binary format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.bin.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     self.assertEqual(test_file.file_format, 'bin-little-endian')
 
     test_file.Close()
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.newc.cpio'])
   def testReadFileObjectOnNewASCII(self):
     """Tests the ReadFileObject function on new ASCII format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.newc.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     self.assertEqual(test_file.file_format, 'newc')
 
     test_file.Close()
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.crc.cpio'])
   def testReadFileObjectOnNewASCIIWithCRC(self):
     """Tests the ReadFileObject function on new ASCII with CRC format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.crc.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     self.assertEqual(test_file.file_format, 'crc')
 
     test_file.Close()
 
-  @test_lib.skipUnlessHasTestFile(['cpio', 'syslog.odc.cpio'])
   def testReadFileObjectOnPortableASCII(self):
     """Tests the ReadFileObject function on portable ASCII format."""
     output_writer = test_lib.TestOutputWriter()
     test_file = cpio.CPIOArchiveFile(debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cpio', 'syslog.odc.cpio'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
     self.assertEqual(test_file.file_format, 'odc')

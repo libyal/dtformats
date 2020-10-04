@@ -82,7 +82,6 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadRecord.
   # TODO: add tests for _ReadVolumePath.
 
-  @test_lib.skipUnlessHasTestFile(['change.log.1'])
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
@@ -90,6 +89,8 @@ class RestorePointChangeLogFileTest(test_lib.BaseTestCase):
         output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['change.log.1'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

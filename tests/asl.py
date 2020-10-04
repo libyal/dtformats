@@ -38,13 +38,14 @@ class AppleSystemLogFileTest(test_lib.BaseTestCase):
     formatted_string = test_file._FormatString('string\x00')
     self.assertEqual(formatted_string, 'string')
 
-  @test_lib.skipUnlessHasTestFile(['applesystemlog.asl'])
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = asl.AppleSystemLogFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['applesystemlog.asl'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
 
@@ -52,7 +53,6 @@ class AppleSystemLogFileTest(test_lib.BaseTestCase):
   # TODO: add test for _ReadRecordExtraField
   # TODO: add test for _ReadRecordString
 
-  @test_lib.skipUnlessHasTestFile(['applesystemlog.asl'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
@@ -60,6 +60,8 @@ class AppleSystemLogFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['applesystemlog.asl'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 

@@ -36,8 +36,6 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _FormatIntegerAsPathSize.
   # TODO: add tests for _FormatString.
 
-  @test_lib.skipUnlessHasTestFile([
-      '1b4dd67f29cb1962.automaticDestinations-ms'])
   def testReadDestList(self):
     """Tests the _ReadDestList function."""
     output_writer = test_lib.TestOutputWriter()
@@ -45,6 +43,8 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
 
     test_file_path = self._GetTestFilePath([
         '1b4dd67f29cb1962.automaticDestinations-ms'])
+    self._SkipIfPathNotExists(test_file_path)
+
     with open(test_file_path, 'rb') as file_object:
       olecf_file = pyolecf.file()
       olecf_file.open_file_object(file_object)
@@ -60,8 +60,6 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadLNKFile.
   # TODO: add tests for _ReadLNKFiles.
 
-  @test_lib.skipUnlessHasTestFile([
-      '1b4dd67f29cb1962.automaticDestinations-ms'])
   def testReadFileObjectOnV1File(self):
     """Tests the ReadFileObject function on a format version 1 file."""
     output_writer = test_lib.TestOutputWriter()
@@ -69,10 +67,10 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
 
     test_file_path = self._GetTestFilePath([
         '1b4dd67f29cb1962.automaticDestinations-ms'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
-  @test_lib.skipUnlessHasTestFile([
-      '9d1f905ce5044aee.automaticDestinations-ms'])
   def testReadFileObjectOnV3File(self):
     """Tests the ReadFileObject function on a format version 3 file."""
     output_writer = test_lib.TestOutputWriter()
@@ -80,6 +78,8 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
 
     test_file_path = self._GetTestFilePath([
         '9d1f905ce5044aee.automaticDestinations-ms'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 
@@ -95,7 +95,6 @@ class CustomDestinationsFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadLNKFile.
   # TODO: add tests for _ReadLNKFiles.
 
-  @test_lib.skipUnlessHasTestFile(['5afe4de1b92fc382.customDestinations-ms'])
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
@@ -103,6 +102,8 @@ class CustomDestinationsFileTest(test_lib.BaseTestCase):
 
     test_file_path = self._GetTestFilePath([
         '5afe4de1b92fc382.customDestinations-ms'])
+    self._SkipIfPathNotExists(test_file_path)
+
     test_file.Open(test_file_path)
 
 
