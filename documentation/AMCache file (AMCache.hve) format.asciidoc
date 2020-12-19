@@ -1,4 +1,4 @@
-= AMCache file (AMCache.hve) format
+= AMCache hive file (AMCache.hve) format
 
 :toc:
 :toclevels: 4
@@ -7,8 +7,7 @@
 [abstract]
 == Summary
 
-The AMCache is an stores metadata about program installation and execution
-for Windows Application Compatibility.
+The AMCache hive file is used to store Windows diagnostic data.
 
 [preface]
 == Document information
@@ -40,22 +39,22 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | February 2020 | Initial version.
+| 0.0.2 | J.B. Metz | December 2020 | Additional information.
 |===
 
 :numbered:
 == Overview
 
-The AMCache is an stores metadata about program installation and execution
-for Windows Application Compatibility.
+The AMCache hive file is used to store Windows diagnostic data. It has been
+observed on Windows 7 or Server 2008 R2 and later.
 
-On Windows 7 or Server 2008 R2 and later the AMCache can be found in:
+The AMCache hive file can be found in:
 
 ....
 C:\Windows\AppCompat\Programs\Amcache.hve
 ....
 
-The AMCache is stored in a Windows NT Registry File (REGF) format containing
-the a key named "Root".
+The AMCache is stored in a Windows NT Registry File (REGF) format.
 
 === Test version
 
@@ -63,37 +62,63 @@ Files created by the following version of programs were used to test the
 information within this document:
 
 * Windows 7
+* Windows 8
+* Windows 8.1
 * Windows 2008 Server R2
-* Windows 10
+* Windows 10 (1511, 1607, 1703, 1709, 1803, 1809, 1903, 1909, 2004, 20H2)
 
-== Root key
+== Root-key
+
+Windows version | Root-key name
+--- | ---
+8, 8.1, 10 | {11517B7C-E79D-4e20-961B-75A811715ADD}
+10 (1511) | {356c48f6-2fee-e7ef-2a64-39f59ec3be22}
 
 Sub keys:
 
 [cols="1,5",options="header"]
 |===
 | Name | Description
-| Device |
-| DeviceCensus |
-| DriverPackageExtended |
+| Root | Sub key named "Root"
+|===
+
+Values:
+
+[cols="1,5",options="header"]
+|===
+| Value | Data type | Description
+| CreatingCommand | REG_SZ |
+| CreatingModule | REG_SZ |
+|===
+
+== Key named Root
+
+Sub keys:
+
+[cols="1,5",options="header"]
+|===
+| Name | Description
+| Device | First seen in Windows 10 1511, last seen in Windows 10 1703
+| DeviceCensus | First seen in Windows 10 1607
+| DriverPackageExtended | First seen in Windows 10 1703
 | File |
 | Generic |
-| HwItem |
-| InventoryApplication |
-| InventoryApplicationAppV |
+| HwItem | First seen in Windows 10 1511
+| InventoryApplication | First seen in Windows 10 1607
+| InventoryApplicationAppV | First seen in Windows 10 1803
 | InventoryApplicationDriver |
-| InventoryApplicationFile |
-| InventoryApplicationFramework |
-| InventoryApplicationShortcut |
-| InventoryDeviceContainer |
-| InventoryDeviceInterface |
-| InventoryDeviceMediaClass |
-| InventoryDevicePnp |
-| InventoryDeviceUsbHubClass |
-| InventoryDriverBinary |
-| InventoryDriverPackage |
-| InventoryMiscellaneousUUPInfo |
-| Metadata |
+| InventoryApplicationFile | First seen in Windows 10 1709
+| InventoryApplicationFramework | First seen in Windows 10 1709
+| InventoryApplicationShortcut | First seen in Windows 10 1709
+| InventoryDeviceContainer | First seen in Windows 10 1607
+| InventoryDeviceInterface | First seen in Windows 10 1703
+| InventoryDeviceMediaClass | First seen in Windows 10 1607
+| InventoryDevicePnp | First seen in Windows 10 1607
+| InventoryDeviceUsbHubClass | First seen in Windows 10 1709
+| InventoryDriverBinary | First seen in Windows 10 1607
+| InventoryDriverPackage | First seen in Windows 10 1607
+| InventoryMiscellaneousUUPInfo | First seen in Windows 10 1803
+| Metadata | First seen in Windows 10 1511
 | Orphan |
 | Programs |
 |===
@@ -126,6 +151,8 @@ Sub keys:
 | Network |
 | OS |
 | Processor |
+| Security | First seen in Windows 10 1709
+| Speech | First seen in Windows 10 1703
 | Storage |
 | VM |
 | WU |
@@ -137,7 +164,7 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
-| WritePermissionsCheck | |
+| WritePermissionsCheck | REG_DWORD_LITTLE_ENDIAN |
 |===
 
 === App sub key
@@ -155,68 +182,83 @@ Values:
 
 Values:
 
-....
-InternalBatteryCapablities
-InternalBatteryCapacityCurrent
-InternalBatteryCapacityDesign
-IsAlwaysOnAlwaysConnectedCapable
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| InternalBatteryCapablities | REG_BINARY |
+| InternalBatteryCapacityCurrent | REG_BINARY |
+| InternalBatteryCapacityDesign | REG_BINARY |
+| InternalBatteryNumberOfCharges | REG_BINARY |
+| IsAlwaysOnAlwaysConnectedCapable | REG_BINARY |
+|===
 
 === Camera sub key
 
 Values:
 
-....
-FrontFacingCameraResolution
-RearFacingCameraResolution
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| FrontFacingCameraResolution | |
+| RearFacingCameraResolution | |
+|===
 
 === Enterprise sub key
 
 Values:
 
-....
-AzureOSIDPresent
-AzureVMType
-CDJType
-CommercialId
-HashedDomain
-IsCloudDomainJoined
-IsDERequirementMet
-IsDeviceProtected
-IsDomainJoined
-IsEDPEnabled
-IsMDMEnrolled
-MPNId
-SCCMClientId
-ServerFeatures
-SystemCenterID
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| AADDeviceId | REG_SZ |
+| AzureOSIDPresent | REG_BINARY |
+| AzureVMType | REG_SZ |
+| CDJType | REG_DWORD_LITTLE_ENDIAN |
+| CommercialId | REG_SZ |
+| ContainerType | REG_DWORD_LITTLE_ENDIAN |
+| EnrollmentType | REG_DWORD_LITTLE_ENDIAN |
+| HashedDomain | REG_SZ |
+| IsCloudDomainJoined | REG_SZ |
+| IsDERequirementMet | REG_SZ |
+| IsDeviceProtected | REG_SZ |
+| IsDomainJoined | |
+| IsEDPEnabled | REG_SZ |
+| IsMDMEnrolled | REG_SZ |
+| MPNId | REG_SZ |
+| SCCMClientId | REG_SZ |
+| ServerFeatures | REG_SZ |
+| SystemCenterID | REG_SZ |
+|===
 
 === Firmware sub key
 
 Values:
 
-....
-FirmwareManufacturer
-FirmwareReleaseDate
-FirmwareType
-FirmwareVersion
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| FirmwareManufacturer | REG_SZ |
+| FirmwareReleaseDate | REG_SZ |
+| FirmwareType | REG_BINARY |
+| FirmwareVersion | REG_SZ |
+|===
 
 === Flighting sub key
 
 Values:
 
-....
-DeviceSampleRate
-EnablePreviewBuilds
-FlightIds
-FlightingBranchName
-IsFlightsDisabled
-MSA_Accounts
-SSRK
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| DeviceSampleRate | REG_BINARY |
+| DriverTargetRing | REG_SZ |
+| EnablePreviewBuilds | REG_BINARY |
+| FlightIds | REG_SZ |
+| FlightingBranchName | REG_SZ |
+| IsFlightsDisabled | REG_BINARY |
+| MSA_Accounts | REG_SZ |
+| SSRK | REG_SZ |
+|===
 
 === Hardware sub key
 
@@ -254,80 +296,90 @@ VoiceSupported
 
 Values:
 
-....
-ActivationLocationConsent
-ActivationLocationLat
-ActivationLocationLong
-ActivationLocationRad
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| ActivationLocationConsent | |
+| ActivationLocationLat | |
+| ActivationLocationLong | |
+| ActivationLocationRad | |
+|===
 
 === Memory sub key
 
 Values:
 
-....
-TotalPhysicalRAM
-TotalVisibleMemory
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| TotalPhysicalRAM | |
+| TotalVisibleMemory | |
+|===
 
 === Network sub key
 
 Values:
 
-....
-IMEI0
-IMEI1
-MCC0
-MCC1
-MEID
-MNC0
-MNC1
-MobileOperatorBilling
-MobileOperatorCommercialized
-MobileOperatorNetwork0
-MobileOperatorNetwork1
-NetworkCost
-SPN0
-SPN1
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| IMEI0 | |
+| IMEI1 | |
+| MCC0 | |
+| MCC1 | |
+| MEID | |
+| MNC0 | |
+| MNC1 | |
+| MobileOperatorBilling | |
+| MobileOperatorCommercialized | |
+| MobileOperatorNetwork0 | |
+| MobileOperatorNetwork1 | |
+| NetworkCost | |
+| SPN0 | |
+| SPN1 | |
+|===
 
 === OS sub key
 
 Values:
 
-....
-ActivationChannel
-CompactOS
-GenuineState
-InstallationType
-InstallLanguage
-IsDeviceRetailDemo
-IsEduData
-IsPortableOperatingSystem
-IsSecureBootEnabled
-LanguagePacks
-LicenseStateReason
-OA3xOriginalProductKey
-OSEdition
-OSInstallType
-OSOOBEDateTime
-OSSKU
-OSSubscriptionStatus
-OSSubscriptionTypeId
-OSTimeZoneBiasInMins
-OSUILocale
-ProductActivationResult
-ProductActivationTime
-ProductKeyID2
-RACw7Id
-ServiceMachineIP
-ServiceMachinePort
-ServiceProductKeyID
-SharedPCMode
-Signature
-SLICStatus
-SLICVersion
-....
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| ActivationChannel | |
+| CompactOS | |
+| GenuineState | |
+| InstallationType | |
+| InstallLanguage | |
+| IsDeviceRetailDemo | |
+| IsEduData | |
+| IsPortableOperatingSystem | |
+| IsSecureBootEnabled | |
+| LanguagePacks | |
+| LicenseStateReason | |
+| OA3xOriginalProductKey | |
+| OSEdition | |
+| OSInstallType | |
+| OSOOBEDateTime | REG_SZ | +
+Contains a date and time string in the format: "2020-07-04T14:45:53.190"
+| OSSKU | |
+| OSSubscriptionStatus | |
+| OSSubscriptionTypeId | |
+| OSTimeZoneBiasInMins | |
+| OSUILocale | |
+| ProductActivationResult | |
+| ProductActivationTime | REG_QWORD_LITTLE_ENDIAN | Product activiation date and time +
+Contains a FILETIME
+| ProductKeyID2 | |
+| RACw7Id | |
+| ServiceMachineIP | |
+| ServiceMachinePort | |
+| ServiceProductKeyID | |
+| SharedPCMode | |
+| Signature | |
+| SLICStatus | |
+| SLICVersion | |
+|===
 
 === Processor sub key
 
@@ -368,6 +420,13 @@ VirtualizationFirmwareEnabled
 === WU sub key
 
 Values:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Data type | Description
+| OSAssessmentReleaseInfoTime | REG_SZ | +
+Contains a date and time string in the format: "2020-07-04T14:45:53.190"
+|===
 
 ....
 AppraiserGatedStatus
@@ -502,6 +561,8 @@ Values:
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
+| LastScanTime | REG_QWORD_LITTLE_ENDIAN |  +
+Contains a FILETIME
 | ProviderSyncId | REG_SZ | Provider identifier +
 Contains a GUID of the provider +
 Seen: "{1b5a86a8-5f1b-4032-8592-32113f1174e1}", "{0b4fdded-d2c2-4e11-b0b2-579bd34983ea}"
@@ -689,7 +750,7 @@ Sub keys:
 [cols="1,5",options="header"]
 |===
 | Name | Description
-| DeviceInterfaces |
+| DeviceInterfaces | First seen in Windows 10 1703
 |===
 
 Values:
