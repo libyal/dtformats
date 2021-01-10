@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Apple Spotlight store database files."""
 
-from __future__ import unicode_literals
-
 import zlib
 
 from dfdatetime import cocoa_time as dfdatetime_cocoa_time

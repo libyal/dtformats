@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for Windows Recycler INFO2 files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import recycler

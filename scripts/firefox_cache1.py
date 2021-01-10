@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """Script to parse Firefox cache version 1 files."""
 
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import argparse
 import logging
 import os

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Timezone information files (TZif)."""
 
-from __future__ import unicode_literals
-
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 
 from dtformats import data_format

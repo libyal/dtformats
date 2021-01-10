@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for copy in and out (CPIO) archive format files."""
 
-from __future__ import unicode_literals
-
 import io
 import unittest
 

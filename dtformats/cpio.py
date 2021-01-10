@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Copy in and out (CPIO) archive format files."""
 
-from __future__ import unicode_literals
-
 import os
 
 from dtformats import data_format

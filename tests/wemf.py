@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import wemf

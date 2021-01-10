@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Apple Unified Logging and Activity Tracing files."""
 
-from __future__ import unicode_literals
-
 import lz4.block
 
 from dtformats import data_format

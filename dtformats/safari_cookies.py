@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Safari Cookies (Cookies.binarycookies) files."""
 
-from __future__ import unicode_literals
-
 import datetime
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps

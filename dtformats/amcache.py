@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Windows AMCache (AMCache.hve) files."""
 
-from __future__ import unicode_literals
-
 import pyregf
 
 from dtformats import data_format

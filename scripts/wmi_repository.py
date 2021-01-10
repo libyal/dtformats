@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """Script to parse WMI Common Information Model (CIM) repository files."""
 
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import argparse
 import logging
 import os

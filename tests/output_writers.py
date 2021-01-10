@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for output writers."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import output_writers

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for Apple Spotlight store database files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import spotlight_storedb

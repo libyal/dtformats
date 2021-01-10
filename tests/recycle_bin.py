@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for Windows Recycle.Bin metadata ($I) files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import recycle_bin

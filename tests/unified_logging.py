@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for Apple Unified Logging and Activity Tracing files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import unified_logging

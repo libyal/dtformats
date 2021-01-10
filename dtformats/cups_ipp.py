@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """CUPS Internet Printing Protocol (IPP) files."""
 
-from __future__ import unicode_literals
-
 import os
 
 from dfdatetime import rfc2579_date_time as dfdatetime_rfc2579_date_time

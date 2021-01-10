@@ -5,8 +5,6 @@
 # AttributeError: 'module' object has no attribute 'GzipFile'
 # when using pip.
 
-from __future__ import unicode_literals
-
 import os
 import zlib
 

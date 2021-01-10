@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """MacOS keychain database files."""
 
-from __future__ import unicode_literals
-
 import collections
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps

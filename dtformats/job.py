@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Windows Task Scheduler job files."""
 
-from __future__ import unicode_literals
-
 from dtformats import data_format
 
 

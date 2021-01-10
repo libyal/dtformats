@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Systemd journal files."""
 
-from __future__ import unicode_literals
-
 from dtformats import data_format
 from dtformats import errors
 

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """WMI Common Information Model (CIM) repository files."""
 
-from __future__ import unicode_literals
-
 import datetime
 import glob
 import logging

@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 """Script to parse copy in and out (CPIO) archive files."""
 
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import argparse
 import bz2
 import gzip

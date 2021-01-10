@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for Safari Cookies (Cookies.binarycookies) files."""
 
-from __future__ import unicode_literals
-
 import io
 import os
 import unittest

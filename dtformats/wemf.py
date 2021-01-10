@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
-from __future__ import unicode_literals
-
 import os
 
 from dtfabric import errors as dtfabric_errors

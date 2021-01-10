@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Data range file-like object."""
 
-from __future__ import unicode_literals
-
 import os
 
 

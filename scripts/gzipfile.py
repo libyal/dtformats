@@ -6,9 +6,6 @@
 # AttributeError: 'module' object has no attribute 'GzipFile'
 # when using pip.
 
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import argparse
 import logging
 import sys

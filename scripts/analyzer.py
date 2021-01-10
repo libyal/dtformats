@@ -2,12 +2,8 @@
 # -*- coding: utf-8 -*-
 """Script to analyze a data format using a dtFabric definition."""
 
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import argparse
 import logging
-import os
 import sys
 
 from dtfabric import definitions
@@ -52,6 +48,7 @@ class BinaryDataFormatAnalyzer(data_format.BinaryDataFormat):
         file_object, file_offset, data_type_map, name)
 
     if self._debug:
+      # pylint: disable=protected-access
       data_type_definition = (
           self._FABRIC._definitions_registry.GetDefinitionByName(name))
 
@@ -111,6 +108,7 @@ class BinaryDataFormatAnalyzer(data_format.BinaryDataFormat):
       lines.append('Entry: {0:d}\n'.format(element_number))
 
       name = element.__class__.__name__
+      # pylint: disable=protected-access
       data_type_definition = (
           self._FABRIC._definitions_registry.GetDefinitionByName(name))
 
@@ -144,7 +142,7 @@ class BinaryDataFormatAnalyzer(data_format.BinaryDataFormat):
     Args:
       filename (str): name of the dtFabric definition file.
     """
-    self._FABRIC = self.ReadDefinitionFile(filename)
+    self._FABRIC = self.ReadDefinitionFile(filename)  # pylint: disable=invalid-name
 
   def ReadFileObject(self, file_object):
     """Reads binary data from a file-like object.

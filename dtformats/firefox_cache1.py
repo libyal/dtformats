@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Firefox cache version 1 files."""
 
-from __future__ import unicode_literals
-
 import os
 
 from dtformats import data_format

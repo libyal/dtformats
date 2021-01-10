@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for BSM event auditing files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import bsm

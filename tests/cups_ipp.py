@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for CUPS Internet Printing Protocol (IPP) files."""
 
-from __future__ import unicode_literals
-
 import unittest
 
 from dtformats import cups_ipp
