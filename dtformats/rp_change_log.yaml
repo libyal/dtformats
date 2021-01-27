@@ -1,7 +1,7 @@
 name: rp_change_log
 type: format
 description: Windows restore point change log format
-urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Restore%20point%20formats.asciidoc"]
+urls: ["https://github.com/libyal/dtformats/blob/main/documentation/Restore%20point%20formats.asciidoc"]
 ---
 name: byte
 type: integer

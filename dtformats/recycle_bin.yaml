@@ -1,7 +1,7 @@
 name: recycle_bin
 type: format
 description: Windows Recycle.Bin formats
-urls: ["https://github.com/libyal/dtformats/blob/master/documentation/Windows%20Recycle.Bin%20file%20formats.asciidoc"]
+urls: ["https://github.com/libyal/dtformats/blob/main/documentation/Windows%20Recycle.Bin%20file%20formats.asciidoc"]
 ---
 name: uint32
 type: integer
