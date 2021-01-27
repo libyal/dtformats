@@ -1,0 +1,86 @@
+name: usn_journal
+type: format
+description: USN change journal
+urls: ["https://github.com/libyal/libfsntfs/blob/main/documentation/New%20Technologies%20File%20System%20(NTFS).asciidoc#1521-usn-change-journal-entry"]
+metadata:
+  authors: ['Joachim Metz <joachim.metz@gmail.com>']
+  year: 2021
+attributes:
+  byte_order: little-endian
+---
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: uint64
+type: integer
+attributes:
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: wchar16
+type: character
+attributes:
+  size: 2
+  units: bytes
+---
+name: usn_record_v2
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: size
+  data_type: uint32
+- name: major_version
+  data_type: uint16
+  value: 2
+- name: minor_version
+  data_type: uint16
+  value: 0
+- name: file_reference
+  data_type: uint64
+- name: parent_file_reference
+  data_type: uint64
+- name: sequence_number
+  data_type: uint64
+- name: timestamp
+  data_type: uint64
+- name: update_reason_flags
+  data_type: uint32
+- name: update_source_flags
+  data_type: uint32
+- name: security_descriptor_entry
+  data_type: uint32
+- name: file_attribute_flags
+  data_type: uint32
+- name: name_size
+  data_type: uint16
+- name: name_offset
+  data_type: uint16
+- name: name
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  elements_data_size: usn_record_v2.name_size
+- name: padding
+  type: stream
+  element_data_type: byte
+  elements_data_size: usn_record_v2.size - ( 60 + usn_record_v2.name_size )
