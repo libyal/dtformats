@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """USN change journal records."""
 
+import os
+
 from dtformats import data_format
 
 
@@ -33,11 +35,16 @@ class USNRecords(data_format.BinaryDataFile):
       ('name_offset', 'Name offset', '_FormatIntegerAsDecimal'),
       ('name', 'Name', '_FormatString')]
 
+  _EMPTY_USN_RECORD_HEADER = bytes([0] * 60)
+
   def _ReadRecordV2(self, file_object):
     """Reads a version 2 USN record.
 
     Args:
       file_object (file): file-like object.
+
+    Returns:
+      int: number of bytes read.
 
     Raises:
       ParseError: if the record cannot be read.
@@ -45,11 +52,13 @@ class USNRecords(data_format.BinaryDataFile):
     file_offset = file_object.tell()
     data_type_map = self._GetDataTypeMap('usn_record_v2')
 
-    usn_record, _ = self._ReadStructureFromFileObject(
+    usn_record, data_size = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'USN record (version 2)')
 
     if self._debug:
       self._DebugPrintStructureObject(usn_record, self._DEBUG_INFO_RECORD_V2)
+
+    return data_size
 
   def ReadFileObject(self, file_object):
     """Reads a file-like object containing USN change journal records.
@@ -62,6 +71,17 @@ class USNRecords(data_format.BinaryDataFile):
     """
     file_offset = 0
     while file_offset < self._file_size:
-      self._ReadRecordV2(file_object)
+      block_size = 4096
 
-      file_offset = file_object.tell()
+      while block_size > 0:
+        usn_record_header = file_object.read(60)
+        if usn_record_header == self._EMPTY_USN_RECORD_HEADER:
+          break
+
+        file_object.seek(-60, os.SEEK_CUR)
+        data_size = self._ReadRecordV2(file_object)
+
+        file_offset += data_size
+        block_size -= data_size
+
+      file_offset += block_size
