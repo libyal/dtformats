@@ -53,7 +53,18 @@ def Main():
   usn_records.Open(options.source)
 
   output_writer.WriteText('USN journal records information:')
-  # TODO: print usn_records information.
+  output_writer.WriteText(','.join([
+      'Date and time', 'Name', 'File reference', 'Parent file reference']))
+  for usn_record in usn_records.ReadRecords():
+    date_time = usn_record._FormatIntegerAsFiletime(usn_record.timestamp)
+    file_reference = '{0:d}-{1:d}'.format(
+        usn_record.file_reference & ((1 << 48) - 1),
+        usn_record.file_reference >> 48)
+    parent_file_reference = '{0:d}-{1:d}'.format(
+        usn_record.parent_file_reference & ((1 << 48) - 1),
+        usn_record.parent_file_reference >> 48)
+    output_writer.WriteText(','.join([
+        date_time, usn_record.name, file_reference, parent_file_reference]))
 
   usn_records.Close()
 

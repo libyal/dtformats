@@ -23,8 +23,6 @@ class USNRecords(data_format.BinaryDataFile):
       ('timestamp', 'Timestamp', '_FormatIntegerAsFiletime'),
       ('update_reason_flags', 'Update reason flags',
        '_FormatIntegerAsHexadecimal8'),
-      ('update_reason_flags', 'Update reason flags',
-       '_FormatIntegerAsHexadecimal8'),
       ('update_source_flags', 'Update source flags',
        '_FormatIntegerAsHexadecimal8'),
       ('security_descriptor_entry', 'Security descriptor entry',
@@ -44,7 +42,7 @@ class USNRecords(data_format.BinaryDataFile):
       file_object (file): file-like object.
 
     Returns:
-      int: number of bytes read.
+      tuple[usn_record_v2, int]: USN record and number of bytes read.
 
     Raises:
       ParseError: if the record cannot be read.
@@ -58,7 +56,7 @@ class USNRecords(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintStructureObject(usn_record, self._DEBUG_INFO_RECORD_V2)
 
-    return data_size
+    return usn_record, data_size
 
   def ReadFileObject(self, file_object):
     """Reads a file-like object containing USN change journal records.
@@ -69,17 +67,33 @@ class USNRecords(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
+    self._file_object = file_object
+
+  def ReadRecords(self):
+    """Reads USN change journal records.
+
+    Yields:
+      usn_record_v2: USN record.
+
+    Raises:
+      ParseError: if a record cannot be read.
+    """
+    self._file_object.seek(0, os.SEEK_SET)
+
     file_offset = 0
     while file_offset < self._file_size:
       block_size = 4096
+      if block_size > self._file_size:
+        block_size = self._file_size
 
-      while block_size > 0:
-        usn_record_header = file_object.read(60)
+      while block_size > 60:
+        usn_record_header = self._file_object.read(60)
         if usn_record_header == self._EMPTY_USN_RECORD_HEADER:
           break
 
-        file_object.seek(-60, os.SEEK_CUR)
-        data_size = self._ReadRecordV2(file_object)
+        self._file_object.seek(-60, os.SEEK_CUR)
+        usn_record, data_size = self._ReadRecordV2(self._file_object)
+        yield usn_record
 
         file_offset += data_size
         block_size -= data_size
