@@ -56,6 +56,7 @@ def Main():
   output_writer.WriteText(','.join([
       'Date and time', 'Name', 'File reference', 'Parent file reference']))
   for usn_record in usn_records.ReadRecords():
+    # pylint: disable=protected-access
     date_time = usn_record._FormatIntegerAsFiletime(usn_record.timestamp)
     file_reference = '{0:d}-{1:d}'.format(
         usn_record.file_reference & ((1 << 48) - 1),
