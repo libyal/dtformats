@@ -104,12 +104,12 @@ Field definition use the following prefixes:
 |===
 | Prefix | Description
 | c | Client action
-| r | Remote server action, such as a proxy
-| s | Server action
 | cs | Client-to-Server action
+| r | Remote server action, such as a proxy
 | rs | Remote-Server-to-Server action
 | sc | Server-to-Client action
 | sr | Server-to-Remote-Server action
+| s | Server action
 | x | Application specific action
 |===
 
@@ -118,29 +118,29 @@ Field definition use the following prefixes:
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| date | HTTP_LOG_FIELD_DATE | Date on which the logged activity occurred
-| time | HTTP_LOG_FIELD_TIME | Time, in UTC, at which the logged activity occurred
-| s-sitename | HTTP_LOG_FIELD_SITE_NAME | Service name and instance number that was running on the client
-| s-computername | HTTP_LOG_FIELD_COMPUTER_NAME | Name of the server that generated the logged activity
-| s-ip | HTTP_LOG_FIELD_SERVER_IP | IP address of the server that generated the logged activity
-| cs-method | HTTP_LOG_FIELD_METHOD | HTTP request method, such as GET or POST.
-| cs-uri-stem | HTTP_LOG_FIELD_URI_STEM | File requested, such as index.php or Default.htm
-| cs-uri-query | HTTP_LOG_FIELD_URI_QUERY | URI query requested
-| s-port | HTTP_LOG_FIELD_SERVER_PORT | Server port number
-| cs-username | HTTP_LOG_FIELD_USER_NAME | Username of the authenticated user that accessed the server, where anonymous users are indicated by a hyphen (-)
 | c-ip | HTTP_LOG_FIELD_CLIENT_IP | IP address of the client that made the request
-| cs-version | HTTP_LOG_FIELD_VERSION | HTTP protocol version that was used
-| cs(User-Agent) | HTTP_LOG_FIELD_USER_AGENT | User agent that was used
-| cs(Cookie) | HTTP_LOG_FIELD_COOKIE | Content of a cookie sent or received
-| cs(Referrer) | HTTP_LOG_FIELD_REFERRER | Site that referred to the requested site
+| cs-bytes | HTTP_LOG_FIELD_BYTES_RECV | Number of bytes received and processed by the server
+| cs(Cookie) | HTTP_LOG_FIELD_COOKIE | Content of a sent or received cookie
 | cs-host | HTTP_LOG_FIELD_HOST | HTTP host header name
+| cs-method | HTTP_LOG_FIELD_METHOD | HTTP request method, such as GET or POST.
+| cs(Referrer) | HTTP_LOG_FIELD_REFERRER | Site that referred to the requested site
+| cs-uri-query | HTTP_LOG_FIELD_URI_QUERY | URI query that was requested
+| cs-uri-stem | HTTP_LOG_FIELD_URI_STEM | File requested, such as index.php or Default.htm
+| cs(User-Agent) | HTTP_LOG_FIELD_USER_AGENT | User agent that was used
+| cs-username | HTTP_LOG_FIELD_USER_NAME | Username of the authenticated user that accessed the server, where anonymous users are indicated by a hyphen (-)
+| cs-version | HTTP_LOG_FIELD_VERSION | HTTP protocol version that was used
+| date | HTTP_LOG_FIELD_DATE | Date on which the logged activity occurred
+| sc-bytes | HTTP_LOG_FIELD_BYTES_SENT | Number of bytes sent by the server
+| s-computername | HTTP_LOG_FIELD_COMPUTER_NAME | Name of the server that generated the logged activity
 | sc-status | HTTP_LOG_FIELD_STATUS | HTTP status code that was returned by the server
 | sc-substatus | HTTP_LOG_FIELD_SUB_STATUS | HTTP substatus error code that was returned by the server
 | sc-win32-status | HTTP_LOG_FIELD_WIN32_STATUS | Windows status code of the server
-| sc-bytes | HTTP_LOG_FIELD_BYTES_SENT | Number of bytes sent by the server
-| cs-bytes | HTTP_LOG_FIELD_BYTES_RECV | Number of bytes received and processed by the server
-| time-taken | HTTP_LOG_FIELD_TIME_TAKEN | Time taken, in milliseconds, to process the request
+| s-ip | HTTP_LOG_FIELD_SERVER_IP | IP address of the server that generated the logged activity
+| s-port | HTTP_LOG_FIELD_SERVER_PORT | Server port number
+| s-sitename | HTTP_LOG_FIELD_SITE_NAME | Service name and instance number that was running on the client
 | streamid | HTTP_LOG_FIELD_STREAM_ID | HTTP stream identifier
+| time | HTTP_LOG_FIELD_TIME | Time, in UTC, at which the logged activity occurred
+| time-taken | HTTP_LOG_FIELD_TIME_TAKEN | Time taken, in milliseconds, to process the request
 |===
 
 :numbered!:
