@@ -146,20 +146,16 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(record, self._DEBUG_INFO_RECORD)
 
     hostname = self._ReadRecordString(
-        record_strings_data, record_strings_data_offset,
-        record.hostname_string_offset)
+        file_object, record.hostname_string_offset)
 
     sender = self._ReadRecordString(
-        record_strings_data, record_strings_data_offset,
-        record.sender_string_offset)
+        file_object, record.sender_string_offset)
 
     facility = self._ReadRecordString(
-        record_strings_data, record_strings_data_offset,
-        record.facility_string_offset)
+        file_object, record.facility_string_offset)
 
     message = self._ReadRecordString(
-        record_strings_data, record_strings_data_offset,
-        record.message_string_offset)
+        file_object, record.message_string_offset)
 
     file_offset += record_data_size
     additional_data_size = record.data_size + 6 - record_data_size
@@ -182,12 +178,10 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       file_offset += 16
 
       name = self._ReadRecordString(
-          record_strings_data, record_strings_data_offset,
-          record_extra_field.name_string_offset)
+          file_object, record_extra_field.name_string_offset)
 
       value = self._ReadRecordString(
-          record_strings_data, record_strings_data_offset,
-          record_extra_field.value_string_offset)
+          file_object, record_extra_field.value_string_offset)
 
       if name is not None:
         extra_fields[name] = value
@@ -237,14 +231,11 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
     return record_extra_field
 
-  def _ReadRecordString(
-      self, record_strings_data, record_strings_data_offset, string_offset):
+  def _ReadRecordString(self, file_object, string_offset):
     """Reads a record string.
 
     Args:
-      record_strings_data (bytes): record strings data.
-      record_strings_data_offset (int): offset of the record strings data
-          relative to the start of the file.
+      file_object (file): file-like object.
       string_offset (int): offset of the string relative to the start of
           the file.
 
@@ -289,13 +280,11 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
 
       return string
 
-    data_offset = string_offset - record_strings_data_offset
     data_type_map = self._GetDataTypeMap('asl_record_string')
 
     try:
-      record_string = self._ReadStructureFromByteStream(
-          record_strings_data[data_offset:], string_offset, data_type_map,
-          'record string')
+      record_string, _ = self._ReadStructureFromFileObject(
+          file_object, string_offset, data_type_map, 'record string')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
           'Unable to parse record string at offset: 0x{0:08x} with error: '
