@@ -191,16 +191,42 @@ in line of "database property".
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x09 | | data records +
-Page contains compressed data
-| 0x11 | | Metadata attribute types +
+| 0x00000009 | | data records +
+Page contains zlib+DEFLATE compressed data
+| 0x00000011 | | Metadata attribute types +
 Page contains a property table header
-| 0x21 | | Metadata attribute values +
+| 0x00000021 | | Metadata attribute values +
 Page contains a property table header
-| 0x41 | | [yellow-background]*Unknown* +
+| 0x00000041 | | [yellow-background]*Unknown* +
 Page contains a property table header
-| 0x81 | | Metadata lists or localized strings +
+| 0x00000081 | | Metadata lists or localized strings +
 Page contains a property table header
+| 0x00001009 | | data records +
+Page contains LZ4 compressed data
+|===
+
+==== Compressed data
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "\x78" | | start of zlib+DEFLATE compressed data
+| "bv41" | | start of LZ4 compressed block
+|===
+
+===== [[lz4_compressed_block]]LZ4 compressed block
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _LZ4 compressed block header_
+| 0 | 4 | "bv41" | Signature
+| 4 | 4 | | Uncompressed data size (in bytes)
+| 8 | 4 | | Block size (in bytes)
+4+| _LZ4 compressed block data_
+| 12 | ... | | LZ4 compressed data
+4+| _LZ4 compressed block footer_
+| ... | 4 | "bv4$" | | LZ4 end of compressed data marker
 |===
 
 ==== Property table header

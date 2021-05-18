@@ -414,6 +414,8 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 | 8 | 4 | | Block size (in bytes)
 4+| _LZ4 compressed block data_
 | 12 | ... | | LZ4 compressed data
+4+| _LZ4 compressed block footer_
+| ... | 4 | "bv4$" | | LZ4 end of compressed data marker
 |===
 
 ==== [[lz4_uncompressed_block]]LZ4 uncompressed block
@@ -421,19 +423,13 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "bv41" | Signature
+| 0 | 4 | "bv4-" | Signature
 | 4 | 4 | | Uncompressed data size (in bytes)
 | 8 | 4 | | Block size (in bytes)
 4+| _LZ4 uncompressed block data_
 | 12 | ... | | uncompressed data
-|===
-
-==== End of compressed data marker
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| "bv4$" | | end of LZ4 compressed or uncompressed block
+4+| _LZ4 compressed block footer_
+| ... | 4 | "bv4$" | | LZ4 end of compressed data marker
 |===
 
 === [[tracev3_filehose_chunk]]Firehose chunk
