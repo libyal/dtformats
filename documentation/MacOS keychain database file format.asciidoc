@@ -6,6 +6,7 @@
 :numbered!:
 [abstract]
 == Summary
+
 The MacOS keychain database file format is used by MacOS to store keys.
 This specification is based on the source code and documentation.
 
@@ -14,6 +15,7 @@ file format specification.
 
 [preface]
 == Document information
+
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
@@ -24,8 +26,9 @@ file format specification.
 
 [preface]
 == License
+
 ....
-Copyright (C) 2018, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2018-2021, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -35,12 +38,14 @@ in the section entitled "GNU Free Documentation License".
 
 [preface]
 == Revision history
+
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | June 2018 | Initial version.
 | 0.0.2 | J.B. Metz | August 2018 | Additional information.
 | 0.0.3 | J. Aguilar | July 2019 | Additional information about X509 certificate record (CSSM_DL_DB_RECORD_X509_CERTIFICATE).
+| 0.0.4 | J.B. Metz | May 2021 | Changes to formatting.
 |===
 
 :numbered:
@@ -272,9 +277,9 @@ Contains a GUID/UUID
 Attribute Name	Attribute Type	Attribute Description
 CertType	CSSM_CERT_TYPE	One of the values defined for CSSM_CERT_TYPE.
 CertEncoding	CSSM_CERT_ENCODING	One of the values defined for CSSM_CERT_ENCODING.
-PrintName	CSSM_Data 
+PrintName	CSSM_Data
 (max length 16 characters)	The PrintName attribute required in all DL-stored records.
-Alias	CSSM_Data 
+Alias	CSSM_Data
 (max length 8 bytes)	The Alias attribute required in all DL-stored records.
 ....
 
@@ -284,9 +289,9 @@ Alias	CSSM_Data
 Attribute Name	Attribute Type	Attribute Description
 CrlType	CSSM_CRL_TYPE	One of the values defined for CSSM_CRL_TYPE.
 CrlEncoding	CSSM_CRL_ENCODING	One of the values defined for CSSM_CRL_ENCODING.
-PrintName	CSSM_Data 
+PrintName	CSSM_Data
 (max length 16 characters)	The PrintName attribute required in all DL-stored records.
-Alias	CSSM_Data 
+Alias	CSSM_Data
 (max length 8 bytes)	The Alias attribute required in all DL-stored records.
 ....
 
@@ -295,9 +300,9 @@ Alias	CSSM_Data
 ....
 Attribute Name	Attribute Type	Attribute Description
 PolicyName	CSSM_OID	One of the values defined by the policy domain.
-PrintName	CSSM_Data 
+PrintName	CSSM_Data
 (max length 16 characters)	The PrintName attribute required in all DL-stored records.
-Alias	CSSM_Data 
+Alias	CSSM_Data
 (max length 8 bytes)	The Alias attribute required in all DL-stored records.
 ....
 
@@ -305,9 +310,9 @@ Alias	CSSM_Data
 
 ....
 Attribute Name	Attribute Type	Attribute Description
-PrintName	CSSM_Data 
+PrintName	CSSM_Data
 (max length 16 characters)	The PrintName attribute required in all DL-stored records.
-Alias	CSSM_Data 
+Alias	CSSM_Data
 (max length 8 bytes)	The Alias attribute required in all DL-stored records.
 ....
 
@@ -430,7 +435,7 @@ The CSSM_DL_DB_RECORD_GENERIC_PASSWORD attribute values data consists of:
 | 1 | mdat | Date and time |
 | 2 | desc | Binary data |
 | 3 | icmt | Binary data |
-| 4 | crtr | Integer 32-bit unsigned |
+| 4 | crtr | Integer 32-bit unsigned | Item creator tag (kSecCreatorItemAttr)
 | 5 | type | Integer 32-bit unsigned |
 | 6 | scrp | Integer 32-bit unsigned |
 | 7 | PrintName | Binary data |
@@ -455,7 +460,7 @@ The CSSM_DL_DB_RECORD_INTERNET_PASSWORD attribute values data consists of:
 | 1 | mdat | Date and time |
 | 2 | desc | Binary data |
 | 3 | icmt | Binary data |
-| 4 | crtr | Integer 32-bit unsigned |
+| 4 | crtr | Integer 32-bit unsigned | Item creator tag (kSecCreatorItemAttr)
 | 5 | type | Integer 32-bit unsigned |
 | 6 | scrp | Integer 32-bit unsigned |
 | 7 | PrintName | Binary data |
@@ -484,7 +489,7 @@ The CSSM_DL_DB_RECORD_APPLESHARE_PASSWORD attribute values data consists of:
 | 1 | mdat | Date and time |
 | 2 | desc | Binary data |
 | 3 | icmt | Binary data |
-| 4 | crtr | Integer 32-bit unsigned |
+| 4 | crtr | Integer 32-bit unsigned | Item creator tag (kSecCreatorItemAttr)
 | 5 | type | Integer 32-bit unsigned |
 | 6 | scrp | Integer 32-bit unsigned |
 | 7 | PrintName | Binary data |
@@ -654,6 +659,7 @@ Module specific attribute identifiers:
 
 [appendix]
 == GNU Free Documentation License
+
 Version 1.3, 3 November 2008
 Copyright © 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc.
 <http://fsf.org/>
@@ -662,6 +668,7 @@ Everyone is permitted to copy and distribute verbatim copies of this license
 document, but changing it is not allowed.
 
 === 0. PREAMBLE
+
 The purpose of this License is to make a manual, textbook, or other functional
 and useful document "free" in the sense of freedom: to assure everyone the
 effective freedom to copy and redistribute it, with or without modifying it,
@@ -682,6 +689,7 @@ recommend this License principally for works whose purpose is instruction or
 reference.
 
 === 1. APPLICABILITY AND DEFINITIONS
+
 This License applies to any manual or other work, in any medium, that contains
 a notice placed by the copyright holder saying it can be distributed under the
 terms of this License. Such a notice grants a world-wide, royalty-free license,
@@ -760,6 +768,7 @@ disclaiming warranties: any other implication that these Warranty Disclaimers
 may have is void and has no effect on the meaning of this License.
 
 === 2. VERBATIM COPYING
+
 You may copy and distribute the Document in any medium, either commercially or
 noncommercially, provided that this License, the copyright notices, and the
 license notice saying this License applies to the Document are reproduced in
@@ -773,6 +782,7 @@ You may also lend copies, under the same conditions stated above, and you may
 publicly display copies.
 
 === 3. COPYING IN QUANTITY
+
 If you publish printed copies (or copies in media that commonly have printed
 covers) of the Document, numbering more than 100, and the Document's license
 notice requires Cover Texts, you must enclose the copies in covers that carry,
@@ -806,6 +816,7 @@ well before redistributing any large number of copies, to give them a chance to
 provide you with an updated version of the Document.
 
 === 4. MODIFICATIONS
+
 You may copy and distribute a Modified Version of the Document under the
 conditions of sections 2 and 3 above, provided that you release the Modified
 Version under precisely this License, with the Modified Version filling the
@@ -898,6 +909,7 @@ permission to use their names for publicity for or to assert or imply
 endorsement of any Modified Version.
 
 === 5. COMBINING DOCUMENTS
+
 You may combine the Document with other documents released under this License,
 under the terms defined in section 4 above for modified versions, provided that
 you include in the combination all of the Invariant Sections of all of the
@@ -919,6 +931,7 @@ combine any sections Entitled "Acknowledgements", and any sections Entitled
 "Dedications". You must delete all sections Entitled "Endorsements".
 
 === 6. COLLECTIONS OF DOCUMENTS
+
 You may make a collection consisting of the Document and other documents
 released under this License, and replace the individual copies of this License
 in the various documents with a single copy that is included in the collection,
@@ -931,6 +944,7 @@ into the extracted document, and follow this License in all other respects
 regarding verbatim copying of that document.
 
 === 7. AGGREGATION WITH INDEPENDENT WORKS
+
 A compilation of the Document or its derivatives with other separate and
 independent documents or works, in or on a volume of a storage or distribution
 medium, is called an "aggregate" if the copyright resulting from the
@@ -947,6 +961,7 @@ in electronic form. Otherwise they must appear on printed covers that bracket
 the whole aggregate.
 
 === 8. TRANSLATION
+
 Translation is considered a kind of modification, so you may distribute
 translations of the Document under the terms of section 4. Replacing Invariant
 Sections with translations requires special permission from their copyright
@@ -964,6 +979,7 @@ If a section in the Document is Entitled "Acknowledgements", "Dedications", or
 typically require changing the actual title.
 
 === 9. TERMINATION
+
 You may not copy, modify, sublicense, or distribute the Document except as
 expressly provided under this License. Any attempt otherwise to copy, modify,
 sublicense, or distribute it is void, and will automatically terminate your
@@ -987,6 +1003,7 @@ your rights have been terminated and not permanently reinstated, receipt of a
 copy of some or all of the same material does not give you any rights to use it.
 
 === 10. FUTURE REVISIONS OF THIS LICENSE
+
 The Free Software Foundation may publish new, revised versions of the GNU Free
 Documentation License from time to time. Such new versions will be similar in
 spirit to the present version, but may differ in detail to address new problems
@@ -1004,6 +1021,7 @@ License can be used, that proxy's public statement of acceptance of a version
 permanently authorizes you to choose that version for the Document.
 
 === 11. RELICENSING
+
 "Massive Multiauthor Collaboration Site" (or "MMC Site") means any World Wide
 Web server that publishes copyrightable works and also provides prominent
 facilities for anybody to edit those works. A public wiki that anybody can edit
