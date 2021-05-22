@@ -332,6 +332,49 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     self._DebugPrintValue(description, date_time_string)
 
+  def _DecompressLZ4PageData(self, compressed_page_data, file_offset):
+    """Decompresses LZ4 compressed page data.
+
+    Args:
+      compressed_page_data (bytes): LZ4 compressed page data.
+      file_offset (int): file offset.
+
+    Returns:
+      bytes: uncompressed page data.
+
+    Raises:
+      ParseError: if the page data cannot be decompressed.
+    """
+    data_type_map = self._GetDataTypeMap('spotlight_store_db_lz4_block_header')
+
+    try:
+      lz4_block_header = data_type_map.MapByteStream(compressed_page_data)
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError((
+          'Unable to map LZ4 bock header at offset: 0x{0:08x} with error: '
+          '{1!s}').format(file_offset, exception))
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          lz4_block_header, self._DEBUG_INFO_LZ4_BLOCK_HEADER)
+
+    end_of_compressed_data_offset = (
+        12 + lz4_block_header.compressed_data_size)
+
+    page_data = lz4.block.decompress(
+        compressed_page_data[12:end_of_compressed_data_offset],
+        uncompressed_size=lz4_block_header.uncompressed_data_size)
+
+    end_of_compressed_data_identifier = compressed_page_data[
+        end_of_compressed_data_offset:end_of_compressed_data_offset + 4]
+
+    if end_of_compressed_data_identifier != b'bv4$':
+      raise errors.ParseError((
+          'Unsupported LZ4 end of compressed data marker at offset: '
+          '0x{0:08x}').format(file_offset + end_of_compressed_data_offset))
+
+    return page_data
+
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
 
@@ -1219,33 +1262,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       elif (page_header.property_table_type == 0x00001009 and
             compressed_page_data[0:4] == b'bv41'):
-        data_type_map = self._GetDataTypeMap(
-            'spotlight_store_db_lz4_block_header')
-
-        try:
-          lz4_block_header = data_type_map.MapByteStream(compressed_page_data)
-        except dtfabric_errors.MappingError as exception:
-          raise errors.ParseError((
-              'Unable to map LZ4 bock header at offset: 0x{0:08x} with error: '
-              '{1!s}').format(file_offset, exception))
-
-        if self._debug:
-          self._DebugPrintStructureObject(
-              lz4_block_header, self._DEBUG_INFO_LZ4_BLOCK_HEADER)
-
-        end_of_compressed_data_offset = (
-            12 + lz4_block_header.compressed_data_size)
-
-        page_data = lz4.block.decompress(
-            compressed_page_data[12:end_of_compressed_data_offset],
-            uncompressed_size=lz4_block_header.uncompressed_data_size)
-
-        end_of_compressed_data_identifier = compressed_page_data[
-            end_of_compressed_data_offset:end_of_compressed_data_offset + 4]
-
-        if end_of_compressed_data_identifier != b'bv4$':
-          raise errors.ParseError(
-              'Unsupported LZ4 end of compressed data marker')
+        page_data = self._DecompressLZ4PageData(
+            compressed_page_data, file_offset)
 
       # TODO: add support for other compression types.
       else:
