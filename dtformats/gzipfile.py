@@ -33,8 +33,8 @@ class GZipFile(data_format.BinaryDataFile):
 
   _DEBUG_INFO_MEMBER_FOOTER = [
       ('checksum', 'Checksum', '_FormatIntegerAsHexadecimal8'),
-      ('uncompressed_data_size', 'Uncompressed data sizse',
-       '_FormatStreamAsDecimal')]
+      ('uncompressed_data_size', 'Uncompressed data size',
+       '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_MEMBER_HEADER = [
       ('signature', 'Signature', '_FormatIntegerAsHexadecimal4'),

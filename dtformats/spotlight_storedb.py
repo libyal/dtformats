@@ -351,7 +351,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       lz4_block_header = data_type_map.MapByteStream(compressed_page_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          'Unable to map LZ4 bock header at offset: 0x{0:08x} with error: '
+          'Unable to map LZ4 block header at offset: 0x{0:08x} with error: '
           '{1!s}').format(file_offset, exception))
 
     if self._debug:

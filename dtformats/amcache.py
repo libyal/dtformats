@@ -45,6 +45,10 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       'd': 'Installation directories',
       'Files': 'File reference key identifiers'}
 
+  _ROOT_KEY_NAMES = frozenset([
+      '{11517b7c-e79d-4e20-961b-75a811715add}',
+      '{356c48f6-2fee-e7ef-2a64-39f59ec3be22}'])
+
   def _GetValueDataAsObject(self, value):
     """Retrieves the value data as an object.
 
@@ -228,6 +232,11 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
     """
     regf_file = pyregf.file()
     regf_file.open_file_object(file_object)
+
+    root_key = regf_file.get_root_key()
+    root_key_name = root_key.get_name()
+    if root_key_name.lower() not in self._ROOT_KEY_NAMES:
+      return
 
     root_key = regf_file.get_key_by_path('\\Root')
     if root_key:
