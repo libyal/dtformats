@@ -713,49 +713,6 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
   # Token types with unknown data format:
   # 0x12: AUT_OHEADER
   # TODO: complete implementation of bsm_token_data_exec_args
-  _DATA_TYPE_MAP_PER_TOKEN_TYPE = {
-      0x11: 'bsm_token_data_other_file32',
-      0x13: 'bsm_token_data_trailer',
-      0x14: 'bsm_token_data_header32',
-      0x15: 'bsm_token_data_header32_ex',
-      0x21: 'bsm_token_data_data',
-      0x22: 'bsm_token_data_ipc',
-      0x23: 'bsm_token_data_path',
-      0x24: 'bsm_token_data_subject32',
-      0x26: 'bsm_token_data_subject32',
-      0x27: 'bsm_token_data_return32',
-      0x28: 'bsm_token_data_text',
-      0x29: 'bsm_token_data_opaque',
-      0x2a: 'bsm_token_data_in_addr',
-      0x2b: 'bsm_token_data_ip',
-      0x2c: 'bsm_token_data_iport',
-      0x2d: 'bsm_token_data_arg32',
-      0x2f: 'bsm_token_data_seq',
-      0x32: 'bsm_token_data_ipc_perm',
-      0x34: 'bsm_token_data_groups',
-      0x3b: 'bsm_token_data_groups',
-      0x3c: 'bsm_token_data_exec_args',
-      0x3d: 'bsm_token_data_exec_args',
-      0x3e: 'bsm_token_data_attr32',
-      0x52: 'bsm_token_data_exit',
-      0x60: 'bsm_token_data_zonename',
-      0x71: 'bsm_token_data_arg64',
-      0x72: 'bsm_token_data_return64',
-      0x73: 'bsm_token_data_attr64',
-      0x74: 'bsm_token_data_header64',
-      0x75: 'bsm_token_data_subject64',
-      0x77: 'bsm_token_data_subject64',
-      0x79: 'bsm_token_data_header64_ex',
-      0x7a: 'bsm_token_data_subject32_ex',
-      0x7b: 'bsm_token_data_subject32_ex',
-      0x7c: 'bsm_token_data_subject64_ex',
-      0x7d: 'bsm_token_data_subject64_ex',
-      0x7e: 'bsm_token_data_in_addr_ex',
-      0x7f: 'bsm_token_data_socket_ex',
-      0x80: 'bsm_token_data_sockinet32',
-      0x81: 'bsm_token_data_sockinet64',
-      0x82: 'bsm_token_data_sockunix',
-  }
   #   0x25: 'AUT_XATPATH',
   #   0x2e: 'AUT_SOCKET',
   #   0x30: 'AUT_ACL',
@@ -790,61 +747,63 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
   #   0x78: 'AUT_OTHER_FILE64',
 
   _DESCRIPTION_PER_TOKEN_TYPE = {
-      0x11: 'token data other_file32',
-      0x13: 'token data trailer',
-      0x14: 'token data header32',
-      0x15: 'token data header32_ex',
-      0x21: 'token data data',
-      0x22: 'token data ipc',
-      0x23: 'token data path',
-      0x24: 'token data subject32',
-      0x26: 'token data process32',
-      0x27: 'token data return32',
-      0x28: 'token data text',
-      0x29: 'token data opaque',
-      0x2a: 'token data in_addr',
-      0x2b: 'token data ip',
-      0x2c: 'token data iport',
-      0x2d: 'token data arg32',
-      0x2f: 'token data seq',
-      0x32: 'token data ipc_perm',
-      0x34: 'token data groups',
-      0x3b: 'token data newgroups',
-      0x3c: 'token data exec_args',
-      0x3d: 'token data exec_env',
-      0x3e: 'token data attr32',
-      0x60: 'token data zonename',
-      0x71: 'token data arg64',
-      0x72: 'token data return64',
-      0x73: 'token data attr64',
-      0x74: 'token data header64',
-      0x75: 'token data subject64',
-      0x77: 'token data process64',
-      0x79: 'token data header64_ex',
-      0x7a: 'token data subject32_ex',
-      0x7b: 'token data process32_ex',
-      0x7c: 'token data subject64_ex',
-      0x7d: 'token data process64_ex',
-      0x7e: 'token data in_addr_ex',
-      0x7f: 'token data socket_ex',
-      0x80: 'token data sockinet32',
-      0x81: 'token data sockinet64',
-      0x82: 'token data sockunix',
+      0x11: 'token other_file32',
+      0x13: 'token trailer',
+      0x14: 'token header32',
+      0x15: 'token header32_ex',
+      0x21: 'token data',
+      0x22: 'token ipc',
+      0x23: 'token path',
+      0x24: 'token subject32',
+      0x26: 'token process32',
+      0x27: 'token return32',
+      0x28: 'token text',
+      0x29: 'token opaque',
+      0x2a: 'token in_addr',
+      0x2b: 'token ip',
+      0x2c: 'token iport',
+      0x2d: 'token arg32',
+      0x2f: 'token seq',
+      0x32: 'token ipc_perm',
+      0x34: 'token groups',
+      0x3b: 'token newgroups',
+      0x3c: 'token exec_args',
+      0x3d: 'token exec_env',
+      0x3e: 'token attr32',
+      0x60: 'token zonename',
+      0x71: 'token arg64',
+      0x72: 'token return64',
+      0x73: 'token attr64',
+      0x74: 'token header64',
+      0x75: 'token subject64',
+      0x77: 'token process64',
+      0x79: 'token header64_ex',
+      0x7a: 'token subject32_ex',
+      0x7b: 'token process32_ex',
+      0x7c: 'token subject64_ex',
+      0x7d: 'token process64_ex',
+      0x7e: 'token in_addr_ex',
+      0x7f: 'token socket_ex',
+      0x80: 'token sockinet32',
+      0x81: 'token sockinet64',
+      0x82: 'token sockunix',
   }
 
   _HEADER_TOKEN_TYPES = frozenset([0x14, 0x15, 0x74, 0x79])
 
   _TRAILER_TOKEN_TYPE = 0x13
 
-  # AUT_ARG32 or AUT_ARG64 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_ARG = [
+  # AUT_ARG32 or AUT_ARG64 token debug information.
+  _DEBUG_INFO_TOKEN_ARG = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('argument_index', 'Argument index', '_FormatIntegerAsDecimal'),
       ('argument_name', 'Argument name', '_FormatIntegerAsHexadecimal8'),
       ('argument_value_size', 'Argument value size', '_FormatIntegerAsDecimal'),
       ('argument_value', 'Argument value', '_FormatString')]
 
-  # AUT_ATTR32 or AUT_ATTR64 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_ATTR = [
+  # AUT_ATTR32 or AUT_ATTR64 token debug information.
+  _DEBUG_INFO_TOKEN_ATTR = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
       ('file_mode', 'File mode', '_FormatIntegerAsHexadecimal4'),
       ('user_identifier', 'User identifier', '_FormatIntegerAsDecimal'),
@@ -854,22 +813,25 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('file_identifier', 'File identifier', '_FormatIntegerAsHexadecimal8'),
       ('device', 'Device', '_FormatIntegerAsHexadecimal8')]
 
-  # AUT_DATA token data debug information.
+  # AUT_DATA token debug information.
   # TODO: improve reading data
-  _DEBUG_INFO_TOKEN_DATA_DATA = [
+  _DEBUG_INFO_TOKEN_DATA = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('data_format', 'Data format', '_FormatIntegerAsHexadecimal2'),
       ('element_data_type', 'Element data type',
        '_FormatIntegerAsHexadecimal2'),
       ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
-  # AUT_EXIT, AUT_RETURN32, AUT_RETURN64 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_EXIT = [
+  # AUT_EXIT, AUT_RETURN32, AUT_RETURN64 token debug information.
+  _DEBUG_INFO_TOKEN_EXIT = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('status', 'Status', '_FormatIntegerAsHexadecimal8'),
       ('return_value', 'Return value', '_FormatIntegerAsHexadecimal8')]
 
-  # AUT_HEADER32, AUT_HEADER64 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_HEADER = [
+  # AUT_HEADER32, AUT_HEADER64 token debug information.
+  _DEBUG_INFO_TOKEN_HEADER = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
       ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
       ('event_type', 'Event type', '_FormatIntegerAsEventType'),
@@ -877,8 +839,9 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
       ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal')]
 
-  # AUT_HEADER32_EX, AUT_HEADER64_EX token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_HEADER_EX = [
+  # AUT_HEADER32_EX, AUT_HEADER64_EX token debug information.
+  _DEBUG_INFO_TOKEN_HEADER_EX = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
       ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
       ('event_type', 'Event type', '_FormatIntegerAsEventType'),
@@ -888,56 +851,66 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
       ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal')]
 
-  # AUT_IN_ADDR token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_IN_ADDR = [
+  # AUT_IN_ADDR token debug information.
+  _DEBUG_INFO_TOKEN_IN_ADDR = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPv4Address')]
 
-  # AUT_IN_ADDR_EX token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_IN_ADDR_EX = [
+  # AUT_IN_ADDR_EX token debug information.
+  _DEBUG_INFO_TOKEN_IN_ADDR_EX = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('net_type', 'Net type', '_FormatIntegerAsNetType'),
       ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress')]
 
-  # AUT_IP token data debug information.
+  # AUT_IP token debug information.
   # TODO: add remaining IPv4 header information.
-  _DEBUG_INFO_TOKEN_DATA_IP = [
+  _DEBUG_INFO_TOKEN_IP = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('source_ip_address', 'Source IP address',
        '_FormatArrayOfIntegersAsIPv4Address'),
       ('destination_ip_address', 'Destination IP address',
        '_FormatArrayOfIntegersAsIPv4Address')]
 
-  # AUT_IPC token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_IPC = [
+  # AUT_IPC token debug information.
+  _DEBUG_INFO_TOKEN_IPC = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('object_type', 'Object type', '_FormatIntegerAsHexadecimal2'),
       ('object_identifier', 'Object identifier',
        '_FormatIntegerAsHexadecimal8')]
 
-  # AUT_IPORT token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_IPORT = [
+  # AUT_IPORT token debug information.
+  _DEBUG_INFO_TOKEN_IPORT = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('port_number', 'Port number', '_FormatIntegerAsDecimal')]
 
-  # AUT_OPAQUE token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_OPAQUE = [
+  # AUT_OPAQUE token debug information.
+  _DEBUG_INFO_TOKEN_OPAQUE = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
-  # AUT_OTHER_FILE32 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_OTHER_FILE32 = [
+  # AUT_OTHER_FILE32 token debug information.
+  _DEBUG_INFO_TOKEN_OTHER_FILE32 = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
       ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal'),
       ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
       ('name', 'Name', '_FormatString')]
 
-  # AUT_PATH token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_PATH = [
+  # AUT_PATH token debug information.
+  _DEBUG_INFO_TOKEN_PATH = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('path_size', 'Path size', '_FormatIntegerAsDecimal'),
       ('path', 'Path', '_FormatString')]
 
-  # AUT_SEQ token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_SEQ = [
+  # AUT_SEQ token debug information.
+  _DEBUG_INFO_TOKEN_SEQ = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('sequence_number', 'Sequence number', '_FormatIntegerAsDecimal')]
 
-  # AUT_SOCKET_EX token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_SOCKET_EX = [
+  # AUT_SOCKET_EX token debug information.
+  _DEBUG_INFO_TOKEN_SOCKET_EX = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('socket_domain', 'Socket domain', '_FormatIntegerAsHexadecimal4'),
       ('socket_type', 'Socket type', '_FormatIntegerAsHexadecimal4'),
       ('net_type', 'Net type', '_FormatIntegerAsNetType'),
@@ -948,28 +921,32 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('remote_ip_address', 'Remote IP address',
        '_FormatArrayOfIntegersAsIPAddress')]
 
-  # AUT_SOCKINET32 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_SOCKINET32 = [
+  # AUT_SOCKINET32 token debug information.
+  _DEBUG_INFO_TOKEN_SOCKINET32 = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
       ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
       ('local_ip_address', 'Local IP address',
        '_FormatArrayOfIntegersAsIPv4Address')]
 
-  # AUT_SOCKINET64 token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_SOCKINET64 = [
+  # AUT_SOCKINET64 token debug information.
+  _DEBUG_INFO_TOKEN_SOCKINET64 = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
       ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
       ('local_ip_address', 'Local IP address',
        '_FormatArrayOfIntegersAsIPv6Address')]
 
-  # AUT_SOCKUNIX token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_SOCKUNIX = [
+  # AUT_SOCKUNIX token debug information.
+  _DEBUG_INFO_TOKEN_SOCKUNIX = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
       ('socket_path', 'Socket path', None)]
 
-  # AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32 and AUT_PROCESS64 token data
+  # AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32 and AUT_PROCESS64 token
   # debug information.
-  _DEBUG_INFO_TOKEN_DATA_SUBJECT = [
+  _DEBUG_INFO_TOKEN_SUBJECT = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('audit_user_identifier', 'Audit user identifier',
        '_FormatIntegerAsDecimal'),
       ('effective_user_identifier', 'Effective user identifier',
@@ -986,8 +963,9 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPv4Address')]
 
   # AUT_SUBJECT32_EX, AUT_SUBJECT64_EX, AUT_PROCESS32_EX and AUT_PROCESS64_EX
-  # token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX = [
+  # token debug information.
+  _DEBUG_INFO_TOKEN_SUBJECT_EX = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('audit_user_identifier', 'Audit user identifier',
        '_FormatIntegerAsDecimal'),
       ('effective_user_identifier', 'Effective user identifier',
@@ -1004,61 +982,64 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ('net_type', 'Net type', '_FormatIntegerAsNetType'),
       ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress')]
 
-  # AUT_TEXT token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_TEXT = [
+  # AUT_TEXT token debug information.
+  _DEBUG_INFO_TOKEN_TEXT = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('text_size', 'Text size', '_FormatIntegerAsDecimal'),
       ('text', 'Text', '_FormatString')]
 
-  # AUT_TRAILER token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_TRAILER = [
+  # AUT_TRAILER token debug information.
+  _DEBUG_INFO_TOKEN_TRAILER = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('signature', 'Signature', '_FormatIntegerAsHexadecimal4'),
       ('record_size', 'Record size', '_FormatIntegerAsDecimal')]
 
-  # AUT_ZONENAME token data debug information.
-  _DEBUG_INFO_TOKEN_DATA_ZONENAME = [
+  # AUT_ZONENAME token debug information.
+  _DEBUG_INFO_TOKEN_ZONENAME = [
+      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
       ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
       ('name', 'Name', '_FormatString')]
 
   # TODO: implement and add debug info for token type 0x32
   # TODO: implement and add debug info for token type 0x34 and 0x3b
   # TODO: implement and add debug info for token type 0x3c and 0x3d
-  _DEBUG_INFO_TOKEN_DATA = {
-      0x11: _DEBUG_INFO_TOKEN_DATA_OTHER_FILE32,
-      0x13: _DEBUG_INFO_TOKEN_DATA_TRAILER,
-      0x14: _DEBUG_INFO_TOKEN_DATA_HEADER,
-      0x15: _DEBUG_INFO_TOKEN_DATA_HEADER_EX,
-      0x21: _DEBUG_INFO_TOKEN_DATA_DATA,
-      0x22: _DEBUG_INFO_TOKEN_DATA_IPC,
-      0x23: _DEBUG_INFO_TOKEN_DATA_PATH,
-      0x24: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
-      0x26: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
-      0x27: _DEBUG_INFO_TOKEN_DATA_EXIT,
-      0x28: _DEBUG_INFO_TOKEN_DATA_TEXT,
-      0x29: _DEBUG_INFO_TOKEN_DATA_OPAQUE,
-      0x2a: _DEBUG_INFO_TOKEN_DATA_IN_ADDR,
-      0x2b: _DEBUG_INFO_TOKEN_DATA_IP,
-      0x2c: _DEBUG_INFO_TOKEN_DATA_IPORT,
-      0x2d: _DEBUG_INFO_TOKEN_DATA_ARG,
-      0x2f: _DEBUG_INFO_TOKEN_DATA_SEQ,
-      0x3e: _DEBUG_INFO_TOKEN_DATA_ATTR,
-      0x52: _DEBUG_INFO_TOKEN_DATA_EXIT,
-      0x60: _DEBUG_INFO_TOKEN_DATA_ZONENAME,
-      0x71: _DEBUG_INFO_TOKEN_DATA_ARG,
-      0x72: _DEBUG_INFO_TOKEN_DATA_EXIT,
-      0x73: _DEBUG_INFO_TOKEN_DATA_ATTR,
-      0x74: _DEBUG_INFO_TOKEN_DATA_HEADER,
-      0x75: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
-      0x77: _DEBUG_INFO_TOKEN_DATA_SUBJECT,
-      0x79: _DEBUG_INFO_TOKEN_DATA_HEADER_EX,
-      0x7a: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
-      0x7b: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
-      0x7c: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
-      0x7d: _DEBUG_INFO_TOKEN_DATA_SUBJECT_EX,
-      0x7e: _DEBUG_INFO_TOKEN_DATA_IN_ADDR_EX,
-      0x7f: _DEBUG_INFO_TOKEN_DATA_SOCKET_EX,
-      0x80: _DEBUG_INFO_TOKEN_DATA_SOCKINET32,
-      0x81: _DEBUG_INFO_TOKEN_DATA_SOCKINET64,
-      0x82: _DEBUG_INFO_TOKEN_DATA_SOCKUNIX,
+  _DEBUG_INFO_TOKEN = {
+      0x11: _DEBUG_INFO_TOKEN_OTHER_FILE32,
+      0x13: _DEBUG_INFO_TOKEN_TRAILER,
+      0x14: _DEBUG_INFO_TOKEN_HEADER,
+      0x15: _DEBUG_INFO_TOKEN_HEADER_EX,
+      0x21: _DEBUG_INFO_TOKEN_DATA,
+      0x22: _DEBUG_INFO_TOKEN_IPC,
+      0x23: _DEBUG_INFO_TOKEN_PATH,
+      0x24: _DEBUG_INFO_TOKEN_SUBJECT,
+      0x26: _DEBUG_INFO_TOKEN_SUBJECT,
+      0x27: _DEBUG_INFO_TOKEN_EXIT,
+      0x28: _DEBUG_INFO_TOKEN_TEXT,
+      0x29: _DEBUG_INFO_TOKEN_OPAQUE,
+      0x2a: _DEBUG_INFO_TOKEN_IN_ADDR,
+      0x2b: _DEBUG_INFO_TOKEN_IP,
+      0x2c: _DEBUG_INFO_TOKEN_IPORT,
+      0x2d: _DEBUG_INFO_TOKEN_ARG,
+      0x2f: _DEBUG_INFO_TOKEN_SEQ,
+      0x3e: _DEBUG_INFO_TOKEN_ATTR,
+      0x52: _DEBUG_INFO_TOKEN_EXIT,
+      0x60: _DEBUG_INFO_TOKEN_ZONENAME,
+      0x71: _DEBUG_INFO_TOKEN_ARG,
+      0x72: _DEBUG_INFO_TOKEN_EXIT,
+      0x73: _DEBUG_INFO_TOKEN_ATTR,
+      0x74: _DEBUG_INFO_TOKEN_HEADER,
+      0x75: _DEBUG_INFO_TOKEN_SUBJECT,
+      0x77: _DEBUG_INFO_TOKEN_SUBJECT,
+      0x79: _DEBUG_INFO_TOKEN_HEADER_EX,
+      0x7a: _DEBUG_INFO_TOKEN_SUBJECT_EX,
+      0x7b: _DEBUG_INFO_TOKEN_SUBJECT_EX,
+      0x7c: _DEBUG_INFO_TOKEN_SUBJECT_EX,
+      0x7d: _DEBUG_INFO_TOKEN_SUBJECT_EX,
+      0x7e: _DEBUG_INFO_TOKEN_IN_ADDR_EX,
+      0x7f: _DEBUG_INFO_TOKEN_SOCKET_EX,
+      0x80: _DEBUG_INFO_TOKEN_SOCKINET32,
+      0x81: _DEBUG_INFO_TOKEN_SOCKINET64,
+      0x82: _DEBUG_INFO_TOKEN_SOCKUNIX,
   }
 
   def _FormatArrayOfIntegersAsIPAddress(self, array_of_integers):
@@ -1119,46 +1100,32 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
           the file-like object.
 
     Raises:
-      ParseError: if the event record cannot be read.
+      ParseError: if the record cannot be read.
     """
-    token_type = self._ReadTokenType(file_object, file_offset)
-    if token_type not in self._HEADER_TOKEN_TYPES:
+    token = self._ReadToken(file_object, file_offset)
+
+    if token.token_type not in self._HEADER_TOKEN_TYPES:
       raise errors.ParseError(
-          'Unsupported header token type: 0x{0:02x}'.format(token_type))
+          'Unsupported header token type: 0x{0:02x}'.format(token.token_type))
 
-    token_type, token_data = self._ReadToken(file_object, file_offset)
-
-    if self._debug:
-      debug_information = self._DEBUG_INFO_TOKEN_DATA.get(token_type, None)
-      if debug_information:
-        self._DebugPrintStructureObject(token_data, debug_information)
-
-    if token_data.format_version != 11:
+    if token.format_version != 11:
       raise errors.ParseError('Unsupported format version type: {0:d}'.format(
-          token_data.format_version))
+          token.format_version))
 
-    header_record_size = token_data.record_size
+    header_record_size = token.record_size
     record_end_offset = file_offset + header_record_size
     while file_offset < record_end_offset:
-      token_type, token_data = self._ReadToken(file_object, file_offset)
-      if not token_data:
-        raise errors.ParseError('Unsupported token type: 0x{0:02x}'.format(
-            token_type))
+      token = self._ReadToken(file_object, file_offset)
 
       # TODO: add callback for validation (trailer) and read of more complex
       # structures.
 
       file_offset = file_object.tell()
 
-      if self._debug:
-        debug_information = self._DEBUG_INFO_TOKEN_DATA.get(token_type, None)
-        if debug_information:
-          self._DebugPrintStructureObject(token_data, debug_information)
-
-      if token_type == self._TRAILER_TOKEN_TYPE:
+      if token.token_type == self._TRAILER_TOKEN_TYPE:
         break
 
-    if token_data.record_size != header_record_size:
+    if token.record_size != header_record_size:
       raise errors.ParseError(
           'Mismatch of event record size between header and trailer token.')
 
@@ -1171,27 +1138,27 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
           the file-like object.
 
     Returns:
-      tuple[int, object]: token type and token data or None if the token
-          type is not supported.
+      object: token or None if the token type is not supported.
+
+    Raises:
+      ParseError: if the record cannot be read.
     """
     token_type = self._ReadTokenType(file_object, file_offset)
+    description = self._DESCRIPTION_PER_TOKEN_TYPE.get(token_type, '')
+
+    data_type_map = self._GetDataTypeMap('bsm_token')
+
+    token, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, description)
+    if not token:
+      raise errors.ParseError('Unsupported token type'.format(token_type))
 
     if self._debug:
-      token_type_string = self._TOKEN_TYPES.get(token_type, 'UNKNOWN')
-      value_string = '0x{0:02x} ({1:s})'.format(token_type, token_type_string)
-      self._DebugPrintValue('Token type', value_string)
+      debug_information = self._DEBUG_INFO_TOKEN.get(token.token_type, None)
+      if debug_information:
+        self._DebugPrintStructureObject(token, debug_information)
 
-    token_data = None
-    data_type_map_name = self._DATA_TYPE_MAP_PER_TOKEN_TYPE.get(
-        token_type, None)
-    if data_type_map_name:
-      data_type_map = self._GetDataTypeMap(data_type_map_name)
-
-      description = self._DESCRIPTION_PER_TOKEN_TYPE.get(token_type, '')
-      token_data, _ = self._ReadStructureFromFileObject(
-          file_object, file_offset + 1, data_type_map, description)
-
-    return token_type, token_data
+    return token
 
   def _ReadTokenType(self, file_object, file_offset):
     """Reads a token type.

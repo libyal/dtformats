@@ -78,10 +78,10 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      token_type, token_data = test_file._ReadToken(file_object, 0)
+      token = test_file._ReadToken(file_object, 0)
 
-      self.assertEqual(token_type, 20)
-      self.assertIsNotNone(token_data)
+      self.assertIsNotNone(token)
+      self.assertEqual(token.token_type, 20)
 
   def testReadFileObjectWithOpenBSM(self):
     """Tests the ReadFileObject function with an Open BSM file ."""

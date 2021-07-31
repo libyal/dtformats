@@ -57,11 +57,14 @@ encoding: ascii
 element_data_type: char
 elements_terminator: "\x00"
 ---
-name: bsm_token_data_arg32
+name: bsm_token_arg32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x2d
 - name: argument_index
   data_type: uint8
 - name: argument_name
@@ -72,13 +75,16 @@ members:
   type: string
   encoding: ascii
   element_data_type: char
-  elements_data_size: bsm_token_data_arg32.argument_value_size
+  elements_data_size: bsm_token_arg32.argument_value_size
 ---
-name: bsm_token_data_arg64
+name: bsm_token_arg64
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x71
 - name: argument_index
   data_type: uint8
 - name: argument_name
@@ -89,13 +95,16 @@ members:
   type: string
   encoding: ascii
   element_data_type: char
-  elements_data_size: bsm_token_data_arg64.argument_value_size
+  elements_data_size: bsm_token_arg64.argument_value_size
 ---
-name: bsm_token_data_attr32
+name: bsm_token_attr32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x3e
 - name: unknown1
   data_type: uint16
 - name: file_mode
@@ -111,11 +120,14 @@ members:
 - name: device
   data_type: uint32
 ---
-name: bsm_token_data_attr64
+name: bsm_token_attr64
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x73
 - name: unknown1
   data_type: uint16
 - name: file_mode
@@ -131,11 +143,14 @@ members:
 - name: device
   data_type: uint64
 ---
-name: bsm_token_data_data
+name: bsm_token_data
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x21
 - name: data_format
   data_type: uint8
 - name: element_data_type
@@ -145,47 +160,59 @@ members:
 - name: data
   type: stream
   element_data_type: byte
-  elements_data_size: bsm_token_data_data.number_of_elements
+  elements_data_size: bsm_token_data.number_of_elements
 ---
-name: bsm_token_data_exec_args
+name: bsm_token_exec_args
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  values: [0x3c, 0x3d]
 - name: number_of_strings
   data_type: uint32
 - name: strings
   type: sequence
   element_data_type: cstring
-  number_of_elements: bsm_token_data_exec_args.number_of_strings
+  number_of_elements: bsm_token_exec_args.number_of_strings
 ---
-name: bsm_token_data_exit
+name: bsm_token_exit
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x52
 - name: status
   data_type: uint32
 - name: return_value
   data_type: uint32
 ---
-name: bsm_token_data_groups
+name: bsm_token_groups
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  values: [0x34, 0x3b]
 - name: number_of_groups
   data_type: uint32
 - name: groups
   type: sequence
   element_data_type: uint32
-  number_of_elements: bsm_token_data_groups.number_of_groups
+  number_of_elements: bsm_token_groups.number_of_groups
 ---
-name: bsm_token_data_header32
+name: bsm_token_header32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x14
 - name: record_size
   data_type: uint32
 - name: format_version
@@ -199,53 +226,14 @@ members:
 - name: microseconds
   data_type: uint32
 ---
-name: bsm_token_data_header32_ex
+name: bsm_token_header32_ex
 type: structure
 attributes:
   byte_order: big-endian
 members:
-- name: record_size
-  data_type: uint32
-- name: format_version
+- name: token_type
   data_type: uint8
-- name: event_type
-  data_type: uint16
-- name: modifier
-  data_type: uint16
-- name: net_type
-  data_type: uint32
-- name: ip_address
-  type: sequence
-  element_data_type: byte
-  elements_data_size: bsm_token_data_header32_ex.net_type
-- name: timestamp
-  data_type: uint32
-- name: microseconds
-  data_type: uint32
----
-name: bsm_token_data_header64
-type: structure
-attributes:
-  byte_order: big-endian
-members:
-- name: record_size
-  data_type: uint32
-- name: format_version
-  data_type: uint8
-- name: event_type
-  data_type: uint16
-- name: modifier
-  data_type: uint16
-- name: timestamp
-  data_type: uint64
-- name: microseconds
-  data_type: uint64
----
-name: bsm_token_data_header64_ex
-type: structure
-attributes:
-  byte_order: big-endian
-members:
+  value: 0x15
 - name: record_size
   data_type: uint32
 - name: format_version
@@ -259,27 +247,81 @@ members:
 - name: ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: bsm_token_data_header64_ex.net_type
+  elements_data_size: bsm_token_header32_ex.net_type
+- name: timestamp
+  data_type: uint32
+- name: microseconds
+  data_type: uint32
+---
+name: bsm_token_header64
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: token_type
+  data_type: uint8
+  value: 0x74
+- name: record_size
+  data_type: uint32
+- name: format_version
+  data_type: uint8
+- name: event_type
+  data_type: uint16
+- name: modifier
+  data_type: uint16
 - name: timestamp
   data_type: uint64
 - name: microseconds
   data_type: uint64
 ---
-name: bsm_token_data_in_addr
+name: bsm_token_header64_ex
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x79
+- name: record_size
+  data_type: uint32
+- name: format_version
+  data_type: uint8
+- name: event_type
+  data_type: uint16
+- name: modifier
+  data_type: uint16
+- name: net_type
+  data_type: uint32
+- name: ip_address
+  type: sequence
+  element_data_type: byte
+  elements_data_size: bsm_token_header64_ex.net_type
+- name: timestamp
+  data_type: uint64
+- name: microseconds
+  data_type: uint64
+---
+name: bsm_token_in_addr
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: token_type
+  data_type: uint8
+  value: 0x2a
 - name: ip_address
   type: sequence
   element_data_type: byte
   elements_data_size: 4
 ---
-name: bsm_token_data_in_addr_ex
+name: bsm_token_in_addr_ex
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x7e
 - name: net_type
   data_type: uint32
 - name: ip_address
@@ -287,11 +329,14 @@ members:
   element_data_type: byte
   elements_data_size: 16
 ---
-name: bsm_token_data_ip
+name: bsm_token_ip
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x2b
 - name: unknown1
   type: stream
   element_data_type: byte
@@ -305,21 +350,27 @@ members:
   element_data_type: byte
   elements_data_size: 4
 ---
-name: bsm_token_data_ipc
+name: bsm_token_ipc
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x22
 - name: object_type
   data_type: uint8
 - name: object_identifier
   data_type: uint32
 ---
-name: bsm_token_data_ipc_perm
+name: bsm_token_ipc_perm
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x32
 - name: user_identifier
   data_type: uint32
 - name: group_identifier
@@ -341,31 +392,40 @@ members:
 - name: key
   data_type: uint16
 ---
-name: bsm_token_data_iport
+name: bsm_token_iport
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x2c
 - name: port_number
   data_type: uint16
 ---
-name: bsm_token_data_opaque
+name: bsm_token_opaque
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x29
 - name: data_size
   data_type: uint16
 - name: data
   type: stream
   element_data_type: byte
-  elements_data_size: bsm_token_data_opaque.data_size
+  elements_data_size: bsm_token_opaque.data_size
 ---
-name: bsm_token_data_other_file32
+name: bsm_token_other_file32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x11
 - name: timestamp
   data_type: uint32
 - name: microseconds
@@ -376,54 +436,69 @@ members:
   type: string
   encoding: ascii
   element_data_type: char
-  elements_data_size: bsm_token_data_other_file32.name_size
+  elements_data_size: bsm_token_other_file32.name_size
 ---
-name: bsm_token_data_path
+name: bsm_token_path
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x23
 - name: path_size
   data_type: uint16
 - name: path
   type: string
   encoding: ascii
   element_data_type: char
-  elements_data_size: bsm_token_data_path.path_size
+  elements_data_size: bsm_token_path.path_size
 ---
-name: bsm_token_data_return32
+name: bsm_token_return32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x27
 - name: status
   data_type: uint8
 - name: return_value
   data_type: uint32
 ---
-name: bsm_token_data_return64
+name: bsm_token_return64
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x72
 - name: status
   data_type: uint8
 - name: return_value
   data_type: uint64
 ---
-name: bsm_token_data_seq
+name: bsm_token_seq
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x2f
 - name: sequence_number
   data_type: uint32
 ---
-name: bsm_token_data_socket_ex
+name: bsm_token_socket_ex
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x7f
 - name: socket_domain
   data_type: uint16
 - name: socket_type
@@ -435,19 +510,22 @@ members:
 - name: local_ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: bsm_token_data_socket_ex.net_type
+  elements_data_size: bsm_token_socket_ex.net_type
 - name: remote_port
   data_type: uint16
 - name: remote_ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: bsm_token_data_socket_ex.net_type
+  elements_data_size: bsm_token_socket_ex.net_type
 ---
-name: bsm_token_data_sockinet32
+name: bsm_token_sockinet32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x80
 - name: socket_family
   data_type: uint16
 - name: local_port
@@ -457,11 +535,14 @@ members:
   element_data_type: byte
   elements_data_size: 4
 ---
-name: bsm_token_data_sockinet64
+name: bsm_token_sockinet64
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x81
 - name: socket_family
   data_type: uint16
 - name: local_port
@@ -471,11 +552,14 @@ members:
   element_data_type: byte
   elements_data_size: 16
 ---
-name: bsm_token_data_sockunix
+name: bsm_token_sockunix
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x82
 - name: socket_family
   data_type: uint16
 - name: socket_path
@@ -484,11 +568,14 @@ members:
   element_data_type: char
   elements_terminator: "\x00"
 ---
-name: bsm_token_data_subject32
+name: bsm_token_subject32
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  values: [0x24, 0x26]
 - name: audit_user_identifier
   data_type: int32
 - name: effective_user_identifier
@@ -510,11 +597,14 @@ members:
   element_data_type: byte
   elements_data_size: 4
 ---
-name: bsm_token_data_subject32_ex
+name: bsm_token_subject32_ex
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  values: [0x7a, 0x7b]
 - name: audit_user_identifier
   data_type: int32
 - name: effective_user_identifier
@@ -536,13 +626,16 @@ members:
 - name: ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: bsm_token_data_subject32_ex.net_type
+  elements_data_size: bsm_token_subject32_ex.net_type
 ---
-name: bsm_token_data_subject64
+name: bsm_token_subject64
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  values: [0x75, 0x77]
 - name: audit_user_identifier
   data_type: int32
 - name: effective_user_identifier
@@ -564,11 +657,14 @@ members:
   element_data_type: byte
   elements_data_size: 4
 ---
-name: bsm_token_data_subject64_ex
+name: bsm_token_subject64_ex
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  values: [0x7c, 0x7d]
 - name: audit_user_identifier
   data_type: int32
 - name: effective_user_identifier
@@ -590,41 +686,101 @@ members:
 - name: ip_address
   type: sequence
   element_data_type: byte
-  elements_data_size: bsm_token_data_subject64_ex.net_type
+  elements_data_size: bsm_token_subject64_ex.net_type
 ---
-name: bsm_token_data_text
+name: bsm_token_text
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x28
 - name: text_size
   data_type: uint16
 - name: text
   type: string
   encoding: ascii
   element_data_type: char
-  elements_data_size: bsm_token_data_text.text_size
+  elements_data_size: bsm_token_text.text_size
 ---
-name: bsm_token_data_trailer
+name: bsm_token_trailer
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x13
 - name: signature
   data_type: uint16
   value: 0xb105
 - name: record_size
   data_type: uint32
 ---
-name: bsm_token_data_zonename
+name: bsm_token_zonename
 type: structure
 attributes:
   byte_order: big-endian
 members:
+- name: token_type
+  data_type: uint8
+  value: 0x60
 - name: name_size
   data_type: uint16
 - name: name
   type: string
   encoding: ascii
   element_data_type: char
-  elements_data_size: bsm_token_data_zonename.name_size
+  elements_data_size: bsm_token_zonename.name_size
+---
+name: bsm_token_base
+type: structure
+description: Structure shared by all BSM token type
+attributes:
+  byte_order: big-endian
+members:
+- name: token_type
+  data_type: uint8
+---
+name: bsm_token
+type: structure-group
+description: Group of BSM token types
+base: bsm_token_base
+identifier: token_type
+members:
+- bsm_token_arg32
+- bsm_token_arg64
+- bsm_token_attr32
+- bsm_token_attr64
+- bsm_token_data
+- bsm_token_exec_args
+- bsm_token_exit
+- bsm_token_groups
+- bsm_token_header32
+- bsm_token_header32_ex
+- bsm_token_header64
+- bsm_token_header64_ex
+- bsm_token_in_addr
+- bsm_token_in_addr_ex
+- bsm_token_ip
+- bsm_token_ipc
+- bsm_token_ipc_perm
+- bsm_token_iport
+- bsm_token_opaque
+- bsm_token_other_file32
+- bsm_token_path
+- bsm_token_return32
+- bsm_token_return64
+- bsm_token_seq
+- bsm_token_socket_ex
+- bsm_token_sockinet32
+- bsm_token_sockinet64
+- bsm_token_sockunix
+- bsm_token_subject32
+- bsm_token_subject32_ex
+- bsm_token_subject64
+- bsm_token_subject64_ex
+- bsm_token_text
+- bsm_token_trailer
+- bsm_token_zonename

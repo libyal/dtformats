@@ -360,7 +360,7 @@ Values:
 | OA3xOriginalProductKey | |
 | OSEdition | |
 | OSInstallType | |
-| OSOOBEDateTime | REG_SZ | +
+| OSOOBEDateTime | REG_SZ | [yellow-background]*Unknown date and time* +
 Contains a date and time string in the format: "2020-07-04T14:45:53.190"
 | OSSKU | |
 | OSSubscriptionStatus | |
@@ -523,7 +523,7 @@ This corresponds with the FileDescription value in the PE/COFF file version info
 | d | REG_DWORD_LITTLE_ENDIAN | PE/COFF image version +
 This corresponds with the MajorImageVersion and MinorImageVersion values in the PE/COFF PE/COFF header
 3+|
-| f | REG_DWORD_LITTLE_ENDIAN | Compilation (or Link) date and time +
+| f | REG_DWORD_LITTLE_ENDIAN | Link (or compilation) date and time +
 This corresponds with the creation time in the PE/COFF header +
 Contains a POSIX timestamp in seconds
 | 10 | REG_DWORD_LITTLE_ENDIAN | [yellow-background]*Unknown (major operating system version)?* +
@@ -580,12 +580,12 @@ Values:
 | HiddenArp | |
 | InboxModernApp | |
 | InstallDate | | Installation date and time +
-Contains a locale specific date and time value e.g. "07/16/2016 22:55:48"
+Contains a date and time string e.g. "07/16/2016 22:55:48"
 | InstallDateArpLastModified | REG_MULTI_SZ | +
 Seen: ["08/01/2017 13:14:28"]
 | InstallDateFromLinkFile | |
 | InstallDateMsi | REG_SZ | MSI installation date and time +
-Contains a locale specific date and time value e.g. "08/01/2017 13:08:04"
+Contains a date and time string e.g. "08/01/2017 13:08:04"
 | Language | REG_SZ | Language code +
 Contains a LCID or "0" if not set
 | MsiPackageCode | REG_SZ | +
@@ -606,6 +606,8 @@ Seen: "AppxPackage", "AddRemoveProgram", "Msi", "File"
 | UninstallString | REG_SZ |
 | Version | REG_SZ |
 |===
+
+[yellow-background]*TODO: determine if date and time string is locale specific*
 
 == InventoryApplicationAppV key
 
@@ -665,6 +667,7 @@ Values:
 | IsPeFile | |
 | Language | |
 | LinkDate | |
+Contains a date and time string e.g. "12/15/2018 22:24:36"
 | LongPathHash | |
 | LowerCaseLongPath | |
 | Name | |
@@ -676,6 +679,8 @@ Values:
 | Usn | |
 | Version | |
 |===
+
+[yellow-background]*TODO: determine if date and time string is locale specific*
 
 == InventoryApplicationFramework key
 
