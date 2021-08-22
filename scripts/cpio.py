@@ -52,7 +52,7 @@ class CPIOArchiveFileHasher(object):
     """Hashes the file entries stored in the CPIO archive file."""
     stat_object = os.stat(self._path)
 
-    file_object = open(self._path, 'rb')
+    file_object = open(self._path, 'rb')  # pylint: disable=consider-using-with
 
     file_offset = 0
     file_size = stat_object.st_size

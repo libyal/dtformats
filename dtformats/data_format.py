@@ -727,7 +727,7 @@ class BinaryDataFile(BinaryDataFormat):
 
     stat_object = os.stat(path)
 
-    file_object = open(path, 'rb')
+    file_object = open(path, 'rb')  # pylint: disable=consider-using-with
 
     self._file_size = stat_object.st_size
     self._path = path
