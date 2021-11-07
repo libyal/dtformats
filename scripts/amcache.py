@@ -17,7 +17,7 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      'Extracts information from Apple System Log files.'))
+      'Extracts information from Amcache.hve files.'))
 
   argument_parser.add_argument(
       '-d', '--debug', dest='debug', action='store_true', default=False,
@@ -25,7 +25,7 @@ def Main():
 
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='PATH',
-      default=None, help='path of the Apple System Log file.')
+      default=None, help='path of the Amcache.hve file.')
 
   options = argument_parser.parse_args()
 
