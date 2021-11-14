@@ -67,9 +67,9 @@ information within this document:
 
 == Root-key
 
-*TODO GUID of root key?*
+*TODO determine GUID of root key*
 
-[cols="1,1,1,5",options="header"]
+[cols="1,5",options="header"]
 |===
 | Windows version | Root-key name
 | 7 |
