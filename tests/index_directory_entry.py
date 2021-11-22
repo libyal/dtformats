@@ -4,13 +4,13 @@
 import unittest
 import os
 
-from dtformats import indx_directory_entry
+from dtformats import index_directory_entry
 
 from tests import test_lib
 
-
-class INDXRecordFileTest(test_lib.BaseTestCase):
-  """INDX record tests."""
+ # pylint: disable=protected-access
+class IndexRecordFileTest(test_lib.BaseTestCase):
+  """NTFS $I30 index record tests."""
 
   expected_values = [
     {'entry_header_signature': b'INDX',
@@ -66,24 +66,30 @@ class INDXRecordFileTest(test_lib.BaseTestCase):
     'index_key_data_filename': '$Tops',
     }]
 
-
   def _GetTestStructure(self, path):
-    test_file_path = self._GetTestFilePath([path])
+    """ Helper method to create an NTFSIndexI30Record
+    object.
+
+    Args:
+        path (str): Path to a test file.
+
+    Returns:
+        NTFSIndexI30Record: An NTFS I30 index object.
+    """
+    test_file_path = self._GetTestFilePath(path)
     self._SkipIfPathNotExists(test_file_path)
 
     output_writer = test_lib.TestOutputWriter()
-    test_file = indx_directory_entry.INDXRecord(
+    test_file = index_directory_entry.NTFSIndexI30Record(
         debug=True, output_writer=output_writer)
 
     test_file.Open(test_file_path)
     return test_file
 
-
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     test_file = self._GetTestStructure('indx.records')
     self.assertIsNotNone(test_file)
-
 
   def testParseIndexEntryHeader(self):
     """Tests the _ParseIndexEntryHeader function. """
@@ -100,7 +106,6 @@ class INDXRecordFileTest(test_lib.BaseTestCase):
       self.expected_values[0].get('entry_header_logfile_sequence_number'))
     self.assertEqual(record.virtual_cluster_number,
       self.expected_values[0].get('entry_header_virtual_cluster_number'))
-
 
   def testParseIndexNodeHeader(self):
     """Tests the _ParseIndexNodeHeader function. """

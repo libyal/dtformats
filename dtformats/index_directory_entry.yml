@@ -1,9 +1,9 @@
-name: index_record
+name: ntfs_i30_index
 type: format
-description: Index Directory Entry
-urls: ["https://github.com/libyal/libfsntfs/blob/83c2f4ce3d16b5535eae9de767adc93fff724004/documentation/New%20Technologies%20File%20System%20(NTFS).asciidoc#index"]
+description: NTFS $I30 index record that contains directory entries
+urls: ["https://github.com/libyal/libfsntfs/blob/main/documentation/New%20Technologies%20File%20System%20(NTFS).asciidoc#index"]
 metadata:
-  authors: ['Joachim Metz <joachim.metz@gmail.com>', 'Juan Leaniz <juan.leaniz@gmail.com']
+  authors: ['Juan Leaniz <juan.leaniz@gmail.com']
   year: 2021
 ---
 name: byte
@@ -132,7 +132,7 @@ members:
 - name: index_node_flags
   data_type: uint32
 ---
-name: index_dir_entry
+name: index_directory_entry
 type: structure
 attributes:
   byte_order: little-endian
@@ -144,7 +144,7 @@ members:
 - name: values_offset
   type: stream
   element_data_type: byte
-  number_of_elements: index_dir_entry.node_header.index_values_offset - 16
+  number_of_elements: index_directory_entry.node_header.index_values_offset - 16
 - name: file_reference
   data_type: uint64
 - name: index_value_size
@@ -154,5 +154,5 @@ members:
 - name: index_value_flags
   data_type: uint32
 - name: index_key_data
-  condition: index_dir_entry.index_key_data_size > 64
+  condition: index_directory_entry.index_key_data_size > 64
   data_type: file_name_attribute
