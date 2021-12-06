@@ -1,70 +1,71 @@
 # -*- coding: utf-8 -*-
 """Tests for NTFS INDX directory entries."""
 
-import unittest
 import os
+import unittest
 
 from dtformats import index_directory_entry
 
 from tests import test_lib
+
 
  # pylint: disable=protected-access
 class IndexRecordFileTest(test_lib.BaseTestCase):
   """NTFS $I30 index record tests."""
 
   expected_values = [
-    {'entry_header_signature': b'INDX',
-    'entry_header_fixup_value_offset': 40,
-    'entry_header_num_fixup_values': 9,
-    'entry_header_logfile_sequence_number': 1143279,
-    'entry_header_virtual_cluster_number': 0,
-    'node_header_index_values_offset': 40,
-    'node_header_index_node_size': 3176,
-    'node_header_allocated_index_node_size': 4072,
-    'node_header_index_node_flags': 0,
-    'file_reference' : 281474976710748,
-    'index_value_size' : 88,
-    'index_key_data_size' : 72,
-    'index_value_flags' : 0,
-    'index_key_data_parent_file_reference': 281474976710691,
-    'index_key_data_creation_time': 130795153668593750,
-    'index_key_data_modification_time': 130870367262995000,
-    'index_key_data_entry_modification_time': 130849843578932500,
-    'index_key_data_access_time': 130870367262995000,
-    'index_key_data_allocated_file_size': 24576,
-    'index_key_data_file_size': 24576,
-    'index_key_data_file_attribute_flags': 38,
-    'index_key_data_extended_data': 0,
-    'index_key_data_name_size': 3,
-    'index_key_data_name_space': 3,
-    'index_key_data_filename': 'BCD',
-    },
-    {'entry_header_signature': b'INDX',
-    'entry_header_fixup_value_offset': 40,
-    'entry_header_num_fixup_values': 9,
-    'entry_header_logfile_sequence_number': 1060954,
-    'entry_header_virtual_cluster_number': 0,
-    'node_header_index_values_offset': 40,
-    'node_header_index_node_size': 784,
-    'node_header_allocated_index_node_size': 4072,
-    'node_header_index_node_flags': 0,
-    'file_reference' : 281474976710687,
-    'index_value_size' : 96,
-    'index_key_data_size' : 76,
-    'index_value_flags' : 0,
-    'index_key_data_parent_file_reference': 281474976710685,
-    'index_key_data_creation_time': 130795138741093750,
-    'index_key_data_modification_time': 130795138741093750,
-    'index_key_data_entry_modification_time': 130795138741093750,
-    'index_key_data_access_time': 130795138741093750,
-    'index_key_data_allocated_file_size': 0,
-    'index_key_data_file_size': 0,
-    'index_key_data_file_attribute_flags': 38,
-    'index_key_data_extended_data': 0,
-    'index_key_data_name_size': 5,
-    'index_key_data_name_space': 0,
-    'index_key_data_filename': '$Tops',
-    }]
+      {'entry_header_signature': b'INDX',
+      'entry_header_fixup_value_offset': 40,
+      'entry_header_num_fixup_values': 9,
+      'entry_header_logfile_sequence_number': 1143279,
+      'entry_header_virtual_cluster_number': 0,
+      'node_header_index_values_offset': 40,
+      'node_header_index_node_size': 3176,
+      'node_header_allocated_index_node_size': 4072,
+      'node_header_index_node_flags': 0,
+      'file_reference' : 281474976710748,
+      'index_value_size' : 88,
+      'index_key_data_size' : 72,
+      'index_value_flags' : 0,
+      'index_key_data_parent_file_reference': 281474976710691,
+      'index_key_data_creation_time': 130795153668593750,
+      'index_key_data_modification_time': 130870367262995000,
+      'index_key_data_entry_modification_time': 130849843578932500,
+      'index_key_data_access_time': 130870367262995000,
+      'index_key_data_allocated_file_size': 24576,
+      'index_key_data_file_size': 24576,
+      'index_key_data_file_attribute_flags': 38,
+      'index_key_data_extended_data': 0,
+      'index_key_data_name_size': 3,
+      'index_key_data_name_space': 3,
+      'index_key_data_filename': 'BCD',
+      },
+      {'entry_header_signature': b'INDX',
+      'entry_header_fixup_value_offset': 40,
+      'entry_header_num_fixup_values': 9,
+      'entry_header_logfile_sequence_number': 1060954,
+      'entry_header_virtual_cluster_number': 0,
+      'node_header_index_values_offset': 40,
+      'node_header_index_node_size': 784,
+      'node_header_allocated_index_node_size': 4072,
+      'node_header_index_node_flags': 0,
+      'file_reference' : 281474976710687,
+      'index_value_size' : 96,
+      'index_key_data_size' : 76,
+      'index_value_flags' : 0,
+      'index_key_data_parent_file_reference': 281474976710685,
+      'index_key_data_creation_time': 130795138741093750,
+      'index_key_data_modification_time': 130795138741093750,
+      'index_key_data_entry_modification_time': 130795138741093750,
+      'index_key_data_access_time': 130795138741093750,
+      'index_key_data_allocated_file_size': 0,
+      'index_key_data_file_size': 0,
+      'index_key_data_file_attribute_flags': 38,
+      'index_key_data_extended_data': 0,
+      'index_key_data_name_size': 5,
+      'index_key_data_name_space': 0,
+      'index_key_data_filename': '$Tops',
+  }]
 
   def _GetTestStructure(self, path):
     """ Helper method to create an NTFSIndexI30Record
@@ -88,12 +89,12 @@ class IndexRecordFileTest(test_lib.BaseTestCase):
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
-    test_file = self._GetTestStructure('indx.records')
+    test_file = self._GetTestStructure(['ntfs_i30_records.raw'])
     self.assertIsNotNone(test_file)
 
   def testParseIndexEntryHeader(self):
     """Tests the _ParseIndexEntryHeader function. """
-    test_file = self._GetTestStructure('indx.records')
+    test_file = self._GetTestStructure(['ntfs_i30_records.raw'])
     record, _ = test_file._ParseIndexEntryHeader(test_file._file_object)
 
     self.assertEqual(record.signature,
@@ -109,7 +110,7 @@ class IndexRecordFileTest(test_lib.BaseTestCase):
 
   def testParseIndexNodeHeader(self):
     """Tests the _ParseIndexNodeHeader function. """
-    test_file = self._GetTestStructure('indx.records')
+    test_file = self._GetTestStructure(['ntfs_i30_records.raw'])
     test_file._file_object.seek(24, os.SEEK_SET)
     record, _ = test_file._ParseIndexNodeHeader(test_file._file_object)
 
@@ -126,7 +127,7 @@ class IndexRecordFileTest(test_lib.BaseTestCase):
     """
     Method to test class functionality.
     """
-    test_file = self._GetTestStructure('indx.records')
+    test_file = self._GetTestStructure(['ntfs_i30_records.raw'])
 
     i = 0
     for r in test_file.ReadRecords():

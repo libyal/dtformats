@@ -141,7 +141,7 @@ class NTFSIndexI30Record(data_format.BinaryDataFile):
 
 
   def ReadRecords(self):
-    """Reads INDX records.
+    """Reads NTFS $I30 INDX records.
 
     Yields:
       index_directory_entry: An NTFS $I30 index record.
