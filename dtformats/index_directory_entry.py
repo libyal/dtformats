@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-""" NTFS $I30 index entries """
+"""NTFS $I30 index entries."""
 
 import os
 
 from dtformats import data_format
 from dtformats import errors
+
 
 class NTFSIndexI30Record(data_format.BinaryDataFile):
   """Class that represents an NTFS $I30 index record."""
@@ -17,16 +18,16 @@ class NTFSIndexI30Record(data_format.BinaryDataFile):
       ('fixup_value_offset', 'fixup_value_offset', '_FormatIntegerAsDecimal'),
       ('num_fixup_values', 'num_fixup_values', '_FormatIntegerAsDecimal'),
       ('logfile_sequence_number', 'logfile_sequence_number',
-      '_FormatIntegerAsDecimal'),
+       '_FormatIntegerAsDecimal'),
       ('virtual_cluster_number', 'virtual_cluster_number',
-      '_FormatIntegerAsDecimal')]
+       '_FormatIntegerAsDecimal')]
 
   _DEBUG_INDX_NODE_HEADER = [
       ('index_values_offset', 'index_values_offset',
-      '_FormatIntegerAsDecimal'),
+       '_FormatIntegerAsDecimal'),
       ('index_node_size', 'index_node_size', '_FormatIntegerAsDecimal'),
       ('allocated_index_node_size', 'allocated_index_node_size',
-      '_FormatIntegerAsDecimal'),
+       '_FormatIntegerAsDecimal'),
       ('index_node_flags', 'index_node_flags', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INDX_DIR_RECORD = [
@@ -54,7 +55,7 @@ class NTFSIndexI30Record(data_format.BinaryDataFile):
 
   def PrintRecord(self, record):
     """Prints a human readable version of the NTFS $I30
-    index record.
+       index record.
 
     Args:
         record (index_directory_entry): An index_directory_entry structure.
@@ -105,8 +106,7 @@ class NTFSIndexI30Record(data_format.BinaryDataFile):
     return index_node_header, data_size
 
   def _ParseIndexDirectoryEntry(self, file_object):
-    """Parses an NTFS $I30 index record that contains
-        directory entries.
+    """Parses an NTFS $I30 index record that contains directory entries
 
     Args:
         file_object: A file-like object.
@@ -138,7 +138,6 @@ class NTFSIndexI30Record(data_format.BinaryDataFile):
       ParseError: if the file cannot be read.
     """
     self._file_object = file_object
-
 
   def ReadRecords(self):
     """Reads NTFS $I30 INDX records.

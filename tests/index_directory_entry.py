@@ -68,8 +68,7 @@ class IndexRecordFileTest(test_lib.BaseTestCase):
   }]
 
   def _GetTestStructure(self, path):
-    """ Helper method to create an NTFSIndexI30Record
-    object.
+    """ Helper method to create an NTFSIndexI30Record object.
 
     Args:
         path (str): Path to a test file.
