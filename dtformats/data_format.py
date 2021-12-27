@@ -111,6 +111,15 @@ class BinaryDataFormat(object):
 
     self._DebugPrintValue(description, date_time_string)
 
+  def _DebugPrintText(self, text):
+    """Prints text for debugging.
+
+    Args:
+      text (str): text.
+    """
+    if self._output_writer:
+      self._output_writer.WriteText(text)
+
   def _DebugPrintValue(self, description, value):
     """Prints a value for debugging.
 
@@ -120,15 +129,6 @@ class BinaryDataFormat(object):
     """
     if self._output_writer:
       text = self._FormatValue(description, value)
-      self._output_writer.WriteText(text)
-
-  def _DebugPrintText(self, text):
-    """Prints text for debugging.
-
-    Args:
-      text (str): text.
-    """
-    if self._output_writer:
       self._output_writer.WriteText(text)
 
   def _FormatDataInHexadecimal(self, data):
@@ -419,7 +419,11 @@ class BinaryDataFormat(object):
         attribute_value = value_format_function(attribute_value)
 
       if isinstance(attribute_value, str) and '\n' in attribute_value:
-        text = '{0:s}:\n{1:s}'.format(description, attribute_value)
+        text = ''
+        if description is not None:
+          text = '{0:s}:\n'.format(description)
+        text = ''.join([text, attribute_value])
+
       else:
         text = self._FormatValue(description, attribute_value)
 
