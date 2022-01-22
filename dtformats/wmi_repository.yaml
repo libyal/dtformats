@@ -129,7 +129,7 @@ attributes:
 members:
 - name: name_offset
   data_type: uint32
-- name: data_offset
+- name: definition_offset
   data_type: uint32
 ---
 name: block
@@ -182,7 +182,7 @@ members:
 - name: properties_block_data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_header.properties_block_size - & 0x7ffffff
+  elements_data_size: class_definition_header.properties_block_size & 0x7ffffff
 ---
 name: class_definition_object_record
 type: structure
@@ -195,7 +195,7 @@ members:
   type: string
   encoding: utf-16-le
   element_data_type: wchar16
-  number_of_elements: super_class_name_size
+  number_of_elements: class_definition_object_record.super_class_name_size
 - name: date_time
   data_type: uint64
 - name: data_size
@@ -212,7 +212,7 @@ attributes:
 members:
 - name: methods_block_size
   data_type: uint32
-- name: data
+- name: methods_block_data
   type: stream
   element_data_type: byte
   elements_data_size: class_definition_methods.methods_block_size - 4

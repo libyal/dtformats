@@ -6,6 +6,7 @@
 :numbered!:
 [abstract]
 == Summary
+
 The WMI repository, also known as the Common Information Model (CIM) repository,
 holds the schema, also called the object repository or class store, that models
 the managed environment and defines every piece of data exposed by WMI.
@@ -15,6 +16,7 @@ format specifications.
 
 [preface]
 == Document information
+
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
@@ -25,8 +27,9 @@ format specifications.
 
 [preface]
 == License
+
 ....
-Copyright (C) 2015-2017, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2015-2022, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -36,6 +39,7 @@ in the section entitled "GNU Free Documentation License".
 
 [preface]
 == Revision history
+
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
@@ -46,10 +50,12 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.5 | J.B. Metz | March 2016 | Additional information about format used in Windows XP.
 | 0.0.6 | J.B. Metz | April 2017 | Textual changes.
 | 0.0.7 | J.B. Metz | May 2017 | Textual changes.
+| 0.0.8 | J.B. Metz | Janunary 2022 | Additional information about format.
 |===
 
 :numbered:
 == Overview
+
 The WMI repository, also known as the Common Information Model (CIM) repository,
 holds the schema, also called the object repository or class store, that models
 the managed environment and defines every piece of data exposed by WMI.
@@ -57,8 +63,10 @@ the managed environment and defines every piece of data exposed by WMI.
 The location and format of the WMI repository varies per Windows version.
 
 === Windows 9x/Me, NT 4 and 2000
+
 In Windows 95 OSR 2.5, Windows 98, Windows Millennium Edition (Me) the CIM
 repository can be found in the directory:
+
 ....
 %WinDir%\System\Wbem\Repository\cim.rep
 ....
@@ -67,6 +75,7 @@ repository can be found in the directory:
 
 In Windows NT 4.0 with SP4 and Windows 2000 the CIM repository can be found in
 the directory:
+
 ....
 %SystemRoot%\System32\Wbem\Respository\
 ....
@@ -77,23 +86,21 @@ the directory:
 [yellow-background]*Determine format*
 
 === Windows XP and later
+
 In Windows XP and Windows 2003 the CIM repository can be found in the directory:
+
 ....
-%SystemRoot%\System32\WBEM\Repository\FS
+%SystemRoot%\System32\WBEM\Repository\FS\
 ....
 
 In Windows Vista and later the CIM repository can be found in the directory:
+
 ....
 %SystemRoot%\System32\WBEM\Repository\
 ....
 
-[yellow-background]*TODO: determine if SysWOW64 is used as well.*
-....
-%SystemRoot%\SysWOW64\WBEM\Repository\
-....
-
 * `Index.btr`; index binary-tree file;
-* `Index.map`; index mappings file;
+* `Index.map`; (optional) index mappings file;
 * `Objects.data`; objects data file;
 * `Objects.map`; objects mappings file;
 * `Mapping#.map`; mappings file where # is:
@@ -105,6 +112,7 @@ In Windows Vista and later the CIM repository can be found in the directory:
 A copy of the CIM repository is stored in the system restore points.
 
 === Test version
+
 Files created by the following version of programs were used to test the
 information within this document:
 
@@ -115,19 +123,22 @@ information within this document:
 * Windows 2000
 * Windows XP
 * Windows 2003
-* [yellow-background]*Windows Vista*
+* Windows Vista
 * Windows 2008
 * Windows 7
-* [yellow-background]*Windows 2012*
+* Windows 2012
 * Windows 8
 * Windows 10
+* Windows 11
 
 == The index binary-tree file (index.btr)
+
 The index binary-tree file (index.btr) consists of:
 
 * an array of pages
 
 === Index binary-tree page
+
 The index binary-tree page is 8192 bytes of size and consists of:
 
 * a page header
@@ -140,6 +151,7 @@ The index binary-tree page is 8192 bytes of size and consists of:
 * padding (0-byte values)
 
 === Index binary-tree page header
+
 The index binary-tree page header is 16 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -167,6 +179,7 @@ The page number is mapped to the in-file page number via the index mappings file
 |===
 
 === Index binary-tree active page body
+
 The index binary-tree active page body is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -189,6 +202,7 @@ Contains the number of bytes
 |===
 
 ==== [[index_binary_tree_page_unknown_array]]Index binary-tree page unknown array
+
 The index binary-tree page unknown array is variable of size and consists of:
 
 * number of keys x size of [yellow-background]*Unknown array entry*
@@ -202,6 +216,7 @@ The unknown entry is 4 bytes of size and consists of:
 |===
 
 ==== [[index_binary_tree_page_sub_pages_array]]Index binary-tree page sub pages array
+
 The index binary-tree page sub pages array is variable of size and consists of:
 
 * (number of keys + 1) x size of mapped sub page number
@@ -216,6 +231,7 @@ The page number is mapped to the in-file page number via the index mappings file
 |===
 
 ==== [[index_binary_tree_page_key_offset_array]]Index binary-tree page key offsets array
+
 The index binary-tree page key offsets are variable of size and consist of:
 
 * number of keys x size of offset
@@ -230,6 +246,7 @@ The offset is relative to the start of the index binary-tree page key data
 |===
 
 ==== Index binary-tree page key data
+
 The index binary-tree page key data is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -241,11 +258,13 @@ The index binary-tree page key data is variable of size and consists of:
 
 The page key segment indexes refer to page values where a page key consists of
 multiple page values e.g.
+
 ....
 \ VALUE1 \ VALUE2 \ VALUE3
 ....
 
 ==== [[index_binary_tree_page_value_offset_array]]Index binary-tree page value offsets array
+
 The index binary-tree page value offsets array is variable of size and consist of:
 
 * number of values x size of offset
@@ -271,6 +290,7 @@ The mapping file consists of:
 * file footer
 
 === Notes
+
 The contents of the `Mapping#.map` file appears to be a concattenation of
 the contents of the `Objects.map` and `Index.map` files. The file header
 data differs.
@@ -279,6 +299,7 @@ data differs.
 concattenated files?*
 
 === File header
+
 The file header is 8 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -296,6 +317,7 @@ The file header is 8 bytes of size and consists of:
 [yellow-background]*TODO: check Windows 7 file header*
 
 === Mappings
+
 The mappings are variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -306,6 +328,7 @@ The mappings are variable of size and consists of:
 |===
 
 === Mapping entry - Windows XP
+
 The mapping entry - Windows XP is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -318,6 +341,7 @@ The mapping entry - Windows XP is 24 bytes of size and consists of:
 [yellow-background]*TODO: 0xffffffff unavailable*
 
 === Mapping entry - Windows 7
+
 [yellow-background]*TODO: check?*
 
 The mapping entry - Windows 7 is 24 bytes of size and consists of:
@@ -337,6 +361,7 @@ The mapping entry - Windows 7 is 24 bytes of size and consists of:
 [yellow-background]*TODO: what about MSB ini page number*
 
 === Unknown entries
+
 [yellow-background]*TODO: are these free pages?*
 
 The unknown entries are variable of size and consists of:
@@ -359,6 +384,7 @@ The unknown entries are variable of size and consists of:
 |===
 
 == Mapping.ver
+
 The `Mapping.ver` file is used in Windows XP and Windows 2003 to indicate the
 active `Mapping#.map` file.
 
@@ -369,11 +395,13 @@ active `Mapping#.map` file.
 |===
 
 == Objects.data
+
 The Objects.data file consists of:
 
 * an array of pages
 
 === Objects data page
+
 The objects data page is 8192 bytes of size and consists of:
 
 * Object descriptors
@@ -391,12 +419,14 @@ Unicode strings are stored in UTF-16 little-endian without the byte order mark (
 |===
 
 ==== Object descriptors
+
 The object descriptors consists of:
 
 * an array of object descriptor
 * empty (zero byte filled) object descriptor (or terminator)
 
 ===== Object descriptor
+
 The object descriptor is 16 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -411,6 +441,7 @@ Contains a CRC-32 with polynomial 0xedb88320 and initial value 0 of the object r
 |===
 
 ==== Object records
+
 The object record is defined by the object descriptor and its structure depends
 on the data type.
 
@@ -419,6 +450,7 @@ data is stored spanning multiple pages. Successive pages do not contain object
 descriptors and must resolved using mapped page numbers.
 
 ===== Class definition (CD)
+
 The class definition is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -485,6 +517,7 @@ Contains a string with end-of-string character
 ....
 
 ==== [[property_descriptor]]Property descriptor
+
 The property descriptor is 8 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -492,7 +525,7 @@ The property descriptor is 8 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Property name offset +
 The offset is relative to the start of the properties block data +
-[yellow-background]*TODO: What is the MSB used for?* +
+If the MSB is set the value is ignored and the offset is effectively 0 +
 See section: <<property_name,Property name>>
 | 4 | 4 | | Property definition offset +
 The offset is relative to the start of the properties block data +
@@ -500,6 +533,7 @@ See section: <<property_definition,Property definition>>
 |===
 
 ===== [[property_name]]Property name
+
 The property name is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -512,6 +546,7 @@ Contains a string with end-of-string character
 |===
 
 ===== [[property_definition]]Property definition
+
 The property defintion is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -532,6 +567,7 @@ E.g. "boolean", "uint32"
 *TODO: seen other multiple optional strings e.g. "WmiDataId" and "WmiSizeIs"*
 
 ===== [[property_types]]Property types
+
 According to MSDN:
 [quote]
 ____
@@ -655,7 +691,9 @@ The attribute value contians a CIM key
 ....
 
 == CIM repository
+
 === Notes
+
 Mapped index page 0 references the administrative page in the index binary-tree
 
 The root page number of the administrative page in the index binary-tree
@@ -671,8 +709,10 @@ Class name: CD_29C96FE3708DDF22ABBE770FCB770099
 ....
 
 === Index binary-tree identifier strings
+
 The page values in the index binary-tree (Index.btr) contain identifier strings
 that map to object records. An example of an identifier strings is:
+
 ....
 R_7F02F51F97C31228F1ADE773040492C4
 ....
@@ -695,6 +735,7 @@ The following the prefixes are known:
 |===
 
 The values in the identifier string can contain segments seperated by '.' e.g.
+
 ....
 R_889E073E24E009B2E955B1E9560E641E.625.860151.342
 ....
@@ -712,19 +753,23 @@ R_889E073E24E009B2E955B1E9560E641E.625.860151.342
 == Notes
 
 Listing name spaces:
+
 ....
-gwmi -namespace "root" -class "__Namespace" | Select Name
+Get-WmiObject -namespace "root" -class "__Namespace" | Select Name
 ....
 
 Listing classes:
+
 ....
-gwmi -namespace root\cimv2 -list
+Get-WmiObject -namespace root\cimv2 -list
 ....
 
 === CIM OOO
+
 http://www.wbemsolutions.com/tutorials/DMTF/cim-ooo.html
 
 === CIM data types
+
 http://www.wbemsolutions.com/tutorials/DMTF/meta-property.html
 
 INTRINSIC DATA TYPE
@@ -796,6 +841,7 @@ char16	16-bit UCS-2 character
 
 [appendix]
 == GNU Free Documentation License
+
 Version 1.3, 3 November 2008
 Copyright © 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc.
 <http://fsf.org/>
@@ -804,6 +850,7 @@ Everyone is permitted to copy and distribute verbatim copies of this license
 document, but changing it is not allowed.
 
 === 0. PREAMBLE
+
 The purpose of this License is to make a manual, textbook, or other functional
 and useful document "free" in the sense of freedom: to assure everyone the
 effective freedom to copy and redistribute it, with or without modifying it,
@@ -824,6 +871,7 @@ recommend this License principally for works whose purpose is instruction or
 reference.
 
 === 1. APPLICABILITY AND DEFINITIONS
+
 This License applies to any manual or other work, in any medium, that contains
 a notice placed by the copyright holder saying it can be distributed under the
 terms of this License. Such a notice grants a world-wide, royalty-free license,
@@ -902,6 +950,7 @@ disclaiming warranties: any other implication that these Warranty Disclaimers
 may have is void and has no effect on the meaning of this License.
 
 === 2. VERBATIM COPYING
+
 You may copy and distribute the Document in any medium, either commercially or
 noncommercially, provided that this License, the copyright notices, and the
 license notice saying this License applies to the Document are reproduced in
@@ -915,6 +964,7 @@ You may also lend copies, under the same conditions stated above, and you may
 publicly display copies.
 
 === 3. COPYING IN QUANTITY
+
 If you publish printed copies (or copies in media that commonly have printed
 covers) of the Document, numbering more than 100, and the Document's license
 notice requires Cover Texts, you must enclose the copies in covers that carry,
@@ -948,6 +998,7 @@ well before redistributing any large number of copies, to give them a chance to
 provide you with an updated version of the Document.
 
 === 4. MODIFICATIONS
+
 You may copy and distribute a Modified Version of the Document under the
 conditions of sections 2 and 3 above, provided that you release the Modified
 Version under precisely this License, with the Modified Version filling the
@@ -1040,6 +1091,7 @@ permission to use their names for publicity for or to assert or imply
 endorsement of any Modified Version.
 
 === 5. COMBINING DOCUMENTS
+
 You may combine the Document with other documents released under this License,
 under the terms defined in section 4 above for modified versions, provided that
 you include in the combination all of the Invariant Sections of all of the
@@ -1061,6 +1113,7 @@ combine any sections Entitled "Acknowledgements", and any sections Entitled
 "Dedications". You must delete all sections Entitled "Endorsements".
 
 === 6. COLLECTIONS OF DOCUMENTS
+
 You may make a collection consisting of the Document and other documents
 released under this License, and replace the individual copies of this License
 in the various documents with a single copy that is included in the collection,
@@ -1073,6 +1126,7 @@ into the extracted document, and follow this License in all other respects
 regarding verbatim copying of that document.
 
 === 7. AGGREGATION WITH INDEPENDENT WORKS
+
 A compilation of the Document or its derivatives with other separate and
 independent documents or works, in or on a volume of a storage or distribution
 medium, is called an "aggregate" if the copyright resulting from the
@@ -1089,6 +1143,7 @@ in electronic form. Otherwise they must appear on printed covers that bracket
 the whole aggregate.
 
 === 8. TRANSLATION
+
 Translation is considered a kind of modification, so you may distribute
 translations of the Document under the terms of section 4. Replacing Invariant
 Sections with translations requires special permission from their copyright
@@ -1106,6 +1161,7 @@ If a section in the Document is Entitled "Acknowledgements", "Dedications", or
 typically require changing the actual title.
 
 === 9. TERMINATION
+
 You may not copy, modify, sublicense, or distribute the Document except as
 expressly provided under this License. Any attempt otherwise to copy, modify,
 sublicense, or distribute it is void, and will automatically terminate your
@@ -1129,6 +1185,7 @@ your rights have been terminated and not permanently reinstated, receipt of a
 copy of some or all of the same material does not give you any rights to use it.
 
 === 10. FUTURE REVISIONS OF THIS LICENSE
+
 The Free Software Foundation may publish new, revised versions of the GNU Free
 Documentation License from time to time. Such new versions will be similar in
 spirit to the present version, but may differ in detail to address new problems
@@ -1146,6 +1203,7 @@ License can be used, that proxy's public statement of acceptance of a version
 permanently authorizes you to choose that version for the Document.
 
 === 11. RELICENSING
+
 "Massive Multiauthor Collaboration Site" (or "MMC Site") means any World Wide
 Web server that publishes copyrightable works and also provides prominent
 facilities for anybody to edit those works. A public wiki that anybody can edit

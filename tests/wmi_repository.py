@@ -9,19 +9,6 @@ from dtformats import wmi_repository
 from tests import test_lib
 
 
-# TODO: add tests for FromFiletime.
-
-
-class PropertyDescriptorTest(test_lib.BaseTestCase):
-  """Property descriptor tests."""
-
-  def testInitialize(self):
-    """Tests the __init__ function."""
-    property_descriptor = wmi_repository.PropertyDescriptor(10, 20)
-    self.assertEqual(property_descriptor.definition_offset, 20)
-    self.assertEqual(property_descriptor.name_offset, 10)
-
-
 # TODO: add tests for IndexBinaryTreePage
 # TODO: add tests for ObjectRecord
 # TODO: add tests for ObjectsDataPage
@@ -78,30 +65,6 @@ class MappingFileTest(test_lib.BaseTestCase):
   """Mappings (*.map) file tests."""
 
   # pylint: disable=protected-access
-
-  def testDebugPrintFileFooter(self):
-    """Tests the _DebugPrintFileFooter function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = wmi_repository.MappingFile(output_writer=output_writer)
-
-    data_type_map = test_file._FILE_FOOTER
-    file_footer = data_type_map.CreateStructureValues(
-        signature=0x0000dcba)
-
-    test_file._DebugPrintFileFooter(file_footer)
-
-  def testDebugPrintFileHeader(self):
-    """Tests the _DebugPrintFileHeader function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = wmi_repository.MappingFile(output_writer=output_writer)
-
-    data_type_map = test_file._FILE_HEADER
-    file_header = data_type_map.CreateStructureValues(
-        format_version=1,
-        number_of_pages=2,
-        signature=0x0000abcd)
-
-    test_file._DebugPrintFileHeader(file_header)
 
   def testDebugPrintPageNumber(self):
     """Tests the _DebugPrintPageNumber function."""
