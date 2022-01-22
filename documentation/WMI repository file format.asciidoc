@@ -358,7 +358,7 @@ The mapping entry - Windows 7 is 24 bytes of size and consists of:
 | 20 | 4 | | [yellow-background]*Unknown (identifier?)*
 |===
 
-[yellow-background]*TODO: what about MSB ini page number*
+[yellow-background]*TODO: what about MSB in page number*
 
 === Unknown entries
 
@@ -479,14 +479,17 @@ Includes the 4 bytes of the size
 |===
 | Offset | Size | Value | Description
 | 0 | 1 | | [yellow-background]*Unknown (empty values?)*
-| 1 | 4 | | [yellow-background]*Unknown (Class name offset?)*
+| 1 | 4 | | Class name offset +
+The offset is relative to the start of the properties block data +
+See section: <<cim_string,CIM string>>
 | 5 | 4 | | [yellow-background]*Unknown (Default values size?)*
 | 9 | 4 | | Super class name block size +
 Includes the 4 bytes of the size
 | 14 | ... | | Super class name block
 | ... | 4 | | Qualifiers block size
 Includes the 4 bytes of the size
-| ... | ... | | Qualifiers block
+| ... | ... | | Qualifiers block +
+See section: <<qualifiers_block,qualifiers block>>
 | ... | 4 | | Number of property descriptors
 | ... | ... | | Property descriptors array +
 See section: <<property_descriptor,Property descriptor>>
@@ -500,8 +503,7 @@ Does not include the 4 bytes of the size +
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)* +
-[yellow-background]*0x00 => ASCII string*
+| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)*
 | 1 | ... | | Super class name string +
 Contains a string with end-of-string character
 | ... | 4 | | Super class name string size +
@@ -516,6 +518,47 @@ Contains a string with end-of-string character
 0x00000030  72 00 00 61 62 73 74 72  61 63 74 00              r..abstract.
 ....
 
+==== [[qualifiers_block]]Qualifiers block
+
+The class qualifiers block is variable of size and consists of:
+
+* zero or more qualifier descriptors
+
+===== Qualifier descriptor
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Qualifier name string offset +
+The offset is relative to the start of the properties block data +
+If the MSB is set the name is predefined and the remainder of the value contains the name index +
+See section: <<cim_string,CIM string>>
+| 4 | 1 | 0x80 | [yellow-background]*Unknown*
+| 5 | 4 | | Qualifier value data type (CimType) +
+See section: <<cim_data_types,CIM data types>>
+| 9 | ... | | Inline stored value or 32-bit offset to value data
+|===
+
+[NOTE]
+The qualifier name is case insensitive.
+
+[cols="1,1,1,5",options="header"]
+|===
+| Name index | Name | Data type | Description
+| 3 | [yellow-background]*Unknown* | CIM-TYPE-BOOLEAN |
+| 6 | Provider | CIM-TYPE-STRING |
+| 7 | [yellow-background]*Unknown (Dynamic?)* | CIM-TYPE-BOOLEAN |
+|===
+
+[cols="1,1,1,5",options="header"]
+|===
+| Name index | Name | Data type | Description
+| 1 | [yellow-background]*Unknown (key?)* | |
+| 3 | [yellow-background]*Unknown (read-only?)* | |
+| 4 | [yellow-background]*Unknown* | |
+| 10 | [yellow-background]*Unknown (type?)* | |
+|===
+
 ==== [[property_descriptor]]Property descriptor
 
 The property descriptor is 8 bytes of size and consists of:
@@ -525,24 +568,11 @@ The property descriptor is 8 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Property name offset +
 The offset is relative to the start of the properties block data +
-If the MSB is set the value is ignored and the offset is effectively 0 +
-See section: <<property_name,Property name>>
+If the MSB is set the name is predefined and the remainder of the value contains the name index
+See section: <<cim_string,CIM string>>
 | 4 | 4 | | Property definition offset +
 The offset is relative to the start of the properties block data +
 See section: <<property_definition,Property definition>>
-|===
-
-===== [[property_name]]Property name
-
-The property name is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)* +
-[yellow-background]*0x00 => ASCII string*
-| 1 | ... | | Property name string +
-Contains a string with end-of-string character
 |===
 
 ===== [[property_definition]]Property definition
@@ -552,85 +582,18 @@ The property defintion is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Property type (CimType) +
-See section: <<property_types,Property types>>
+| 0 | 4 | | Property data type (CimType) +
+See section: <<cim_data_types,CIM data types>>
 | 4 | 2 | | [yellow-background]*Unknown (index?)*
 | 6 | 4 | | [yellow-background]*Unknown (offset?)*
 | 10 | 4 | | [yellow-background]*Unknown (level?)*
-| 14 | 4 | | Qualifiers block size
+| 14 | 4 | | Qualifiers block size +
 Includes the 4 bytes of the size
-| 18 | ... | | Qualifiers block
-| ... | ... | | [yellow-background]*Unknown (optional type string?)* +
-E.g. "boolean", "uint32"
+| 18 | ... | | Qualifiers block +
+See section: <<qualifiers_block,qualifiers block>>
 |===
 
 *TODO: seen other multiple optional strings e.g. "WmiDataId" and "WmiSizeIs"*
-
-===== [[property_types]]Property types
-
-According to MSDN:
-[quote]
-____
-CimType is a 32-bit value of which only the lower 16 bits are used.
-____
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x00000000 | | [yellow-background]*None (Confirm this)* +
-A null value
-| | |
-| 0x00000002 | CIM-TYPE-SINT16 | A signed 16-bit integer
-| 0x00000003 | CIM-TYPE-SINT32 | A signed 32-bit integer
-| 0x00000004 | CIM-TYPE-REAL32 | A floating-point 32-bit number
-| 0x00000005 | CIM-TYPE-REAL64 | A floating-point 64-bit number
-| | |
-| 0x00000008 | CIM-TYPE-STRING | A string
-| | |
-| 0x0000000b | CIM-TYPE-BOOLEAN | A boolean. +
-[yellow-background]*Stored as a 16-bit value? (Confirm this)*
-| | |
-| 0x0000000d | CIM-TYPE-OBJECT | [yellow-background]*An embedded object.*
-| | |
-| 0x00000010 | CIM-TYPE-SINT8 | A signed 8-bit integer
-| 0x00000011 | CIM-TYPE-UINT8 | An unsigned 8-bit integer
-| 0x00000012 | CIM-TYPE-UINT16 | An unsigned 16-bit integer
-| 0x00000013 | CIM-TYPE-UINT32 | An unsigned 32-bit integer
-| 0x00000014 | CIM-TYPE-SINT64 | A signed 64-bit integer
-| 0x00000015 | CIM-TYPE-UINT64 | An unsigned 64-bit integer
-| | |
-| 0x00000065 | CIM-TYPE-DATETIME | A date or time value +
-Contains a string in DMTF date/time format: yyyymmddHHMMSS.mmmmmmsUUU +
-where yyyymmdd is the date in year/month/day; +
-HHMMSS is the time in hours/minutes/seconds; +
-mmmmmm is the number of microseconds in 6 digits; +
-and sUUU is a sign (+ or -) and a 3-digit UTC offset
-| 0x00000066 | CIM-TYPE-REFERENCE | A reference to another object. +
-[yellow-background]*This is represented by a string containing the path to the referenced object.* +
-[yellow-background]*This value maps to the signed 16-bit integer type (CIM-TYPE-SINT16). (Confirm this)*
-| 0x00000067 | CIM-TYPE-CHAR16 | A 16-bit character
-| | |
-| 0x00002000 | | The array (or multi-value) flag. +
-Array property types are identified with CIM-ARRAY instead of CIM-TYPE e.g. CIM-ARRAY-UINT8
-| 0x00004000 | | [yellow-background]*Unknown flag*
-|===
-
-=== Interface (I and IL)
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 64 | | String digest hash +
-Contains an UTF-16 little-endian string without end-of-string character.
-| 64 | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
-| 72 | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
-4+| _Data block_
-| ... | 4 | | Data size +
-Includes the 4 bytes of the size
-| ... | ... | | Data
-|===
 
 === Registration (R)
 
@@ -689,6 +652,85 @@ The attribute value contians a CIM key
 
 0x00000140  00 00 00 00 00 00 00 00                           ........
 ....
+
+=== [[cim_data_types]]CIM data types
+
+According to MSDN:
+
+[quote]
+____
+CimType is a 32-bit value of which only the lower 16 bits are used.
+____
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000000 | | [yellow-background]*None (Confirm this)* +
+A null value
+| | |
+| 0x00000002 | CIM-TYPE-SINT16 | A signed 16-bit integer
+| 0x00000003 | CIM-TYPE-SINT32 | A signed 32-bit integer
+| 0x00000004 | CIM-TYPE-REAL32 | A floating-point 32-bit number
+| 0x00000005 | CIM-TYPE-REAL64 | A floating-point 64-bit number
+| | |
+| 0x00000008 | CIM-TYPE-STRING | A string
+| | |
+| 0x0000000b | CIM-TYPE-BOOLEAN | A boolean +
+Stored as a 16-bit value
+| | |
+| 0x0000000d | CIM-TYPE-OBJECT | [yellow-background]*An embedded object.*
+| | |
+| 0x00000010 | CIM-TYPE-SINT8 | A signed 8-bit integer
+| 0x00000011 | CIM-TYPE-UINT8 | An unsigned 8-bit integer
+| 0x00000012 | CIM-TYPE-UINT16 | An unsigned 16-bit integer
+| 0x00000013 | CIM-TYPE-UINT32 | An unsigned 32-bit integer
+| 0x00000014 | CIM-TYPE-SINT64 | A signed 64-bit integer
+| 0x00000015 | CIM-TYPE-UINT64 | An unsigned 64-bit integer
+| | |
+| 0x00000065 | CIM-TYPE-DATETIME | A date or time value +
+Contains a string in DMTF date/time format: yyyymmddHHMMSS.mmmmmmsUUU +
+where yyyymmdd is the date in year/month/day; +
+HHMMSS is the time in hours/minutes/seconds; +
+mmmmmm is the number of microseconds in 6 digits; +
+and sUUU is a sign (+ or -) and a 3-digit UTC offset
+| 0x00000066 | CIM-TYPE-REFERENCE | A reference to another object. +
+[yellow-background]*This is represented by a string containing the path to the referenced object.* +
+[yellow-background]*This value maps to the signed 16-bit integer type (CIM-TYPE-SINT16). (Confirm this)*
+| 0x00000067 | CIM-TYPE-CHAR16 | A 16-bit character
+| | |
+| 0x00002000 | | The array (or multi-value) flag. +
+Array property types are identified with CIM-ARRAY instead of CIM-TYPE e.g. CIM-ARRAY-UINT8
+| 0x00004000 | | [yellow-background]*Unknown flag*
+|===
+
+==== [[cim_string]]CIM string
+
+The CIM string is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)*
+| 1 | ... | | Property name string +
+Contains a string with end-of-string character
+|===
+
+=== Interface (I and IL)
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 64 | | String digest hash +
+Contains an UTF-16 little-endian string without end-of-string character.
+| 64 | 8 | | [yellow-background]*Unknown (date and time)* +
+Contains a FILETIME
+| 72 | 8 | | [yellow-background]*Unknown (date and time)* +
+Contains a FILETIME
+4+| _Data block_
+| ... | 4 | | Data size +
+Includes the 4 bytes of the size
+| ... | ... | | Data
+|===
 
 == CIM repository
 
@@ -772,6 +814,7 @@ http://www.wbemsolutions.com/tutorials/DMTF/cim-ooo.html
 
 http://www.wbemsolutions.com/tutorials/DMTF/meta-property.html
 
+....
 INTRINSIC DATA TYPE
 
 INTERPRETATION
@@ -793,6 +836,7 @@ datetime	A string containing a date-time
 
 Strongly typed reference
 char16	16-bit UCS-2 character
+....
 
 :numbered!:
 [appendix]

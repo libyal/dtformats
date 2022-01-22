@@ -1,4 +1,56 @@
+name: wmi_repository
+type: format
+description: WMI repository file formats
+urls: ["https://github.com/libyal/dtformats/blob/main/documentation/WMI%20repository%20file%20format.asciidoc"]
+---
 name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: float32
+type: floating-point
+attributes:
+  size: 4
+  units: bytes
+---
+name: float64
+type: floating-point
+attributes:
+  size: 8
+  units: bytes
+---
+name: int8
+type: integer
+attributes:
+  format: signed
+  size: 1
+  units: bytes
+---
+name: int16
+type: integer
+attributes:
+  format: signed
+  size: 2
+  units: bytes
+---
+name: int32
+type: integer
+attributes:
+  format: signed
+  size: 4
+  units: bytes
+---
+name: int64
+type: integer
+attributes:
+  format: signed
+  size: 8
+  units: bytes
+---
+name: uint8
 type: integer
 attributes:
   format: unsigned
@@ -8,14 +60,6 @@ attributes:
 name: uint16
 type: integer
 attributes:
-  format: unsigned
-  size: 2
-  units: bytes
----
-name: uint16le
-type: integer
-attributes:
-  byte_order: little-endian
   format: unsigned
   size: 2
   units: bytes
@@ -54,7 +98,7 @@ encoding: ascii
 element_data_type: byte
 elements_terminator: "\x00"
 ---
-name: cim_property_types
+name: cim_data_types
 type: enumeration
 values:
 - name: CIM-TYPE-SINT16
@@ -122,16 +166,6 @@ values:
 - name: CIM-ARRAY-CHAR16
   number: 0x00002067
 ---
-name: property_descriptor
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: name_offset
-  data_type: uint32
-- name: definition_offset
-  data_type: uint32
----
 name: block
 type: structure
 attributes:
@@ -143,6 +177,272 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: block.size - 4 if block.size else 0
+---
+name: cim_string
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: string_flags
+  data_type: byte
+- name: string
+  type: string
+  encoding: cp1252
+  element_data_type: byte
+  elements_terminator: "\x00"
+---
+name: qualifier_descriptor_base
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+---
+name: qualifier_descriptor_int16
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000002
+- name: value_integer
+  data_type: int16
+---
+name: qualifier_descriptor_int32
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000003
+- name: value_integer
+  data_type: int32
+---
+name: qualifier_descriptor_float32
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000004
+- name: value_floating_point
+  data_type: float32
+---
+name: qualifier_descriptor_float64
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000005
+- name: value_floating_point
+  data_type: float64
+---
+name: qualifier_descriptor_boolean
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x0000000b
+- name: value_boolean
+  data_type: uint16
+---
+name: qualifier_descriptor_int8
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000010
+- name: value_integer
+  data_type: int8
+---
+name: qualifier_descriptor_uint8
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000011
+- name: value_integer
+  data_type: uint8
+---
+name: qualifier_descriptor_uint16
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000012
+- name: value_integer
+  data_type: uint16
+---
+name: qualifier_descriptor_uint32
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000013
+- name: value_integer
+  data_type: uint32
+---
+name: qualifier_descriptor_int64
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000014
+- name: value_integer
+  data_type: int64
+---
+name: qualifier_descriptor_uint64
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  value: 0x00000015
+- name: value_integer
+  data_type: uint64
+---
+name: qualifier_descriptor_with_value_offset
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: value_data_type
+  data_type: uint32
+  values:
+  - 0x00000008
+  - 0x00002002
+  - 0x00002003
+  - 0x00002004
+  - 0x00002005
+  - 0x00002008
+  - 0x0000200b
+  - 0x00002010
+  - 0x00002011
+  - 0x00002012
+  - 0x00002013
+  - 0x00002014
+  - 0x00002015
+- name: value_offset
+  data_type: uint32
+---
+name: qualifier_descriptor
+type: structure-group
+base: qualifier_descriptor_base
+identifier: value_data_type
+members:
+- qualifier_descriptor_int16
+- qualifier_descriptor_int32
+- qualifier_descriptor_float32
+- qualifier_descriptor_float64
+- qualifier_descriptor_boolean
+- qualifier_descriptor_int8
+- qualifier_descriptor_uint8
+- qualifier_descriptor_uint16
+- qualifier_descriptor_uint32
+- qualifier_descriptor_int64
+- qualifier_descriptor_uint64
+- qualifier_descriptor_with_value_offset
+---
+name: property_definition
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: value_data_type
+  data_type: uint32
+- name: index
+  data_type: uint16
+- name: offset
+  data_type: uint32
+- name: level
+  data_type: uint32
+- name: qualifiers_block_size
+  data_type: uint32
+- name: qualifiers_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: property_definition.qualifiers_block_size - 4
+---
+name: property_descriptor
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: definition_offset
+  data_type: uint32
 ---
 name: class_definition_header
 type: structure
@@ -184,6 +484,18 @@ members:
   element_data_type: byte
   elements_data_size: class_definition_header.properties_block_size & 0x7ffffff
 ---
+name: class_definition_methods
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: methods_block_size
+  data_type: uint32
+- name: methods_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_methods.methods_block_size - 4
+---
 name: class_definition_object_record
 type: structure
 attributes:
@@ -204,66 +516,6 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: class_definition_object_record.data_size - 4
----
-name: class_definition_methods
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: methods_block_size
-  data_type: uint32
-- name: methods_block_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: class_definition_methods.methods_block_size - 4
----
-name: super_class_name_block
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: super_class_name_flags
-  data_type: byte
-- name: super_class_name
-  type: string
-  encoding: ascii
-  element_data_type: byte
-  elements_terminator: "\x00"
-- name: super_class_name_size
-  data_type: uint32
----
-name: property_name
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: string_flags
-  data_type: byte
-- name: string
-  type: string
-  encoding: ascii
-  element_data_type: byte
-  elements_terminator: "\x00"
----
-name: property_definition
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: type
-  data_type: uint32
-- name: index
-  data_type: uint16
-- name: offset
-  data_type: uint32
-- name: level
-  data_type: uint32
-- name: qualifiers_block_size
-  data_type: uint32
-- name: qualifiers_block_data
-  type: stream
-  element_data_type: byte
-  elements_data_size: property_definition.qualifiers_block_size - 4
 ---
 name: interface_object_record
 type: structure
@@ -322,6 +574,21 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: 8
+---
+name: super_class_name_block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: super_class_name_flags
+  data_type: byte
+- name: super_class_name
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_terminator: "\x00"
+- name: super_class_name_size
+  data_type: uint32
 ---
 name: cim_object_descriptor
 type: structure
