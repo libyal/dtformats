@@ -3,6 +3,14 @@ type: format
 description: WMI repository file formats
 urls: ["https://github.com/libyal/dtformats/blob/main/documentation/WMI%20repository%20file%20format.asciidoc"]
 ---
+name: bool16
+type: boolean
+attributes:
+  size: 2
+  units: bytes
+  false_value: 0
+  true_value: 0xffff
+---
 name: byte
 type: integer
 attributes:
@@ -276,7 +284,7 @@ members:
   data_type: uint32
   value: 0x0000000b
 - name: value_boolean
-  data_type: uint16
+  data_type: bool16
 ---
 name: qualifier_descriptor_int8
 type: structure

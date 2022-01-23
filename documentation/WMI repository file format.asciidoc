@@ -532,7 +532,7 @@ The class qualifiers block is variable of size and consists of:
 | 0 | 4 | | Qualifier name string offset +
 The offset is relative to the start of the properties block data +
 If the MSB is set the name is predefined and the remainder of the value contains the name index +
-See section: <<cim_string,CIM string>>
+See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
 | 4 | 1 | 0x80 | [yellow-background]*Unknown*
 | 5 | 4 | | Qualifier value data type (CimType) +
 See section: <<cim_data_types,CIM data types>>
@@ -541,23 +541,6 @@ See section: <<cim_data_types,CIM data types>>
 
 [NOTE]
 The qualifier name is case insensitive.
-
-[cols="1,1,1,5",options="header"]
-|===
-| Name index | Name | Data type | Description
-| 3 | [yellow-background]*Unknown* | CIM-TYPE-BOOLEAN |
-| 6 | Provider | CIM-TYPE-STRING |
-| 7 | [yellow-background]*Unknown (Dynamic?)* | CIM-TYPE-BOOLEAN |
-|===
-
-[cols="1,1,1,5",options="header"]
-|===
-| Name index | Name | Data type | Description
-| 1 | [yellow-background]*Unknown (key?)* | |
-| 3 | [yellow-background]*Unknown (read-only?)* | |
-| 4 | [yellow-background]*Unknown* | |
-| 10 | [yellow-background]*Unknown (type?)* | |
-|===
 
 ==== [[property_descriptor]]Property descriptor
 
@@ -569,7 +552,7 @@ The property descriptor is 8 bytes of size and consists of:
 | 0 | 4 | | Property name offset +
 The offset is relative to the start of the properties block data +
 If the MSB is set the name is predefined and the remainder of the value contains the name index
-See section: <<cim_string,CIM string>>
+See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
 | 4 | 4 | | Property definition offset +
 The offset is relative to the start of the properties block data +
 See section: <<property_definition,Property definition>>
@@ -594,6 +577,23 @@ See section: <<qualifiers_block,qualifiers block>>
 |===
 
 *TODO: seen other multiple optional strings e.g. "WmiDataId" and "WmiSizeIs"*
+
+==== [[predefined_names]]Predefined names
+
+[cols="1,1,1,5",options="header"]
+|===
+| Name index | Name | Data type | Description
+| 1 | "key" | CIM-TYPE-BOOLEAN |
+4+|
+| 3 | "read" | CIM-TYPE-BOOLEAN |
+| 4 | "write" | CIM-TYPE-BOOLEAN |
+| 5 | [yellow-background]*Unknown (volatile?)* | |
+| 6 | "provider" | CIM-TYPE-STRING +
+CIM-TYPE-REFERENCE |
+| 7 | "dynamic" | CIM-TYPE-BOOLEAN |
+4+|
+| 10 | "type" | CIM-TYPE-STRING |
+|===
 
 === Registration (R)
 
