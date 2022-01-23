@@ -17,6 +17,7 @@ class ClassDefinitionProperty(object):
 
   Attributes:
     name (str): name of the property.
+    offset (int): offset of the property.
     qualifiers (dict[str, object]): qualifiers.
   """
 
@@ -24,6 +25,7 @@ class ClassDefinitionProperty(object):
     """Initializes a class property."""
     super(ClassDefinitionProperty, self).__init__()
     self.name = None
+    self.offset = None
     self.qualifiers = {}
 
 
@@ -93,9 +95,8 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
   _DEBUG_INFO_OBJECT_DESCRIPTOR = [
       ('identifier', 'Identifier', '_FormatIntegerAsHexadecimal8'),
-      ('data_offset', 'Data offset (relative)', '_FormatIntegerAsHexadecimal8'),
-      ('data_file_offset', 'Data offset (file)',
-       '_FormatIntegerAsHexadecimal8'),
+      ('data_offset', 'Data offset (relative)', '_FormatIntegerAsOffset'),
+      ('data_file_offset', 'Data offset (file)', '_FormatIntegerAsOffset'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
       ('data_checksum', 'Data checksum', '_FormatIntegerAsHexadecimal8')]
 
@@ -290,10 +291,13 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
       ('root_page_number', 'Root page number', '_FormatIntegerAsDecimal')]
 
-  def __init__(self, index_mapping_table, debug=False, output_writer=None):
+  def __init__(
+      self, format_version, index_mapping_table, debug=False,
+      output_writer=None):
     """Initializes an index binary-tree file.
 
     Args:
+      format_version (int): format version.
       index_mapping_table (mapping_table): an index mapping table.
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
@@ -301,6 +305,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     super(IndexBinaryTreeFile, self).__init__(
         debug=debug, output_writer=output_writer)
     self._first_mapped_page = None
+    self._format_version = format_version
     self._index_mapping_table = index_mapping_table
     self._root_page = None
 
@@ -407,6 +412,11 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the page cannot be read.
     """
+    if self._debug:
+      self._DebugPrintText(
+          'Reading page: {0:d} at offset: {1:d} (0x{1:08x}).\n'.format(
+              file_offset // self._PAGE_SIZE, file_offset))
+
     page_data = self._ReadData(
         file_object, file_offset, self._PAGE_SIZE, 'index binary-tree page')
 
@@ -471,7 +481,8 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       for page_key_segments in index_binary_tree_page.page_key_segments:
         key_segments = []
         for segment_index in page_key_segments:
-          key_segments.append(index_binary_tree_page.page_values[segment_index])
+          page_value = index_binary_tree_page.page_values[segment_index]
+          key_segments.append(page_value)
 
         key_path = '{0:s}{1:s}'.format(
             self._KEY_SEGMENT_SEPARATOR,
@@ -555,7 +566,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
 
       if self._debug:
         description = 'Page value: {0:d} data'.format(index)
-        self._DebugPrintValue(description, value_string[:-1])
+        self._DebugPrintValue(description, value_string)
 
       index_binary_tree_page.page_values.append(value_string)
 
@@ -590,7 +601,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             '{0:d}.').format(page_number))
         return None
 
-      if index_page.page_type not in (0xaccc, 0xaddd):
+      if index_page.page_type != 0xaddd:
         logging.warning((
             'Unsupported first mapped index binary-tree page type: '
             '0x{0:04x}').format(index_page.page_type))
@@ -625,12 +636,16 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       IndexBinaryTreePage: an index binary-tree page or None.
     """
     if not self._root_page:
-      first_mapped_page = self.GetFirstMappedPage()
-      if not first_mapped_page:
-        return None
+      if self._format_version == 1:
+        first_mapped_page = self.GetFirstMappedPage()
+        if not first_mapped_page:
+          return None
 
-      page_number = self._ResolveMappedPageNumber(
-          first_mapped_page.root_page_number)
+        root_page_number = first_mapped_page.root_page_number
+      else:
+        root_page_number = 1
+
+      page_number = self._ResolveMappedPageNumber(root_page_number)
 
       index_page = self._GetPage(page_number)
       if not index_page:
@@ -663,10 +678,8 @@ class MappingFile(data_format.BinaryDataFile):
   """Mappings (*.map) file.
 
   Attributes:
-    data_size (int): data size of the mappings file.
+    format_version (int): format version.
     sequence_number (int): sequence number.
-    mapping (list[int]): mappings to page numbers in the index binary-tree
-        or objects data file.
   """
 
   # Using a class constant significantly speeds up the time required to load
@@ -705,11 +718,11 @@ class MappingFile(data_format.BinaryDataFile):
     """
     super(MappingFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self._format_version = None
     self._mapping_table1 = None
     self._mapping_table2 = None
     self._unavailable_page_numbers = set([0xffffffff])
 
+    self.format_version = None
     self.sequence_number = None
 
   def _DebugPrintMappingTable(self, mapping_table):
@@ -775,7 +788,7 @@ class MappingFile(data_format.BinaryDataFile):
       ParseError: if the file footer cannot be read.
     """
     if not format_version:
-      format_version = self._format_version
+      format_version = self.format_version
 
     file_offset = file_object.tell()
 
@@ -805,7 +818,7 @@ class MappingFile(data_format.BinaryDataFile):
 
     try:
       file_footer = self._ReadFileFooter(file_object, format_version=1)
-      self._format_version = 1
+      self.format_version = 1
 
     except errors.ParseError:
       file_footer = None
@@ -815,7 +828,7 @@ class MappingFile(data_format.BinaryDataFile):
 
       try:
         file_footer = self._ReadFileFooter(file_object, format_version=2)
-        self._format_version = 2
+        self.format_version = 2
       except errors.ParseError:
         file_footer = None
 
@@ -836,7 +849,7 @@ class MappingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
 
-    if self._format_version == 1:
+    if self.format_version == 1:
       data_type_map = self._GetDataTypeMap('cim_map_header_v1')
     else:
       data_type_map = self._GetDataTypeMap('cim_map_header_v2')
@@ -863,7 +876,7 @@ class MappingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
 
-    if self._format_version == 1:
+    if self.format_version == 1:
       data_type_map = self._GetDataTypeMap('cim_map_mapping_table_v1')
     else:
       data_type_map = self._GetDataTypeMap('cim_map_mapping_table_v2')
@@ -906,7 +919,7 @@ class MappingFile(data_format.BinaryDataFile):
     Returns:
       mapping_table: index mapping table.
     """
-    return self._mapping_table1
+    return self._mapping_table2 or self._mapping_table1
 
   def GetObjectsMappingTable(self):
     """Retrieves the objects mapping table.
@@ -937,7 +950,7 @@ class MappingFile(data_format.BinaryDataFile):
     self._ReadUnknownTable(file_object)
     self._ReadFileFooter(file_object, format_version=1)
 
-    if self._format_version == 2:
+    if self.format_version == 2:
       self._ReadFileHeader(file_object)
 
       self._mapping_table2 = self._ReadMappingTable(file_object)
@@ -1167,8 +1180,7 @@ class ClassDefinition(data_format.BinaryDataFormat):
 
   _DEBUG_INFO_CLASS_DEFINITION_HEADER = [
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('class_name_offset', 'Class name offset',
-       '_FormatIntegerAsHexadecimal8'),
+      ('class_name_offset', 'Class name offset', '_FormatIntegerAsOffset'),
       ('default_value_size', 'Default value size', '_FormatIntegerAsDecimal'),
       ('super_class_name_block_size', 'Super class name block size',
        '_FormatIntegerAsDecimal'),
@@ -1194,18 +1206,18 @@ class ClassDefinition(data_format.BinaryDataFormat):
       ('string', 'Class name string', '_FormatString')]
 
   _DEBUG_INFO_QUALIFIER_DESCRIPTOR = [
-      ('name_offset', 'Name offset', '_FormatIntegerAsHexadecimal8'),
+      ('name_offset', 'Name offset', '_FormatIntegerAsOffset'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
       ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
       ('value_floating_point', 'Value', '_FormatFloatingPoint'),
       ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_offset', 'Value offset', '_FormatIntegerAsHexadecimal8')]
+      ('value_offset', 'Value offset', '_FormatIntegerAsOffset')]
 
   _DEBUG_INFO_PROPERTY_DEFINITION = [
       ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
       ('index', 'Index', '_FormatIntegerAsDecimal'),
-      ('offset', 'Offset', '_FormatIntegerAsHexadecimal8'),
+      ('offset', 'Offset', '_FormatIntegerAsOffset'),
       ('level', 'Level', '_FormatIntegerAsDecimal'),
       ('qualifiers_block_size', 'Qualifiers block size',
        '_FormatIntegerAsDecimal'),
@@ -1214,7 +1226,7 @@ class ClassDefinition(data_format.BinaryDataFormat):
       ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
       ('value_floating_point', 'Value', '_FormatFloatingPoint'),
       ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_offset', 'Value offset', '_FormatIntegerAsHexadecimal8')]
+      ('value_offset', 'Value offset', '_FormatIntegerAsOffset')]
 
   _PREDEFINED_NAMES = {
       1: 'key',
@@ -1225,7 +1237,12 @@ class ClassDefinition(data_format.BinaryDataFormat):
       10: 'type'}
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a class definition."""
+    """Initializes a class definition.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
     super(ClassDefinition, self).__init__(
         debug=debug, output_writer=output_writer)
     self.name = None
@@ -1551,6 +1568,7 @@ class ClassDefinition(data_format.BinaryDataFormat):
 
       class_definition_property = ClassDefinitionProperty()
       class_definition_property.name = property_name
+      class_definition_property.offset = property_definition.offset
       class_definition_property.qualifiers = property_qualifiers
 
       properties[property_name] = class_definition_property
@@ -1746,6 +1764,7 @@ class ClassDefinition(data_format.BinaryDataFormat):
     """
     if self._debug:
       self._DebugPrintText('Reading class definition object record.\n')
+      self._DebugPrintData('Object redord data', object_record.data)
 
     record_data_offset = 0
     data_type_map = self._GetDataTypeMap('class_definition_object_record')
@@ -1815,28 +1834,37 @@ class ClassDefinition(data_format.BinaryDataFormat):
     self.qualifiers = class_qualifiers
 
 
-class Interface(data_format.BinaryDataFormat):
-  """Interface.
+class Instance(data_format.BinaryDataFormat):
+  """Instance.
 
   Attributes:
-    name (str): name of the interface.
+    digest_hash (str): digest hash.
   """
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _DEBUG_INFO_INTERFACE_OBJECT_RECORD = [
-      ('string_digest_hash', 'String digest hash', '_FormatString'),
+  _DEBUG_INFO_INSTANCE_OBJECT_RECORD = [
+      ('digest_hash', 'Digest hash', '_FormatString'),
       ('date_time1', 'Unknown data and time1', '_FormatIntegerAsFiletime'),
       ('date_time2', 'Unknown data and time2', '_FormatIntegerAsFiletime'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
+      ('instance_block_size', 'Instance block size', '_FormatIntegerAsDecimal'),
+      ('instance_block_data', 'Instance block data',
+       '_FormatDataInHexadecimal')]
 
-  def __init__(self, debug=False, output_writer=None):
-    """Initializes an interface."""
-    super(Interface, self).__init__(debug=debug, output_writer=output_writer)
-    self.name = None
+  def __init__(self, format_version, debug=False, output_writer=None):
+    """Initializes an instance.
+
+    Args:
+      format_version (int): format version.
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(Instance, self).__init__(debug=debug, output_writer=output_writer)
+    self._format_version = format_version
+
+    self.digest_hash = None
 
   def ReadObjectRecord(self, object_record):
     """Reads a class definition from an object record.
@@ -1848,23 +1876,30 @@ class Interface(data_format.BinaryDataFormat):
       ParseError: if the class definition cannot be read.
     """
     if self._debug:
-      self._DebugPrintText('Reading interface object record.\n')
+      self._DebugPrintText('Reading instance object record.\n')
+      self._DebugPrintData('Object redord data', object_record.data)
 
     record_data_offset = 0
-    data_type_map = self._GetDataTypeMap('interface_object_record')
+
+    if self._format_version == 1:
+      data_type_map = self._GetDataTypeMap('instance_object_record_v1')
+    else:
+      data_type_map = self._GetDataTypeMap('instance_object_record_v2')
 
     try:
-      interface_object_record = self._ReadStructureFromByteStream(
+      instance_object_record = self._ReadStructureFromByteStream(
           object_record.data, record_data_offset, data_type_map,
-          'Interface object record')
+          'Instance object record')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to map interface object record data at offset: 0x{0:08x} '
+          'Unable to map instance object record data at offset: 0x{0:08x} '
           'with error: {1!s}').format(record_data_offset, exception))
 
     if self._debug:
       self._DebugPrintStructureObject(
-          interface_object_record, self._DEBUG_INFO_INTERFACE_OBJECT_RECORD)
+          instance_object_record, self._DEBUG_INFO_INSTANCE_OBJECT_RECORD)
+
+    self.digest_hash = instance_object_record.digest_hash
 
 
 class Registration(data_format.BinaryDataFormat):
@@ -1893,7 +1928,12 @@ class Registration(data_format.BinaryDataFormat):
       ('attribute_value_string', 'Attribute value string', '_FormatString')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a registration."""
+    """Initializes a registration.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
     super(Registration, self).__init__(debug=debug, output_writer=output_writer)
     self.name = None
 
@@ -1908,6 +1948,7 @@ class Registration(data_format.BinaryDataFormat):
     """
     if self._debug:
       self._DebugPrintText('Reading registration object record.\n')
+      self._DebugPrintData('Object redord data', object_record.data)
 
     record_data_offset = 0
     data_type_map = self._GetDataTypeMap('registration_object_record')
@@ -1928,7 +1969,11 @@ class Registration(data_format.BinaryDataFormat):
 
 
 class CIMRepository(data_format.BinaryDataFormat):
-  """A CIM repository."""
+  """A CIM repository.
+
+  Attributes:
+    format_version (int): format version.
+  """
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
@@ -1947,10 +1992,13 @@ class CIMRepository(data_format.BinaryDataFormat):
     """
     super(CIMRepository, self).__init__()
     self._debug = debug
-    self._class_definitions = {}
+    self._class_definitions_by_digest_hash = {}
+    self._class_definitions_by_name = {}
     self._index_binary_tree_file = None
     self._objects_data_file = None
     self._output_writer = output_writer
+
+    self.format_version = None
 
   def _DebugPrintClassDefinition(self, class_definition):
     """Prints class definition information.
@@ -1972,6 +2020,10 @@ class CIMRepository(data_format.BinaryDataFormat):
     for property_name, class_definition_property in (
         class_definition.properties.items()):
       self._DebugPrintText('    Property: {0:s}\n'.format(property_name))
+
+      value_string = '{0:d} (0x{0:08x})'.format(
+          class_definition_property.offset)
+      self._DebugPrintValue('        Offset', value_string)
 
       for qualifier_name, qualifier_value in (
           class_definition_property.qualifiers.items()):
@@ -2064,7 +2116,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         active_mapping_file = mapping_file
         active_mapping_file_number = mapping_file_number
 
-    if (active_mapping_file_number is not None and
+    if (mapping_ver_file_number is not None and
         mapping_ver_file_number != active_mapping_file_number):
       logging.warning('Mismatch in active mapping file number.')
 
@@ -2112,7 +2164,7 @@ class CIMRepository(data_format.BinaryDataFormat):
           index_binary_tree_file_path[0]))
 
     index_binary_tree_file = IndexBinaryTreeFile(
-        index_mapping_table, debug=self._debug,
+        self.format_version, index_mapping_table, debug=self._debug,
         output_writer=self._output_writer)
     index_binary_tree_file.Open(index_binary_tree_file_path[0])
 
@@ -2198,7 +2250,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         continue
 
       _, _, key_name = key.rpartition('\\')
-      data_type, _, _ = key_name.partition('_')
+      data_type, _, key_name = key_name.partition('_')
       if data_type != 'CD':
         continue
 
@@ -2208,7 +2260,10 @@ class CIMRepository(data_format.BinaryDataFormat):
           debug=self._debug, output_writer=self._output_writer)
       class_definition.ReadObjectRecord(object_record)
 
-      self._class_definitions[class_definition.name] = class_definition
+      self._class_definitions_by_name[class_definition.name] = class_definition
+
+      digest_hash, _, _ = key_name.partition('.')
+      self._class_definitions_by_digest_hash[digest_hash] = class_definition
 
   def Close(self):
     """Closes the CIM repository."""
@@ -2219,6 +2274,17 @@ class CIMRepository(data_format.BinaryDataFormat):
     if self._index_binary_tree_file:
       self._index_binary_tree_file.Close()
       self._index_binary_tree_file = None
+
+  def GetClassDefinition(self, digest_hash):
+    """Retrieves a class definition.
+
+    Args:
+      digest_hash (str): digest hash of the class definition.
+
+    Returns:
+      ClassDefinition: class definitions or None.
+    """
+    return self._class_definitions_by_digest_hash.get(digest_hash, None)
 
   def GetKeys(self):
     """Retrieves the keys.
@@ -2258,6 +2324,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       active_mapping_file = self._GetActiveMappingFile(path)
       index_mapping_file = active_mapping_file
 
+    self.format_version = index_mapping_file.format_version
     index_mapping_table = index_mapping_file.GetIndexMappingTable()
 
     if not active_mapping_file:
@@ -2279,10 +2346,6 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     self._ReadClassDefinitions()
 
-    if self._debug:
-      for class_definition in self._class_definitions.values():
-        self._DebugPrintClassDefinition(class_definition)
-
   def OpenIndexBinaryTree(self, path):
     """Opens the CIM repository index binary tree.
 
@@ -2293,6 +2356,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     if not index_mapping_file:
       index_mapping_file = self._GetActiveMappingFile(path)
 
+    self.format_version = index_mapping_file.format_version
     index_mapping_table = index_mapping_file.GetIndexMappingTable()
 
     index_mapping_file.Close()

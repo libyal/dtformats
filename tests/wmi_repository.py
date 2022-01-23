@@ -39,7 +39,7 @@ class IndexBinaryTreeFileTest(test_lib.BaseTestCase):
 
     output_writer = test_lib.TestOutputWriter()
     test_file = wmi_repository.IndexBinaryTreeFile(
-        mapping_file, output_writer=output_writer)
+        1, mapping_file, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cim', 'INDEX.BTR'])
     self._SkipIfPathNotExists(test_file_path)
@@ -85,7 +85,7 @@ class MappingFileTest(test_lib.BaseTestCase):
     """Tests the _ReadMappingTable function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = wmi_repository.MappingFile(output_writer=output_writer)
-    test_file._format_version = 1
+    test_file.format_version = 1
 
     test_file_path = self._GetTestFilePath(['cim', 'INDEX.MAP'])
     self._SkipIfPathNotExists(test_file_path)

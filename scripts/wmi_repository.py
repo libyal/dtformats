@@ -70,6 +70,12 @@ def Main():
   else:
     cim_repository.Open(options.source)
 
+    if options.debug:
+      # pylint: disable=protected-access
+      for class_definition in (
+          cim_repository._class_definitions_by_name.values()):
+        cim_repository._DebugPrintClassDefinition(class_definition)
+
     object_record_keys = {}
     for key in cim_repository.GetKeys():
       if '.' not in key:
@@ -90,9 +96,15 @@ def Main():
           object_record = cim_repository.GetObjectRecordByKey(key)
 
           if object_record.data_type in ('I', 'IL'):
-            interface = wmi_repository.Interface(
-                debug=options.debug, output_writer=output_writer)
-            interface.ReadObjectRecord(object_record)
+            instance = wmi_repository.Instance(
+                cim_repository.format_version, debug=options.debug,
+                output_writer=output_writer)
+            instance.ReadObjectRecord(object_record)
+
+            class_definition = cim_repository.GetClassDefinition(
+                instance.digest_hash)
+            # pylint: disable=protected-access
+            cim_repository._DebugPrintClassDefinition(class_definition)
 
           elif object_record.data_type == 'R':
             registration = wmi_repository.Registration(

@@ -525,12 +525,12 @@ members:
   element_data_type: byte
   elements_data_size: class_definition_object_record.data_size - 4
 ---
-name: interface_object_record
+name: instance_object_record_v1
 type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: string_digest_hash
+- name: digest_hash
   type: string
   encoding: utf-16-le
   element_data_type: wchar16
@@ -539,12 +539,33 @@ members:
   data_type: uint64
 - name: date_time2
   data_type: uint64
-- name: data_size
+- name: instance_block_size
   data_type: uint32
-- name: data
+- name: instance_block_data
   type: stream
   element_data_type: byte
-  elements_data_size: interface_object_record.data_size - 4
+  elements_data_size: instance_object_record_v1.instance_block_size - 4
+---
+name: instance_object_record_v2
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: digest_hash
+  type: string
+  encoding: utf-16-le
+  element_data_type: wchar16
+  elements_data_size: 128
+- name: date_time1
+  data_type: uint64
+- name: date_time2
+  data_type: uint64
+- name: instance_block_size
+  data_type: uint32
+- name: instance_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: instance_object_record_v2.instance_block_size - 4
 ---
 name: registration_object_record
 type: structure

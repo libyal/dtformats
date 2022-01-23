@@ -354,6 +354,17 @@ class BinaryDataFormat(object):
 
     return '{0:s} UTC'.format(date_time_string)
 
+  def _FormatIntegerAsOffset(self, integer):
+    """Formats an integer as an offset.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as an offset.
+    """
+    return '{0:d} (0x{0:08x})'.format(integer)
+
   # TODO: replace by _FormatArrayOfIntegersAsIPv4Address
   def _FormatPackedIPv4Address(self, packed_ip_address):
     """Formats a packed IPv4 address as a human readable string.

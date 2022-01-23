@@ -300,11 +300,12 @@ backups.
 A version 2 mapping file consists of:
 
 * version 2 file header
-* index or objects mapping table
+* objects mapping table
 * unknown table, presumably used for free space tracking
 * version 1 file footer
 * version 2 file header
-* unknown mapping table
+* index mapping table
+* unknown table, presumably used for free space tracking
 * version 2 file footer
 
 === File header
@@ -563,7 +564,7 @@ The class qualifiers block is variable of size and consists of:
 The offset is relative to the start of the properties block data +
 If the MSB is set the name is predefined and the remainder of the value contains the name index +
 See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
-| 4 | 1 | 0x80 | [yellow-background]*Unknown*
+| 4 | 1 | | [yellow-background]*Unknown*
 | 5 | 4 | | Qualifier value data type (CimType) +
 See section: <<cim_data_types,CIM data types>>
 | 9 | ... | | Inline stored value or 32-bit offset to value data
@@ -745,43 +746,104 @@ The CIM string is variable of size and consists of:
 Contains a string with end-of-string character
 |===
 
-=== Interface (I and IL)
+=== Instance (I and IL)
+
+==== Instance - version 1
+
+Instance - version 1 is used by Windows XP and Windows 2003.
+
+The interface - version 1 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 64 | | String digest hash +
+| 0 | 64 | | Digest hash +
 Contains an UTF-16 little-endian string without end-of-string character.
 | 64 | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
 | 72 | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
-4+| _Data block_
-| ... | 4 | | Data size +
+| 80 | 4 | | Instance block size +
 Includes the 4 bytes of the size
-| ... | ... | | Data
+| 84 | ... | | Instance block data
 |===
 
+==== Instance - version 2
+
+Instance - version 2 is used by Windows Vista and later.
+
+The interface - version 2 is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 128 | | Digest hash +
+Contains an UTF-16 little-endian string without end-of-string character.
+| 128 | 8 | | [yellow-background]*Unknown (date and time)* +
+Contains a FILETIME
+| 136 | 8 | | [yellow-background]*Unknown (date and time)* +
+Contains a FILETIME
+| 144 | 4 | | Instance block size +
+Includes the 4 bytes of the size
+| 148 | ... | | Instance block data
+|===
+
+==== Instance block data
+
 ....
-0x00000000  00 00 00 00 00 2f 23 e8  00 00 00 00 00 00 00 00  ...../#.........
-0x00000010  00 00 00 00 00 19 00 00  00 00 00 00 00 36 00 00  .............6..
-0x00000020  00 00 00 00 00 01 00 00  00 00 00 00 00 00 00 00  ................
-0x00000030  00 00 00 00 00 00 00 31  00 00 00 04 00 00 00 01  .......1........
-0x00000040  4f 00 00 80                                       O....NTEventLogE
+Class definition:
+    Name                                                                : __AdapStatus
+    Super class name                                                    : __SystemClass
+    Qualifier: singleton                                                : True
+    Property: LastStartTime
+        Offset                                                          : 0 (0x00000000)
+        Qualifier: type                                                 : datetime
+    Property: LastStopTime
+        Offset                                                          : 4 (0x00000004)
+        Qualifier: type                                                 : datetime
+    Property: Status
+        Offset                                                          : 8 (0x00000008)
+        Qualifier: type                                                 : uint32
 
-0x00000040              00 4e 54 45  76 65 6e 74 4c 6f 67 45  O....NTEventLogE
-0x00000050  76 65 6e 74 43 6f 6e 73  75 6d 65 72 00           ventConsumer..SC
+Offset name
+0x00000000  00 00 00 00 00                                    ..........).....
+Unknown
+0x00000000                 00                                 ..........).....
+Offset data property 1
+0x00000000                    0e 00  00 00                    ..........).....
+Offset data property 2
+0x00000000                                 29 00 00 00        ..........).....
 
-0x00000050                                          00 53 43  ventConsumer..SC
-0x00000060  4d 20 45 76 65 6e 74 20  4c 6f 67 20 43 6f 6e 73  M Event Log Cons
-0x00000070  75 6d 65 72 00                                    umer..sid..Servi
+Unknown
+0x00000000                                             00 00  ..........).....
+0x00000010  00 00 04 00 00 00 01 44  00 00 80                 .......D....__Ad
 
-0x00000070                 00 73 69  64 00                    umer..sid..Servi
+Name: (offset 0x00)
+0x00000010                                    00 5f 5f 41 64  .......D....__Ad
+0x00000020  61 70 53 74 61 74 75 73  00                       apStatus..000000
 
-0x00000070                                 00 53 65 72 76 69  umer..sid..Servi
-0x00000080  63 65 20 43 6f 6e 74 72  6f 6c 20 4d 61 6e 61 67  ce Control Manag
-0x00000090  65 72 00                                          er.
+Property 1: (offset 0x0e)
+0x00000020                              00 30 30 30 30 30 30  apStatus..000000
+0x00000030  30 30 30 30 30 30 30 30  2e 30 30 30 30 30 30 3a  00000000.000000:
+0x00000040  30 30 30 00                                       000..00000000000
+
+Property 2: (offset 0x29)
+0x00000040              00 30 30 30  30 30 30 30 30 30 30 30  000..00000000000
+0x00000050  30 30 30 2e 30 30 30 30  30 30 3a 30 30 30 00     000.000000:000.
 ....
+
+===== Qualifier descriptor
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown*
+| 4 | 1 | | [yellow-background]*Unknown*
+| 5 | 4 | | [yellow-background]*Unknown*
+| 9 | 1 | | [yellow-background]*Unknown*
+| 10 | 4 | | [yellow-background]*Unknown*
+| 14 | ... | | [yellow-background]*Unknown (CIM string)*
+|===
 
 == CIM repository
 
@@ -819,8 +881,8 @@ The following the prefixes are known:
 | CD | Class definition
 | CI | Class instance?
 | CR | Class reference?
-| I | Interface?
-| IL | Interface?
+| I | Instance
+| IL | Instance?
 | KI |
 | KL |
 | NS | Name space
