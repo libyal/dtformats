@@ -519,7 +519,7 @@ class BinaryDataFormat(object):
 
     if read_error:
       raise errors.ParseError((
-          'Unable to read {0:s} data at offset: 0x{1:08x} with error: '
+          'Unable to read {0:s} data at offset: {1:d} (0x{1:08x}) with error: '
           '{2:s}').format(description, file_offset, read_error))
 
     return data
@@ -545,8 +545,9 @@ class BinaryDataFormat(object):
       ValueError: if file-like object or data type map is missing.
     """
     if self._debug:
-      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
-          description, file_offset))
+      self._DebugPrintText(
+          'Reading {0:s} at offset: {1:d} (0x{1:08x})\n'.format(
+              description, file_offset))
 
     data = self._ReadData(file_object, file_offset, data_size, description)
 
@@ -587,7 +588,7 @@ class BinaryDataFormat(object):
     except (dtfabric_errors.ByteStreamTooSmallError,
             dtfabric_errors.MappingError) as exception:
       raise errors.ParseError((
-          'Unable to map {0:s} data at offset: 0x{1:08x} with error: '
+          'Unable to map {0:s} data at offset: {1:d} (0x{1:08x}) with error: '
           '{2!s}').format(description, file_offset, exception))
 
   def _ReadStructureFromFileObject(
@@ -624,8 +625,9 @@ class BinaryDataFormat(object):
       data_size = data_type_map.GetSizeHint()
 
     if self._debug:
-      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
-          description, file_offset))
+      self._DebugPrintText(
+          'Reading {0:s} at offset: {1:d} (0x{1:08x})\n'.format(
+              description, file_offset))
 
     while data_size != last_data_size:
       read_offset = file_offset + last_data_size
@@ -651,14 +653,14 @@ class BinaryDataFormat(object):
 
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            'Unable to map {0:s} data at offset: 0x{1:08x} with error: '
+            'Unable to map {0:s} data at offset: {1:d} (0x{1:08x}) with error: '
             '{2!s}').format(description, file_offset, exception))
 
       last_data_size = data_size
       data_size = data_type_map.GetSizeHint(context=context)
 
     raise errors.ParseError(
-        'Unable to read {0:s} at offset: 0x{1:08x}'.format(
+        'Unable to read {0:s} at offset: {1:d} (0x{1:08x})'.format(
             description, file_offset))
 
   @classmethod

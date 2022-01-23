@@ -12,27 +12,8 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class CIMClassDefinition(object):
-  """CIM class definition.
-
-  Attributes:
-    name (str): name of the class.
-    properties (dict[str, CIMClassDefinitionProperty]): properties.
-    qualifiers (dict[str, object]): qualifiers.
-    super_class_name (str): name of the super class.
-  """
-
-  def __init__(self):
-    """Initializes a CIM class definition."""
-    super(CIMClassDefinition, self).__init__()
-    self.name = None
-    self.properties = {}
-    self.qualifiers = {}
-    self.super_class_name = None
-
-
-class CIMClassDefinitionProperty(object):
-  """CIM class definition property.
+class ClassDefinitionProperty(object):
+  """Class definition property.
 
   Attributes:
     name (str): name of the property.
@@ -40,8 +21,8 @@ class CIMClassDefinitionProperty(object):
   """
 
   def __init__(self):
-    """Initializes a CIM class property."""
-    super(CIMClassDefinitionProperty, self).__init__()
+    """Initializes a class property."""
+    super(ClassDefinitionProperty, self).__init__()
     self.name = None
     self.qualifiers = {}
 
@@ -73,823 +54,31 @@ class IndexBinaryTreePage(object):
     self.sub_pages = []
 
 
-class ObjectRecord(data_format.BinaryDataFormat):
+class ObjectRecord(object):
   """Object record.
 
   Attributes:
     data (bytes): object record data.
     data_type (str): object record data type.
-    file_offset (int): offset of the object record data relative to
-        the start of the file.
   """
 
-  # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
-
-  # TODO: replace streams by block type
-  # TODO: add more values.
-
-  _INTERFACE_OBJECT_RECORD = _FABRIC.CreateDataTypeMap(
-      'interface_object_record')
-
-  _REGISTRATION_OBJECT_RECORD = _FABRIC.CreateDataTypeMap(
-      'registration_object_record')
-
-  _CIM_DATA_TYPES = _FABRIC.CreateDataTypeMap('cim_data_types')
-
-  _DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD = [
-      ('super_class_name_size', 'Super class name size',
-       '_FormatIntegerAsDecimal'),
-      ('super_class_name', 'Super class name', '_FormatString'),
-      ('date_time', 'Unknown date and time', '_FormatIntegerAsFiletime'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_DEFINITION_HEADER = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('class_name_offset', 'Class name offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('default_value_size', 'Default value size', '_FormatIntegerAsDecimal'),
-      ('super_class_name_block_size', 'Super class name block size',
-       '_FormatIntegerAsDecimal'),
-      ('super_class_name_block_data', 'Super class name block data',
-       '_FormatDataInHexadecimal'),
-      ('qualifiers_block_size', 'Qualifiers block size',
-       '_FormatIntegerAsDecimal'),
-      ('qualifiers_block_data', 'Qualifiers block data',
-       '_FormatDataInHexadecimal'),
-      ('number_of_property_descriptors', 'Number of property descriptors',
-       '_FormatIntegerAsDecimal'),
-      ('property_descriptors', 'Property descriptors',
-       '_FormatArrayOfPropertyDescriptors'),
-      ('default_value_data', 'Default value data', '_FormatDataInHexadecimal'),
-      ('properties_block_size', 'Properties block size',
-       '_FormatIntegerAsPropertiesBlockSize'),
-      ('properties_block_data', 'Properties block data',
-       '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_NAME = [
-      ('string_flags', 'Class name string flags',
-       '_FormatIntegerAsHexadecimal2'),
-      ('string', 'Class name string', '_FormatString')]
-
-  _DEBUG_INFO_QUALIFIER_DESCRIPTOR = [
-      ('name_offset', 'Name offset', '_FormatIntegerAsHexadecimal8'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
-      ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
-      ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_floating_point', 'Value', '_FormatFloatingPoint'),
-      ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_offset', 'Value offset', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_PROPERTY_DEFINITION = [
-      ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
-      ('index', 'Index', '_FormatIntegerAsDecimal'),
-      ('offset', 'Offset', '_FormatIntegerAsHexadecimal8'),
-      ('level', 'Level', '_FormatIntegerAsDecimal'),
-      ('qualifiers_block_size', 'Qualifiers block size',
-       '_FormatIntegerAsDecimal'),
-      ('qualifiers_block_data', 'Qualifiers block data',
-       '_FormatDataInHexadecimal'),
-      ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_floating_point', 'Value', '_FormatFloatingPoint'),
-      ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_offset', 'Value offset', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_INTERFACE_OBJECT_RECORD = [
-      ('string_digest_hash', 'String digest hash', '_FormatDataInHexadecimal'),
-      ('date_time1', 'Unknown data and time1', '_FormatIntegerAsFiletime'),
-      ('date_time2', 'Unknown data and time2', '_FormatIntegerAsFiletime'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_REGISTRATION_OBJECT_RECORD = [
-      ('name_space_string_size', 'Name space string size',
-       '_FormatIntegerAsDecimal'),
-      ('name_space_string', 'Name space string', '_FormatString'),
-      ('class_name_string_size', 'Class name string size',
-       '_FormatIntegerAsDecimal'),
-      ('class_name_string', 'Class name string', '_FormatString'),
-      ('attribute_name_string_size', 'Attribute name string size',
-       '_FormatIntegerAsDecimal'),
-      ('attribute_name_string', 'Attribute name string', '_FormatString'),
-      ('attribute_value_string_size', 'Attribute value string size',
-       '_FormatIntegerAsDecimal'),
-      ('attribute_value_string', 'Attribute value string', '_FormatString')]
-
-  _PREDEFINED_NAMES = {
-      1: 'key',
-      3: 'read',
-      4: 'write',
-      6: 'provider',
-      7: 'dynamic',
-      10: 'type'}
-
-  DATA_TYPE_CLASS_DEFINITION = 'CD'
-
-  def __init__(self, data_type, data, debug=False, output_writer=None):
+  def __init__(self, data_type, data):
     """Initializes an object record.
 
     Args:
       data_type (str): object record data type.
       data (bytes): object record data.
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
     """
-    super(ObjectRecord, self).__init__(debug=debug, output_writer=output_writer)
+    super(ObjectRecord, self).__init__()
     self.data = data
     self.data_type = data_type
-    self.file_offset = 0
-
-  def _DebugPrintCIMClassDefinition(self, cim_class_definition):
-    """Prints CIM class definition information.
-
-    Args:
-      cim_class_definition (CIMClassDefinition): CIM class definition.
-    """
-    self._DebugPrintText('CIM class definition:\n')
-    self._DebugPrintValue('    Name', cim_class_definition.name)
-    self._DebugPrintValue(
-        '    Super class name', cim_class_definition.super_class_name)
-
-    for qualifier_name, qualifier_value in (
-        cim_class_definition.qualifiers.items()):
-      description = '    Qualifier: {0:s}'.format(qualifier_name)
-      value_string = '{0!s}'.format(qualifier_value)
-      self._DebugPrintValue(description, value_string)
-
-    for property_name, cim_class_definition_property in (
-        cim_class_definition.properties.items()):
-      self._DebugPrintText('    Property: {0:s}\n'.format(property_name))
-
-      for qualifier_name, qualifier_value in (
-          cim_class_definition_property.qualifiers.items()):
-        description = '        Qualifier: {0:s}'.format(qualifier_name)
-        value_string = '{0!s}'.format(qualifier_value)
-        self._DebugPrintValue(description, value_string)
-
-    self._DebugPrintText('\n')
-
-  def _DebugPrintCIMString(self, cim_string):
-    """Prints CIM string information.
-
-    Args:
-      cim_string (cim_string): CIM string.
-    """
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
-    self._DebugPrintValue('String flags', value_string)
-
-    self._DebugPrintValue('String', cim_string.string)
-
-  def _DebugPrintQualifierName(self, index, cim_string):
-    """Prints qualifier name information.
-
-    Args:
-      index (int): qualifier index.
-      cim_string (cim_string): CIM string.
-    """
-    description = 'Qualifier: {0:d} name string flags'.format(index)
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
-    self._DebugPrintValue(description, value_string)
-
-    description = 'Qualifier: {0:d} name string'.format(index)
-    self._DebugPrintValue(description, cim_string.string)
-
-  def _DebugPrintPropertyName(self, index, cim_string):
-    """Prints property name information.
-
-    Args:
-      index (int): property index.
-      cim_string (cim_string): CIM string.
-    """
-    description = 'Property: {0:d} name string flags'.format(index)
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
-    self._DebugPrintValue(description, value_string)
-
-    description = 'Property: {0:d} name string'.format(index)
-    self._DebugPrintValue(description, cim_string.string)
-
-  def _FormatArrayOfPropertyDescriptors(self, array_of_property_descriptors):
-    """Formats an array of property descriptors.
-
-    Args:
-      array_of_property_descriptors (list[property_descriptor]): array of
-          property descriptors.
-
-    Returns:
-      str: formatted array of property descriptors.
-    """
-    lines = []
-    for index, property_descriptor in enumerate(array_of_property_descriptors):
-      description = '    Property descriptor: {0:d} name offset'.format(index)
-      value_string = '0x{0:08x}'.format(property_descriptor.name_offset)
-      line = self._FormatValue(description, value_string)
-      lines.append(line)
-
-      description = '    Property descriptor: {0:d} definition offset'.format(
-          index)
-      value_string = '0x{0:08x}'.format(property_descriptor.definition_offset)
-      line = self._FormatValue(description, value_string)
-      lines.append(line)
-
-    return ''.join(lines)
-
-  def _FormatIntegerAsDataType(self, integer):
-    """Formats an integer as a data type.
-
-    Args:
-      integer (int): integer.
-
-    Returns:
-      str: integer formatted as a data type.
-    """
-    data_type_string = self._CIM_DATA_TYPES.GetName(integer & 0x0fff)
-    # TODO: format flags 0x2000 and 0x4000
-    return '0x{0:08x} ({1:s})'.format(integer, data_type_string or 'UNKNOWN')
-
-  def _FormatIntegerAsPropertiesBlockSize(self, integer):
-    """Formats an integer as a properties block size.
-
-    Args:
-      integer (int): integer.
-
-    Returns:
-      str: integer formatted as a properties block size.
-    """
-    return '{0:d} (0x{1:08x})'.format(integer & 0x7fffffff, integer)
-
-  def _ReadClassDefinition(self, object_record_data, file_offset):
-    """Reads a class definition object record.
-
-    Args:
-      object_record_data (bytes): object record data.
-      file_offset (int): offset of the object record data relative to
-          the start of the file.
-
-    Returns:
-      CIMClassDefinition: class definition.
-
-    Raises:
-      ParseError: if the object record cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          'Reading class definition object record at offset: {0:d} '
-          '(0x{0:08x}).\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('class_definition_object_record')
-
-    context = dtfabric_data_maps.DataTypeMapContext()
-
-    try:
-      class_definition_object_record = self._ReadStructureFromByteStream(
-          object_record_data, file_offset, data_type_map,
-          'Class definition object record', context=context)
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map class definition object record data at offset: '
-          '0x{0:08x} with error: {1!s}').format(file_offset, exception))
-
-    file_offset += context.byte_size
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          class_definition_object_record,
-          self._DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD)
-
-    class_definition_header = self._ReadClassDefinitionHeader(
-        class_definition_object_record.data, file_offset)
-
-    qualifiers_block_file_offset = (
-        file_offset + 9 + class_definition_header.super_class_name_block_size)
-
-    properties_block_file_offset = (
-        qualifiers_block_file_offset +
-        class_definition_header.qualifiers_block_size + 4 + (
-            class_definition_header.number_of_property_descriptors * 8 ) +
-        class_definition_header.default_value_size)
-
-    class_name = self._ReadClassDefinitionName(
-        class_definition_header.class_name_offset,
-        class_definition_header.properties_block_data,
-        properties_block_file_offset)
-
-    class_qualifiers = {}
-    if class_definition_header.qualifiers_block_size > 4:
-      class_qualifiers = self._ReadQualifiers(
-          class_definition_header.qualifiers_block_data,
-          qualifiers_block_file_offset,
-          class_definition_header.properties_block_data,
-          properties_block_file_offset)
-
-    cim_class_definition = CIMClassDefinition()
-    cim_class_definition.super_class_name = (
-        class_definition_object_record.super_class_name)
-    cim_class_definition.name = class_name
-    cim_class_definition.qualifiers = class_qualifiers
-
-    self._ReadClassDefinitionProperties(
-        class_definition_header.property_descriptors,
-        class_definition_header.properties_block_data,
-        properties_block_file_offset, cim_class_definition)
-
-    data_offset = (
-        12 + (class_definition_object_record.super_class_name_size * 2) +
-        class_definition_object_record.data_size)
-
-    if data_offset < len(object_record_data):
-      if self._debug:
-        self._DebugPrintData('Methods data', object_record_data[data_offset:])
-
-      self._ReadClassDefinitionMethods(object_record_data[data_offset:])
-
-    return cim_class_definition
-
-  def _ReadClassDefinitionHeader(self, class_definition_data, file_offset):
-    """Reads a class definition header.
-
-    Args:
-      class_definition_data (bytes): class definition data.
-      file_offset (int): offset of the class definition data relative to
-          the start of the file.
-
-    Returns:
-      class_definition_header: class definition header.
-
-    Raises:
-      ParseError: if the class definition cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          'Reading class definition header at offset: {0:d} '
-          '(0x{0:08x}).\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('class_definition_header')
-
-    try:
-      class_definition_header = self._ReadStructureFromByteStream(
-          class_definition_data, file_offset, data_type_map,
-          'Class definition header')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map class definition header data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          class_definition_header, self._DEBUG_INFO_CLASS_DEFINITION_HEADER)
-
-    return class_definition_header
-
-  def _ReadClassDefinitionMethods(self, class_definition_data):
-    """Reads a class definition methods.
-
-    Args:
-      class_definition_data (bytes): class definition data.
-
-    Raises:
-      ParseError: if the class definition cannot be read.
-    """
-    # TODO: set file_offset
-    file_offset = 0
-
-    if self._debug:
-      self._DebugPrintText((
-          'Reading class definition methods at offset: {0:d} '
-          '(0x{0:08x}).\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('class_definition_methods')
-
-    try:
-      class_definition_methods = self._ReadStructureFromByteStream(
-          class_definition_data, file_offset, data_type_map,
-          'Class definition methods')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map class definition methods data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
-
-    methods_block_size = class_definition_methods.methods_block_size
-
-    if self._debug:
-      value_string = '{0:d} (0x{1:08x})'.format(
-          methods_block_size & 0x7fffffff, methods_block_size)
-      self._DebugPrintValue('Methods block size', value_string)
-
-      self._DebugPrintData(
-          'Methods block data', class_definition_methods.methods_block_data)
-
-  def _ReadClassDefinitionName(
-      self, name_offset, properties_data, properties_data_file_offset):
-    """Reads a class definition name.
-
-    Args:
-      name_offset (int): name offset.
-      properties_data (bytes): class definition properties data.
-      properties_data_file_offset (int): offset of the class definition
-          properties data relative to the start of the file.
-
-    Returns:
-      str: class name.
-
-    Raises:
-      ParseError: if the name cannot be read.
-    """
-    file_offset = properties_data_file_offset + name_offset
-    data_type_map = self._GetDataTypeMap('cim_string')
-
-    try:
-      class_name = self._ReadStructureFromByteStream(
-          properties_data[name_offset:], file_offset, data_type_map,
-          'Class name')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map class name data at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
-
-    if self._debug:
-      self._DebugPrintStructureObject(class_name, self._DEBUG_INFO_CLASS_NAME)
-
-    return class_name.string
-
-  def _ReadClassDefinitionPropertyDefinition(
-      self, definition_offset, properties_data, properties_data_file_offset):
-    """Reads a class definition property definition.
-
-    Args:
-      definition_offset (int): definition offset.
-      properties_data (bytes): class definition properties data.
-      properties_data_file_offset (int): offset of the class definition
-          properties data relative to the start of the file.
-
-    Returns:
-      property_definition: property definition.
-
-    Raises:
-      ParseError: if the property name cannot be read.
-    """
-    file_offset = properties_data_file_offset + definition_offset
-    data_type_map = self._GetDataTypeMap('property_definition')
-
-    try:
-      property_definition = self._ReadStructureFromByteStream(
-          properties_data[definition_offset:], file_offset, data_type_map,
-          'Property definition')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map property definition data at offset: 0x{0:08x} with '
-          'error: {1!s}').format(file_offset, exception))
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          property_definition, self._DEBUG_INFO_PROPERTY_DEFINITION)
-
-    return property_definition
-
-  def _ReadClassDefinitionPropertyName(
-      self, property_index, name_offset, properties_data,
-      properties_data_file_offset):
-    """Reads a class definition property name.
-
-    Args:
-      index (int): property index.
-      name_offset (int): name offset.
-      properties_data (bytes): class definition properties data.
-      properties_data_file_offset (int): offset of the class definition
-          properties data relative to the start of the file.
-
-    Returns:
-      str: property name.
-
-    Raises:
-      ParseError: if the property name cannot be read.
-    """
-    if name_offset & 0x80000000:
-      name_index = name_offset & 0x7fffffff
-      property_name = self._PREDEFINED_NAMES.get(
-          name_index, 'UNKNOWN_{0:d}'.format(name_index))
-
-      if self._debug:
-        description = 'Property: {0:d} name index'.format(property_index)
-        value_string = '{0:d}'.format(name_index)
-        self._DebugPrintValue(description, value_string)
-
-        description = 'Property: {0:d} name'.format(property_index)
-        self._DebugPrintValue(description, property_name)
-
-    else:
-      file_offset = properties_data_file_offset + name_offset
-      data_type_map = self._GetDataTypeMap('cim_string')
-
-      try:
-        cim_string = self._ReadStructureFromByteStream(
-            properties_data[name_offset:], file_offset, data_type_map,
-           'Property name')
-      except (ValueError, errors.ParseError) as exception:
-        raise errors.ParseError((
-            'Unable to map property name data at offset: 0x{0:08x} with '
-            'error: {1!s}').format(file_offset, exception))
-
-      if self._debug:
-        self._DebugPrintPropertyName(property_index, cim_string)
-
-      property_name = cim_string.string
-
-    return property_name
-
-  def _ReadClassDefinitionProperties(
-      self, property_descriptors, properties_data, properties_data_file_offset,
-      cim_class_definition):
-    """Reads class definition properties.
-
-    Args:
-      property_descriptors (list[property_descriptor]): property descriptors.
-      properties_data (bytes): class definition properties data.
-      properties_data_file_offset (int): offset of the class definition
-          properties data relative to the start of the file.
-      cim_class_definition (CIMClassDefinition): CIM class definition.
-
-    Raises:
-      ParseError: if the properties cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText('Reading class definition properties.\n')
-
-    for property_index, property_descriptor in enumerate(property_descriptors):
-      property_name = self._ReadClassDefinitionPropertyName(
-          property_index, property_descriptor.name_offset, properties_data,
-          properties_data_file_offset)
-
-      property_definition = self._ReadClassDefinitionPropertyDefinition(
-          property_descriptor.definition_offset, properties_data,
-          properties_data_file_offset)
-
-      qualifiers_block_file_offset = property_descriptor.definition_offset + 18
-
-      property_qualifiers = self._ReadQualifiers(
-          property_definition.qualifiers_block_data,
-          qualifiers_block_file_offset,
-          properties_data, properties_data_file_offset)
-
-      cim_class_definition_property = CIMClassDefinitionProperty()
-      cim_class_definition_property.name = property_name
-      cim_class_definition_property.qualifiers = property_qualifiers
-
-      cim_class_definition.properties[property_name] = (
-          cim_class_definition_property)
-
-  def _ReadInterface(self, object_record_data):
-    """Reads an interface object record.
-
-    Args:
-      object_record_data (bytes): object record data.
-
-    Raises:
-      ParseError: if the object record cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText('Reading interface object record.\n')
-
-    try:
-      interface_object_record = self._INTERFACE_OBJECT_RECORD.MapByteStream(
-          object_record_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError(
-          'Unable to parse interace object record with error: {0!s}'.format(
-              exception))
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          interface_object_record, self._DEBUG_INFO_INTERFACE_OBJECT_RECORD)
-
-  def _ReadQualifierName(
-      self, qualifier_index, name_offset, properties_data, file_offset):
-    """Reads a qualifier name.
-
-    Args:
-      qualifier_index (int): qualifier index.
-      name_offset (int): name offset.
-      properties_data (bytes): properties data.
-      file_offset (int): offset of the properties data relative to the start of
-          the file.
-
-    Returns:
-      str: qualifier name.
-
-    Raises:
-      ParseError: if the qualifier name cannot be read.
-    """
-    if name_offset & 0x80000000:
-      name_index = name_offset & 0x7fffffff
-      qualifier_name = self._PREDEFINED_NAMES.get(
-          name_index, 'UNKNOWN_{0:d}'.format(name_index))
-
-      if self._debug:
-        description = 'Qualifier: {0:d} name index'.format(qualifier_index)
-        value_string = '{0:d}'.format(name_index)
-        self._DebugPrintValue(description, value_string)
-
-        description = 'Qualifier: {0:d} name'.format(qualifier_index)
-        self._DebugPrintValue(description, qualifier_name)
-
-    else:
-      file_offset += name_offset
-      data_type_map = self._GetDataTypeMap('cim_string')
-
-      try:
-        cim_string = self._ReadStructureFromByteStream(
-            properties_data[name_offset:], file_offset, data_type_map,
-            'Qualifier name')
-      except (ValueError, errors.ParseError) as exception:
-        raise errors.ParseError((
-            'Unable to map qualifier name data at offset: 0x{0:08x} with '
-            'error: {1!s}').format(file_offset, exception))
-
-      if self._debug:
-        self._DebugPrintQualifierName(qualifier_index, cim_string)
-
-      qualifier_name = cim_string.string
-
-    return qualifier_name
-
-  def _ReadQualifiers(
-      self, qualifiers_data, qualifiers_data_file_offset, properties_data,
-      properties_data_file_offset):
-    """Reads qualifiers.
-
-    Args:
-      qualifiers_data (bytes): qualifiers data.
-      qualifiers_data_file_offset (int): offset of the qualifiers data relative
-          to the start of the file.
-      properties_data (bytes): properties data.
-      properties_data_file_offset (int): offset of the properties data relative
-          to the start of the file.
-
-    Returns:
-      dict[str, object]: qualifier names and values.
-
-    Raises:
-      ParseError: if the qualifiers cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading qualifiers at offset: {0:d} (0x{0:08x}).\n'.format(
-              qualifiers_data_file_offset))
-
-    qualifiers = {}
-    qualifiers_data_offset = 0
-    qualifier_index = 0
-
-    while qualifiers_data_offset < len(qualifiers_data):
-      file_offset = qualifiers_data_file_offset + qualifiers_data_offset
-      data_type_map = self._GetDataTypeMap('qualifier_descriptor')
-
-      context = dtfabric_data_maps.DataTypeMapContext()
-
-      try:
-        qualifier_descriptor = self._ReadStructureFromByteStream(
-            qualifiers_data[qualifiers_data_offset:], file_offset,
-            data_type_map, 'Qualifier descriptor', context=context)
-      except (ValueError, errors.ParseError) as exception:
-        raise errors.ParseError((
-            'Unable to map qualifier descriptor data at offset: 0x{0:08x} with '
-            'error: {1!s}').format(file_offset, exception))
-
-      if self._debug:
-        self._DebugPrintStructureObject(
-            qualifier_descriptor, self._DEBUG_INFO_QUALIFIER_DESCRIPTOR)
-
-      qualifier_name = self._ReadQualifierName(
-          qualifier_index, qualifier_descriptor.name_offset, properties_data,
-          properties_data_file_offset)
-
-      cim_data_type = self._CIM_DATA_TYPES.GetName(
-          qualifier_descriptor.value_data_type)
-      if cim_data_type == 'CIM-TYPE-BOOLEAN':
-        qualifier_value = qualifier_descriptor.value_boolean
-
-      elif cim_data_type in (
-          'CIM-TYPE-SINT16', 'CIM-TYPE-SINT32', 'CIM-TYPE-SINT8',
-          'CIM-TYPE-UINT8', 'CIM-TYPE-UINT16', 'CIM-TYPE-UINT16',
-          'CIM-TYPE-SINT64', 'CIM-TYPE-UINT64'):
-        qualifier_value = qualifier_descriptor.value_integer
-
-      elif cim_data_type in ('CIM-TYPE-REAL32', 'CIM-TYPE-REAL64'):
-        qualifier_value = qualifier_descriptor.value_floating_point
-
-      elif cim_data_type == 'CIM-TYPE-STRING':
-        qualifier_value = self._ReadQualifierValueString(
-            qualifier_descriptor.value_offset, properties_data,
-            properties_data_file_offset)
-
-      elif cim_data_type == 'CIM-TYPE-DATETIME':
-        # TODO: implement
-        qualifier_value = None
-
-      elif cim_data_type == 'CIM-TYPE-REFERENCE':
-        # TODO: implement
-        qualifier_value = None
-
-      elif cim_data_type == 'CIM-TYPE-CHAR16':
-        # TODO: implement
-        qualifier_value = None
-
-      else:
-        qualifier_value = None
-
-      if self._debug:
-        self._DebugPrintText('\n')
-
-      qualifiers[qualifier_name] = qualifier_value
-
-      qualifiers_data_offset += context.byte_size
-      qualifier_index += 1
-
-    return qualifiers
-
-  def _ReadQualifierValueString(
-      self, value_offset, properties_data, file_offset):
-    """Reads a qualifier value.
-
-    Args:
-      value_offset (int): value offset.
-      properties_data (bytes): properties data.
-      file_offset (int): offset of the properties data relative to the start of
-          the file.
-
-    Returns:
-      str: qualifier value.
-
-    Raises:
-      ParseError: if the qualifier value cannot be read.
-    """
-    file_offset += value_offset
-    data_type_map = self._GetDataTypeMap('cim_string')
-
-    try:
-      cim_string = self._ReadStructureFromByteStream(
-          properties_data[value_offset:], file_offset, data_type_map,
-          'Qualifier value')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map qualifier value string data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
-
-    if self._debug:
-      self._DebugPrintCIMString(cim_string)
-
-    return cim_string.string
-
-  def _ReadRegistration(self, object_record_data):
-    """Reads a registration object record.
-
-    Args:
-      object_record_data (bytes): object record data.
-
-    Raises:
-      ParseError: if the object record cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText('Reading registration object record.\n')
-
-    try:
-      registration_object_record = (
-          self._REGISTRATION_OBJECT_RECORD.MapByteStream(
-              object_record_data))
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          'Unable to parse registration object record with '
-          'error: {0:s}').format(exception))
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          registration_object_record,
-          self._DEBUG_INFO_REGISTRATION_OBJECT_RECORD)
-
-  def Read(self):
-    """Reads an object record."""
-    if self._debug:
-      self._DebugPrintData('Object record data', self.data)
-
-    if self._debug:
-      if self.data_type == self.DATA_TYPE_CLASS_DEFINITION:
-        cim_class_definition = self._ReadClassDefinition(
-            self.data, self.file_offset)
-        self._DebugPrintCIMClassDefinition(cim_class_definition)
-
-      elif self.data_type in ('I', 'IL'):
-        self._ReadInterface(self.data)
-
-      elif self.data_type == 'R':
-        self._ReadRegistration(self.data)
 
 
 class ObjectsDataPage(data_format.BinaryDataFormat):
   """An objects data page.
 
   Attributes:
-    page_offset (int): page offset or None.
+    page_offset (int): offset of the page relative to the start of the file.
   """
 
   # Using a class constant significantly speeds up the time required to load
@@ -1101,18 +290,18 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
       ('root_page_number', 'Root page number', '_FormatIntegerAsDecimal')]
 
-  def __init__(self, index_mapping_file, debug=False, output_writer=None):
+  def __init__(self, index_mapping_table, debug=False, output_writer=None):
     """Initializes an index binary-tree file.
 
     Args:
-      index_mapping_file (MappingFile): an index mapping file.
+      index_mapping_table (mapping_table): an index mapping table.
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(IndexBinaryTreeFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self._index_mapping_file = index_mapping_file
     self._first_mapped_page = None
+    self._index_mapping_table = index_mapping_table
     self._root_page = None
 
   def _DebugPrintPageBody(self, page_body):
@@ -1373,6 +562,18 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     if self._debug and index_binary_tree_page.page_value_offsets:
       self._DebugPrintText('\n')
 
+  def _ResolveMappedPageNumber(self, mapped_page_number):
+    """Resolves a mapped page number.
+
+    Args:
+      mapped_page_number (int): mapped page number.
+
+    Returns:
+      int: (physical) page number.
+    """
+    mapping_table_entry = self._index_mapping_table.entries[mapped_page_number]
+    return mapping_table_entry.page_number
+
   def GetFirstMappedPage(self):
     """Retrieves the first mapped page.
 
@@ -1380,7 +581,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       IndexBinaryTreePage: an index binary-tree page or None.
     """
     if not self._first_mapped_page:
-      page_number = self._index_mapping_file.mappings[0]
+      page_number = self._ResolveMappedPageNumber(0)
 
       index_page = self._GetPage(page_number)
       if not index_page:
@@ -1389,30 +590,30 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             '{0:d}.').format(page_number))
         return None
 
-      if index_page.page_type != 0xaddd:
-        logging.warning('First mapped index binary-tree page type mismatch.')
-        return None
+      if index_page.page_type not in (0xaccc, 0xaddd):
+        logging.warning((
+            'Unsupported first mapped index binary-tree page type: '
+            '0x{0:04x}').format(index_page.page_type))
 
       self._first_mapped_page = index_page
 
     return self._first_mapped_page
 
-  def GetMappedPage(self, page_number):
+  def GetMappedPage(self, mapped_page_number):
     """Retrieves a specific mapped page.
 
     Args:
-      page_number (int): page number.
+      mapped_page_number (int): mapped page number.
 
     Returns:
       IndexBinaryTreePage: an index binary-tree page or None.
     """
-    mapped_page_number = self._index_mapping_file.mappings[page_number]
+    page_number = self._ResolveMappedPageNumber(mapped_page_number)
 
-    index_page = self._GetPage(mapped_page_number)
+    index_page = self._GetPage(page_number)
     if not index_page:
-      logging.warning(
-          'Unable to read index binary-tree mapped page: {0:d}.'.format(
-              page_number))
+      logging.warning('Unable to read index binary-tree page: {0:d}.'.format(
+          page_number))
       return None
 
     return index_page
@@ -1428,8 +629,8 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       if not first_mapped_page:
         return None
 
-      page_number = self._index_mapping_file.mappings[
-          first_mapped_page.root_page_number]
+      page_number = self._ResolveMappedPageNumber(
+          first_mapped_page.root_page_number)
 
       index_page = self._GetPage(page_number)
       if not index_page:
@@ -1463,6 +664,7 @@ class MappingFile(data_format.BinaryDataFile):
 
   Attributes:
     data_size (int): data size of the mappings file.
+    sequence_number (int): sequence number.
     mapping (list[int]): mappings to page numbers in the index binary-tree
         or objects data file.
   """
@@ -1475,27 +677,24 @@ class MappingFile(data_format.BinaryDataFile):
 
   _UINT32LE_SIZE = _UINT32LE.GetByteSize()
 
-  _FILE_HEADER_SIGNATURE = 0x0000abcd
-
-  _FILE_HEADER = _FABRIC.CreateDataTypeMap('cim_map_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _FILE_FOOTER_SIGNATURE = 0x0000dcba
-
-  _FILE_FOOTER = _FABRIC.CreateDataTypeMap('cim_map_footer')
-
-  _FILE_FOOTER_SIZE = _FILE_FOOTER.GetByteSize()
-
-  _PAGE_NUMBERS = _FABRIC.CreateDataTypeMap('cim_map_page_numbers')
-
   _DEBUG_INFO_FILE_FOOTER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8')]
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
 
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
-      ('format_version', 'Format version', '_FormatIntegerAsHexadecimal8'),
+      ('sequence_number', 'Sequence number', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
       ('number_of_pages', 'Number of pages', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_TABLE_ENTRY = [
+      ('page_number', '    Page number', '_FormatIntegerAsPageNumber'),
+      ('unknown1', '    Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', '    Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('unknown3', '    Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('unknown4', '    Unknown4', '_FormatIntegerAsHexadecimal8'),
+      ('unknown5', '    Unknown5', '_FormatIntegerAsHexadecimal8')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a mappings file.
@@ -1506,47 +705,95 @@ class MappingFile(data_format.BinaryDataFile):
     """
     super(MappingFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self.data_size = 0
-    self.mappings = []
+    self._format_version = None
+    self._mapping_table1 = None
+    self._mapping_table2 = None
+    self._unavailable_page_numbers = set([0xffffffff])
 
-  def _DebugPrintPageNumber(
-      self, description, page_number, unavailable_page_numbers=None):
-    """Prints a page number debug information.
+    self.sequence_number = None
 
-    Args:
-      description (str): description.
-      page_number (int): page number.
-      unavailable_page_numbers (Optional[set[int]]): unavailable page numbers.
-    """
-    if not unavailable_page_numbers:
-      unavailable_page_numbers = set()
-
-    if page_number in unavailable_page_numbers:
-      value_string = '0x{0:08x} (unavailable)'.format(page_number)
-    else:
-      value_string = '{0:d}'.format(page_number)
-
-    self._DebugPrintValue(description, value_string)
-
-  def _DebugPrintPageNumbersTable(
-      self, description, page_number_table, unavailable_page_numbers=None):
-    """Prints a page number table debug information.
+  def _DebugPrintMappingTable(self, mapping_table):
+    """Prints a mapping table debug information.
 
     Args:
-      description (str): description.
-      page_number_table (tuple[int, ...]): page number table.
-      unavailable_page_numbers (Optional[set[int]]): unavailable page numbers.
+      mapping_table (mapping_table): mapping table.
     """
-    for index, page_number in enumerate(page_number_table):
-      sub_description = '{0:s}: {1:d} page number'.format(description, index)
-      self._DebugPrintPageNumber(
-          sub_description, page_number,
-          unavailable_page_numbers=unavailable_page_numbers)
+    self._DebugPrintText('Mapping table:\n')
+    self._DebugPrintDecimalValue(
+        '  Number of entries', mapping_table.number_of_entries)
+    self._DebugPrintText('\n')
+
+    for index, mapping_table_entry in enumerate(mapping_table.entries):
+      self._DebugPrintText('  Entry: {0:d}:\n'.format(index))
+      self._DebugPrintStructureObject(
+          mapping_table_entry, self._DEBUG_INFO_TABLE_ENTRY)
 
     self._DebugPrintText('\n')
 
-  def _ReadFileFooter(self, file_object):
+  def _DebugPrintUnknownTable(self, unknown_table):
+    """Prints a unknown table debug information.
+
+    Args:
+      unknown_table (unknown_table): mapping table.
+    """
+    self._DebugPrintText('Unknown table:\n')
+    self._DebugPrintDecimalValue(
+        '  Number of entries', unknown_table.number_of_entries)
+
+    for index, page_number in enumerate(unknown_table.entries):
+      description = '  Entry: {0:d} page number'.format(index)
+      value_string = self._FormatIntegerAsPageNumber(page_number)
+      self._DebugPrintValue(description, value_string)
+
+    self._DebugPrintText('\n')
+
+  def _FormatIntegerAsPageNumber(self, integer):
+    """Formats an integer as a page number.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a page number.
+    """
+    if integer in self._unavailable_page_numbers:
+      return '0x{0:08x} (unavailable)'.format(integer)
+
+    return '{0:d}'.format(integer)
+
+  def _ReadFileFooter(self, file_object, format_version=None):
     """Reads the file footer.
+
+    Args:
+      file_object (file): file-like object.
+      format_version (Optional[int]): format version.
+
+    Returns:
+      cim_map_footer: file footer.
+
+    Raises:
+      ParseError: if the file footer cannot be read.
+    """
+    if not format_version:
+      format_version = self._format_version
+
+    file_offset = file_object.tell()
+
+    if format_version == 1:
+      data_type_map = self._GetDataTypeMap('cim_map_footer_v1')
+    else:
+      data_type_map = self._GetDataTypeMap('cim_map_footer_v2')
+
+    file_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file footer')
+
+    if self._debug:
+      self._DebugPrintStructureObject(file_footer, self._DEBUG_INFO_FILE_FOOTER)
+
+    return file_footer
+
+  def _ReadDetermineFormatVersion(self, file_object):
+    """Reads the file footer to determine the format version.
 
     Args:
       file_object (file): file-like object.
@@ -1554,163 +801,120 @@ class MappingFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file footer cannot be read.
     """
-    file_offset = file_object.tell()
+    file_object.seek(-4, os.SEEK_END)
 
-    file_footer = self._ReadStructure(
-        file_object, file_offset, self._FILE_FOOTER_SIZE, self._FILE_FOOTER,
-        'file footer')
+    try:
+      file_footer = self._ReadFileFooter(file_object, format_version=1)
+      self._format_version = 1
 
-    if self._debug:
-      self._DebugPrintStructureObject(file_footer, self._DEBUG_INFO_FILE_FOOTER)
+    except errors.ParseError:
+      file_footer = None
 
-    if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
-      raise errors.ParseError(
-          'Unsupported file footer signature: 0x{0:08x}'.format(
-              file_footer.signature))
+    if not file_footer:
+      file_object.seek(-8, os.SEEK_END)
 
-  def _ReadFileHeader(self, file_object, file_offset=0):
+      try:
+        file_footer = self._ReadFileFooter(file_object, format_version=2)
+        self._format_version = 2
+      except errors.ParseError:
+        file_footer = None
+
+    if not file_footer:
+      raise errors.ParseError('Unable to read file footer.')
+
+  def _ReadFileHeader(self, file_object):
     """Reads the file header.
 
     Args:
       file_object (file): file-like object.
-      file_offset (Optional[int]): offset of the mappings file header
-          relative to the start of the file.
+
+    Returns:
+      cim_map_header: file header.
 
     Raises:
       ParseError: if the file header cannot be read.
     """
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+    file_offset = file_object.tell()
+
+    if self._format_version == 1:
+      data_type_map = self._GetDataTypeMap('cim_map_header_v1')
+    else:
+      data_type_map = self._GetDataTypeMap('cim_map_header_v2')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
-    if file_header.signature != self._FILE_HEADER_SIGNATURE:
-      raise errors.ParseError(
-          'Unsupported file header signature: 0x{0:08x}'.format(
-              file_header.signature))
+    return file_header
 
-  def _ReadMappings(self, file_object):
-    """Reads the mappings.
+  def _ReadMappingTable(self, file_object):
+    """Reads the mapping tables.
 
     Args:
       file_object (file): file-like object.
+
+    Returns:
+      mapping_table: mapping table.
 
     Raises:
       ParseError: if the mappings cannot be read.
     """
     file_offset = file_object.tell()
-    mappings_array = self._ReadPageNumbersTable(
-        file_object, file_offset, 'mappings')
 
-    if self._debug:
-      self._DebugPrintPageNumbersTable(
-          'Mapping entry', mappings_array,
-          unavailable_page_numbers=set([0xffffffff]))
-
-    self.mappings = mappings_array
-
-  def _ReadPageNumbersTable(self, file_object, file_offset, description):
-    """Reads a page numbers table.
-
-    Args:
-      file_object (file): a file-like object.
-      file_offset (int): offset of the data relative to the start of
-          the file-like object.
-      description (str): description of the page numbers table.
-
-    Returns:
-      tuple[int, ...]: page number array.
-
-    Raises:
-      ParseError: if the page numbers table cannot be read.
-    """
-    file_object.seek(file_offset, os.SEEK_SET)
-
-    if self._debug:
-      self._DebugPrintText('Reading {0:s} at offset: 0x{1:08x}\n'.format(
-          description, file_offset))
-
-    try:
-      number_of_entries_data = file_object.read(self._UINT32LE_SIZE)
-    except IOError as exception:
-      raise errors.ParseError((
-          'Unable to read number of entries data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
-
-    if len(number_of_entries_data) != self._UINT32LE_SIZE:
-      raise errors.ParseError((
-          'Unable to read number of entries data at offset: 0x{0:08x} '
-          'with error: missing data').format(file_offset))
-
-    try:
-      number_of_entries = self._UINT32LE.MapByteStream(number_of_entries_data)
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          'Unable to parse number of entries at offset: 0x{0:08x} with error '
-          'error: {1!s}').format(file_offset, exception))
-
-    if number_of_entries == 0:
-      entries_data = b''
+    if self._format_version == 1:
+      data_type_map = self._GetDataTypeMap('cim_map_mapping_table_v1')
     else:
-      entries_data_size = number_of_entries * self._UINT32LE_SIZE
+      data_type_map = self._GetDataTypeMap('cim_map_mapping_table_v2')
 
-      try:
-        entries_data = file_object.read(entries_data_size)
-      except IOError as exception:
-        raise errors.ParseError((
-            'Unable to read entries data at offset: 0x{0:08x} with error: '
-            '{1!s}').format(file_offset, exception))
-
-      if len(entries_data) != entries_data_size:
-        raise errors.ParseError((
-            'Unable to read entries data at offset: 0x{0:08x} with error: '
-            'missing data').format(file_offset))
+    mapping_table, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'mapping table')
 
     if self._debug:
-      data_description = '{0:s} data'.format(description.title())
-      self._DebugPrintData(data_description, b''.join([
-          number_of_entries_data, entries_data]))
+      self._DebugPrintMappingTable(mapping_table)
 
-      self._DebugPrintDecimalValue('Number of entries', number_of_entries)
+    return mapping_table
 
-    if not entries_data:
-      page_numbers = tuple()
-    else:
-      context = dtfabric_data_maps.DataTypeMapContext(values={
-          'number_of_entries': number_of_entries})
-
-      try:
-        page_numbers = self._PAGE_NUMBERS.MapByteStream(
-            entries_data, context=context)
-
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError((
-            'Unable to parse entries data at offset: 0x{0:08x} with error: '
-            '{1!s}').format(file_offset, exception))
-
-    return page_numbers
-
-  def _ReadUnknownEntries(self, file_object):
-    """Reads unknown entries.
+  def _ReadUnknownTable(self, file_object):
+    """Reads the unknown tables.
 
     Args:
       file_object (file): file-like object.
 
+    Returns:
+      unknown_table: unknown table.
+
     Raises:
-      ParseError: if the unknown entries cannot be read.
+      ParseError: if the unknowns cannot be read.
     """
     file_offset = file_object.tell()
-    unknown_entries_array = self._ReadPageNumbersTable(
-        file_object, file_offset, 'unknown entries')
+
+    data_type_map = self._GetDataTypeMap('cim_map_unknown_table')
+
+    unknown_table, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'unknown table')
 
     if self._debug:
-      self._DebugPrintPageNumbersTable(
-          'Unknown entry', unknown_entries_array,
-          unavailable_page_numbers=set([0xffffffff]))
+      self._DebugPrintUnknownTable(unknown_table)
 
-      self._DebugPrintText('\n')
+    return unknown_table
+
+  def GetIndexMappingTable(self):
+    """Retrieves the index mapping table.
+
+    Returns:
+      mapping_table: index mapping table.
+    """
+    return self._mapping_table1
+
+  def GetObjectsMappingTable(self):
+    """Retrieves the objects mapping table.
+
+    Returns:
+      mapping_table: objects mapping table.
+    """
+    return self._mapping_table1
 
   def ReadFileObject(self, file_object):
     """Reads a mappings file-like object.
@@ -1721,14 +925,25 @@ class MappingFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    file_offset = file_object.tell()
+    self._ReadDetermineFormatVersion(file_object)
 
-    self._ReadFileHeader(file_object, file_offset=file_offset)
-    self._ReadMappings(file_object)
-    self._ReadUnknownEntries(file_object)
-    self._ReadFileFooter(file_object)
+    file_object.seek(0, os.SEEK_SET)
 
-    self.data_size = file_object.tell() - file_offset
+    file_header = self._ReadFileHeader(file_object)
+    self.sequence_number = file_header.sequence_number
+
+    self._mapping_table1 = self._ReadMappingTable(file_object)
+
+    self._ReadUnknownTable(file_object)
+    self._ReadFileFooter(file_object, format_version=1)
+
+    if self._format_version == 2:
+      self._ReadFileHeader(file_object)
+
+      self._mapping_table2 = self._ReadMappingTable(file_object)
+
+      self._ReadUnknownTable(file_object)
+      self._ReadFileFooter(file_object, format_version=2)
 
 
 class ObjectsDataFile(data_format.BinaryDataFile):
@@ -1741,17 +956,17 @@ class ObjectsDataFile(data_format.BinaryDataFile):
   _KEY_VALUE_RECORD_IDENTIFIER_INDEX = 2
   _KEY_VALUE_DATA_SIZE_INDEX = 3
 
-  def __init__(self, objects_mapping_file, debug=False, output_writer=None):
+  def __init__(self, objects_mapping_table, debug=False, output_writer=None):
     """Initializes an objects data file.
 
     Args:
-      objects_mapping_file (MappingFile): objects mapping file.
+      objects_mapping_table (mapping_table): objects mapping table.
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(ObjectsDataFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self._objects_mapping_file = objects_mapping_file
+    self._objects_mapping_table = objects_mapping_table
 
   def _GetKeyValues(self, key):
     """Retrieves the key values from the key.
@@ -1829,23 +1044,35 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     objects_page.ReadPage(self._file_object, file_offset, data_page=data_page)
     return objects_page
 
-  def GetMappedPage(self, page_number, data_page=False):
+  def _ResolveMappedPageNumber(self, mapped_page_number):
+    """Resolves a mapped page number.
+
+    Args:
+      mapped_page_number (int): mapped page number.
+
+    Returns:
+      int: (physical) page number.
+    """
+    mapping_table_entry = self._objects_mapping_table.entries[
+        mapped_page_number]
+    return mapping_table_entry.page_number
+
+  def GetMappedPage(self, mapped_page_number, data_page=False):
     """Retrieves a specific mapped page.
 
     Args:
-      page_number (int): page number.
+      mapped_page_number (int): mapped page number.
       data_page (Optional[bool]): True if the page is a data page.
 
     Returns:
       ObjectsDataPage: objects data page or None.
     """
-    mapped_page_number = self._objects_mapping_file.mappings[page_number]
+    page_number = self._ResolveMappedPageNumber(mapped_page_number)
 
-    objects_page = self._GetPage(mapped_page_number, data_page=data_page)
+    objects_page = self._GetPage(page_number, data_page=data_page)
     if not objects_page:
-      logging.warning(
-          'Unable to read objects data mapped page: {0:d}.'.format(
-              page_number))
+      logging.warning('Unable to read objects data page: {0:d}.'.format(
+          page_number))
       return None
 
     return objects_page
@@ -1862,13 +1089,14 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the object record cannot be retrieved.
     """
-    key, page_number, record_identifier, data_size = self._GetKeyValues(key)
+    key, mapped_page_number, record_identifier, data_size = (
+        self._GetKeyValues(key))
 
     data_segments = []
     data_page = False
     data_segment_index = 0
     while data_size > 0:
-      object_page = self.GetMappedPage(page_number, data_page=data_page)
+      object_page = self.GetMappedPage(mapped_page_number, data_page=data_page)
       if not object_page:
         errors.ParseError(
             'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
@@ -1893,15 +1121,13 @@ class ObjectsDataFile(data_format.BinaryDataFile):
       data_segments.append(data_segment)
       data_size -= len(data_segment)
       data_segment_index += 1
-      page_number += 1
+      mapped_page_number += 1
 
-    data_type, _, _ = key.partition('_')
+    _, _, key_name = key.rpartition('\\')
+    data_type, _, _ = key_name.partition('_')
     object_record_data = b''.join(data_segments)
 
-    # TODO: set file_offset
-    return ObjectRecord(
-        data_type, object_record_data, debug=self._debug,
-        output_writer=self._output_writer)
+    return ObjectRecord(data_type, object_record_data)
 
   def ReadFileObject(self, file_object):
     """Reads an objects data file-like object.
@@ -1915,6 +1141,792 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     self._file_object = file_object
 
 
+class ClassDefinition(data_format.BinaryDataFormat):
+  """Class definition.
+
+  Attributes:
+    name (str): name of the class.
+    properties (dict[str, ClassDefinitionProperty]): properties.
+    qualifiers (dict[str, object]): qualifiers.
+    super_class_name (str): name of the super class.
+  """
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
+
+  _CIM_DATA_TYPES = _FABRIC.CreateDataTypeMap('cim_data_types')
+
+  _DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD = [
+      ('super_class_name_size', 'Super class name size',
+       '_FormatIntegerAsDecimal'),
+      ('super_class_name', 'Super class name', '_FormatString'),
+      ('date_time', 'Unknown date and time', '_FormatIntegerAsFiletime'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('data', 'Data', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_CLASS_DEFINITION_HEADER = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
+      ('class_name_offset', 'Class name offset',
+       '_FormatIntegerAsHexadecimal8'),
+      ('default_value_size', 'Default value size', '_FormatIntegerAsDecimal'),
+      ('super_class_name_block_size', 'Super class name block size',
+       '_FormatIntegerAsDecimal'),
+      ('super_class_name_block_data', 'Super class name block data',
+       '_FormatDataInHexadecimal'),
+      ('qualifiers_block_size', 'Qualifiers block size',
+       '_FormatIntegerAsDecimal'),
+      ('qualifiers_block_data', 'Qualifiers block data',
+       '_FormatDataInHexadecimal'),
+      ('number_of_property_descriptors', 'Number of property descriptors',
+       '_FormatIntegerAsDecimal'),
+      ('property_descriptors', 'Property descriptors',
+       '_FormatArrayOfPropertyDescriptors'),
+      ('default_value_data', 'Default value data', '_FormatDataInHexadecimal'),
+      ('properties_block_size', 'Properties block size',
+       '_FormatIntegerAsPropertiesBlockSize'),
+      ('properties_block_data', 'Properties block data',
+       '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_CLASS_NAME = [
+      ('string_flags', 'Class name string flags',
+       '_FormatIntegerAsHexadecimal2'),
+      ('string', 'Class name string', '_FormatString')]
+
+  _DEBUG_INFO_QUALIFIER_DESCRIPTOR = [
+      ('name_offset', 'Name offset', '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
+      ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
+      ('value_floating_point', 'Value', '_FormatFloatingPoint'),
+      ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
+      ('value_offset', 'Value offset', '_FormatIntegerAsHexadecimal8')]
+
+  _DEBUG_INFO_PROPERTY_DEFINITION = [
+      ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
+      ('index', 'Index', '_FormatIntegerAsDecimal'),
+      ('offset', 'Offset', '_FormatIntegerAsHexadecimal8'),
+      ('level', 'Level', '_FormatIntegerAsDecimal'),
+      ('qualifiers_block_size', 'Qualifiers block size',
+       '_FormatIntegerAsDecimal'),
+      ('qualifiers_block_data', 'Qualifiers block data',
+       '_FormatDataInHexadecimal'),
+      ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
+      ('value_floating_point', 'Value', '_FormatFloatingPoint'),
+      ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
+      ('value_offset', 'Value offset', '_FormatIntegerAsHexadecimal8')]
+
+  _PREDEFINED_NAMES = {
+      1: 'key',
+      3: 'read',
+      4: 'write',
+      6: 'provider',
+      7: 'dynamic',
+      10: 'type'}
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes a class definition."""
+    super(ClassDefinition, self).__init__(
+        debug=debug, output_writer=output_writer)
+    self.name = None
+    self.properties = {}
+    self.qualifiers = {}
+    self.super_class_name = None
+
+  def _DebugPrintCIMString(self, cim_string):
+    """Prints CIM string information.
+
+    Args:
+      cim_string (cim_string): CIM string.
+    """
+    value_string = '0x{0:02x}'.format(cim_string.string_flags)
+    self._DebugPrintValue('String flags', value_string)
+
+    self._DebugPrintValue('String', cim_string.string)
+
+  def _DebugPrintQualifierName(self, index, cim_string):
+    """Prints qualifier name information.
+
+    Args:
+      index (int): qualifier index.
+      cim_string (cim_string): CIM string.
+    """
+    description = 'Qualifier: {0:d} name string flags'.format(index)
+    value_string = '0x{0:02x}'.format(cim_string.string_flags)
+    self._DebugPrintValue(description, value_string)
+
+    description = 'Qualifier: {0:d} name string'.format(index)
+    self._DebugPrintValue(description, cim_string.string)
+
+  def _DebugPrintPropertyName(self, index, cim_string):
+    """Prints property name information.
+
+    Args:
+      index (int): property index.
+      cim_string (cim_string): CIM string.
+    """
+    description = 'Property: {0:d} name string flags'.format(index)
+    value_string = '0x{0:02x}'.format(cim_string.string_flags)
+    self._DebugPrintValue(description, value_string)
+
+    description = 'Property: {0:d} name string'.format(index)
+    self._DebugPrintValue(description, cim_string.string)
+
+  def _FormatArrayOfPropertyDescriptors(self, array_of_property_descriptors):
+    """Formats an array of property descriptors.
+
+    Args:
+      array_of_property_descriptors (list[property_descriptor]): array of
+          property descriptors.
+
+    Returns:
+      str: formatted array of property descriptors.
+    """
+    lines = []
+    for index, property_descriptor in enumerate(array_of_property_descriptors):
+      description = '    Property descriptor: {0:d} name offset'.format(index)
+      value_string = '0x{0:08x}'.format(property_descriptor.name_offset)
+      line = self._FormatValue(description, value_string)
+      lines.append(line)
+
+      description = '    Property descriptor: {0:d} definition offset'.format(
+          index)
+      value_string = '0x{0:08x}'.format(property_descriptor.definition_offset)
+      line = self._FormatValue(description, value_string)
+      lines.append(line)
+
+    return ''.join(lines)
+
+  def _FormatIntegerAsDataType(self, integer):
+    """Formats an integer as a data type.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a data type.
+    """
+    data_type_string = self._CIM_DATA_TYPES.GetName(integer & 0x0fff)
+    # TODO: format flags 0x2000 and 0x4000
+    return '0x{0:08x} ({1:s})'.format(integer, data_type_string or 'UNKNOWN')
+
+  def _FormatIntegerAsPropertiesBlockSize(self, integer):
+    """Formats an integer as a properties block size.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a properties block size.
+    """
+    return '{0:d} (0x{1:08x})'.format(integer & 0x7fffffff, integer)
+
+  def _ReadClassDefinitionHeader(
+      self, class_definition_data, record_data_offset):
+    """Reads a class definition header.
+
+    Args:
+      class_definition_data (bytes): class definition data.
+      record_data_offset (int): offset of the class definition data relative to
+          the start of the record data.
+
+    Returns:
+      class_definition_header: class definition header.
+
+    Raises:
+      ParseError: if the class definition cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText((
+          'Reading class definition header at offset: {0:d} '
+          '(0x{0:08x}).\n').format(record_data_offset))
+
+    data_type_map = self._GetDataTypeMap('class_definition_header')
+
+    try:
+      class_definition_header = self._ReadStructureFromByteStream(
+          class_definition_data, record_data_offset, data_type_map,
+          'Class definition header')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map class definition header data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(record_data_offset, exception))
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          class_definition_header, self._DEBUG_INFO_CLASS_DEFINITION_HEADER)
+
+    return class_definition_header
+
+  def _ReadClassDefinitionMethods(self, class_definition_data):
+    """Reads a class definition methods.
+
+    Args:
+      class_definition_data (bytes): class definition data.
+
+    Raises:
+      ParseError: if the class definition cannot be read.
+    """
+    # TODO: set record_data_offset
+    record_data_offset = 0
+
+    if self._debug:
+      self._DebugPrintText((
+          'Reading class definition methods at offset: {0:d} '
+          '(0x{0:08x}).\n').format(record_data_offset))
+
+    data_type_map = self._GetDataTypeMap('class_definition_methods')
+
+    try:
+      class_definition_methods = self._ReadStructureFromByteStream(
+          class_definition_data, record_data_offset, data_type_map,
+          'Class definition methods')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map class definition methods data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(record_data_offset, exception))
+
+    methods_block_size = class_definition_methods.methods_block_size
+
+    if self._debug:
+      value_string = '{0:d} (0x{1:08x})'.format(
+          methods_block_size & 0x7fffffff, methods_block_size)
+      self._DebugPrintValue('Methods block size', value_string)
+
+      self._DebugPrintData(
+          'Methods block data', class_definition_methods.methods_block_data)
+
+  def _ReadClassDefinitionName(
+      self, name_offset, properties_data, properties_data_offset):
+    """Reads a class definition name.
+
+    Args:
+      name_offset (int): name offset.
+      properties_data (bytes): class definition properties data.
+      properties_data_offset (int): offset of the class definition
+          properties data relative to the start of the record data.
+
+    Returns:
+      str: class name.
+
+    Raises:
+      ParseError: if the name cannot be read.
+    """
+    record_data_offset = properties_data_offset + name_offset
+    data_type_map = self._GetDataTypeMap('cim_string')
+
+    try:
+      class_name = self._ReadStructureFromByteStream(
+          properties_data[name_offset:], record_data_offset, data_type_map,
+          'Class name')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map class name data at offset: 0x{0:08x} with error: '
+          '{1!s}').format(record_data_offset, exception))
+
+    if self._debug:
+      self._DebugPrintStructureObject(class_name, self._DEBUG_INFO_CLASS_NAME)
+
+    return class_name.string
+
+  def _ReadClassDefinitionPropertyDefinition(
+      self, definition_offset, properties_data, properties_data_offset):
+    """Reads a class definition property definition.
+
+    Args:
+      definition_offset (int): definition offset.
+      properties_data (bytes): class definition properties data.
+      properties_data_offset (int): offset of the class definition
+          properties data relative to the start of the record data.
+
+    Returns:
+      property_definition: property definition.
+
+    Raises:
+      ParseError: if the property name cannot be read.
+    """
+    record_data_offset = properties_data_offset + definition_offset
+    data_type_map = self._GetDataTypeMap('property_definition')
+
+    try:
+      property_definition = self._ReadStructureFromByteStream(
+          properties_data[definition_offset:], record_data_offset,
+          data_type_map, 'Property definition')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map property definition data at offset: 0x{0:08x} with '
+          'error: {1!s}').format(record_data_offset, exception))
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          property_definition, self._DEBUG_INFO_PROPERTY_DEFINITION)
+
+    return property_definition
+
+  def _ReadClassDefinitionPropertyName(
+      self, property_index, name_offset, properties_data,
+      properties_data_offset):
+    """Reads a class definition property name.
+
+    Args:
+      index (int): property index.
+      name_offset (int): name offset.
+      properties_data (bytes): class definition properties data.
+      properties_data_offset (int): offset of the class definition
+          properties data relative to the start of the record data.
+
+    Returns:
+      str: property name.
+
+    Raises:
+      ParseError: if the property name cannot be read.
+    """
+    if name_offset & 0x80000000:
+      name_index = name_offset & 0x7fffffff
+      property_name = self._PREDEFINED_NAMES.get(
+          name_index, 'UNKNOWN_{0:d}'.format(name_index))
+
+      if self._debug:
+        description = 'Property: {0:d} name index'.format(property_index)
+        value_string = '{0:d}'.format(name_index)
+        self._DebugPrintValue(description, value_string)
+
+        description = 'Property: {0:d} name'.format(property_index)
+        self._DebugPrintValue(description, property_name)
+
+    else:
+      record_data_offset = properties_data_offset + name_offset
+      data_type_map = self._GetDataTypeMap('cim_string')
+
+      try:
+        cim_string = self._ReadStructureFromByteStream(
+            properties_data[name_offset:], record_data_offset, data_type_map,
+           'Property name')
+      except (ValueError, errors.ParseError) as exception:
+        raise errors.ParseError((
+            'Unable to map property name data at offset: 0x{0:08x} with '
+            'error: {1!s}').format(record_data_offset, exception))
+
+      if self._debug:
+        self._DebugPrintPropertyName(property_index, cim_string)
+
+      property_name = cim_string.string
+
+    return property_name
+
+  def _ReadClassDefinitionProperties(
+      self, property_descriptors, properties_data, properties_data_offset):
+    """Reads class definition properties.
+
+    Args:
+      property_descriptors (list[property_descriptor]): property descriptors.
+      properties_data (bytes): class definition properties data.
+      properties_data_offset (int): offset of the class definition
+          properties data relative to the start of the record data.
+
+    Returns:
+      dict[str, ClassDefinitionProperty]: properties.
+
+    Raises:
+      ParseError: if the properties cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText('Reading class definition properties.\n')
+
+    properties = {}
+    for property_index, property_descriptor in enumerate(property_descriptors):
+      property_name = self._ReadClassDefinitionPropertyName(
+          property_index, property_descriptor.name_offset, properties_data,
+          properties_data_offset)
+
+      property_definition = self._ReadClassDefinitionPropertyDefinition(
+          property_descriptor.definition_offset, properties_data,
+          properties_data_offset)
+
+      qualifiers_block_offset = property_descriptor.definition_offset + 18
+
+      property_qualifiers = self._ReadQualifiers(
+          property_definition.qualifiers_block_data, qualifiers_block_offset,
+          properties_data, properties_data_offset)
+
+      class_definition_property = ClassDefinitionProperty()
+      class_definition_property.name = property_name
+      class_definition_property.qualifiers = property_qualifiers
+
+      properties[property_name] = class_definition_property
+
+    return properties
+
+  def _ReadQualifierName(
+      self, qualifier_index, name_offset, properties_data, record_data_offset):
+    """Reads a qualifier name.
+
+    Args:
+      qualifier_index (int): qualifier index.
+      name_offset (int): name offset.
+      properties_data (bytes): properties data.
+      record_data_offset (int): offset of the properties data relative to
+          the start of the record data.
+
+    Returns:
+      str: qualifier name.
+
+    Raises:
+      ParseError: if the qualifier name cannot be read.
+    """
+    if name_offset & 0x80000000:
+      name_index = name_offset & 0x7fffffff
+      qualifier_name = self._PREDEFINED_NAMES.get(
+          name_index, 'UNKNOWN_{0:d}'.format(name_index))
+
+      if self._debug:
+        description = 'Qualifier: {0:d} name index'.format(qualifier_index)
+        value_string = '{0:d}'.format(name_index)
+        self._DebugPrintValue(description, value_string)
+
+        description = 'Qualifier: {0:d} name'.format(qualifier_index)
+        self._DebugPrintValue(description, qualifier_name)
+
+    else:
+      record_data_offset += name_offset
+      data_type_map = self._GetDataTypeMap('cim_string')
+
+      try:
+        cim_string = self._ReadStructureFromByteStream(
+            properties_data[name_offset:], record_data_offset, data_type_map,
+            'Qualifier name')
+      except (ValueError, errors.ParseError) as exception:
+        raise errors.ParseError((
+            'Unable to map qualifier name data at offset: 0x{0:08x} with '
+            'error: {1!s}').format(record_data_offset, exception))
+
+      if self._debug:
+        self._DebugPrintQualifierName(qualifier_index, cim_string)
+
+      qualifier_name = cim_string.string
+
+    return qualifier_name
+
+  def _ReadQualifiers(
+      self, qualifiers_data, qualifiers_data_offset, properties_data,
+      properties_data_offset):
+    """Reads qualifiers.
+
+    Args:
+      qualifiers_data (bytes): qualifiers data.
+      qualifiers_data_offset (int): offset of the qualifiers data relative
+          to the start of the record data.
+      properties_data (bytes): properties data.
+      properties_data_offset (int): offset of the properties data relative
+          to the start of the record data.
+
+    Returns:
+      dict[str, object]: qualifier names and values.
+
+    Raises:
+      ParseError: if the qualifiers cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText(
+          'Reading qualifiers at offset: {0:d} (0x{0:08x}).\n'.format(
+              qualifiers_data_offset))
+
+    qualifiers = {}
+    qualifiers_data_offset = 0
+    qualifier_index = 0
+
+    while qualifiers_data_offset < len(qualifiers_data):
+      record_data_offset = qualifiers_data_offset + qualifiers_data_offset
+      data_type_map = self._GetDataTypeMap('qualifier_descriptor')
+
+      context = dtfabric_data_maps.DataTypeMapContext()
+
+      try:
+        qualifier_descriptor = self._ReadStructureFromByteStream(
+            qualifiers_data[qualifiers_data_offset:], record_data_offset,
+            data_type_map, 'Qualifier descriptor', context=context)
+      except (ValueError, errors.ParseError) as exception:
+        raise errors.ParseError((
+            'Unable to map qualifier descriptor data at offset: 0x{0:08x} with '
+            'error: {1!s}').format(record_data_offset, exception))
+
+      if self._debug:
+        self._DebugPrintStructureObject(
+            qualifier_descriptor, self._DEBUG_INFO_QUALIFIER_DESCRIPTOR)
+
+      qualifier_name = self._ReadQualifierName(
+          qualifier_index, qualifier_descriptor.name_offset, properties_data,
+          properties_data_offset)
+
+      cim_data_type = self._CIM_DATA_TYPES.GetName(
+          qualifier_descriptor.value_data_type)
+      if cim_data_type == 'CIM-TYPE-BOOLEAN':
+        qualifier_value = qualifier_descriptor.value_boolean
+
+      elif cim_data_type in (
+          'CIM-TYPE-SINT16', 'CIM-TYPE-SINT32', 'CIM-TYPE-SINT8',
+          'CIM-TYPE-UINT8', 'CIM-TYPE-UINT16', 'CIM-TYPE-UINT16',
+          'CIM-TYPE-SINT64', 'CIM-TYPE-UINT64'):
+        qualifier_value = qualifier_descriptor.value_integer
+
+      elif cim_data_type in ('CIM-TYPE-REAL32', 'CIM-TYPE-REAL64'):
+        qualifier_value = qualifier_descriptor.value_floating_point
+
+      elif cim_data_type == 'CIM-TYPE-STRING':
+        qualifier_value = self._ReadQualifierValueString(
+            qualifier_descriptor.value_offset, properties_data,
+            properties_data_offset)
+
+      elif cim_data_type == 'CIM-TYPE-DATETIME':
+        # TODO: implement
+        qualifier_value = None
+
+      elif cim_data_type == 'CIM-TYPE-REFERENCE':
+        # TODO: implement
+        qualifier_value = None
+
+      elif cim_data_type == 'CIM-TYPE-CHAR16':
+        # TODO: implement
+        qualifier_value = None
+
+      else:
+        qualifier_value = None
+
+      if self._debug:
+        self._DebugPrintText('\n')
+
+      qualifiers[qualifier_name] = qualifier_value
+
+      qualifiers_data_offset += context.byte_size
+      qualifier_index += 1
+
+    return qualifiers
+
+  def _ReadQualifierValueString(
+      self, value_offset, properties_data, record_data_offset):
+    """Reads a qualifier value.
+
+    Args:
+      value_offset (int): value offset.
+      properties_data (bytes): properties data.
+      record_data_offset (int): offset of the properties data relative to
+          the start of the record data.
+
+    Returns:
+      str: qualifier value.
+
+    Raises:
+      ParseError: if the qualifier value cannot be read.
+    """
+    record_data_offset += value_offset
+    data_type_map = self._GetDataTypeMap('cim_string')
+
+    try:
+      cim_string = self._ReadStructureFromByteStream(
+          properties_data[value_offset:], record_data_offset, data_type_map,
+          'Qualifier value')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map qualifier value string data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(record_data_offset, exception))
+
+    if self._debug:
+      self._DebugPrintCIMString(cim_string)
+
+    return cim_string.string
+
+  def ReadObjectRecord(self, object_record):
+    """Reads a class definition from an object record.
+
+    Args:
+      object_record (ObjectRecord): object record.
+
+    Raises:
+      ParseError: if the class definition cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText('Reading class definition object record.\n')
+
+    record_data_offset = 0
+    data_type_map = self._GetDataTypeMap('class_definition_object_record')
+
+    context = dtfabric_data_maps.DataTypeMapContext()
+
+    try:
+      class_definition_object_record = self._ReadStructureFromByteStream(
+          object_record.data, record_data_offset, data_type_map,
+          'Class definition object record', context=context)
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map class definition object record data at offset: '
+          '0x{0:08x} with error: {1!s}').format(record_data_offset, exception))
+
+    record_data_offset += context.byte_size
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          class_definition_object_record,
+          self._DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD)
+
+    class_definition_header = self._ReadClassDefinitionHeader(
+        class_definition_object_record.data, record_data_offset)
+
+    qualifiers_block_offset = (
+        record_data_offset + 9 +
+        class_definition_header.super_class_name_block_size)
+
+    properties_block_offset = (
+        qualifiers_block_offset +
+        class_definition_header.qualifiers_block_size + 4 + (
+            class_definition_header.number_of_property_descriptors * 8 ) +
+        class_definition_header.default_value_size)
+
+    class_name = self._ReadClassDefinitionName(
+        class_definition_header.class_name_offset,
+        class_definition_header.properties_block_data,
+        properties_block_offset)
+
+    class_qualifiers = {}
+    if class_definition_header.qualifiers_block_size > 4:
+      class_qualifiers = self._ReadQualifiers(
+          class_definition_header.qualifiers_block_data,
+          qualifiers_block_offset,
+          class_definition_header.properties_block_data,
+          properties_block_offset)
+
+    class_properties = self._ReadClassDefinitionProperties(
+        class_definition_header.property_descriptors,
+        class_definition_header.properties_block_data,
+        properties_block_offset)
+
+    data_offset = (
+        12 + (class_definition_object_record.super_class_name_size * 2) +
+        class_definition_object_record.data_size)
+
+    if data_offset < len(object_record.data):
+      if self._debug:
+        self._DebugPrintData('Methods data', object_record.data[data_offset:])
+
+      self._ReadClassDefinitionMethods(object_record.data[data_offset:])
+
+    self.super_class_name = class_definition_object_record.super_class_name
+    self.name = class_name
+    self.properties = class_properties
+    self.qualifiers = class_qualifiers
+
+
+class Interface(data_format.BinaryDataFormat):
+  """Interface.
+
+  Attributes:
+    name (str): name of the interface.
+  """
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
+
+  _DEBUG_INFO_INTERFACE_OBJECT_RECORD = [
+      ('string_digest_hash', 'String digest hash', '_FormatString'),
+      ('date_time1', 'Unknown data and time1', '_FormatIntegerAsFiletime'),
+      ('date_time2', 'Unknown data and time2', '_FormatIntegerAsFiletime'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('data', 'Data', '_FormatDataInHexadecimal')]
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes an interface."""
+    super(Interface, self).__init__(debug=debug, output_writer=output_writer)
+    self.name = None
+
+  def ReadObjectRecord(self, object_record):
+    """Reads a class definition from an object record.
+
+    Args:
+      object_record (ObjectRecord): object record.
+
+    Raises:
+      ParseError: if the class definition cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText('Reading interface object record.\n')
+
+    record_data_offset = 0
+    data_type_map = self._GetDataTypeMap('interface_object_record')
+
+    try:
+      interface_object_record = self._ReadStructureFromByteStream(
+          object_record.data, record_data_offset, data_type_map,
+          'Interface object record')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map interface object record data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(record_data_offset, exception))
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          interface_object_record, self._DEBUG_INFO_INTERFACE_OBJECT_RECORD)
+
+
+class Registration(data_format.BinaryDataFormat):
+  """Registration.
+
+  Attributes:
+    name (str): name of the registration.
+  """
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
+
+  _DEBUG_INFO_REGISTRATION_OBJECT_RECORD = [
+      ('name_space_string_size', 'Name space string size',
+       '_FormatIntegerAsDecimal'),
+      ('name_space_string', 'Name space string', '_FormatString'),
+      ('class_name_string_size', 'Class name string size',
+       '_FormatIntegerAsDecimal'),
+      ('class_name_string', 'Class name string', '_FormatString'),
+      ('attribute_name_string_size', 'Attribute name string size',
+       '_FormatIntegerAsDecimal'),
+      ('attribute_name_string', 'Attribute name string', '_FormatString'),
+      ('attribute_value_string_size', 'Attribute value string size',
+       '_FormatIntegerAsDecimal'),
+      ('attribute_value_string', 'Attribute value string', '_FormatString')]
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes a registration."""
+    super(Registration, self).__init__(debug=debug, output_writer=output_writer)
+    self.name = None
+
+  def ReadObjectRecord(self, object_record):
+    """Reads a class definition from an object record.
+
+    Args:
+      object_record (ObjectRecord): object record.
+
+    Raises:
+      ParseError: if the class definition cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText('Reading registration object record.\n')
+
+    record_data_offset = 0
+    data_type_map = self._GetDataTypeMap('registration_object_record')
+
+    try:
+      registration_object_record = self._ReadStructureFromByteStream(
+          object_record.data, record_data_offset, data_type_map,
+          'Registration object record')
+    except (ValueError, errors.ParseError) as exception:
+      raise errors.ParseError((
+          'Unable to map registration object record data at offset: 0x{0:08x} '
+          'with error: {1!s}').format(record_data_offset, exception))
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          registration_object_record,
+          self._DEBUG_INFO_REGISTRATION_OBJECT_RECORD)
+
+
 class CIMRepository(data_format.BinaryDataFormat):
   """A CIM repository."""
 
@@ -1922,9 +1934,9 @@ class CIMRepository(data_format.BinaryDataFormat):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _MAPPING_VER = _FABRIC.CreateDataTypeMap('uint32le')
+  _MAPPING_VERSION = _FABRIC.CreateDataTypeMap('uint32le')
 
-  _MAPPING_VER_SIZE = _MAPPING_VER.GetByteSize()
+  _MAPPING_VERSION_SIZE = _MAPPING_VERSION.GetByteSize()
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a CIM repository.
@@ -1935,11 +1947,39 @@ class CIMRepository(data_format.BinaryDataFormat):
     """
     super(CIMRepository, self).__init__()
     self._debug = debug
+    self._class_definitions = {}
     self._index_binary_tree_file = None
-    self._index_mapping_file = None
     self._objects_data_file = None
-    self._objects_mapping_file = None
     self._output_writer = output_writer
+
+  def _DebugPrintClassDefinition(self, class_definition):
+    """Prints class definition information.
+
+    Args:
+      class_definition (ClassDefinition): class definition.
+    """
+    self._DebugPrintText('Class definition:\n')
+    self._DebugPrintValue('    Name', class_definition.name)
+    self._DebugPrintValue(
+        '    Super class name', class_definition.super_class_name)
+
+    for qualifier_name, qualifier_value in (
+        class_definition.qualifiers.items()):
+      description = '    Qualifier: {0:s}'.format(qualifier_name)
+      value_string = '{0!s}'.format(qualifier_value)
+      self._DebugPrintValue(description, value_string)
+
+    for property_name, class_definition_property in (
+        class_definition.properties.items()):
+      self._DebugPrintText('    Property: {0:s}\n'.format(property_name))
+
+      for qualifier_name, qualifier_value in (
+          class_definition_property.qualifiers.items()):
+        description = '        Qualifier: {0:s}'.format(qualifier_name)
+        value_string = '{0!s}'.format(qualifier_value)
+        self._DebugPrintValue(description, value_string)
+
+    self._DebugPrintText('\n')
 
   def _DebugPrintText(self, text):
     """Prints text for debugging.
@@ -1950,50 +1990,89 @@ class CIMRepository(data_format.BinaryDataFormat):
     if self._output_writer:
       self._output_writer.WriteText(text)
 
-  def _GetCurrentMappingFile(self, path):
-    """Retrieves the current mapping file.
+  def _FormatFilenameAsGlob(self, filename):
+    """Formats the filename as a case-insensitive glob.
+
+    Args:
+      filename (str): name of the file.
+
+    Returns:
+      str: case-insensitive glob of representation the filename.
+    """
+    glob_parts = []
+    for character in filename:
+      if character.isalpha():
+        glob_part = '[{0:s}{1:s}]'.format(character.upper(), character.lower())
+      else:
+        glob_part = character
+      glob_parts.append(glob_part)
+
+    return ''.join(glob_parts)
+
+  def _GetActiveMappingFile(self, path):
+    """Retrieves the active mapping file.
 
     Args:
       path (str): path to the CIM repository.
 
+    Returns:
+      MappingFile: mapping file or None if not available.
+
     Raises:
-      ParseError: if the current mapping file cannot be read.
+      ParseError: if the mapping version file cannot be read.
     """
-    mapping_file_glob = glob.glob(
-        os.path.join(path, '[Mm][Aa][Pp][Pp][Ii][Nn][Gg].[Vv][Ee][Rr]'))
+    mapping_ver_file_number = None
 
-    active_mapping_file = 0
-    if mapping_file_glob:
-      with open(mapping_file_glob[0], 'rb') as file_object:
-        active_mapping_file = self._ReadStructure(
-            file_object, 0, self._MAPPING_VER_SIZE, self._MAPPING_VER,
+    file_object = self._OpenMappingVersionFile(path)
+    if file_object:
+      try:
+        mapping_ver_file_number = self._ReadStructure(
+            file_object, 0, self._MAPPING_VERSION_SIZE, self._MAPPING_VERSION,
             'Mapping.ver')
+      finally:
+        file_object.close()
 
       if self._debug:
-        self._DebugPrintText('Active mapping file: {0:d}'.format(
-            active_mapping_file))
+        self._DebugPrintText('Mapping.ver file number: {0:d}\n'.format(
+            mapping_ver_file_number))
 
-    if mapping_file_glob:
-      mapping_file_glob = glob.glob(os.path.join(
-          path, '[Mm][Aa][Pp][Pp][Ii][Nn][Gg]{0:d}.[Mm][Aa][Pp]'.format(
-              active_mapping_file)))
-    else:
-      mapping_file_glob = glob.glob(os.path.join(
-          path, '[Mm][Aa][Pp][Pp][Ii][Nn][Gg][1-3].[Mm][Aa][Pp]'))
+    active_mapping_file = None
+    active_mapping_file_number = None
 
-    # TODO: determine active mapping file for Windows Vista and later.
-    for mapping_file_path in mapping_file_glob:
+    # Unsure how reliable this method is since multiple index[1-3].map files
+    # can have the same sequence number but contain different mappings.
+    for mapping_file_number in range(1, 4):
+      filename_as_glob = self._FormatFilenameAsGlob(
+          'mapping{0:d}.map'.format(mapping_file_number))
+      mapping_file_glob = glob.glob(os.path.join(path, filename_as_glob))
+      if not mapping_file_glob:
+        continue
+
       if self._debug:
-        self._DebugPrintText('Reading: {0:s}'.format(mapping_file_path))
+        self._DebugPrintText('Reading: {0:s}\n'.format(mapping_file_glob[0]))
 
-      objects_mapping_file = MappingFile(
+      mapping_file = MappingFile(
           debug=self._debug, output_writer=self._output_writer)
-      objects_mapping_file.Open(mapping_file_path)
+      # TODO: change to only read limited information.
+      mapping_file.Open(mapping_file_glob[0])
 
-      index_mapping_file = MappingFile(
-          debug=self._debug, output_writer=self._output_writer)
-      index_mapping_file.Open(mapping_file_path)
-      # TODO: pass file_offset=objects_mapping_file.data_size) ?
+      if not active_mapping_file:
+        active_mapping_file = mapping_file
+        active_mapping_file_number = mapping_file_number
+      elif mapping_file.sequence_number > active_mapping_file.sequence_number:
+        active_mapping_file.Close()
+        active_mapping_file = mapping_file
+        active_mapping_file_number = mapping_file_number
+
+    if (active_mapping_file_number is not None and
+        mapping_ver_file_number != active_mapping_file_number):
+      logging.warning('Mismatch in active mapping file number.')
+
+    if self._debug:
+      self._DebugPrintText('Active mapping file: mapping{0:d}.map\n'.format(
+          active_mapping_file_number))
+
+    return active_mapping_file
 
   def _GetKeysFromIndexPage(self, index_page):
     """Retrieves the keys from an index page.
@@ -2001,117 +2080,145 @@ class CIMRepository(data_format.BinaryDataFormat):
     Yields:
       str: a CIM key.
     """
-    for key in index_page.keys:
-      yield key
-
-    for sub_page_number in index_page.sub_pages:
-      sub_index_page = self._index_binary_tree_file.GetMappedPage(
-          sub_page_number)
-      for key in self._GetKeysFromIndexPage(sub_index_page):
+    if index_page:
+      for key in index_page.keys:
         yield key
 
-  def _OpenIndexBinaryTree(self, path):
-    """Opens the CIM repository index binary tree.
+      for mapped_page_number in index_page.sub_pages:
+        sub_index_page = self._index_binary_tree_file.GetMappedPage(
+            mapped_page_number)
+        for key in self._GetKeysFromIndexPage(sub_index_page):
+          yield key
+
+  def _OpenIndexBinaryTreeFile(self, path, index_mapping_table):
+    """Opens an index binary tree.
 
     Args:
       path (str): path to the CIM repository.
+      index_mapping_table (mapping_table): index mapping table.
+
+    Returns:
+      IndexBinaryTreeFile: index binary tree file or None if not available.
     """
-    index_binary_tree_file_glob = os.path.join(
-        path, '[Ii][Nn][Dd][Ee][Xx].[Bb][Tt][Rr]')
+    filename_as_glob = self._FormatFilenameAsGlob('index.btr')
+    index_binary_tree_file_glob = os.path.join(path, filename_as_glob)
+
     index_binary_tree_file_path = glob.glob(index_binary_tree_file_glob)
-    if index_binary_tree_file_path:
-      index_binary_tree_file_path = index_binary_tree_file_path[0]
+    if not index_binary_tree_file_path:
+      return None
 
-      if self._debug:
-        self._DebugPrintText('Reading: {0:s}\n'.format(
-            index_binary_tree_file_path))
+    if self._debug:
+      self._DebugPrintText('Reading: {0:s}\n'.format(
+          index_binary_tree_file_path[0]))
 
-      # TODO: warn about missing index_mapping_file
+    index_binary_tree_file = IndexBinaryTreeFile(
+        index_mapping_table, debug=self._debug,
+        output_writer=self._output_writer)
+    index_binary_tree_file.Open(index_binary_tree_file_path[0])
 
-      self._index_binary_tree_file = IndexBinaryTreeFile(
-          self._index_mapping_file, debug=self._debug,
-          output_writer=self._output_writer)
-      self._index_binary_tree_file.Open(index_binary_tree_file_path)
+    return index_binary_tree_file
 
-  def _OpenObjectsDataFile(self, path):
-    """Opens the CIM repository objects data file.
+  def _OpenMappingFile(self, path, filename):
+    """Opens a mapping file.
 
     Args:
       path (str): path to the CIM repository.
+      filename (str): mapping file name.
+
+    Returns:
+      MappingFile: mapping file or None if not available.
     """
-    objects_data_file_glob = os.path.join(
-        path, '[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Da][Aa][Tt][Aa]')
+    filename_as_glob = self._FormatFilenameAsGlob(filename)
+    mapping_file_glob = os.path.join(path, filename_as_glob)
+
+    mapping_file_path = glob.glob(mapping_file_glob)
+    if not mapping_file_path:
+      return None
+
+    if self._debug:
+      self._DebugPrintText('Reading: {0:s}\n'.format(
+          mapping_file_path[0]))
+
+    mapping_file = MappingFile(
+        debug=self._debug, output_writer=self._output_writer)
+    mapping_file.Open(mapping_file_path[0])
+
+    return mapping_file
+
+  def _OpenMappingVersionFile(self, path):
+    """Opens a mapping version file.
+
+    Args:
+      path (str): path to the CIM repository.
+
+    Returns:
+      file: file-like object or None if not available.
+    """
+    filename_as_glob = self._FormatFilenameAsGlob('mapping.ver')
+    mapping_version_file_glob = os.path.join(path, filename_as_glob)
+
+    mapping_version_file_path = glob.glob(mapping_version_file_glob)
+    if not mapping_version_file_path:
+      return None
+
+    return open(mapping_version_file_path[0], 'rb')  # pylint: disable=consider-using-with
+
+  def _OpenObjectsDataFile(self, path, objects_mapping_table):
+    """Opens an objects data file.
+
+    Args:
+      path (str): path to the CIM repository.
+      objects_mapping_table (mapping_table): objects mapping table.
+
+    Returns:
+      ObjectsDataFile: objects data file or None if not available.
+    """
+    filename_as_glob = self._FormatFilenameAsGlob('objects.data')
+    objects_data_file_glob = os.path.join(path, filename_as_glob)
+
     objects_data_file_path = glob.glob(objects_data_file_glob)
-    if objects_data_file_path:
-      objects_data_file_path = objects_data_file_path[0]
+    if not objects_data_file_path:
+      return None
 
-      if self._debug:
-        self._DebugPrintText('Reading: {0:s}\n'.format(objects_data_file_path))
+    if self._debug:
+      self._DebugPrintText('Reading: {0:s}\n'.format(objects_data_file_path[0]))
 
-      # TODO: warn about missing objects_mapping_file
+    objects_data_file = ObjectsDataFile(
+        objects_mapping_table, debug=self._debug,
+        output_writer=self._output_writer)
+    objects_data_file.Open(objects_data_file_path[0])
 
-      self._objects_data_file = ObjectsDataFile(
-          self._objects_mapping_file, debug=self._debug,
-          output_writer=self._output_writer)
-      self._objects_data_file.Open(objects_data_file_path)
+    return objects_data_file
 
-  def _OpenIndexMappingsFile(self, path):
-    """Opens the CIM repository index mappings file.
+  def _ReadClassDefinitions(self):
+    """Reads the class definitions."""
+    index_page = self._index_binary_tree_file.GetRootPage()
+    for key in self._GetKeysFromIndexPage(index_page):
+      if '.' not in key:
+        continue
 
-    Args:
-      path (str): path to the CIM repository.
-    """
-    index_mapping_file_glob = os.path.join(
-        path, '[Ii][Nn][Dd][Ee][Xx].[Mm][Aa][Pp]')
-    index_mapping_file_path = glob.glob(index_mapping_file_glob)
-    if index_mapping_file_path:
-      index_mapping_file_path = index_mapping_file_path[0]
+      _, _, key_name = key.rpartition('\\')
+      data_type, _, _ = key_name.partition('_')
+      if data_type != 'CD':
+        continue
 
-      if self._debug:
-        self._DebugPrintText('Reading: {0:s}\n'.format(
-            index_mapping_file_path))
+      object_record = self._objects_data_file.GetObjectRecordByKey(key)
 
-      self._index_mapping_file = MappingFile(
+      class_definition = ClassDefinition(
           debug=self._debug, output_writer=self._output_writer)
-      self._index_mapping_file.Open(index_mapping_file_path)
+      class_definition.ReadObjectRecord(object_record)
 
-  def _OpenObjectsMappingsFile(self, path):
-    """Opens the CIM repository objects mappings file.
-
-    Args:
-      path (str): path to the CIM repository.
-    """
-    objects_mapping_file_glob = os.path.join(
-        path, '[Oo][Bb][Jj][Ee][Cc][Tt][Ss].[Mm][Aa][Pp]')
-    objects_mapping_file_path = glob.glob(objects_mapping_file_glob)
-    if objects_mapping_file_path:
-      objects_mapping_file_path = objects_mapping_file_path[0]
-
-      if self._debug:
-        self._DebugPrintText('Reading: {0:s}\n'.format(
-            objects_mapping_file_path))
-
-      self._objects_mapping_file = MappingFile(
-          debug=self._debug, output_writer=self._output_writer)
-      self._objects_mapping_file.Open(objects_mapping_file_path)
+      self._class_definitions[class_definition.name] = class_definition
 
   def Close(self):
     """Closes the CIM repository."""
-    if self._index_binary_tree_file:
-      self._index_binary_tree_file.Close()
-      self._index_binary_tree_file = None
-
-    if self._index_mapping_file:
-      self._index_mapping_file.Close()
-      self._index_mapping_file = None
-
     if self._objects_data_file:
       self._objects_data_file.Close()
       self._objects_data_file = None
 
-    if self._objects_mapping_file:
-      self._objects_mapping_file.Close()
-      self._objects_mapping_file = None
+    if self._index_binary_tree_file:
+      self._index_binary_tree_file.Close()
+      self._index_binary_tree_file = None
 
   def GetKeys(self):
     """Retrieves the keys.
@@ -2144,12 +2251,37 @@ class CIMRepository(data_format.BinaryDataFormat):
     Args:
       path (str): path to the CIM repository.
     """
-    # TODO: self._GetCurrentMappingFile(path)
+    active_mapping_file = None
 
-    self._OpenIndexMappingsFile(path)
-    self._OpenIndexBinaryTree(path)
-    self._OpenObjectsMappingsFile(path)
-    self._OpenObjectsDataFile(path)
+    index_mapping_file = self._OpenMappingFile(path, 'index.map')
+    if not index_mapping_file:
+      active_mapping_file = self._GetActiveMappingFile(path)
+      index_mapping_file = active_mapping_file
+
+    index_mapping_table = index_mapping_file.GetIndexMappingTable()
+
+    if not active_mapping_file:
+      index_mapping_file.Close()
+
+    self._index_binary_tree_file = self._OpenIndexBinaryTreeFile(
+        path, index_mapping_table)
+
+    objects_mapping_file = active_mapping_file
+    if not objects_mapping_file:
+      objects_mapping_file = self._OpenMappingFile(path, 'objects.map')
+
+    object_mapping_table = objects_mapping_file.GetObjectsMappingTable()
+
+    objects_mapping_file.Close()
+
+    self._objects_data_file = self._OpenObjectsDataFile(
+        path, object_mapping_table)
+
+    self._ReadClassDefinitions()
+
+    if self._debug:
+      for class_definition in self._class_definitions.values():
+        self._DebugPrintClassDefinition(class_definition)
 
   def OpenIndexBinaryTree(self, path):
     """Opens the CIM repository index binary tree.
@@ -2157,5 +2289,22 @@ class CIMRepository(data_format.BinaryDataFormat):
     Args:
       path (str): path to the CIM repository.
     """
-    self._OpenIndexMappingsFile(path)
-    self._OpenIndexBinaryTree(path)
+    index_mapping_file = self._OpenMappingFile(path, 'index.map')
+    if not index_mapping_file:
+      index_mapping_file = self._GetActiveMappingFile(path)
+
+    index_mapping_table = index_mapping_file.GetIndexMappingTable()
+
+    index_mapping_file.Close()
+
+    self._index_binary_tree_file = self._OpenIndexBinaryTreeFile(
+        path, index_mapping_table)
+
+  def OpenMappingFile(self, path):
+    """Opens a CIM repository mapping file.
+
+    Args:
+      path (str): path to the CIM repository.
+    """
+    path, _, filename = path.rpartition(os.path.sep)
+    self._OpenMappingFile(path, filename)

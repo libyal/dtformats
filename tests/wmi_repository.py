@@ -19,19 +19,7 @@ class IndexBinaryTreeFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  # TODO: add tests for _DebugPrintKeyOffsets
   # TODO: add tests for _DebugPrintPageBody
-  # TODO: add tests for _DebugPrintPageHeader
-
-  def testDebugPrintPageNumber(self):
-    """Tests the _DebugPrintPageNumber function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = wmi_repository.MappingFile(output_writer=output_writer)
-
-    test_file._DebugPrintPageNumber('Page number', 0x00000001)
-
-    test_file._DebugPrintPageNumber(
-        'Page number', 0xffffffff, unavailable_page_numbers=set([0xffffffff]))
 
   # TODO: add tests for _GetPage
   # TODO: add tests for _ReadPage
@@ -66,17 +54,8 @@ class MappingFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  def testDebugPrintPageNumber(self):
-    """Tests the _DebugPrintPageNumber function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = wmi_repository.MappingFile(output_writer=output_writer)
-
-    test_file._DebugPrintPageNumber('Page number', 0x00000001)
-
-    test_file._DebugPrintPageNumber(
-        'Page number', 0xffffffff, unavailable_page_numbers=set([0xffffffff]))
-
-  # TODO: add tests _DebugPrintPageNumbersTable
+  # TODO: add tests _DebugPrintMappingTable
+  # TODO: add tests _DebugPrintUnknownTable
 
   def testReadFileFooter(self):
     """Tests the _ReadFileFooter function."""
@@ -87,10 +66,9 @@ class MappingFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      file_offset = -1 * test_file._FILE_FOOTER_SIZE
-      file_object.seek(file_offset, os.SEEK_END)
+      file_object.seek(-4, os.SEEK_END)
 
-      test_file._ReadFileFooter(file_object)
+      test_file._ReadFileFooter(file_object, format_version=1)
 
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
@@ -103,34 +81,22 @@ class MappingFileTest(test_lib.BaseTestCase):
     with open(test_file_path, 'rb') as file_object:
       test_file._ReadFileHeader(file_object)
 
-  def testReadMappings(self):
-    """Tests the _ReadMappings function."""
+  def testReadMappingTable(self):
+    """Tests the _ReadMappingTable function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = wmi_repository.MappingFile(output_writer=output_writer)
+    test_file._format_version = 1
 
     test_file_path = self._GetTestFilePath(['cim', 'INDEX.MAP'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      file_offset = test_file._FILE_HEADER_SIZE
-      file_object.seek(file_offset, os.SEEK_SET)
+      file_object.seek(12, os.SEEK_SET)
 
-      test_file._ReadMappings(file_object)
+      test_file._ReadMappingTable(file_object)
 
-  def testReadPageNumbersTable(self):
-    """Tests the _ReadPageNumbersTable function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = wmi_repository.MappingFile(output_writer=output_writer)
-
-    test_file_path = self._GetTestFilePath(['cim', 'INDEX.MAP'])
-    self._SkipIfPathNotExists(test_file_path)
-
-    with open(test_file_path, 'rb') as file_object:
-      file_offset = test_file._FILE_HEADER_SIZE
-      test_file._ReadPageNumbersTable(file_object, file_offset, 'mappings')
-
-  def testReadUnknownEntries(self):
-    """Tests the _ReadUnknownEntries function."""
+  def testReadUnknownTable(self):
+    """Tests the _ReadUnknownTable function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = wmi_repository.MappingFile(output_writer=output_writer)
 
@@ -140,7 +106,7 @@ class MappingFileTest(test_lib.BaseTestCase):
     with open(test_file_path, 'rb') as file_object:
       file_object.seek(572, os.SEEK_SET)
 
-      test_file._ReadUnknownEntries(file_object)
+      test_file._ReadUnknownTable(file_object)
 
   def testReadFileObject(self):
     """Tests the ReadFileObject."""

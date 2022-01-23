@@ -53,14 +53,19 @@ def Main():
     return False
 
   source_basename = os.path.basename(options.source)
-  source_basename = source_basename.upper()
+  source_basename = source_basename.lower()
 
   cim_repository = wmi_repository.CIMRepository(
       debug=options.debug, output_writer=output_writer)
 
-  if source_basename == 'INDEX.BTR':
+  if source_basename == 'index.btr':
     source = os.path.dirname(options.source)
     cim_repository.OpenIndexBinaryTree(source)
+
+  elif source_basename in (
+      'index.map', 'mapping1.map', 'mapping2.map', 'mapping3.map',
+      'objects.map'):
+    cim_repository.OpenMappingFile(options.source)
 
   else:
     cim_repository.Open(options.source)
@@ -81,8 +86,18 @@ def Main():
     for key_name, keys in object_record_keys.items():
       for key in keys:
         print(key)
-        object_record = cim_repository.GetObjectRecordByKey(key)
-        object_record.Read()
+        if options.debug:
+          object_record = cim_repository.GetObjectRecordByKey(key)
+
+          if object_record.data_type in ('I', 'IL'):
+            interface = wmi_repository.Interface(
+                debug=options.debug, output_writer=output_writer)
+            interface.ReadObjectRecord(object_record)
+
+          elif object_record.data_type == 'R':
+            registration = wmi_repository.Registration(
+                debug=options.debug, output_writer=output_writer)
+            registration.ReadObjectRecord(object_record)
 
   cim_repository.Close()
 

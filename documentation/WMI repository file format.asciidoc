@@ -280,107 +280,137 @@ The offset is relative to the start of the index binary-tree page value data
 
 == Index.map, Mapping#.map and Objects.map
 
-[yellow-background]*TODO: maps x to Objects.data page numbers*
+Windows XP and Windows 2003 use the following version 1 mapping files:
 
-The mapping file consists of:
+* `Index.map` to map "virtual" page numbers to "physical" page numbers in `Index.btr`
+* `Objects.map` to map "virtual" page numbers to "physical" page numbers in `Objects.data`
+* `Mapping[1-2].map` contains a backup of the information in `Objects.map`
 
-* file header
-* mappings
-* unknown entries
-* file footer
+A version 1 mapping file consists of:
 
-=== Notes
+* version 1 file header
+* index or objects mapping table
+* unknown table, presumably used for free space tracking
+* version 1 file footer
 
-The contents of the `Mapping#.map` file appears to be a concattenation of
-the contents of the `Objects.map` and `Index.map` files. The file header
-data differs.
+In Windows Vista the information of `Index.map` and `Objects.map` was moved
+into a single version 2 mapping file where `Mapping[1-3].map` contain multiple
+backups.
 
-[yellow-background]*TODO: what is the role of the invidual files and the
-concattenated files?*
+A version 2 mapping file consists of:
+
+* version 2 file header
+* index or objects mapping table
+* unknown table, presumably used for free space tracking
+* version 1 file footer
+* version 2 file header
+* unknown mapping table
+* version 2 file footer
 
 === File header
 
-The file header is 8 bytes of size and consists of:
+==== File header - version 1
+
+The file header  - version 1 is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | 0x0000abcd | [yellow-background]*Unknown (signature)*
-| 4 | 4 | | [yellow-background]*Unknown (format version and flags?)*
+| 4 | 4 | | Sequence number
+| 8 | 4 | | Number of pages
 |===
 
-....
-0x000035be => Mapping#.map
-0x000035bf => Index.map, Objects.map
-....
+==== File header - version 2
 
-[yellow-background]*TODO: check Windows 7 file header*
-
-=== Mappings
-
-The mappings are variable of size and consists of:
+The file header  - version 2 is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | number of entries
-| 4 | ... | | array of entries
+| 0 | 4 | 0x0000abcd | [yellow-background]*Unknown (signature)*
+| 4 | 4 | | Sequence number
+| 8 | 4 | | [yellow-background]*Unknown (current identifier)*
+| 12 | 4 | | [yellow-background]*Unknown (previous identifier)*
+| 16 | 4 | | Number of pages
 |===
 
-=== Mapping entry - Windows XP
+=== Mapping table
 
-The mapping entry - Windows XP is 24 bytes of size and consists of:
+The mapping table is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (page number)*
+| 0 | 4 | | Number of entries
+| 4 | ... | | Array of entries
+|===
+
+=== Mapping table entry - version 1
+
+The mapping table entry - version 1 is 24 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Page number
 |===
 
 [yellow-background]*TODO: what about MSB in the page number*
 [yellow-background]*TODO: 0xffffffff unavailable*
 
-=== Mapping entry - Windows 7
+=== Mapping table entry - version 2
 
 [yellow-background]*TODO: check?*
 
-The mapping entry - Windows 7 is 24 bytes of size and consists of:
+The mapping table entry - version 2 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (page number)*
+| 0 | 4 | | Page number
 | 4 | 4 | | [yellow-background]*Unknown (checksum)* +
 [yellow-background]*Contains a CRC-32?*
 | 8 | 4 | | [yellow-background]*Unknown (free space?)*
 | 12 | 4 | | [yellow-background]*Unknown (used space?)*
-| 16 | 4 | | [yellow-background]*Unknown (identifier?)*
-| 20 | 4 | | [yellow-background]*Unknown (identifier?)*
+| 16 | 4 | | [yellow-background]*Unknown (related to identifiers in the header)*
+| 20 | 4 | | [yellow-background]*Unknown (related to identifiers in the header)*
 |===
 
 [yellow-background]*TODO: what about MSB in page number*
 
-=== Unknown entries
+=== Unknown table
 
-[yellow-background]*TODO: are these free pages?*
-
-The unknown entries are variable of size and consists of:
+The unknown table is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | number of entries
-| 4 | ... | | array of entries
+| 0 | 4 | | Number of entries
+| 4 | ... | | Array of 32-bit entries
 |===
-
-[yellow-background]*TODO: 32-bit entry contains page size?*
 
 === File footer
 
+==== File footer - version 1
+
+The file footer - version 1 is 4 bytes of size and consists of:
+
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | 0x0000dcba | [yellow-background]*Unknown*
+| 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
+|===
+
+==== File footer - version 2
+
+The file footer - version 2 is 8 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
+| 4 | 4 | 1 | [yellow-background]*Unknown*
 |===
 
 == Mapping.ver
@@ -731,6 +761,27 @@ Contains a FILETIME
 Includes the 4 bytes of the size
 | ... | ... | | Data
 |===
+
+....
+0x00000000  00 00 00 00 00 2f 23 e8  00 00 00 00 00 00 00 00  ...../#.........
+0x00000010  00 00 00 00 00 19 00 00  00 00 00 00 00 36 00 00  .............6..
+0x00000020  00 00 00 00 00 01 00 00  00 00 00 00 00 00 00 00  ................
+0x00000030  00 00 00 00 00 00 00 31  00 00 00 04 00 00 00 01  .......1........
+0x00000040  4f 00 00 80                                       O....NTEventLogE
+
+0x00000040              00 4e 54 45  76 65 6e 74 4c 6f 67 45  O....NTEventLogE
+0x00000050  76 65 6e 74 43 6f 6e 73  75 6d 65 72 00           ventConsumer..SC
+
+0x00000050                                          00 53 43  ventConsumer..SC
+0x00000060  4d 20 45 76 65 6e 74 20  4c 6f 67 20 43 6f 6e 73  M Event Log Cons
+0x00000070  75 6d 65 72 00                                    umer..sid..Servi
+
+0x00000070                 00 73 69  64 00                    umer..sid..Servi
+
+0x00000070                                 00 53 65 72 76 69  umer..sid..Servi
+0x00000080  63 65 20 43 6f 6e 74 72  6f 6c 20 4d 61 6e 61 67  ce Control Manag
+0x00000090  65 72 00                                          er.
+....
 
 == CIM repository
 
