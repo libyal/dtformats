@@ -431,7 +431,7 @@ members:
   data_type: uint32
 - name: index
   data_type: uint16
-- name: offset
+- name: value_data_offset
   data_type: uint32
 - name: level
   data_type: uint32
@@ -451,6 +451,62 @@ members:
   data_type: uint32
 - name: definition_offset
   data_type: uint32
+---
+name: property_value_boolean
+type: boolean
+attributes:
+  size: 2
+  units: bytes
+  false_value: 0
+  true_value: 0xffff
+---
+name: property_value_uint8
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: property_value_uint16
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: property_value_sint32
+type: integer
+attributes:
+  byte_order: little-endian
+  format: signed
+  size: 4
+  units: bytes
+---
+name: property_value_uint32
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: property_value_uint64
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 8
+  units: bytes
+---
+name: property_value_offset
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 4
+  units: bytes
 ---
 name: class_definition_block
 type: structure
@@ -485,12 +541,12 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: class_definition_block.default_value_size
-- name: properties_block_size
+- name: values_data_size
   data_type: uint32
-- name: properties_block_data
+- name: values_data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_block.properties_block_size & 0x7ffffff
+  elements_data_size: class_definition_block.values_data_size & 0x7ffffff
 ---
 name: class_definition_methods
 type: structure
@@ -551,7 +607,13 @@ members:
 - name: dynamic_block_type
   data_type: byte
   values: [1, 2]
-- name: dynamic_block_value1
+---
+name: instance_block_dynamic_type2_header
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_entries
   data_type: uint32
 ---
 name: instance_block_dynamic_type2_entry

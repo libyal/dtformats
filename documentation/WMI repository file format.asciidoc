@@ -540,10 +540,10 @@ See section: <<qualifiers_block,qualifiers block>>
 | ... | ... | | Property descriptors array +
 See section: <<property_descriptor,Property descriptor>>
 | ... | ... | |  [yellow-background]*Unknown (Default values data? bitmap?)*
-| ... | 4 | | Properties block size
+| ... | 4 | | Values data size
 Does not include the 4 bytes of the size +
 [yellow-background]*TODO: What is the MSB used for?*
-| ... | ... | | Properties block data
+| ... | ... | | Values data
 |===
 
 ====== Super class name block
@@ -607,8 +607,8 @@ The property defintion is variable of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Property data type (CimType) +
 See section: <<cim_data_types,CIM data types>>
-| 4 | 2 | | [yellow-background]*Unknown (index?)*
-| 6 | 4 | | [yellow-background]*Unknown (offset?)*
+| 4 | 2 | | Property index
+| 6 | 4 | | Value data offset
 | 10 | 4 | | [yellow-background]*Unknown (level?)*
 | 14 | 4 | | Qualifiers block size +
 Includes the 4 bytes of the size
@@ -796,6 +796,9 @@ Seen: 1 and 2
 | ... | 4 | | [yellow-background]*Unknown (offset?)*
 | ... | ... | | Data
 |===
+
+[yellow-background]*Can dynamic block type 2 be used if the class definition
+does not specify the dynprops qualifier as True? Related to MOF `[DYNPROPS]`?*
 
 ===== Instance dynamic property
 

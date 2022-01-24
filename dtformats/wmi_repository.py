@@ -19,8 +19,8 @@ class ClassDefinitionProperty(object):
   Attributes:
     name (str): name of the property.
     index (int): index of the property.
-    offset (int): offset of the property.
     qualifiers (dict[str, object]): qualifiers.
+    value_data_offset (int): offset of the property value data.
   """
 
   def __init__(self):
@@ -28,8 +28,116 @@ class ClassDefinitionProperty(object):
     super(ClassDefinitionProperty, self).__init__()
     self.name = None
     self.index = None
-    self.offset = None
     self.qualifiers = {}
+    self.value_data_offset = None
+
+
+class PropertyValueDataMap(object):
+  """Property value data map.
+
+  Attributes:
+    name (str): name of the property.
+    offset (int): offset of the property in value data.
+    size (int): size of the property in value data.
+    type_qualifier (str): type qualifier of the property.
+  """
+
+  def __init__(self, name, offset, size):
+    """Initializes a property value data map.
+
+    Args:
+      name (str): name of the property.
+      offset (int): offset of the property in value data.
+      size (int): size of the property in value data.
+    """
+    super(PropertyValueDataMap, self).__init__()
+    self.name = name
+    self.offset = offset
+    self.size = size
+    self.type_qualifier = None
+
+
+class ClassValueDataMap(object):
+  """Class value data map.
+
+  Attributes:
+    properties (dict[str, PropertyValueDataMap]): value data maps of
+        the properties.
+    properties_size (int): size of the properties in value data.
+  """
+
+  _PROPERTY_TYPE_VALUE_DATA_SIZE = {
+      'boolean': 2,
+      'datetime': 4,
+      'object': 4,
+      'ref': 4,
+      'sint32': 4,
+      'string': 4,
+      'uint8': 4,
+      'uint16': 2,
+      'uint32': 4,
+      'uint64': 8}
+
+  def __init__(self):
+    """Initializes a class value data map."""
+    super(ClassValueDataMap, self).__init__()
+    self.properties = {}
+    self.properties_size = 0
+
+  def Build(self, class_definitions):
+    """Builds the class map from the class definitions.
+
+    Args:
+      class_definitions (list[ClassDefinition]): the class definition and its
+          super class definitions.
+
+    Raises:
+      ParseError: if the class map cannot be build.
+    """
+    largest_offset = None
+    largest_property_map = None
+
+    for class_definition in class_definitions:
+      for name, property_definition in class_definition.properties.items():
+        type_qualifier = property_definition.qualifiers.get('type', None)
+        if not type_qualifier:
+          name_lower = property_definition.name.lower()
+          if name_lower in self.properties:
+            continue
+
+          raise errors.ParseError((
+              'Missing type qualifier for property: {0:s} of class: '
+              '{1:s}').format(property_definition.name, class_definition.name))
+
+        type_qualifier_lower = type_qualifier.lower()
+        if ':' in type_qualifier_lower:
+          type_qualifier_lower, _, _ = type_qualifier_lower.partition(':')
+
+        value_data_size = self._PROPERTY_TYPE_VALUE_DATA_SIZE.get(
+            type_qualifier_lower, None)
+        if value_data_size is None:
+          raise errors.ParseError((
+              'Unsupported type qualifier: {0:s} of property: {1:s} of class: '
+              '{2:s}').format(
+                  type_qualifier, property_definition.name,
+                  class_definition.name))
+
+        property_map = PropertyValueDataMap(
+            property_definition.name, property_definition.value_data_offset,
+            value_data_size)
+        property_map.type_qualifier = type_qualifier_lower
+
+        # TODO: compare property_map against property map of super classes.
+        self.properties[name.lower()] = property_map
+
+        if (largest_offset is None or
+            largest_offset < property_definition.value_data_offset):
+          largest_offset = property_definition.value_data_offset
+          largest_property_map = property_map
+
+    if largest_property_map:
+      self.properties_size = (
+          largest_property_map.offset + largest_property_map.size)
 
 
 class IndexBinaryTreePage(object):
@@ -690,10 +798,6 @@ class MappingFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _UINT32LE = _FABRIC.CreateDataTypeMap('uint32le')
-
-  _UINT32LE_SIZE = _UINT32LE.GetByteSize()
-
   _DEBUG_INFO_FILE_FOOTER = [
       ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
@@ -1167,6 +1271,21 @@ class CIMObject(data_format.BinaryDataFormat):
 
   _CIM_DATA_TYPES = _FABRIC.CreateDataTypeMap('cim_data_types')
 
+  def _DebugPrintCIMString(self, cim_string, description):
+    """Prints CIM string information.
+
+    Args:
+      cim_string (cim_string): CIM string.
+      description (str): description of the structure.
+    """
+    description = ''.join([description[0].upper(), description[1:]])
+
+    value_string = '0x{0:02x}'.format(cim_string.string_flags)
+    self._DebugPrintValue(
+        '{0:s} string flags'.format(description), value_string)
+
+    self._DebugPrintValue('{0:s} string'.format(description), cim_string.string)
+
   def _FormatIntegerAsDataType(self, integer):
     """Formats an integer as a data type.
 
@@ -1179,6 +1298,34 @@ class CIMObject(data_format.BinaryDataFormat):
     data_type_string = self._CIM_DATA_TYPES.GetName(integer & 0x0fff)
     # TODO: format flags 0x2000 and 0x4000
     return '0x{0:08x} ({1:s})'.format(integer, data_type_string or 'UNKNOWN')
+
+  def _ReadCIMString(
+      self, string_offset, record_data, record_data_offset, description):
+    """Reads a CIM string.
+
+    Args:
+      string_offset (int): string offset.
+      record_data (bytes): record data.
+      record_data_offset (int): offset of the string data relative to
+          the start of the record data.
+      description (str): description of the structure.
+
+    Returns:
+      str: qualifier value.
+
+    Raises:
+      ParseError: if the qualifier value cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('cim_string')
+
+    cim_string = self._ReadStructureFromByteStream(
+        record_data[string_offset:], record_data_offset + string_offset,
+        data_type_map, description)
+
+    if self._debug:
+      self._DebugPrintCIMString(cim_string, description)
+
+    return cim_string.string
 
 
 class ClassDefinition(CIMObject):
@@ -1217,15 +1364,9 @@ class ClassDefinition(CIMObject):
       ('property_descriptors', 'Property descriptors',
        '_FormatArrayOfPropertyDescriptors'),
       ('default_value_data', 'Default value data', '_FormatDataInHexadecimal'),
-      ('properties_block_size', 'Properties block size',
+      ('values_data_size', 'Values data size',
        '_FormatIntegerAsPropertiesBlockSize'),
-      ('properties_block_data', 'Properties block data',
-       '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_NAME = [
-      ('string_flags', 'Class name string flags',
-       '_FormatIntegerAsHexadecimal2'),
-      ('string', 'Class name string', '_FormatString')]
+      ('values_data', 'Values data', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_QUALIFIER_DESCRIPTOR = [
       ('name_offset', 'Name offset', '_FormatIntegerAsOffset'),
@@ -1239,7 +1380,7 @@ class ClassDefinition(CIMObject):
   _DEBUG_INFO_PROPERTY_DEFINITION = [
       ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
       ('index', 'Index', '_FormatIntegerAsDecimal'),
-      ('offset', 'Offset', '_FormatIntegerAsOffset'),
+      ('value_data_offset', 'Value data offset', '_FormatIntegerAsOffset'),
       ('level', 'Level', '_FormatIntegerAsDecimal'),
       ('qualifiers_block_size', 'Qualifiers block size',
        '_FormatIntegerAsDecimal'),
@@ -1276,17 +1417,6 @@ class ClassDefinition(CIMObject):
   def super_class_name(self):
     """str: name of the super class."""
     return self._class_definition_object_record.super_class_name
-
-  def _DebugPrintCIMString(self, cim_string):
-    """Prints CIM string information.
-
-    Args:
-      cim_string (cim_string): CIM string.
-    """
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
-    self._DebugPrintValue('String flags', value_string)
-
-    self._DebugPrintValue('String', cim_string.string)
 
   def _DebugPrintQualifierName(self, index, cim_string):
     """Prints qualifier name information.
@@ -1417,43 +1547,15 @@ class ClassDefinition(CIMObject):
       self._DebugPrintData(
           'Methods block data', class_definition_methods.methods_block_data)
 
-  def _ReadClassDefinitionName(
-      self, name_offset, properties_data, properties_data_offset):
-    """Reads a class definition name.
-
-    Args:
-      name_offset (int): name offset.
-      properties_data (bytes): class definition properties data.
-      properties_data_offset (int): offset of the class definition
-          properties data relative to the start of the record data.
-
-    Returns:
-      str: class name.
-
-    Raises:
-      ParseError: if the name cannot be read.
-    """
-    record_data_offset = properties_data_offset + name_offset
-    data_type_map = self._GetDataTypeMap('cim_string')
-
-    class_name = self._ReadStructureFromByteStream(
-        properties_data[name_offset:], record_data_offset, data_type_map,
-        'class name')
-
-    if self._debug:
-      self._DebugPrintStructureObject(class_name, self._DEBUG_INFO_CLASS_NAME)
-
-    return class_name.string
-
   def _ReadClassDefinitionPropertyDefinition(
-      self, definition_offset, properties_data, properties_data_offset):
+      self, definition_offset, values_data, values_data_offset):
     """Reads a class definition property definition.
 
     Args:
       definition_offset (int): definition offset.
-      properties_data (bytes): class definition properties data.
-      properties_data_offset (int): offset of the class definition
-          properties data relative to the start of the record data.
+      values_data (bytes): values data.
+      values_data_offset (int): offset of the values data relative to the start
+          of the record data.
 
     Returns:
       property_definition: property definition.
@@ -1461,12 +1563,12 @@ class ClassDefinition(CIMObject):
     Raises:
       ParseError: if the property name cannot be read.
     """
-    record_data_offset = properties_data_offset + definition_offset
+    record_data_offset = values_data_offset + definition_offset
     data_type_map = self._GetDataTypeMap('property_definition')
 
     property_definition = self._ReadStructureFromByteStream(
-        properties_data[definition_offset:], record_data_offset,
-        data_type_map, 'property definition')
+        values_data[definition_offset:], record_data_offset, data_type_map,
+        'property definition')
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -1475,16 +1577,15 @@ class ClassDefinition(CIMObject):
     return property_definition
 
   def _ReadClassDefinitionPropertyName(
-      self, property_index, name_offset, properties_data,
-      properties_data_offset):
+      self, property_index, name_offset, values_data, values_data_offset):
     """Reads a class definition property name.
 
     Args:
       index (int): property index.
       name_offset (int): name offset.
-      properties_data (bytes): class definition properties data.
-      properties_data_offset (int): offset of the class definition
-          properties data relative to the start of the record data.
+      values_data (bytes): values data.
+      values_dataoffset (int): offset of the values data relative to the start
+          of the record data.
 
     Returns:
       str: property name.
@@ -1506,29 +1607,21 @@ class ClassDefinition(CIMObject):
         self._DebugPrintValue(description, property_name)
 
     else:
-      record_data_offset = properties_data_offset + name_offset
-      data_type_map = self._GetDataTypeMap('cim_string')
-
-      cim_string = self._ReadStructureFromByteStream(
-          properties_data[name_offset:], record_data_offset, data_type_map,
-          'property name')
-
-      if self._debug:
-        self._DebugPrintPropertyName(property_index, cim_string)
-
-      property_name = cim_string.string
+      property_name = self._ReadCIMString(
+          name_offset, values_data, values_data_offset,
+          'property: {0:d} name'.format(property_index))
 
     return property_name
 
   def _ReadClassDefinitionProperties(
-      self, property_descriptors, properties_data, properties_data_offset):
+      self, property_descriptors, values_data, values_data_offset):
     """Reads class definition properties.
 
     Args:
       property_descriptors (list[property_descriptor]): property descriptors.
-      properties_data (bytes): class definition properties data.
-      properties_data_offset (int): offset of the class definition
-          properties data relative to the start of the record data.
+      values_data (bytes): properties data.
+      values_data_offset (int): offset of the values data relative to the start
+          of the record data.
 
     Returns:
       dict[str, ClassDefinitionProperty]: properties.
@@ -1542,23 +1635,24 @@ class ClassDefinition(CIMObject):
     properties = {}
     for property_index, property_descriptor in enumerate(property_descriptors):
       property_name = self._ReadClassDefinitionPropertyName(
-          property_index, property_descriptor.name_offset, properties_data,
-          properties_data_offset)
+          property_index, property_descriptor.name_offset, values_data,
+          values_data_offset)
 
       property_definition = self._ReadClassDefinitionPropertyDefinition(
-          property_descriptor.definition_offset, properties_data,
-          properties_data_offset)
+          property_descriptor.definition_offset, values_data,
+          values_data_offset)
 
       qualifiers_block_offset = property_descriptor.definition_offset + 18
 
       property_qualifiers = self._ReadQualifiers(
           property_definition.qualifiers_block_data, qualifiers_block_offset,
-          properties_data, properties_data_offset)
+          values_data, values_data_offset)
 
       class_definition_property = ClassDefinitionProperty()
       class_definition_property.name = property_name
       class_definition_property.index = property_definition.index
-      class_definition_property.offset = property_definition.offset
+      class_definition_property.value_data_offset = (
+          property_definition.value_data_offset)
       class_definition_property.qualifiers = property_qualifiers
 
       properties[property_name] = class_definition_property
@@ -1566,15 +1660,15 @@ class ClassDefinition(CIMObject):
     return properties
 
   def _ReadQualifierName(
-      self, qualifier_index, name_offset, properties_data, record_data_offset):
+      self, qualifier_index, name_offset, values_data, values_data_offset):
     """Reads a qualifier name.
 
     Args:
       qualifier_index (int): qualifier index.
       name_offset (int): name offset.
-      properties_data (bytes): properties data.
-      record_data_offset (int): offset of the properties data relative to
-          the start of the record data.
+      values_data (bytes): values data.
+      values_data_offset (int): offset of the values data relative to the start
+          of the record data.
 
     Returns:
       str: qualifier name.
@@ -1596,32 +1690,24 @@ class ClassDefinition(CIMObject):
         self._DebugPrintValue(description, qualifier_name)
 
     else:
-      record_data_offset += name_offset
-      data_type_map = self._GetDataTypeMap('cim_string')
-
-      cim_string = self._ReadStructureFromByteStream(
-          properties_data[name_offset:], record_data_offset, data_type_map,
-          'qualifier name')
-
-      if self._debug:
-        self._DebugPrintQualifierName(qualifier_index, cim_string)
-
-      qualifier_name = cim_string.string
+      qualifier_name = self._ReadCIMString(
+          name_offset, values_data, values_data_offset,
+          'qualifier: {0:d} name'.format(qualifier_index))
 
     return qualifier_name
 
   def _ReadQualifiers(
-      self, qualifiers_data, qualifiers_data_offset, properties_data,
-      properties_data_offset):
+      self, qualifiers_data, qualifiers_data_offset, values_data,
+      values_data_offset):
     """Reads qualifiers.
 
     Args:
       qualifiers_data (bytes): qualifiers data.
       qualifiers_data_offset (int): offset of the qualifiers data relative
           to the start of the record data.
-      properties_data (bytes): properties data.
-      properties_data_offset (int): offset of the properties data relative
-          to the start of the record data.
+      values_data (bytes): values data.
+      values_data_offset (int): offset of the values data relative to the start
+          of the record data.
 
     Returns:
       dict[str, object]: qualifier names and values.
@@ -1653,8 +1739,8 @@ class ClassDefinition(CIMObject):
             qualifier_descriptor, self._DEBUG_INFO_QUALIFIER_DESCRIPTOR)
 
       qualifier_name = self._ReadQualifierName(
-          qualifier_index, qualifier_descriptor.name_offset, properties_data,
-          properties_data_offset)
+          qualifier_index, qualifier_descriptor.name_offset, values_data,
+          values_data_offset)
 
       cim_data_type = self._CIM_DATA_TYPES.GetName(
           qualifier_descriptor.value_data_type)
@@ -1671,9 +1757,9 @@ class ClassDefinition(CIMObject):
         qualifier_value = qualifier_descriptor.value_floating_point
 
       elif cim_data_type == 'CIM-TYPE-STRING':
-        qualifier_value = self._ReadQualifierValueString(
-            qualifier_descriptor.value_offset, properties_data,
-            properties_data_offset)
+        qualifier_value = self._ReadCIMString(
+            qualifier_descriptor.value_offset, values_data, values_data_offset,
+            'qualifier value')
 
       elif cim_data_type == 'CIM-TYPE-DATETIME':
         # TODO: implement
@@ -1701,34 +1787,6 @@ class ClassDefinition(CIMObject):
       qualifier_index += 1
 
     return qualifiers
-
-  def _ReadQualifierValueString(
-      self, value_offset, properties_data, record_data_offset):
-    """Reads a qualifier value.
-
-    Args:
-      value_offset (int): value offset.
-      properties_data (bytes): properties data.
-      record_data_offset (int): offset of the properties data relative to
-          the start of the record data.
-
-    Returns:
-      str: qualifier value.
-
-    Raises:
-      ParseError: if the qualifier value cannot be read.
-    """
-    record_data_offset += value_offset
-    data_type_map = self._GetDataTypeMap('cim_string')
-
-    cim_string = self._ReadStructureFromByteStream(
-        properties_data[value_offset:], record_data_offset, data_type_map,
-        'qualifier value')
-
-    if self._debug:
-      self._DebugPrintCIMString(cim_string)
-
-    return cim_string.string
 
   def IsAbstract(self):
     """Determins if the class is abstract.
@@ -1780,9 +1838,9 @@ class ClassDefinition(CIMObject):
             class_definition_block.number_of_property_descriptors * 8 ) +
         class_definition_block.default_value_size)
 
-    class_name = self._ReadClassDefinitionName(
-        class_definition_block.name_offset,
-        class_definition_block.properties_block_data, properties_block_offset)
+    class_name = self._ReadCIMString(
+        class_definition_block.name_offset, class_definition_block.values_data,
+        properties_block_offset, 'class name')
 
     # TODO: read super class name block
 
@@ -1790,11 +1848,11 @@ class ClassDefinition(CIMObject):
     if class_definition_block.qualifiers_block_size > 4:
       class_qualifiers = self._ReadQualifiers(
           class_definition_block.qualifiers_block_data, qualifiers_block_offset,
-          class_definition_block.properties_block_data, properties_block_offset)
+          class_definition_block.values_data, properties_block_offset)
 
     class_properties = self._ReadClassDefinitionProperties(
         class_definition_block.property_descriptors,
-        class_definition_block.properties_block_data, properties_block_offset)
+        class_definition_block.values_data, properties_block_offset)
 
     data_offset = (
         12 + (class_definition_object_record.super_class_name_size * 2) +
@@ -1813,7 +1871,12 @@ class ClassDefinition(CIMObject):
 
 
 class Instance(CIMObject):
-  """Instance."""
+  """Instance.
+
+  Attributes:
+    name (str): name of the instance.
+    properties (dict[str, object]): instance property names and values.
+  """
 
   _DEBUG_INFO_INSTANCE_OBJECT_RECORD = [
       ('class_name_hash', 'Class name hash', '_FormatString'),
@@ -1838,21 +1901,12 @@ class Instance(CIMObject):
       ('dynamic_block_value1', 'Dynamic block value1',
        '_FormatIntegerAsHexadecimal8')]
 
+  _DEBUG_INFO_DYNAMIC_TYPE2_HEADER = [
+      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal')]
+
   _DEBUG_INFO_DYNAMIC_TYPE2_ENTRY = [
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
-
-  _PROPERTY_TYPE_VALUE_DATA_SIZE = {
-      'boolean': 2,
-      'datetime': 4,
-      'object': 4,
-      'ref': 4,
-      'sint32': 4,
-      'string': 4,
-      'uint8': 4,
-      'uint16': 2,
-      'uint32': 4,
-      'uint64': 8}
 
   def __init__(self, format_version, debug=False, output_writer=None):
     """Initializes an instance.
@@ -1866,18 +1920,19 @@ class Instance(CIMObject):
     self._format_version = format_version
     self._instance_block_offset = None
     self._instance_object_record = None
+    self.name = None
+    self.properties = {}
 
   @property
   def class_name_hash(self):
     """str: hash of the class name."""
     return self._instance_object_record.class_name_hash
 
-  def ReadInstanceBlockData(self, class_definitions):
+  def ReadInstanceBlockData(self, class_value_data_map):
     """Reads the instance block data.
 
     Args:
-      class_definitions (list[ClassDefinition]): the class definition and its
-          super class definitions.
+      class_value_data_map (ClassValueDataMap): the class value data map.
 
     Raises:
       ParseError: if the instance block data cannot be read.
@@ -1886,63 +1941,25 @@ class Instance(CIMObject):
 
     data_type_map = self._GetDataTypeMap('instance_block')
 
-    property_names = set()
-    largest_offset = None
-    class_with_largest_offset = None
-    property_with_largest_offset = None
-
-    for class_definition in class_definitions:
-      for name, class_property in class_definition.properties.items():
-        property_names.add(name.lower())
-
-        if largest_offset is None or class_property.offset > largest_offset:
-          largest_offset = class_property.offset
-          class_with_largest_offset = class_definition
-          property_with_largest_offset = class_property
-
     # 2 state bits per property, stored byte aligned.
-    number_of_properties = len(property_names)
+    number_of_properties = len(class_value_data_map.properties)
     property_state_bits_size, remainder = divmod(number_of_properties, 4)
     if remainder > 0:
       property_state_bits_size += 1
-
-    if largest_offset is None:
-      property_values_data_size = 0
-    else:
-      type_qualifier = property_with_largest_offset.qualifiers.get('type', None)
-      if not type_qualifier:
-        raise errors.ParseError(
-            'Missing type qualifier for property: {0:s} of class: {1:s}'.format(
-                property_with_largest_offset.name,
-                class_with_largest_offset.name))
-
-      type_qualifier_lower = type_qualifier.lower()
-      if ':' in type_qualifier_lower:
-        type_qualifier_lower, _, _ = type_qualifier_lower.partition(':')
-
-      value_data_size = self._PROPERTY_TYPE_VALUE_DATA_SIZE.get(
-          type_qualifier_lower, None)
-      if value_data_size is None:
-        raise errors.ParseError((
-            'Unsupported type qualifier: {0:s} of property: {1:s} of class: '
-            '{2:s}').format(
-                type_qualifier, property_with_largest_offset.name,
-                class_with_largest_offset.name))
-
-      property_values_data_size = largest_offset + value_data_size
 
     if self._debug:
       value_string = self._FormatIntegerAsDecimal(property_state_bits_size)
       self._DebugPrintValue('Property state bits size', value_string)
 
-      value_string = self._FormatIntegerAsDecimal(property_values_data_size)
+      value_string = self._FormatIntegerAsDecimal(
+          class_value_data_map.properties_size)
       self._DebugPrintValue('Property values data size', value_string)
 
       self._DebugPrintText('\n')
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'property_state_bits_size': property_state_bits_size,
-        'property_values_data_size': property_values_data_size})
+        'property_values_data_size': class_value_data_map.properties_size})
 
     instance_block = self._ReadStructureFromByteStream(
         instance_block_data, self._instance_block_offset, data_type_map,
@@ -1955,9 +1972,24 @@ class Instance(CIMObject):
     data_offset = context.byte_size
 
     if instance_block.dynamic_block_type == 2:
+      data_type_map = self._GetDataTypeMap(
+          'instance_block_dynamic_type2_header')
+
+      dynamic_type2_header = self._ReadStructureFromByteStream(
+           instance_block_data[data_offset:],
+           self._instance_block_offset + data_offset, data_type_map,
+           'dynamic block type 2 header')
+
+      if self._debug:
+        self._DebugPrintText('Dynamic type 2 header\n')
+        self._DebugPrintStructureObject(
+            dynamic_type2_header, self._DEBUG_INFO_DYNAMIC_TYPE2_HEADER)
+
+      data_offset += 4
+
       data_type_map = self._GetDataTypeMap('instance_block_dynamic_type2_entry')
 
-      for index in range(instance_block.dynamic_block_value1):
+      for index in range(dynamic_type2_header.number_of_entries):
         context = dtfabric_data_maps.DataTypeMapContext()
 
         dynamic_type2_entry = self._ReadStructureFromByteStream(
@@ -1972,8 +2004,71 @@ class Instance(CIMObject):
 
         data_offset += context.byte_size
 
+    data_type_map = self._GetDataTypeMap('uint32le')
+
+    unknown_offset = self._ReadStructureFromByteStream(
+         instance_block_data[data_offset:],
+         self._instance_block_offset + data_offset, data_type_map,
+         'unknown offset')
+
     if self._debug:
-      self._DebugPrintData('Remaining data', instance_block_data[data_offset:])
+      value_string = self._FormatIntegerAsOffset(unknown_offset)
+      self._DebugPrintValue('Unknown offset', value_string)
+
+    data_offset += 4
+
+    values_data = instance_block_data[data_offset:]
+
+    if self._debug:
+      self._DebugPrintData('Values data', values_data)
+
+    self.name = self._ReadCIMString(
+        instance_block.name_offset, values_data, data_offset, 'instance name')
+
+    property_values_data = instance_block.property_values_data
+    property_values_data_offset = 5 + len(instance_block.property_state_bits)
+
+    for property_value_data_map in class_value_data_map.properties.values():
+      property_map_offset = property_value_data_map.offset
+
+      description = 'property: {0:s} value: {1:s}'.format(
+           property_value_data_map.name, property_value_data_map.type_qualifier)
+
+      if property_value_data_map.type_qualifier in (
+          'boolean', 'sint32', 'uint8', 'uint16', 'uint32', 'uint64'):
+        data_type_map_name = 'property_value_{0:s}'.format(
+            property_value_data_map.type_qualifier)
+        data_type_map = self._GetDataTypeMap(data_type_map_name)
+
+        property_value = self._ReadStructureFromByteStream(
+             property_values_data[property_map_offset:],
+             property_values_data_offset + property_map_offset, data_type_map,
+             description)
+
+        if self._debug:
+          description = 'Property: {0:s} value: {1:s}'.format(
+               property_value_data_map.name,
+               property_value_data_map.type_qualifier)
+          self._DebugPrintValue(description, property_value)
+
+      elif property_value_data_map.type_qualifier in ('datetime', 'string'):
+        data_type_map = self._GetDataTypeMap('property_value_offset')
+
+        string_offset = self._ReadStructureFromByteStream(
+             property_values_data[property_map_offset:],
+             property_values_data_offset + property_map_offset, data_type_map,
+             description)
+
+        property_value = self._ReadCIMString(
+            string_offset, values_data, data_offset, description)
+
+      else:
+        property_value = None
+
+      self.properties[property_value_data_map.name] = property_value
+
+    if self._debug:
+      self._DebugPrintText('\n')
 
   def ReadObjectRecord(self, object_record):
     """Reads an instance from an object record.
@@ -2074,10 +2169,6 @@ class CIMRepository(data_format.BinaryDataFormat):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _MAPPING_VERSION = _FABRIC.CreateDataTypeMap('uint32le')
-
-  _MAPPING_VERSION_SIZE = _MAPPING_VERSION.GetByteSize()
-
   def __init__(self, debug=False, output_writer=None):
     """Initializes a CIM repository.
 
@@ -2116,18 +2207,35 @@ class CIMRepository(data_format.BinaryDataFormat):
         class_definition.properties.items()):
       self._DebugPrintText('    Property: {0:s}\n'.format(property_name))
 
-      value_string = '{0:d}'.format(class_definition_property.index)
+      value_string = self._FormatIntegerAsDecimal(
+          class_definition_property.index)
       self._DebugPrintValue('        Index', value_string)
 
-      value_string = '{0:d} (0x{0:08x})'.format(
-          class_definition_property.offset)
-      self._DebugPrintValue('        Offset', value_string)
+      value_string = self._FormatIntegerAsOffset(
+          class_definition_property.value_data_offset)
+      self._DebugPrintValue('        Value data offset', value_string)
 
       for qualifier_name, qualifier_value in (
           class_definition_property.qualifiers.items()):
         description = '        Qualifier: {0:s}'.format(qualifier_name)
         value_string = '{0!s}'.format(qualifier_value)
         self._DebugPrintValue(description, value_string)
+
+    self._DebugPrintText('\n')
+
+  def _DebugPrintInstance(self, instance):
+    """Prints instance information.
+
+    Args:
+      instance (Instance): instance.
+    """
+    self._DebugPrintText('Instance:\n')
+    self._DebugPrintValue('    Name', instance.name)
+    self._DebugPrintValue('    Class name hash', instance.class_name_hash)
+
+    for property_name, property_value in instance.properties.items():
+      description = '    Property: {0:s}'.format(property_name)
+      self._DebugPrintValue(description, '{0!s}'.format(property_value))
 
     self._DebugPrintText('\n')
 
@@ -2175,10 +2283,11 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     file_object = self._OpenMappingVersionFile(path)
     if file_object:
+      data_type_map = self._GetDataTypeMap('uint32le')
+
       try:
-        mapping_ver_file_number = self._ReadStructure(
-            file_object, 0, self._MAPPING_VERSION_SIZE, self._MAPPING_VERSION,
-            'Mapping.ver')
+        mapping_ver_file_number, _ = self._ReadStructureFromFileObject(
+            file_object, 0, data_type_map, 'Mapping.ver')
       finally:
         file_object.close()
 
@@ -2445,13 +2554,22 @@ class CIMRepository(data_format.BinaryDataFormat):
 
       class_definitions.append(class_definition)
 
+    # The ClassValueDataMap.Build functions want the class definitions starting
+    # the with the base class first.
     class_definitions.reverse()
 
-    # TODO: remove debug print
-    for class_definition in class_definitions:
-      self._DebugPrintClassDefinition(class_definition)
+    if self._debug:
+      for class_definition in class_definitions:
+        self._DebugPrintClassDefinition(class_definition)
 
-    instance.ReadInstanceBlockData(class_definitions)
+    # TODO: cache class value data map
+    class_value_data_map = ClassValueDataMap()
+    class_value_data_map.Build(class_definitions)
+
+    instance.ReadInstanceBlockData(class_value_data_map)
+
+    if self._debug:
+      self._DebugPrintInstance(instance)
 
     return instance
 
