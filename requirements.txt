@@ -1,7 +1,7 @@
 pip >= 7.0.0
 PyYAML >= 3.10
 dfdatetime >= 20180510
-dtfabric >= 20210731
+dtfabric >= 20220124
 libfwsi-python >= 20150606
 liblnk-python >= 20150830
 libolecf-python >= 20151223

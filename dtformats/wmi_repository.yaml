@@ -452,14 +452,14 @@ members:
 - name: definition_offset
   data_type: uint32
 ---
-name: class_definition_header
+name: class_definition_block
 type: structure
 attributes:
   byte_order: little-endian
 members:
 - name: unknown1
   data_type: byte
-- name: class_name_offset
+- name: name_offset
   data_type: uint32
 - name: default_value_size
   data_type: uint32
@@ -468,29 +468,29 @@ members:
 - name: super_class_name_block_data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_header.super_class_name_block_size - 4
+  elements_data_size: class_definition_block.super_class_name_block_size - 4
 - name: qualifiers_block_size
   data_type: uint32
 - name: qualifiers_block_data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_header.qualifiers_block_size - 4
+  elements_data_size: class_definition_block.qualifiers_block_size - 4
 - name: number_of_property_descriptors
   data_type: uint32
 - name: property_descriptors
   type: sequence
   element_data_type: property_descriptor
-  number_of_elements: class_definition_header.number_of_property_descriptors
+  number_of_elements: class_definition_block.number_of_property_descriptors
 - name: default_value_data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_header.default_value_size
+  elements_data_size: class_definition_block.default_value_size
 - name: properties_block_size
   data_type: uint32
 - name: properties_block_data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_header.properties_block_size & 0x7ffffff
+  elements_data_size: class_definition_block.properties_block_size & 0x7ffffff
 ---
 name: class_definition_methods
 type: structure
@@ -518,19 +518,60 @@ members:
   number_of_elements: class_definition_object_record.super_class_name_size
 - name: date_time
   data_type: uint64
+- name: class_definition_block_size
+  data_type: uint32
+- name: class_definition_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: class_definition_object_record.class_definition_block_size - 4
+---
+name: instance_block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_offset
+  data_type: uint32
+- name: unknown1
+  data_type: byte
+- name: property_state_bits
+  type: sequence
+  element_data_type: byte
+  number_of_elements: property_state_bits_size
+- name: property_values_data
+  type: stream
+  element_data_type: byte
+  number_of_elements: property_values_data_size
+- name: qualifiers_block_size
+  data_type: uint32
+- name: qualifiers_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: instance_block.qualifiers_block_size - 4
+- name: dynamic_block_type
+  data_type: byte
+  values: [1, 2]
+- name: dynamic_block_value1
+  data_type: uint32
+---
+name: instance_block_dynamic_type2_entry
+type: structure
+attributes:
+  byte_order: little-endian
+members:
 - name: data_size
   data_type: uint32
 - name: data
   type: stream
   element_data_type: byte
-  elements_data_size: class_definition_object_record.data_size - 4
+  elements_data_size: instance_block_dynamic_type2_entry.data_size - 4
 ---
 name: instance_object_record_v1
 type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: digest_hash
+- name: class_name_hash
   type: string
   encoding: utf-16-le
   element_data_type: wchar16
@@ -551,7 +592,7 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: digest_hash
+- name: class_name_hash
   type: string
   encoding: utf-16-le
   element_data_type: wchar16

@@ -62,7 +62,7 @@ the managed environment and defines every piece of data exposed by WMI.
 
 The location and format of the WMI repository varies per Windows version.
 
-=== Windows 9x/Me, NT 4 and 2000
+=== Windows 9x/Me
 
 In Windows 95 OSR 2.5, Windows 98, Windows Millennium Edition (Me) the CIM
 repository can be found in the directory:
@@ -72,6 +72,8 @@ repository can be found in the directory:
 ....
 
 [yellow-background]*Determine format*
+
+=== Windows NT 4 and 2000
 
 In Windows NT 4.0 with SP4 and Windows 2000 the CIM repository can be found in
 the directory:
@@ -85,13 +87,20 @@ the directory:
 
 [yellow-background]*Determine format*
 
-=== Windows XP and later
+=== Windows XP and Windows 2003
 
 In Windows XP and Windows 2003 the CIM repository can be found in the directory:
 
 ....
 %SystemRoot%\System32\WBEM\Repository\FS\
 ....
+
+This document refers to this format as version 2.1.
+
+[NOTE]
+A copy of the CIM repository can be stored in the system restore points.
+
+=== Windows Vista and later
 
 In Windows Vista and later the CIM repository can be found in the directory:
 
@@ -108,8 +117,7 @@ In Windows Vista and later the CIM repository can be found in the directory:
 ** `[1-3]` in Windows Vista and later
 * `Mapping.ver`; mappings version file contains # of the active mappings file.
 
-[NOTE]
-A copy of the CIM repository is stored in the system restore points.
+This document refers to this format as version 2.2.
 
 === Test version
 
@@ -163,9 +171,16 @@ See section: <<index_binary_tree_page_types,Index binary-tree page types>>
 The page number is mapped to the in-file page number via the index mappings file
 | 8 | 4 | | [yellow-background]*Unknown (empty values)*
 | 12 | 4 | | Mapped root page number +
-[yellow-background]*Only set in the administrative page and 0 otherwise?* +
 The page number is mapped to the in-file page number via the index mappings file
 |===
+
+In format version 2.1 the mapped index page 0 references an administrative page
+(page type: 0xaddd). The index binary-tree page header of this page contains
+the mapped root page number.
+
+In format version 2.2 the mapped root page number is assumed to be always 1.
+
+[yellow-background]*TODO: determine if this assumption holds.*
 
 === [[index_binary_tree_page_types]]Index binary-tree page types
 
@@ -280,39 +295,39 @@ The offset is relative to the start of the index binary-tree page value data
 
 == Index.map, Mapping#.map and Objects.map
 
-Windows XP and Windows 2003 use the following version 1 mapping files:
+Windows XP and Windows 2003 use the following version 2.1 mapping files:
 
-* `Index.map` to map "virtual" page numbers to "physical" page numbers in `Index.btr`
-* `Objects.map` to map "virtual" page numbers to "physical" page numbers in `Objects.data`
+* `Index.map` to resolve mapped page numbers to in-file page numbers in `Index.btr`
+* `Objects.map` to resolve mapped page numbers to in-file page numbers in `Objects.data`
 * `Mapping[1-2].map` contains a backup of the information in `Objects.map`
 
-A version 1 mapping file consists of:
+A version 2.1 mapping file consists of:
 
-* version 1 file header
+* version 2.1 file header
 * index or objects mapping table
 * unknown table, presumably used for free space tracking
-* version 1 file footer
+* version 2.1 file footer
 
 In Windows Vista the information of `Index.map` and `Objects.map` was moved
-into a single version 2 mapping file where `Mapping[1-3].map` contain multiple
+into a single version 2.2 mapping file where `Mapping[1-3].map` contain multiple
 backups.
 
-A version 2 mapping file consists of:
+A version 2.2 mapping file consists of:
 
-* version 2 file header
+* version 2.2 file header
 * objects mapping table
 * unknown table, presumably used for free space tracking
-* version 1 file footer
-* version 2 file header
+* version 2.1 file footer
+* version 2.2 file header
 * index mapping table
 * unknown table, presumably used for free space tracking
-* version 2 file footer
+* version 2.2 file footer
 
 === File header
 
-==== File header - version 1
+==== File header - version 2.1
 
-The file header  - version 1 is 12 bytes of size and consists of:
+The file header - version 2.1 is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -322,9 +337,9 @@ The file header  - version 1 is 12 bytes of size and consists of:
 | 8 | 4 | | Number of pages
 |===
 
-==== File header - version 2
+==== File header - version 2.2
 
-The file header  - version 2 is 20 bytes of size and consists of:
+The file header - version 2.2 is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -347,9 +362,9 @@ The mapping table is variable of size and consists of:
 | 4 | ... | | Array of entries
 |===
 
-=== Mapping table entry - version 1
+=== Mapping table entry - version 2.1
 
-The mapping table entry - version 1 is 24 bytes of size and consists of:
+The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -360,11 +375,11 @@ The mapping table entry - version 1 is 24 bytes of size and consists of:
 [yellow-background]*TODO: what about MSB in the page number*
 [yellow-background]*TODO: 0xffffffff unavailable*
 
-=== Mapping table entry - version 2
+=== Mapping table entry - version 2.2
 
 [yellow-background]*TODO: check?*
 
-The mapping table entry - version 2 is 24 bytes of size and consists of:
+The mapping table entry - version 2.2 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -393,9 +408,9 @@ The unknown table is variable of size and consists of:
 
 === File footer
 
-==== File footer - version 1
+==== File footer - version 2.1
 
-The file footer - version 1 is 4 bytes of size and consists of:
+The file footer - version 2.1 is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -403,9 +418,9 @@ The file footer - version 1 is 4 bytes of size and consists of:
 | 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
 |===
 
-==== File footer - version 2
+==== File footer - version 2.2
 
-The file footer - version 2 is 8 bytes of size and consists of:
+The file footer - version 2.2 is 8 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -493,18 +508,18 @@ Contains the number of UTF-16 characters (16-bit values)
 Contains an UTF-16 little-endian string without end-of-string character.
 | ... | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
-| ... | 4 | | Data size +
+| ... | 4 | | Class definition block size +
 Includes the 4 bytes of the size
-| ... | ... | | Data
+| ... | ... | | Class definition block data
 4+| _If remaining data size > 0_
 | ... | 4 | | Methods block size
 Includes the 4 bytes of the size
-| ... | ... | | Methods block
+| ... | ... | | Methods block data
 |===
 
 [yellow-background]*TODO: if the class name is empty it refers to __SystemClass?*
 
-[yellow-background]*TODO: define data*
+====== Class definition block
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -516,10 +531,10 @@ See section: <<cim_string,CIM string>>
 | 5 | 4 | | [yellow-background]*Unknown (Default values size?)*
 | 9 | 4 | | Super class name block size +
 Includes the 4 bytes of the size
-| 14 | ... | | Super class name block
+| 14 | ... | | Super class name block data
 | ... | 4 | | Qualifiers block size
 Includes the 4 bytes of the size
-| ... | ... | | Qualifiers block +
+| ... | ... | | Qualifiers block data +
 See section: <<qualifiers_block,qualifiers block>>
 | ... | 4 | | Number of property descriptors
 | ... | ... | | Property descriptors array +
@@ -528,8 +543,10 @@ See section: <<property_descriptor,Property descriptor>>
 | ... | 4 | | Properties block size
 Does not include the 4 bytes of the size +
 [yellow-background]*TODO: What is the MSB used for?*
-| ... | ... | | Properties block
+| ... | ... | | Properties block data
 |===
+
+====== Super class name block
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -540,14 +557,6 @@ Contains a string with end-of-string character
 | ... | 4 | | Super class name string size +
 [yellow-background]*Contains a value in bytes?*
 |===
-
-....
-0x00000000  00 00 00 00 00 00 00 00  00 04 00 00 00           ................
-0x00000000                                          0f 00 00  ................
-0x00000010  00 0e 00 00 00 00 0b 00  00 00 ff ff 00 00 00 00  ................
-0x00000020  18 00 00 80 00 4d 53 54  61 70 65 44 72 69 76 65  .....MSTapeDrive
-0x00000030  72 00 00 61 62 73 74 72  61 63 74 00              r..abstract.
-....
 
 ==== [[qualifiers_block]]Qualifiers block
 
@@ -560,12 +569,12 @@ The class qualifiers block is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Qualifier name string offset +
+| 0 | 4 | | Name offset +
 The offset is relative to the start of the properties block data +
 If the MSB is set the name is predefined and the remainder of the value contains the name index +
 See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
 | 4 | 1 | | [yellow-background]*Unknown*
-| 5 | 4 | | Qualifier value data type (CimType) +
+| 5 | 4 | | Value data type (CimType) +
 See section: <<cim_data_types,CIM data types>>
 | 9 | ... | | Inline stored value or 32-bit offset to value data
 |===
@@ -603,7 +612,7 @@ See section: <<cim_data_types,CIM data types>>
 | 10 | 4 | | [yellow-background]*Unknown (level?)*
 | 14 | 4 | | Qualifiers block size +
 Includes the 4 bytes of the size
-| 18 | ... | | Qualifiers block +
+| 18 | ... | | Qualifiers block data +
 See section: <<qualifiers_block,qualifiers block>>
 |===
 
@@ -651,38 +660,7 @@ Contains an UTF-16 little-endian string without end-of-string character.
 |===
 
 [NOTE]
-The attribute value contians a CIM key
-
-....
-0x00000000  09 00 00 00 52 00 4f 00  4f 00 54 00 5c 00 52 00  ....R.O.O.T.\.R.
-0x00000010  53 00 4f 00 50 00                                 S.O.P....._._.M.
-
-0x00000010                    1c 00  00 00 5f 00 5f 00 4d 00  S.O.P....._._.M.
-0x00000020  65 00 74 00 68 00 6f 00  64 00 50 00 72 00 6f 00  e.t.h.o.d.P.r.o.
-0x00000030  76 00 69 00 64 00 65 00  72 00 52 00 65 00 67 00  v.i.d.e.r.R.e.g.
-0x00000040  69 00 73 00 74 00 72 00  61 00 74 00 69 00 6f 00  i.s.t.r.a.t.i.o.
-0x00000050  6e 00                                             n.....p.r.o.v.i.
-
-0x00000050        08 00 00 00 70 00  72 00 6f 00 76 00 69 00  n.....p.r.o.v.i.
-0x00000060  64 00 65 00 72 00                                 d.e.r.k...\.N.S.
-
-0x00000060                    6b 00  00 00 5c 00 4e 00 53 00  d.e.r.k...\.N.S.
-0x00000070  5f 00 31 00 45 00 36 00  41 00 33 00 38 00 41 00  _.1.E.6.A.3.8.A.
-0x00000080  30 00 36 00 45 00 37 00  36 00 39 00 39 00 32 00  0.6.E.7.6.9.9.2.
-0x00000090  37 00 43 00 37 00 43 00  32 00 31 00 30 00 42 00  7.C.7.C.2.1.0.B.
-0x000000a0  45 00 45 00 46 00 34 00  37 00 32 00 43 00 46 00  E.E.F.4.7.2.C.F.
-0x000000b0  38 00 5c 00 4b 00 49 00  5f 00 46 00 34 00 30 00  8.\.K.I._.F.4.0.
-0x000000c0  32 00 37 00 35 00 33 00  43 00 34 00 42 00 37 00  2.7.5.3.C.4.B.7.
-0x000000d0  38 00 43 00 37 00 46 00  33 00 36 00 33 00 42 00  8.C.7.F.3.6.3.B.
-0x000000e0  34 00 35 00 42 00 36 00  32 00 43 00 38 00 43 00  4.5.B.6.2.C.8.C.
-0x000000f0  42 00 33 00 31 00 33 00  46 00 5c 00 49 00 5f 00  B.3.1.3.F.\.I._.
-0x00000100  38 00 37 00 32 00 33 00  30 00 37 00 38 00 46 00  8.7.2.3.0.7.8.F.
-0x00000110  45 00 43 00 39 00 33 00  41 00 46 00 33 00 39 00  E.C.9.3.A.F.3.9.
-0x00000120  36 00 38 00 32 00 41 00  34 00 30 00 35 00 35 00  6.8.2.A.4.0.5.5.
-0x00000130  42 00 30 00 37 00 31 00  30 00 45 00 46 00 43 00  B.0.7.1.0.E.F.C.
-
-0x00000140  00 00 00 00 00 00 00 00                           ........
-....
+The attribute value contains a CIM key
 
 === [[cim_data_types]]CIM data types
 
@@ -748,17 +726,16 @@ Contains a string with end-of-string character
 
 === Instance (I and IL)
 
-==== Instance - version 1
+==== Instance - version 2.1
 
-Instance - version 1 is used by Windows XP and Windows 2003.
-
-The interface - version 1 is variable of size and consists of:
+The interface - version 2.1 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 64 | | Digest hash +
-Contains an UTF-16 little-endian string without end-of-string character.
+| 0 | 64 | | MD5 hash of the class name +
+Contains an UTF-16 little-endian string without end-of-string character +
+See section: <<cim_identifier_strings,identifier strings>>
 | 64 | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
 | 72 | 8 | | [yellow-background]*Unknown (date and time)* +
@@ -768,17 +745,18 @@ Includes the 4 bytes of the size
 | 84 | ... | | Instance block data
 |===
 
-==== Instance - version 2
+==== Instance - version 2.2
 
-Instance - version 2 is used by Windows Vista and later.
+Instance - version 2.2 is used by Windows Vista and later.
 
-The interface - version 2 is variable of size and consists of:
+The interface - version 2.2 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 128 | | Digest hash +
-Contains an UTF-16 little-endian string without end-of-string character.
+| 0 | 128 | | SHA-256 hash of the class name +
+Contains an UTF-16 little-endian string without end-of-string character. +
+See section: <<cim_identifier_strings,identifier strings>>
 | 128 | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
 | 136 | 8 | | [yellow-background]*Unknown (date and time)* +
@@ -790,89 +768,79 @@ Includes the 4 bytes of the size
 
 ==== Instance block data
 
-....
-Class definition:
-    Name                                                                : __AdapStatus
-    Super class name                                                    : __SystemClass
-    Qualifier: singleton                                                : True
-    Property: LastStartTime
-        Offset                                                          : 0 (0x00000000)
-        Qualifier: type                                                 : datetime
-    Property: LastStopTime
-        Offset                                                          : 4 (0x00000004)
-        Qualifier: type                                                 : datetime
-    Property: Status
-        Offset                                                          : 8 (0x00000008)
-        Qualifier: type                                                 : uint32
+===== Instance block header
 
-Offset name
-0x00000000  00 00 00 00 00                                    ..........).....
-Unknown
-0x00000000                 00                                 ..........).....
-Offset data property 1
-0x00000000                    0e 00  00 00                    ..........).....
-Offset data property 2
-0x00000000                                 29 00 00 00        ..........).....
-
-Unknown
-0x00000000                                             00 00  ..........).....
-0x00000010  00 00 04 00 00 00 01 44  00 00 80                 .......D....__Ad
-
-Name: (offset 0x00)
-0x00000010                                    00 5f 5f 41 64  .......D....__Ad
-0x00000020  61 70 53 74 61 74 75 73  00                       apStatus..000000
-
-Property 1: (offset 0x0e)
-0x00000020                              00 30 30 30 30 30 30  apStatus..000000
-0x00000030  30 30 30 30 30 30 30 30  2e 30 30 30 30 30 30 3a  00000000.000000:
-0x00000040  30 30 30 00                                       000..00000000000
-
-Property 2: (offset 0x29)
-0x00000040              00 30 30 30  30 30 30 30 30 30 30 30  000..00000000000
-0x00000050  30 30 30 2e 30 30 30 30  30 30 3a 30 30 30 00     000.000000:000.
-....
-
-===== Qualifier descriptor
+The instance block header is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown*
+| 0 | 4 | | Name offset
 | 4 | 1 | | [yellow-background]*Unknown*
-| 5 | 4 | | [yellow-background]*Unknown*
-| 9 | 1 | | [yellow-background]*Unknown*
-| 10 | 4 | | [yellow-background]*Unknown*
-| 14 | ... | | [yellow-background]*Unknown (CIM string)*
+| 5 | ... | | [yellow-background]*Unknown (property state bits?)* +
+Contains an array of 2 bits per property, that is stored byte aligned +
+The number of properties corresponds to the number of unique property names (including those of the super classes)
+| ... | ... | | Property values data +
+The size of the data can be determined by the property with the largest offset (including those of the super classes) and its size
+| ... | ... | | [yellow-background]*Unknown (related to property state bits?)* +
+| ... | 4 | | Qualifiers block size +
+Includes the 4 bytes of the size
+| ... | ... | | Qualifiers block +
+See section: <<qualifiers_block,qualifiers block>>
+| ... | 1 | | [yellow-background]*Unknown (dynamic block type?)* +
+Seen: 1 and 2
+4+| _If dynamic block type is 2_
+| ... | 4 | | Number of (instance) dynamic properties
+| ... | ... | | Array of (instance) dynamic properties
+4+| _Common_
+| ... | 4 | | [yellow-background]*Unknown (offset?)*
+| ... | ... | | Data
+|===
+
+===== Instance dynamic property
+
+The instance block header is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Data size +
+Includes the 4 bytes of the size
+| 4 | ... | | [yellow-background]*Unknown*
 |===
 
 == CIM repository
 
-=== Notes
-
-Mapped index page 0 references the administrative page in the index binary-tree
-
-The root page number of the administrative page in the index binary-tree
-
-....
-Name space: ROOT\WMI
-Class name: MSTapeDriver
-....
-
-....
-Name space: NS_8DFCCA0B7FAB09C32755407485035A60
-Class name: CD_29C96FE3708DDF22ABBE770FCB770099
-....
-
-=== Index binary-tree identifier strings
+=== [[cim_identifier_strings]]Identifier strings
 
 The page values in the index binary-tree (Index.btr) contain identifier strings
-that map to object records. An example of an identifier strings is:
+that map to object records.
+
+An example of a version 2.1 identifier string:
 
 ....
 R_7F02F51F97C31228F1ADE773040492C4
 ....
 
-The following the prefixes are known:
+And an example of a version 2.2 identier string:
+
+....
+CD_41C53E6DB1ACF2453CEFD41398198E613F10DFF47709ECAB1D7F037756AC8CE7.0.2079881926.209
+....
+
+The identifier string consist of the following components
+
+* Type prefix
+* Separator "_"
+* Digest hash
+* Optional values:
+  * Separator "."
+  * Mapped page number of the object record in objects.data
+  * Separator "."
+  * Identifier of the object record in objects.data
+  * Data size of the object record in objects.data
+
+The following type prefixes are known:
 
 [cols="1,5",options="header"]
 |===
@@ -889,21 +857,27 @@ The following the prefixes are known:
 | R | Registration? Reference?
 |===
 
-The values in the identifier string can contain segments seperated by '.' e.g.
+The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
+is calculated from an upper case name, for example using Python to determine
+the identifier of the class name "__thisNAMESPACE":
 
 ....
-R_889E073E24E009B2E955B1E9560E641E.625.860151.342
+hashlib.sha256('__thisNAMESPACE'.upper().encode('utf-16-le')).hexdigest()
+
+41c53e6db1acf2453cefd41398198e613f10dff47709ecab1d7f037756ac8ce7
 ....
 
-[cols="1,5",options="header"]
-|===
-| Segment index | Usage
-| 0 | Type prefix and MD5 hash
-2+| _Optional values_
-| 1 | Objects data mappings page number
-| 2 | Object record identifier
-| 3 | Object record data size
-|===
+=== Notes
+
+....
+Name space: ROOT\WMI
+Class name: MSTapeDriver
+....
+
+....
+Name space: NS_8DFCCA0B7FAB09C32755407485035A60
+Class name: CD_29C96FE3708DDF22ABBE770FCB770099
+....
 
 == Notes
 

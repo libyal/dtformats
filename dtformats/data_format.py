@@ -205,6 +205,18 @@ class BinaryDataFormat(object):
     """
     return ', '.join(['{0:d}'.format(integer) for integer in array_of_integers])
 
+  def _FormatArrayOfIntegersAsOffsets(self, array_of_integers):
+    """Formats an array of integers as offset.
+
+    Args:
+      array_of_integers (list[int]): array of integers.
+
+    Returns:
+      str: array of integers formatted as offsets.
+    """
+    return ', '.join([
+        '{0:d} (0x{0:08x})'.format(integer) for integer in array_of_integers])
+
   def _FormatArrayOfIntegersAsIPv4Address(self, array_of_integers):
     """Formats an array of integers as an IPv4 address.
 
