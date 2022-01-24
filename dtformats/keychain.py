@@ -265,13 +265,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     attribute_value_offset -= attribute_values_data_offset + 1
     attribute_value_data = attribute_values_data[attribute_value_offset:]
 
-    try:
-      string_attribute_value = self._ReadStructureFromByteStream(
-          attribute_value_data, file_offset, data_type_map, description)
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map binary data attribute value data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
+    string_attribute_value = self._ReadStructureFromByteStream(
+        attribute_value_data, file_offset, data_type_map, description)
 
     return repr(string_attribute_value.blob)
 
@@ -307,13 +302,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     attribute_value_offset -= attribute_values_data_offset + 1
     attribute_value_data = attribute_values_data[attribute_value_offset:]
 
-    try:
-      date_time_attribute_value = self._ReadStructureFromByteStream(
-          attribute_value_data, file_offset, data_type_map, description)
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map date time attribute value data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
+    date_time_attribute_value = self._ReadStructureFromByteStream(
+        attribute_value_data, file_offset, data_type_map, description)
 
     return date_time_attribute_value.date_time.rstrip('\x00')
 
@@ -349,13 +339,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     attribute_value_offset -= attribute_values_data_offset + 1
     attribute_value_data = attribute_values_data[attribute_value_offset:]
 
-    try:
-      return self._ReadStructureFromByteStream(
-          attribute_value_data, file_offset, data_type_map, description)
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map integer attribute value data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
+    return self._ReadStructureFromByteStream(
+        attribute_value_data, file_offset, data_type_map, description)
 
   def _ReadAttributeValueString(
       self, attribute_values_data, record_offset, attribute_values_data_offset,
@@ -389,13 +374,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     attribute_value_offset -= attribute_values_data_offset + 1
     attribute_value_data = attribute_values_data[attribute_value_offset:]
 
-    try:
-      string_attribute_value = self._ReadStructureFromByteStream(
-          attribute_value_data, file_offset, data_type_map, description)
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map string attribute value data at offset: 0x{0:08x} '
-          'with error: {1!s}').format(file_offset, exception))
+    string_attribute_value = self._ReadStructureFromByteStream(
+        attribute_value_data, file_offset, data_type_map, description)
 
     return string_attribute_value.string
 
@@ -483,6 +463,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
           description = 'Attribute value: {0:d} ({1:s}) data'.format(
               index, column.attribute_name)
+
           self._DebugPrintData(description, record_data[
               attribute_value_offset:attribute_value_end_offset])
 
@@ -526,20 +507,15 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintData('Attribute value offsets data', offsets_data)
 
-    context = dtfabric_data_maps.DataTypeMapContext(values={
-        'number_of_attribute_values': number_of_attribute_values})
-
     data_type_map = self._GetDataTypeMap(
         'keychain_record_attribute_value_offsets')
 
-    try:
-      attribute_value_offsets = self._ReadStructureFromByteStream(
-          offsets_data, file_offset, data_type_map,
-          'record attribute value offsets', context=context)
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError((
-          'Unable to map record attribute value offsets data at offset: '
-          '0x{0:08x} with error: {1!s}').format(file_offset, exception))
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'number_of_attribute_values': number_of_attribute_values})
+
+    attribute_value_offsets = self._ReadStructureFromByteStream(
+        offsets_data, file_offset, data_type_map,
+        'record attribute value offsets', context=context)
 
     if self._debug:
       for index, attribute_value_offset in enumerate(attribute_value_offsets):
