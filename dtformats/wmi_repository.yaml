@@ -820,7 +820,7 @@ members:
   value: 0x0000dcba
 - name: unknown1
   data_type: uint32
-  value: 0x00000001
+  values: [0, 1]
 ---
 name: cim_map_header_v1
 type: structure

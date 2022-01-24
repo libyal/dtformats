@@ -308,9 +308,20 @@ A version 2.1 mapping file consists of:
 * unknown table, presumably used for free space tracking
 * version 2.1 file footer
 
-In Windows Vista the information of `Index.map` and `Objects.map` was moved
-into a single version 2.2 mapping file where `Mapping[1-3].map` contain multiple
-backups.
+In Windows 2003 and XP 64-bit the information of `Index.map` was moved into
+a single version version 2.1 mapping file where `Mapping[1-2].map` contain
+multiple backups.
+
+* version 2.1 file header
+* objects mapping table
+* unknown table, presumably used for free space tracking
+* version 2.1 file footer
+* version 2.1 file header
+* index mapping table
+* version 2.1 file footer
+
+In Windows Vista the format changed to version 2.2. and an additional
+`Mapping3.map` file was added.
 
 A version 2.2 mapping file consists of:
 
@@ -426,7 +437,8 @@ The file footer - version 2.2 is 8 bytes of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
-| 4 | 4 | 1 | [yellow-background]*Unknown*
+| 4 | 4 | | [yellow-background]*Unknown* +
+Seen: 0, 1
 |===
 
 == Mapping.ver
@@ -850,14 +862,14 @@ The following type prefixes are known:
 | Prefix | Usage
 | C |
 | CD | Class definition
-| CI | Class instance?
-| CR | Class reference?
+| CI | [yellow-background]*Unknown (Class instance?)*
+| CR | [yellow-background]*Unknown (Class reference?)*
 | I | Instance
-| IL | Instance?
+| IL | Instance
 | KI |
 | KL |
 | NS | Name space
-| R | Registration? Reference?
+| R | Registration
 |===
 
 The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
@@ -894,6 +906,10 @@ Listing classes:
 
 ....
 Get-WmiObject -namespace root\cimv2 -list
+....
+
+....
+Get-CimInstance
 ....
 
 === CIM OOO

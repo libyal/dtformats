@@ -61,9 +61,14 @@ class ClassValueDataMap(object):
   """Class value data map.
 
   Attributes:
+    class_name (str): name of the class.
+    derivation (list[str]): name of the classes this classed is derived from.
+    dynasty (str): name of the parent class of the parent clas or None if not
+        available.
     properties (dict[str, PropertyValueDataMap]): value data maps of
         the properties.
     properties_size (int): size of the properties in value data.
+    super_class_name (str): name of the parent class or None if not available.
   """
 
   _PROPERTY_TYPE_VALUE_DATA_SIZE = {
@@ -81,19 +86,34 @@ class ClassValueDataMap(object):
   def __init__(self):
     """Initializes a class value data map."""
     super(ClassValueDataMap, self).__init__()
+    self.class_name = None
+    self.derivation = []
+    self.dynasty = None
     self.properties = {}
     self.properties_size = 0
+    self.super_class_name = None
 
   def Build(self, class_definitions):
     """Builds the class map from the class definitions.
 
     Args:
       class_definitions (list[ClassDefinition]): the class definition and its
-          super class definitions.
+          parent class definitions.
 
     Raises:
       ParseError: if the class map cannot be build.
     """
+    self.class_name = class_definitions[-1].name
+    self.derivation = [
+        class_definition.name for class_definition in class_definitions[:-1]]
+    self.derivation.reverse()
+
+    derivation_length = len(self.derivation)
+    if derivation_length >= 1:
+      self.super_class_name = self.derivation[0]
+    if derivation_length >= 2:
+      self.dynasty = self.derivation[1]
+
     largest_offset = None
     largest_property_map = None
 
@@ -127,7 +147,7 @@ class ClassValueDataMap(object):
             value_data_size)
         property_map.type_qualifier = type_qualifier_lower
 
-        # TODO: compare property_map against property map of super classes.
+        # TODO: compare property_map against property map of parent classes.
         self.properties[name.lower()] = property_map
 
         if (largest_offset is None or
@@ -711,6 +731,8 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         logging.warning((
             'Unable to read first mapped index binary-tree page: '
             '{0:d}.').format(page_number))
+
+        # TODO: scan for root page number?
         return None
 
       if index_page.page_type != 0xaddd:
@@ -931,6 +953,8 @@ class MappingFile(data_format.BinaryDataFile):
     except errors.ParseError:
       file_footer = None
 
+    self._file_size = file_object.tell()
+
     if not file_footer:
       file_object.seek(-8, os.SEEK_END)
 
@@ -1058,13 +1082,16 @@ class MappingFile(data_format.BinaryDataFile):
     self._ReadUnknownTable(file_object)
     self._ReadFileFooter(file_object, format_version=1)
 
-    if self.format_version == 2:
+    file_offset = file_object.tell()
+
+    if self.format_version == 2 or file_offset < self._file_size:
       self._ReadFileHeader(file_object)
 
       self._mapping_table2 = self._ReadMappingTable(file_object)
 
       self._ReadUnknownTable(file_object)
-      self._ReadFileFooter(file_object, format_version=2)
+      self._ReadFileFooter(
+          file_object, format_version=self.format_version)
 
 
 class ObjectsDataFile(data_format.BinaryDataFile):
@@ -1415,7 +1442,7 @@ class ClassDefinition(CIMObject):
 
   @property
   def super_class_name(self):
-    """str: name of the super class."""
+    """str: name of the parent class."""
     return self._class_definition_object_record.super_class_name
 
   def _DebugPrintQualifierName(self, index, cim_string):
@@ -2034,6 +2061,7 @@ class Instance(CIMObject):
       description = 'property: {0:s} value: {1:s}'.format(
            property_value_data_map.name, property_value_data_map.type_qualifier)
 
+      property_value = None
       if property_value_data_map.type_qualifier in (
           'boolean', 'sint32', 'uint8', 'uint16', 'uint32', 'uint64'):
         data_type_map_name = 'property_value_{0:s}'.format(
@@ -2059,11 +2087,10 @@ class Instance(CIMObject):
              property_values_data_offset + property_map_offset, data_type_map,
              description)
 
-        property_value = self._ReadCIMString(
-            string_offset, values_data, data_offset, description)
-
-      else:
-        property_value = None
+        # A string offset of 0 appears to indicate not set.
+        if string_offset > 0:
+          property_value = self._ReadCIMString(
+              string_offset, values_data, data_offset, description)
 
       self.properties[property_value_data_map.name] = property_value
 
@@ -2529,9 +2556,9 @@ class CIMRepository(data_format.BinaryDataFormat):
       RuntimeError: if a class definition cannot be found.
     """
     # TODO: update method interface
+    _ = key
     # object_record = self.GetObjectRecordByKey(key)
 
-    print('Instance key:', key)
     instance = Instance(
         self.format_version, debug=self._debug,
         output_writer=self._output_writer)
@@ -2570,6 +2597,12 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     if self._debug:
       self._DebugPrintInstance(instance)
+
+    # pylint: disable=attribute-defined-outside-init
+    instance.class_name = class_value_data_map.class_name
+    instance.derivation = class_value_data_map.derivation
+    instance.dynasty = class_value_data_map.dynasty
+    instance.super_class_name = class_value_data_map.super_class_name
 
     return instance
 

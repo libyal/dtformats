@@ -11,6 +11,58 @@ from dtformats import output_writers
 from dtformats import wmi_repository
 
 
+def PrintInstance(instance):
+  """Writes an instance to stdout.
+
+  Args:
+    instance (Instance): instance.
+  """
+  name_property = instance.properties.get('Name', None)
+
+  genus = '2'
+  super_class_name = instance.super_class_name or ''
+  dynasty = instance.dynasty or ''
+
+  if name_property:
+    relpath = '{0:s}.Name="{1:s}"'.format(instance.class_name, name_property)
+  else:
+    relpath = '{0:s}=@'.format(instance.class_name)
+
+  property_count = '{0:d}'.format(len(instance.properties))
+  derivation = '{{{0:s}}}'.format(', '.join(instance.derivation))
+  server = 'TEST'
+  namespace = 'ROOT'
+  path = '\\\\{0:s}\\{1:s}:{2:s}'.format(server, namespace, relpath)
+
+  name_value_pairs = [
+      ('__GENUS', genus),
+      ('__CLASS', instance.class_name),
+      ('__SUPERCLASS', super_class_name),
+      ('__DYNASTY', dynasty),
+      ('__RELPATH', relpath),
+      ('__PROPERTY_COUNT', property_count),
+      ('__DERIVATION', derivation),
+      ('__SERVER', server),
+      ('__NAMESPACE', namespace),
+      ('__PATH', path)]
+
+  for property_name, property_value in sorted(instance.properties.items()):
+    if property_value is None:
+      property_value = ''
+    else:
+      property_value = '{0!s}'.format(property_value)
+
+    name_value_pairs.append((property_name, property_value))
+
+  largest_name = max([len(name) for name, _ in name_value_pairs])
+
+  for name, value in name_value_pairs:
+    alignment_length = largest_name - len(name)
+    print('{0:s}{1:s} : {2:s}'.format(name, ' ' * alignment_length, value))
+
+  print('')
+
+
 def Main():
   """The main program function.
 
@@ -86,16 +138,17 @@ def Main():
     for key_name, keys in object_record_keys.items():
       for key in keys:
         print(key)
-        if options.debug:
-          object_record = cim_repository.GetObjectRecordByKey(key)
 
-          if object_record.data_type in ('I', 'IL'):
-            _ = cim_repository.GetInstanceByKey(key, object_record)
+        object_record = cim_repository.GetObjectRecordByKey(key)
 
-          elif object_record.data_type == 'R':
-            registration = wmi_repository.Registration(
-                debug=options.debug, output_writer=output_writer)
-            registration.ReadObjectRecord(object_record)
+        if object_record.data_type in ('I', 'IL'):
+          interface = cim_repository.GetInstanceByKey(key, object_record)
+          PrintInstance(interface)
+
+        elif object_record.data_type == 'R':
+          registration = wmi_repository.Registration(
+              debug=options.debug, output_writer=output_writer)
+          registration.ReadObjectRecord(object_record)
 
   cim_repository.Close()
 
