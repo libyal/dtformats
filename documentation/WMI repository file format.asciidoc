@@ -95,7 +95,7 @@ In Windows XP and Windows 2003 the CIM repository can be found in the directory:
 %SystemRoot%\System32\WBEM\Repository\FS\
 ....
 
-This document refers to this format as version 2.1.
+This document refers to this format as version 2.0.
 
 [NOTE]
 A copy of the CIM repository can be stored in the system restore points.
@@ -117,7 +117,7 @@ In Windows Vista and later the CIM repository can be found in the directory:
 ** `[1-3]` in Windows Vista and later
 * `Mapping.ver`; mappings version file contains # of the active mappings file.
 
-This document refers to this format as version 2.2.
+This document refers to this format as version 2.1.
 
 === Test version
 
@@ -156,13 +156,13 @@ A CIM repository uses identifier strings to map to <<object_records,object recor
 The identifier strings are stored in the <<index_binary_tree_file,index binary-tree (Index.btr) file>>.
 The object records are stored in the <<objects_data_file,objects data file>>.
 
-An example of a format version 2.1 identifier string:
+An example of a format version 2.0 identifier string:
 
 ....
 R_7F02F51F97C31228F1ADE773040492C4
 ....
 
-An example of a format version 2.2 identier string:
+An example of a format version 2.1 identier string:
 
 ....
 CD_41C53E6DB1ACF2453CEFD41398198E613F10DFF47709ECAB1D7F037756AC8CE7.0.2079881926.209
@@ -197,7 +197,7 @@ The following type prefixes are known:
 | R | Registration
 |===
 
-The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
+The hash is either and MD5 hash (version 2.0) or SHA-256 hash (version 2.1) and
 is calculated from an upper case name, for example using Python to determine
 the identifier of the class name "__thisNAMESPACE":
 
@@ -305,11 +305,11 @@ The page number is mapped to the in-file page number via the index mappings file
 The page number is mapped to the in-file page number via the index mappings file
 |===
 
-In format version 2.1 the mapped index page 0 references an administrative page
+In format version 2.0 the mapped index page 0 references an administrative page
 (page type: 0xaddd). The index binary-tree page header of this page contains
 the mapped root page number.
 
-In format version 2.2 the mapped root page number is assumed to be always 1.
+In format version 2.1 the mapped root page number is assumed to be always 1.
 
 [yellow-background]*TODO: determine if this assumption holds.*
 
@@ -429,50 +429,50 @@ The offset is relative to the start of the index binary-tree page value data
 The mapping file (Index.map, Mapping#.map and Objects.map) is used by format
 version 2.
 
-Windows XP and Windows 2003 use the following version 2.1 mapping files:
+Windows XP and Windows 2003 use the following version 2.0 mapping files:
 
 * `Index.map` to resolve mapped page numbers to in-file page numbers in `Index.btr`
 * `Objects.map` to resolve mapped page numbers to in-file page numbers in `Objects.data`
 * `Mapping[1-2].map` contains a backup of the information in `Objects.map`
 
+A version 2.0 mapping file consists of:
+
+* version 2.0 file header
+* index or objects mapping table
+* unknown table, presumably used for free space tracking
+* version 2.0 file footer
+
+In Windows 2003 and XP 64-bit the information of `Index.map` was moved into
+a single version version 2.0 mapping file where `Mapping[1-2].map` contain
+multiple backups.
+
+* version 2.0 file header
+* objects mapping table
+* unknown table, presumably used for free space tracking
+* version 2.0 file footer
+* version 2.0 file header
+* index mapping table
+* version 2.0 file footer
+
+In Windows Vista the format changed to version 2.1. and an additional
+`Mapping3.map` file was added.
+
 A version 2.1 mapping file consists of:
 
 * version 2.1 file header
-* index or objects mapping table
-* unknown table, presumably used for free space tracking
-* version 2.1 file footer
-
-In Windows 2003 and XP 64-bit the information of `Index.map` was moved into
-a single version version 2.1 mapping file where `Mapping[1-2].map` contain
-multiple backups.
-
-* version 2.1 file header
 * objects mapping table
 * unknown table, presumably used for free space tracking
-* version 2.1 file footer
+* version 2.0 file footer
 * version 2.1 file header
 * index mapping table
-* version 2.1 file footer
-
-In Windows Vista the format changed to version 2.2. and an additional
-`Mapping3.map` file was added.
-
-A version 2.2 mapping file consists of:
-
-* version 2.2 file header
-* objects mapping table
 * unknown table, presumably used for free space tracking
 * version 2.1 file footer
-* version 2.2 file header
-* index mapping table
-* unknown table, presumably used for free space tracking
-* version 2.2 file footer
 
 === File header
 
-==== File header - version 2.1
+==== File header - version 2.0
 
-The file header - version 2.1 is 12 bytes of size and consists of:
+The file header - version 2.0 is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -482,9 +482,9 @@ The file header - version 2.1 is 12 bytes of size and consists of:
 | 8 | 4 | | Number of pages
 |===
 
-==== File header - version 2.2
+==== File header - version 2.1
 
-The file header - version 2.2 is 20 bytes of size and consists of:
+The file header - version 2.1 is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -507,9 +507,9 @@ The mapping table is variable of size and consists of:
 | 4 | ... | | Array of entries
 |===
 
-=== Mapping table entry - version 2.1
+=== Mapping table entry - version 2.0
 
-The mapping table entry - version 2.1 is 24 bytes of size and consists of:
+The mapping table entry - version 2.0 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -520,11 +520,11 @@ The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 [yellow-background]*TODO: what about MSB in the page number*
 [yellow-background]*TODO: 0xffffffff unavailable*
 
-=== Mapping table entry - version 2.2
+=== Mapping table entry - version 2.1
 
 [yellow-background]*TODO: check?*
 
-The mapping table entry - version 2.2 is 24 bytes of size and consists of:
+The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -553,9 +553,9 @@ The unknown table is variable of size and consists of:
 
 === File footer
 
-==== File footer - version 2.1
+==== File footer - version 2.0
 
-The file footer - version 2.1 is 4 bytes of size and consists of:
+The file footer - version 2.0 is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -563,9 +563,9 @@ The file footer - version 2.1 is 4 bytes of size and consists of:
 | 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
 |===
 
-==== File footer - version 2.2
+==== File footer - version 2.1
 
-The file footer - version 2.2 is 8 bytes of size and consists of:
+The file footer - version 2.1 is 8 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -595,14 +595,6 @@ of:
 
 * an array of objects data pages
 
-=== Objects data page
-
-The objects data page is 8192 bytes of size and consists of:
-
-* Object descriptors
-* [yellow-background]*unknown records*
-* [yellow-background]*unknown*
-
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
@@ -613,11 +605,19 @@ Though technically maybe incorrect, this document will use term (extended) ASCII
 Unicode strings are stored in UTF-16 little-endian without the byte order mark (BOM).
 |===
 
+=== Objects data page
+
+The objects data page is 8192 bytes of size and consists of:
+
+* Object descriptors
+* [yellow-background]*unknown records*
+* [yellow-background]*unknown*
+
 ==== Object descriptors
 
 The object descriptors consists of:
 
-* an array of object descriptor
+* an array of object descriptors
 * empty (zero byte filled) object descriptor (or terminator)
 
 ===== Object descriptor
@@ -659,7 +659,8 @@ Contains an UTF-16 little-endian string without end-of-string character.
 Contains a FILETIME
 | ... | 4 | | Class definition block size +
 Includes the 4 bytes of the size
-| ... | ... | | Class definition block data
+| ... | ... | | Class definition block data +
+See section: <<class_definition_block,Class definition block>>
 4+| _If remaining data size > 0_
 | ... | 4 | | Methods block size
 Includes the 4 bytes of the size
@@ -668,7 +669,7 @@ Includes the 4 bytes of the size
 
 [yellow-background]*TODO: if the class name is empty it refers to __SystemClass?*
 
-====== Class definition block
+====== [[class_definition_block]]Class definition block
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -680,7 +681,8 @@ See section: <<cim_string,CIM string>>
 | 5 | 4 | | [yellow-background]*Unknown (Default values size?)*
 | 9 | 4 | | Super class name block size +
 Includes the 4 bytes of the size
-| 14 | ... | | Super class name block data
+| 14 | ... | | Super class name block data +
+Contians a <<cim_string,CIM string>>
 | ... | 4 | | Qualifiers block size
 Includes the 4 bytes of the size
 | ... | ... | | Qualifiers block data +
@@ -693,18 +695,6 @@ See section: <<property_descriptor,Property descriptor>>
 Does not include the 4 bytes of the size +
 [yellow-background]*TODO: What is the MSB used for?*
 | ... | ... | | Values data
-|===
-
-====== Super class name block
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)*
-| 1 | ... | | Super class name string +
-Contains a string with end-of-string character
-| ... | 4 | | Super class name string size +
-[yellow-background]*Contains a value in bytes?*
 |===
 
 ==== [[qualifiers_block]]Qualifiers block
@@ -839,9 +829,9 @@ The attribute value contains a CIM key
 
 === Instance (I and IL)
 
-==== Instance - version 2.1
+==== Instance - version 2.0
 
-The interface - version 2.1 is variable of size and consists of:
+The interface - version 2.0 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -858,11 +848,11 @@ Includes the 4 bytes of the size
 | 84 | ... | | Instance block data
 |===
 
-==== Instance - version 2.2
+==== Instance - version 2.1
 
-Instance - version 2.2 is used by Windows Vista and later.
+Instance - version 2.1 is used by Windows Vista and later.
 
-The interface - version 2.2 is variable of size and consists of:
+The interface - version 2.1 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -925,9 +915,159 @@ Includes the 4 bytes of the size
 | 4 | ... | | [yellow-background]*Unknown*
 |===
 
-== The CIM.REC file
+== The repository file (cim.rep)
 
-Seen on Windows 2000, is this a recovery file ?
+The repostitory file (cim.reg) is used by format version 1 and consists of:
+
+* file header
+* one or more data blocks
+* unused space
+
+=== File header
+
+The file header is 40 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Number of data block with <<class_definition_root_node,class definition root node>> of "__SystemClass"
+| 4 | 4 | | [yellow-background]*Unknown (root block number?)*
+| 8 | 4 | | Total data size
+| 12 | 4 | | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown*
+| 20 | 4 | | Offset of unused space
+| 24 | 4 | | [yellow-background]*Unknown*
+| 28 | 4 | | [yellow-background]*Unknown*
+| 32 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block 0?)*
+| 36 | 4 | | [yellow-background]*Unknown*
+|===
+
+=== Data block
+
+The data block is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Data size
+Includes the 4 bytes of the size
+| 4 | ... | | [yellow-background]*Unknown (data)*
+| ... | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+=== [[class_definition_root_node]]Class definition root node
+
+The class definition root node is 44 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block, parent index?)*
+| 4 | 4 | | Offset + 4 to data block with <<class_definition_branch_node,class definition branch node>>
+| 8 | 4 | | Offset + 4 to data block with <<class_definition_root_node,class definition root node>> of the parent class +
+Contains 0 if the class has no parent class
+| 12 | 4 | | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 20 | 4 | | Offset + 4 to data block with <<sub_classes_root_node,sub classes root node>>
+| 24 | 4 | | [yellow-background]*Unknown (empty)*
+| 28 | 4 | | [yellow-background]*Unknown (empty)*
+| 32 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+=== [[class_definition_branch_node]]Class definition branch node
+
+The class definition branch node is 32 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block, parent index?)*
+| 4 | 4 | | Offset + 4 to data block with <<class_definition_root_node,class definition root node>>
+| 8 | 4 | 1 | [yellow-background]*Unknown (data type?)*
+| 12 | 4 | | Offset + 4 to data block with <<class_definition_leaf_node,class definition leaf node>>
+| 16 | 4 | | [yellow-background]*Unknown (empty)*
+| 20 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+=== [[class_definition_leaf_node]]Class definition leaf node
+
+The class definition leaf node is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Class definition block size +
+Includes the 4 bytes of the size
+| 4 | ... | | Class definition block data +
+See section: <<class_definition_block,Class definition block>>
+| ... | 4 | | Unknown block size +
+Includes the 4 bytes of the size
+| ... | ... | | Unknown block data
+| ... | 3 | | [yellow-background]*Unknown (alignment padding?)*
+| ... | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+=== [[sub_classes_root_node]]Sub classes root node
+
+The sub classes root node is 24 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | 2 | [yellow-background]*Unknown*
+| 4 | 4 | 5 | [yellow-background]*Unknown*
+| 8 | 4 | | Offset + 4 to data block with <<sub_classes_branch_node,sub classes branch node>>
+| 12 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+=== [[sub_classes_branch_node]]Sub classes branch node
+
+The sub classes branch node is 28 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | 5 | [yellow-background]*Unknown*
+| 4 | 4 | 10 | [yellow-background]*Unknown*
+| 8 | 4 | 5 | [yellow-background]*Unknown*
+| 12 | 4 | | Offset + 4 to data block with <<sub_classes_leaf_node,sub classes leaf node>>
+| 16 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+=== [[sub_classes_leaf_node]]Sub classes leaf node
+
+The sub classes leaf node is 52 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 4 | 4 | | Offset + 4 to data block with <<class_definition_root_node,class definition root node>>
+| 8 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 12 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 16 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 20 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 24 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
+| 28 | 4 | | [yellow-background]*Unknown*
+| 32 | 4 | | [yellow-background]*Unknown*
+| 36 | 4 | | [yellow-background]*Unknown*
+| 40 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+== The recovery file (cim.rec)
+
+The recovery file (cim.rec) is used by format version 1 and consists of:
+
+* file header
+* compressed blocks
+* [yellow-background]*Unknown (footer or terminator block?)*
+
+The recovery file is presumed to be a compressed backup of the repository file
+(cim.rep).
+
+=== File header
+
+The file header is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -939,75 +1079,20 @@ Contains a FILETIME
 | 16 | 8 | | [yellow-background]*Unknown (total uncompressed data size?)*
 |===
 
+=== Compressed block
+
+The compressed block is variable of size and consists of:
+
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | 1 | [yellow-background]*Unknown (version?)*
-| 4 | 4 | | Compressed block size
-| 8 | 4 | 0x8000 | Uncompressed block size
-4+| _Compressed data?_
+| 4 | 4 | | Compressed data size
+| 8 | 4 | 0x8000 | Uncompressed data size
+4+| _Compressed data_
 | 12 | 2 | "DS" | [yellow-background]*Unknown (compression signature?)*
 | 14 | ... | | [yellow-background]*Unknown (compressed data)*
 |===
-
-....
-00000000  01 01 01 78 00 80 00 00  80 74 ab 8b e4 00 d4 01  |...x.....t......|
-00000010  91 47 25 00 00 00 00 00                           |.G%..........'..|
-
-00000010                           01 00 00 00 c0 27 00 00  |.G%..........'..|
-00000020  00 80 00 00 44 53 00 01  ca 2d 0b b7 2c 5e b8 33  |....DS...-..,^.3|
-00000030  03 02 08 aa 80 90 52 01  3e 11 24 15 45 1e 20 24  |......R.>.$.E. $|
-...
-000027e0  26 ff ff 01                                       |&........$......|
-
-000027e0              01 00 00 00  ff 24 00 00 00 80 00 00  |&........$......|
-000027f0  44 53 00 01 8e 0c 08 20  a8 d3 b7 6e cb 18 4d ea  |DS..... ...n..M.|
-...
-00004ce0  4b 33 a6 d1 99 37 6f 0a  85 9d 1d 6c f0 ff 0f     |K3...7o....l....|
-
-00004ce0                                                01  |K3...7o....l....|
-00004cf0  00 00 00 dd 22 00 00 00  80 00 00 44 53 00 01 b6  |...."......DS...|
-00004d00  8c 19 93 ac cc 96 38 6b  1a 1d da 12 46 20 8d e2  |......8k....F ..|
-...
-00006fc0  e1 f7 a2 33 61 12 ff b6  15 1a d4 68 f1 96 46 ad  |...3a......h..F.|
-00006fd0  5d d1 de d2 60 ff ff 01  01 00 00 00 c8 1f 00 00  |]...`...........|
-00006fe0  00 80 00 00 44 53 00 01  02 34 0b 14 40 80 72 08  |....DS...4..@.r.|
-...
-000ae340  ff 07                                             |...........G..DS|
-000ae340        01 00 00 00 e2 0a  00 00 91 47 00 00 44 53  |...........G..DS|
-000ae350  00 01 02 a4 0b b0 2e c0  b9 00 a1 02 94 0b f0 0d  |................|
-...
-000aee20  ad c8 01 3e 89 c0 d3 00  06 3a 02 83 c1 f9 ff 03  |...>.....:......|
-
-Footer or terminator block?
-000aee30  00 00 00 00 00 00 00 00  91 47 00 00              |.........G..|
-....
-
-== The CIM.REP file
-
-Seen on Windows 2000
-
-== Notes
-
-Listing name spaces:
-
-....
-Get-WmiObject -namespace "root" -class "__Namespace" | Select Name
-....
-
-Listing classes:
-
-....
-Get-WmiObject -namespace root\cimv2 -list
-....
-
-....
-Get-CimInstance
-....
-
-=== CIM OOO
-
-http://www.wbemsolutions.com/tutorials/DMTF/cim-ooo.html
 
 :numbered!:
 [appendix]
