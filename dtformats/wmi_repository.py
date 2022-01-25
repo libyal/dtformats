@@ -32,31 +32,6 @@ class ClassDefinitionProperty(object):
     self.value_data_offset = None
 
 
-class PropertyValueDataMap(object):
-  """Property value data map.
-
-  Attributes:
-    name (str): name of the property.
-    offset (int): offset of the property in value data.
-    size (int): size of the property in value data.
-    type_qualifier (str): type qualifier of the property.
-  """
-
-  def __init__(self, name, offset, size):
-    """Initializes a property value data map.
-
-    Args:
-      name (str): name of the property.
-      offset (int): offset of the property in value data.
-      size (int): size of the property in value data.
-    """
-    super(PropertyValueDataMap, self).__init__()
-    self.name = name
-    self.offset = offset
-    self.size = size
-    self.type_qualifier = None
-
-
 class ClassValueDataMap(object):
   """Class value data map.
 
@@ -73,11 +48,19 @@ class ClassValueDataMap(object):
 
   _PROPERTY_TYPE_VALUE_DATA_SIZE = {
       'boolean': 2,
+      'char16': 2,
       'datetime': 4,
       'object': 4,
+      'real32': 4,
+      'real64': 8,
       'ref': 4,
+      # Assumed since the behavior of uint8.
+      'sint8': 4,
+      'sint16': 2,
       'sint32': 4,
+      'sint64': 8,
       'string': 4,
+      # For some reason an uint8 seems to be stored as 4 bytes.
       'uint8': 4,
       'uint16': 2,
       'uint32': 4,
@@ -187,119 +170,56 @@ class IndexBinaryTreePage(object):
     self.sub_pages = []
 
 
-class ObjectRecord(object):
-  """Object record.
+class MappingTable(object):
+  """Mapping table."""
 
-  Attributes:
-    data (bytes): object record data.
-    data_type (str): object record data type.
-  """
-
-  def __init__(self, data_type, data):
-    """Initializes an object record.
+  def __init__(self, mapping_table):
+    """Initializes a mapping table.
 
     Args:
-      data_type (str): object record data type.
-      data (bytes): object record data.
+      mapping_table (mapping_table): mapping table.
     """
-    super(ObjectRecord, self).__init__()
-    self.data = data
-    self.data_type = data_type
+    super(MappingTable, self).__init__()
+    self._mapping_table = mapping_table
+
+  def ResolveMappedPageNumber(self, mapped_page_number):
+    """Resolves a mapped page number.
+
+    Args:
+      mapped_page_number (int): mapped page number.
+
+    Returns:
+      int: (physical) page number.
+    """
+    mapping_table_entry = self._mapping_table.entries[mapped_page_number]
+    return mapping_table_entry.page_number
 
 
-class ObjectsDataPage(data_format.BinaryDataFormat):
+class ObjectsDataPage(object):
   """An objects data page.
 
   Attributes:
     page_offset (int): offset of the page relative to the start of the file.
   """
 
-  # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
-
-  _EMPTY_OBJECT_DESCRIPTOR = b'\x00' * 16
-
-  _DEBUG_INFO_OBJECT_DESCRIPTOR = [
-      ('identifier', 'Identifier', '_FormatIntegerAsHexadecimal8'),
-      ('data_offset', 'Data offset (relative)', '_FormatIntegerAsOffset'),
-      ('data_file_offset', 'Data offset (file)', '_FormatIntegerAsOffset'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data_checksum', 'Data checksum', '_FormatIntegerAsHexadecimal8')]
-
-  PAGE_SIZE = 8192
-
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, page_offset):
     """Initializes an objects data page.
 
     Args:
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
+      page_offset (int): offset of the page relative to the start of the file.
     """
-    super(ObjectsDataPage, self).__init__(
-        debug=debug, output_writer=output_writer)
+    super(ObjectsDataPage, self).__init__()
     self._object_descriptors = []
 
-    self.page_offset = None
+    self.page_offset = page_offset
 
-  def _ReadObjectDescriptor(self, file_object):
-    """Reads an object descriptor.
-
-    Args:
-      file_object (file): a file-like object.
-
-    Returns:
-      cim_object_descriptor: an object descriptor or None if the object
-          descriptor is empty.
-
-    Raises:
-      ParseError: if the object descriptor cannot be read.
-    """
-    file_offset = file_object.tell()
-
-    if self._debug:
-      self._DebugPrintText(
-          'Reading object descriptor at offset: 0x{0:08x}\n'.format(
-              file_offset))
-
-    object_descriptor_data = file_object.read(16)
-
-    if self._debug:
-      self._DebugPrintData('Object descriptor data', object_descriptor_data)
-
-    # The last object descriptor (terminator) is filled with 0-byte values.
-    if object_descriptor_data == self._EMPTY_OBJECT_DESCRIPTOR:
-      return None
-
-    data_type_map = self._GetDataTypeMap('cim_object_descriptor')
-
-    object_descriptor = self._ReadStructureFromByteStream(
-        object_descriptor_data, file_offset, data_type_map, 'object descriptor')
-
-    setattr(object_descriptor, 'data_file_offset',
-            file_offset + object_descriptor.data_offset)
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          object_descriptor, self._DEBUG_INFO_OBJECT_DESCRIPTOR)
-
-    return object_descriptor
-
-  def _ReadObjectDescriptors(self, file_object):
-    """Reads object descriptors.
+  def AppendObjectDescriptor(self, object_descriptor):
+    """Appends an object descriptor.
 
     Args:
-      file_object (file): a file-like object.
-
-    Raises:
-      ParseError: if the object descriptor cannot be read.
+      object_descriptor (cim_object_descriptor): object descriptor.
     """
-    while True:
-      object_descriptor = self._ReadObjectDescriptor(file_object)
-      if not object_descriptor:
-        break
-
-      self._object_descriptors.append(object_descriptor)
+    self._object_descriptors.append(object_descriptor)
 
   def GetObjectDescriptor(self, record_identifier, data_size):
     """Retrieves a specific object descriptor.
@@ -327,61 +247,50 @@ class ObjectsDataPage(data_format.BinaryDataFormat):
 
     return object_descriptor_match
 
-  def ReadPage(self, file_object, file_offset, data_page=False):
-    """Reads a page.
+
+class ObjectRecord(object):
+  """Object record.
+
+  Attributes:
+    data (bytes): object record data.
+    data_type (str): object record data type.
+  """
+
+  def __init__(self, data_type, data):
+    """Initializes an object record.
 
     Args:
-      file_object (file): a file-like object.
-      file_offset (int): offset of the page relative to the start of the file.
-      data_page (Optional[bool]): True if the page is a data page.
-
-    Raises:
-      ParseError: if the page cannot be read.
+      data_type (str): object record data type.
+      data (bytes): object record data.
     """
-    file_object.seek(file_offset, os.SEEK_SET)
+    super(ObjectRecord, self).__init__()
+    self.data = data
+    self.data_type = data_type
 
-    if self._debug:
-      self._DebugPrintText(
-          'Reading objects data page at offset: 0x{0:08x}\n'.format(
-              file_offset))
 
-    self.page_offset = file_offset
+class PropertyValueDataMap(object):
+  """Property value data map.
 
-    if not data_page:
-      self._ReadObjectDescriptors(file_object)
+  Attributes:
+    name (str): name of the property.
+    offset (int): offset of the property in value data.
+    size (int): size of the property in value data.
+    type_qualifier (str): type qualifier of the property.
+  """
 
-  def ReadObjectRecordData(self, file_object, data_offset, data_size):
-    """Reads the data of an object record.
+  def __init__(self, name, offset, size):
+    """Initializes a property value data map.
 
     Args:
-      file_object (file): a file-like object.
-      data_offset (int): offset of the object record data relative to
-          the start of the page.
-      data_size (int): object record data size.
-
-    Returns:
-      bytes: object record data.
-
-    Raises:
-      ParseError: if the object record cannot be read.
+      name (str): name of the property.
+      offset (int): offset of the property in value data.
+      size (int): size of the property in value data.
     """
-    # Make the offset relative to the start of the file.
-    file_offset = self.page_offset + data_offset
-
-    file_object.seek(file_offset, os.SEEK_SET)
-
-    if self._debug:
-      self._DebugPrintText(
-          'Reading object record at offset: 0x{0:08x}\n'.format(file_offset))
-
-    available_page_size = self.PAGE_SIZE - data_offset
-
-    if data_size > available_page_size:
-      read_size = available_page_size
-    else:
-      read_size = data_size
-
-    return file_object.read(read_size)
+    super(PropertyValueDataMap, self).__init__()
+    self.name = name
+    self.offset = offset
+    self.size = size
+    self.type_qualifier = None
 
 
 class IndexBinaryTreeFile(data_format.BinaryDataFile):
@@ -411,23 +320,15 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
       ('root_page_number', 'Root page number', '_FormatIntegerAsDecimal')]
 
-  def __init__(
-      self, format_version, index_mapping_table, debug=False,
-      output_writer=None):
+  def __init__(self, debug=False, output_writer=None):
     """Initializes an index binary-tree file.
 
     Args:
-      format_version (int): format version.
-      index_mapping_table (mapping_table): an index mapping table.
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(IndexBinaryTreeFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self._first_mapped_page = None
-    self._format_version = format_version
-    self._index_mapping_table = index_mapping_table
-    self._root_page = None
     self._unavailable_page_numbers = set([0, 0xffffffff])
 
   def _DebugPrintPageBody(self, page_body):
@@ -497,22 +398,6 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     """
     page_type_string = self._PAGE_TYPES.get(integer, 'Unknown')
     return '0x{0:04x} ({1:s})'.format(integer, page_type_string)
-
-  def _GetPage(self, page_number):
-    """Retrieves a specific page.
-
-    Args:
-      page_number (int): page number.
-
-    Returns:
-      IndexBinaryTreePage: an index binary-tree page or None.
-    """
-    file_offset = page_number * self._PAGE_SIZE
-    if file_offset >= self._file_size:
-      return None
-
-    # TODO: cache pages.
-    return self._ReadPage(self._file_object, file_offset)
 
   def _ReadPage(self, file_object, file_offset):
     """Reads a page.
@@ -705,92 +590,21 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     if self._debug and index_binary_tree_page.page_value_offsets:
       self._DebugPrintText('\n')
 
-  def _ResolveMappedPageNumber(self, mapped_page_number):
-    """Resolves a mapped page number.
+  def GetPage(self, page_number):
+    """Retrieves a specific page.
 
     Args:
-      mapped_page_number (int): mapped page number.
-
-    Returns:
-      int: (physical) page number.
-    """
-    mapping_table_entry = self._index_mapping_table.entries[mapped_page_number]
-    return mapping_table_entry.page_number
-
-  def GetFirstMappedPage(self):
-    """Retrieves the first mapped page.
+      page_number (int): page number.
 
     Returns:
       IndexBinaryTreePage: an index binary-tree page or None.
     """
-    if not self._first_mapped_page:
-      page_number = self._ResolveMappedPageNumber(0)
-
-      index_page = self._GetPage(page_number)
-      if not index_page:
-        logging.warning((
-            'Unable to read first mapped index binary-tree page: '
-            '{0:d}.').format(page_number))
-
-        # TODO: scan for root page number?
-        return None
-
-      if index_page.page_type != 0xaddd:
-        logging.warning((
-            'Unsupported first mapped index binary-tree page type: '
-            '0x{0:04x}').format(index_page.page_type))
-
-      self._first_mapped_page = index_page
-
-    return self._first_mapped_page
-
-  def GetMappedPage(self, mapped_page_number):
-    """Retrieves a specific mapped page.
-
-    Args:
-      mapped_page_number (int): mapped page number.
-
-    Returns:
-      IndexBinaryTreePage: an index binary-tree page or None.
-    """
-    page_number = self._ResolveMappedPageNumber(mapped_page_number)
-
-    index_page = self._GetPage(page_number)
-    if not index_page:
-      logging.warning('Unable to read index binary-tree page: {0:d}.'.format(
-          page_number))
+    file_offset = page_number * self._PAGE_SIZE
+    if file_offset >= self._file_size:
       return None
 
-    return index_page
-
-  def GetRootPage(self):
-    """Retrieves the root page.
-
-    Returns:
-      IndexBinaryTreePage: an index binary-tree page or None.
-    """
-    if not self._root_page:
-      if self._format_version == 1:
-        first_mapped_page = self.GetFirstMappedPage()
-        if not first_mapped_page:
-          return None
-
-        root_page_number = first_mapped_page.root_page_number
-      else:
-        root_page_number = 1
-
-      page_number = self._ResolveMappedPageNumber(root_page_number)
-
-      index_page = self._GetPage(page_number)
-      if not index_page:
-        logging.warning(
-            'Unable to read index binary-tree root page: {0:d}.'.format(
-                page_number))
-        return None
-
-      self._root_page = index_page
-
-    return self._root_page
+    # TODO: cache pages.
+    return self._ReadPage(self._file_object, file_offset)
 
   def ReadFileObject(self, file_object):
     """Reads an index binary-tree file-like object.
@@ -1049,17 +863,17 @@ class MappingFile(data_format.BinaryDataFile):
     """Retrieves the index mapping table.
 
     Returns:
-      mapping_table: index mapping table.
+      MappingTable: index mapping table.
     """
-    return self._mapping_table2 or self._mapping_table1
+    return MappingTable(self._mapping_table2 or self._mapping_table1)
 
   def GetObjectsMappingTable(self):
     """Retrieves the objects mapping table.
 
     Returns:
-      mapping_table: objects mapping table.
+      MappingTable: objects mapping table.
     """
-    return self._mapping_table1
+    return MappingTable(self._mapping_table1)
 
   def ReadFileObject(self, file_object):
     """Reads a mappings file-like object.
@@ -1085,197 +899,144 @@ class MappingFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
 
     if self.format_version == 2 or file_offset < self._file_size:
-      self._ReadFileHeader(file_object)
+      try:
+        file_header = self._ReadFileHeader(file_object)
+      except errors.ParseError:
+        file_header = None
 
-      self._mapping_table2 = self._ReadMappingTable(file_object)
+      if not file_header and self.format_version == 2:
+        raise errors.ParseError('Unable to read second file header.')
 
-      self._ReadUnknownTable(file_object)
-      self._ReadFileFooter(
-          file_object, format_version=self.format_version)
+      # Seen trailing data in Windows XP objects.map file.
+      if file_header:
+        self._mapping_table2 = self._ReadMappingTable(file_object)
+
+        self._ReadUnknownTable(file_object)
+        self._ReadFileFooter(
+            file_object, format_version=self.format_version)
 
 
 class ObjectsDataFile(data_format.BinaryDataFile):
   """An objects data (Objects.data) file."""
 
-  _KEY_SEGMENT_SEPARATOR = '\\'
-  _KEY_VALUE_SEPARATOR = '.'
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _KEY_VALUE_PAGE_NUMBER_INDEX = 1
-  _KEY_VALUE_RECORD_IDENTIFIER_INDEX = 2
-  _KEY_VALUE_DATA_SIZE_INDEX = 3
+  _DEBUG_INFO_OBJECT_DESCRIPTOR = [
+      ('identifier', 'Identifier', '_FormatIntegerAsHexadecimal8'),
+      ('data_offset', 'Data offset (relative)', '_FormatIntegerAsOffset'),
+      ('data_file_offset', 'Data offset (file)', '_FormatIntegerAsOffset'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('data_checksum', 'Data checksum', '_FormatIntegerAsHexadecimal8')]
 
-  def __init__(self, objects_mapping_table, debug=False, output_writer=None):
-    """Initializes an objects data file.
+  _EMPTY_OBJECT_DESCRIPTOR = b'\x00' * 16
 
-    Args:
-      objects_mapping_table (mapping_table): objects mapping table.
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(ObjectsDataFile, self).__init__(
-        debug=debug, output_writer=output_writer)
-    self._objects_mapping_table = objects_mapping_table
+  _PAGE_SIZE = 8192
 
-  def _GetKeyValues(self, key):
-    """Retrieves the key values from the key.
+  def _ReadObjectDescriptor(self, file_object):
+    """Reads an object descriptor.
 
     Args:
-      key (str): a CIM key.
+      file_object (file): a file-like object.
 
     Returns:
-      tuple[str, int, int, int]: name of the key, corresponding page number,
-          record identifier and record data size or None.
+      cim_object_descriptor: an object descriptor or None if the object
+          descriptor is empty.
+
+    Raises:
+      ParseError: if the object descriptor cannot be read.
     """
-    _, _, key = key.rpartition(self._KEY_SEGMENT_SEPARATOR)
+    file_offset = file_object.tell()
 
-    if self._KEY_VALUE_SEPARATOR not in key:
+    if self._debug:
+      self._DebugPrintText(
+          'Reading object descriptor at offset: 0x{0:08x}\n'.format(
+              file_offset))
+
+    object_descriptor_data = file_object.read(16)
+
+    if self._debug:
+      self._DebugPrintData('Object descriptor data', object_descriptor_data)
+
+    # The last object descriptor (terminator) is filled with 0-byte values.
+    if object_descriptor_data == self._EMPTY_OBJECT_DESCRIPTOR:
       return None
 
-    key_values = key.split(self._KEY_VALUE_SEPARATOR)
-    if not len(key_values) == 4:
-      logging.warning('Unsupported number of key values.')
-      return None
+    data_type_map = self._GetDataTypeMap('cim_object_descriptor')
 
-    try:
-      page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
-    except ValueError:
-      logging.warning('Unsupported key value page number.')
-      return None
+    object_descriptor = self._ReadStructureFromByteStream(
+        object_descriptor_data, file_offset, data_type_map, 'object descriptor')
 
-    try:
-      record_identifier = int(
-          key_values[self._KEY_VALUE_RECORD_IDENTIFIER_INDEX], 10)
-    except ValueError:
-      logging.warning('Unsupported key value record identifier.')
-      return None
+    setattr(object_descriptor, 'data_file_offset',
+            file_offset + object_descriptor.data_offset)
 
-    try:
-      data_size = int(key_values[self._KEY_VALUE_DATA_SIZE_INDEX], 10)
-    except ValueError:
-      logging.warning('Unsupported key value data size.')
-      return None
+    if self._debug:
+      self._DebugPrintStructureObject(
+          object_descriptor, self._DEBUG_INFO_OBJECT_DESCRIPTOR)
 
-    return key_values[0], page_number, record_identifier, data_size
+    return object_descriptor
 
-  def _GetPage(self, page_number, data_page=False):
+  def _ReadObjectDescriptors(self, file_object, objects_page):
+    """Reads object descriptors.
+
+    Args:
+      file_object (file): a file-like object.
+      objects_page (ObjectsDataPage): objects data page.
+
+    Raises:
+      ParseError: if the object descriptor cannot be read.
+    """
+    while True:
+      object_descriptor = self._ReadObjectDescriptor(file_object)
+      if not object_descriptor:
+        break
+
+      objects_page.AppendObjectDescriptor(object_descriptor)
+
+  def _ReadPage(self, file_object, file_offset, is_data_page):
+    """Reads a page.
+
+    Args:
+      file_object (file): a file-like object.
+      file_offset (int): offset of the page relative to the start of the file.
+      is_data_page (bool): True if the page is a data page.
+
+    Raises:
+      ParseError: if the page cannot be read.
+
+    Returns:
+      ObjectsDataPage: objects data page or None.
+    """
+    file_object.seek(file_offset, os.SEEK_SET)
+
+    if self._debug:
+      self._DebugPrintText(
+          'Reading objects data page at offset: {0:d} (0x{0:08x})\n'.format(
+              file_offset))
+
+    objects_page = ObjectsDataPage(file_offset)
+
+    if not is_data_page:
+      self._ReadObjectDescriptors(file_object, objects_page)
+
+    return objects_page
+
+  def GetPage(self, page_number, is_data_page):
     """Retrieves a specific page.
 
     Args:
       page_number (int): page number.
-      data_page (Optional[bool]): True if the page is a data page.
+      is_data_page (bool): True if the page is a data page.
 
     Returns:
       ObjectsDataPage: objects data page or None.
     """
-    file_offset = page_number * ObjectsDataPage.PAGE_SIZE
+    file_offset = page_number * self._PAGE_SIZE
     if file_offset >= self._file_size:
       return None
 
-    # TODO: cache pages.
-    return self._ReadPage(file_offset, data_page=data_page)
-
-  def _ReadPage(self, file_offset, data_page=False):
-    """Reads a page.
-
-    Args:
-      file_offset (int): offset of the page relative to the start of the file.
-      data_page (Optional[bool]): True if the page is a data page.
-
-    Return:
-      ObjectsDataPage: objects data page or None.
-
-    Raises:
-      ParseError: if the page cannot be read.
-    """
-    objects_page = ObjectsDataPage(
-        debug=self._debug, output_writer=self._output_writer)
-    objects_page.ReadPage(self._file_object, file_offset, data_page=data_page)
-    return objects_page
-
-  def _ResolveMappedPageNumber(self, mapped_page_number):
-    """Resolves a mapped page number.
-
-    Args:
-      mapped_page_number (int): mapped page number.
-
-    Returns:
-      int: (physical) page number.
-    """
-    mapping_table_entry = self._objects_mapping_table.entries[
-        mapped_page_number]
-    return mapping_table_entry.page_number
-
-  def GetMappedPage(self, mapped_page_number, data_page=False):
-    """Retrieves a specific mapped page.
-
-    Args:
-      mapped_page_number (int): mapped page number.
-      data_page (Optional[bool]): True if the page is a data page.
-
-    Returns:
-      ObjectsDataPage: objects data page or None.
-    """
-    page_number = self._ResolveMappedPageNumber(mapped_page_number)
-
-    objects_page = self._GetPage(page_number, data_page=data_page)
-    if not objects_page:
-      logging.warning('Unable to read objects data page: {0:d}.'.format(
-          page_number))
-      return None
-
-    return objects_page
-
-  def GetObjectRecordByKey(self, key):
-    """Retrieves a specific object record.
-
-    Args:
-      key (str): a CIM key.
-
-    Returns:
-      ObjectRecord: an object record or None.
-
-    Raises:
-      ParseError: if the object record cannot be retrieved.
-    """
-    key, mapped_page_number, record_identifier, data_size = (
-        self._GetKeyValues(key))
-
-    data_segments = []
-    data_page = False
-    data_segment_index = 0
-    while data_size > 0:
-      object_page = self.GetMappedPage(mapped_page_number, data_page=data_page)
-      if not object_page:
-        errors.ParseError(
-            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
-                record_identifier, data_segment_index))
-
-      if not data_page:
-        object_descriptor = object_page.GetObjectDescriptor(
-            record_identifier, data_size)
-
-        data_offset = object_descriptor.data_offset
-        data_page = True
-      else:
-        data_offset = 0
-
-      data_segment = object_page.ReadObjectRecordData(
-          self._file_object, data_offset, data_size)
-      if not data_segment:
-        errors.ParseError(
-            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
-                record_identifier, data_segment_index))
-
-      data_segments.append(data_segment)
-      data_size -= len(data_segment)
-      data_segment_index += 1
-      mapped_page_number += 1
-
-    _, _, key_name = key.rpartition('\\')
-    data_type, _, _ = key_name.partition('_')
-    object_record_data = b''.join(data_segments)
-
-    return ObjectRecord(data_type, object_record_data)
+    return self._ReadPage(self._file_object, file_offset, is_data_page)
 
   def ReadFileObject(self, file_object):
     """Reads an objects data file-like object.
@@ -1287,6 +1048,40 @@ class ObjectsDataFile(data_format.BinaryDataFile):
       ParseError: if the file cannot be read.
     """
     self._file_object = file_object
+
+  def ReadObjectRecordData(self, objects_page, data_offset, data_size):
+    """Reads the data of an object record.
+
+    Args:
+      objects_page (ObjectsDataPage): objects data page.
+      data_offset (int): offset of the object record data relative to
+          the start of the page.
+      data_size (int): object record data size.
+
+    Returns:
+      bytes: object record data.
+
+    Raises:
+      ParseError: if the object record cannot be read.
+    """
+    # Make the offset relative to the start of the file.
+    file_offset = objects_page.page_offset + data_offset
+
+    self._file_object.seek(file_offset, os.SEEK_SET)
+
+    if self._debug:
+      self._DebugPrintText(
+          'Reading object record at offset: {0:d} (0x{0:08x})\n'.format(
+              file_offset))
+
+    available_page_size = self._PAGE_SIZE - data_offset
+
+    if data_size > available_page_size:
+      read_size = available_page_size
+    else:
+      read_size = data_size
+
+    return self._file_object.read(read_size)
 
 
 class CIMObject(data_format.BinaryDataFormat):
@@ -2192,9 +1987,12 @@ class CIMRepository(data_format.BinaryDataFormat):
     format_version (int): format version.
   """
 
-  # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
+  _KEY_SEGMENT_SEPARATOR = '\\'
+  _KEY_VALUE_SEPARATOR = '.'
+
+  _KEY_VALUE_PAGE_NUMBER_INDEX = 1
+  _KEY_VALUE_RECORD_IDENTIFIER_INDEX = 2
+  _KEY_VALUE_DATA_SIZE_INDEX = 3
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a CIM repository.
@@ -2207,8 +2005,13 @@ class CIMRepository(data_format.BinaryDataFormat):
     self._debug = debug
     self._class_definitions_by_hash = {}
     self._class_definitions_by_name = {}
+    self._class_value_data_map_by_hash = {}
     self._index_binary_tree_file = None
+    self._index_mapping_table = None
+    self._index_root_page = None
+    self._namespaces_by_hash = {}
     self._objects_data_file = None
+    self._objects_mapping_table = None
     self._output_writer = output_writer
 
     self.format_version = None
@@ -2360,6 +2163,97 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     return active_mapping_file
 
+  def _GetHashFromString(self, string):
+    """Retrieves the hash of a string.
+
+    Args:
+      string (str): string to hash.
+
+    Returns:
+      str: hash of the string.
+    """
+    string_data = string.upper().encode('utf-16-le')
+    if self.format_version == 1:
+      string_hash = hashlib.md5(string_data)
+    else:
+      string_hash = hashlib.sha256(string_data)
+
+    return string_hash.hexdigest()
+
+  def _GetIndexPageByMappedPageNumber(self, mapped_page_number):
+    """Retrieves a specific index page by mapped page number.
+
+    Args:
+      mapped_page_number (int): mapped page number.
+
+    Returns:
+      IndexBinaryTreePage: an index binary-tree page or None.
+    """
+    page_number = self._index_mapping_table.ResolveMappedPageNumber(
+        mapped_page_number)
+
+    index_page = self._index_binary_tree_file.GetPage(page_number)
+    if not index_page:
+      logging.warning('Unable to read index binary-tree page: {0:d}.'.format(
+          page_number))
+      return None
+
+    return index_page
+
+  def _GetIndexFirstMappedPage(self):
+    """Retrieves the index first mapped page.
+
+    Returns:
+      IndexBinaryTreePage: an index binary-tree page or None.
+
+    Raises:
+      RuntimeError: if the index first mapped page could not be determined.
+    """
+    page_number = self._index_mapping_table.ResolveMappedPageNumber(0)
+
+    index_page = self._index_binary_tree_file.GetPage(page_number)
+    if not index_page:
+      raise RuntimeError((
+          'Unable to determine first mapped index binary-tree page: '
+          '{0:d}.').format(page_number))
+
+    if index_page.page_type != 0xaddd:
+      raise RuntimeError((
+          'Unsupported first mapped index binary-tree page type: '
+          '0x{0:04x}').format(index_page.page_type))
+
+    return index_page
+
+  def _GetIndexRootPage(self):
+    """Retrieves the index root page.
+
+    Returns:
+      IndexBinaryTreePage: an index binary-tree page or None.
+    """
+    if not self._index_root_page:
+      if self.format_version == 1:
+        first_mapped_page = self._GetIndexFirstMappedPage()
+        if not first_mapped_page:
+          return None
+
+        root_page_number = first_mapped_page.root_page_number
+      else:
+        root_page_number = 1
+
+      page_number = self._index_mapping_table.ResolveMappedPageNumber(
+          root_page_number)
+
+      index_page = self._index_binary_tree_file.GetPage(page_number)
+      if not index_page:
+        logging.warning(
+            'Unable to read index binary-tree root page: {0:d}.'.format(
+                page_number))
+        return None
+
+      self._index_root_page = index_page
+
+    return self._index_root_page
+
   def _GetKeysFromIndexPage(self, index_page):
     """Retrieves the keys from an index page.
 
@@ -2371,17 +2265,78 @@ class CIMRepository(data_format.BinaryDataFormat):
         yield key
 
       for mapped_page_number in index_page.sub_pages:
-        sub_index_page = self._index_binary_tree_file.GetMappedPage(
+        sub_index_page = self._GetIndexPageByMappedPageNumber(
             mapped_page_number)
         for key in self._GetKeysFromIndexPage(sub_index_page):
           yield key
 
-  def _OpenIndexBinaryTreeFile(self, path, index_mapping_table):
+  def _GetKeyValues(self, key):
+    """Retrieves the key values from the key.
+
+    Args:
+      key (str): a CIM key.
+
+    Returns:
+      tuple[str, int, int, int]: name of the key, corresponding page number,
+          record identifier and record data size or None.
+    """
+    key_segment = key.split(self._KEY_SEGMENT_SEPARATOR)[-1]
+
+    if self._KEY_VALUE_SEPARATOR not in key_segment:
+      return None, None, None, None
+
+    key_values = key_segment.split(self._KEY_VALUE_SEPARATOR)
+    if not len(key_values) == 4:
+      logging.warning('Unsupported number of key values.')
+      return None, None, None, None
+
+    try:
+      page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
+    except ValueError:
+      logging.warning('Unsupported key value page number.')
+      return None, None, None, None
+
+    try:
+      record_identifier = int(
+          key_values[self._KEY_VALUE_RECORD_IDENTIFIER_INDEX], 10)
+    except ValueError:
+      logging.warning('Unsupported key value record identifier.')
+      return None, None, None, None
+
+    try:
+      data_size = int(key_values[self._KEY_VALUE_DATA_SIZE_INDEX], 10)
+    except ValueError:
+      logging.warning('Unsupported key value data size.')
+      return None, None, None, None
+
+    return key_values[0], page_number, record_identifier, data_size
+
+  def _GetObjectsPageByMappedPageNumber(self, mapped_page_number, is_data_page):
+    """Retrieves a specific objects page by mapped page number.
+
+    Args:
+      mapped_page_number (int): mapped page number.
+      is_data_page (bool): True if the page is a data page.
+
+    Returns:
+      ObjectsDataPage: objects data page or None.
+    """
+    page_number = self._objects_mapping_table.ResolveMappedPageNumber(
+        mapped_page_number)
+
+    objects_page = self._objects_data_file.GetPage(page_number, is_data_page)
+    if not objects_page:
+      logging.warning('Unable to read objects data page: {0:d}.'.format(
+          page_number))
+      return None
+
+    return objects_page
+
+  def _OpenIndexBinaryTreeFile(self, path):
     """Opens an index binary tree.
 
     Args:
       path (str): path to the CIM repository.
-      index_mapping_table (mapping_table): index mapping table.
 
     Returns:
       IndexBinaryTreeFile: index binary tree file or None if not available.
@@ -2398,8 +2353,7 @@ class CIMRepository(data_format.BinaryDataFormat):
           index_binary_tree_file_path[0]))
 
     index_binary_tree_file = IndexBinaryTreeFile(
-        self.format_version, index_mapping_table, debug=self._debug,
-        output_writer=self._output_writer)
+        debug=self._debug, output_writer=self._output_writer)
     index_binary_tree_file.Open(index_binary_tree_file_path[0])
 
     return index_binary_tree_file
@@ -2449,12 +2403,11 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     return open(mapping_version_file_path[0], 'rb')  # pylint: disable=consider-using-with
 
-  def _OpenObjectsDataFile(self, path, objects_mapping_table):
+  def _OpenObjectsDataFile(self, path):
     """Opens an objects data file.
 
     Args:
       path (str): path to the CIM repository.
-      objects_mapping_table (mapping_table): objects mapping table.
 
     Returns:
       ObjectsDataFile: objects data file or None if not available.
@@ -2470,25 +2423,24 @@ class CIMRepository(data_format.BinaryDataFormat):
       self._DebugPrintText('Reading: {0:s}\n'.format(objects_data_file_path[0]))
 
     objects_data_file = ObjectsDataFile(
-        objects_mapping_table, debug=self._debug,
-        output_writer=self._output_writer)
+        debug=self._debug, output_writer=self._output_writer)
     objects_data_file.Open(objects_data_file_path[0])
 
     return objects_data_file
 
   def _ReadClassDefinitions(self):
     """Reads the class definitions."""
-    index_page = self._index_binary_tree_file.GetRootPage()
+    index_page = self._GetIndexRootPage()
     for key in self._GetKeysFromIndexPage(index_page):
       if '.' not in key:
         continue
 
-      _, _, key_name = key.rpartition('\\')
-      data_type, _, key_name = key_name.partition('_')
+      key_segment = key.split(self._KEY_SEGMENT_SEPARATOR)[-1]
+      data_type, _, key_segment = key_segment.partition('_')
       if data_type != 'CD':
         continue
 
-      object_record = self._objects_data_file.GetObjectRecordByKey(key)
+      object_record = self.GetObjectRecordByKey(key)
 
       class_definition = ClassDefinition(
           debug=self._debug, output_writer=self._output_writer)
@@ -2496,12 +2448,74 @@ class CIMRepository(data_format.BinaryDataFormat):
 
       self._class_definitions_by_name[class_definition.name] = class_definition
 
-      name_hash, _, _ = key_name.partition('.')
+      name_hash, _, _ = key_segment.partition('.')
       name_hash = name_hash.lower()
       self._class_definitions_by_hash[name_hash] = class_definition
 
+  def _ReadInstanceFromObjectRecord(self, object_record):
+    """Reads an instance.
+
+    Args:
+      object_record (ObjectRecord): object record.
+
+    Returns:
+      Instance: instance or None.
+    """
+    instance = Instance(
+        self.format_version, debug=self._debug,
+        output_writer=self._output_writer)
+    instance.ReadObjectRecord(object_record)
+
+    class_value_data_map = self.GetClassValueMapByHash(
+        instance.class_name_hash)
+    instance.ReadInstanceBlockData(class_value_data_map)
+
+    if self._debug:
+      self._DebugPrintInstance(instance)
+
+    return instance
+
+  def _ReadNamespaces(self):
+    """Reads the namespaces."""
+    # TODO: Get the __NAMESPACE class definition on demand
+
+    class_name_hash = self._GetHashFromString('__NAMESPACE')
+
+    index_page = self._GetIndexRootPage()
+    for key in self._GetKeysFromIndexPage(index_page):
+      if '.' not in key:
+        continue
+
+      key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+
+      _, _, key_segment = key_segments[2].partition('_')
+      if key_segment.lower() != class_name_hash:
+        continue
+
+      data_type, _, _ = key_segments[-1].partition('_')
+      if data_type not in ('I', 'IL'):
+        continue
+
+      object_record = self.GetObjectRecordByKey(key)
+      instance = self._ReadInstanceFromObjectRecord(object_record)
+
+      name_property = instance.properties.get('Name', None)
+      if name_property:
+        namespace = 'ROOT\\{0:s}'.format(name_property)
+        namespace_hash = self._GetHashFromString(namespace)
+        self._namespaces_by_hash[namespace_hash] = namespace
+
   def Close(self):
     """Closes the CIM repository."""
+    self._class_definitions_by_hash = {}
+    self._class_definitions_by_name = {}
+    self._class_value_data_map_by_hash = {}
+    self._namespaces_by_hash = {}
+
+    self._index_mapping_table = None
+    self._index_root_page = None
+    self._objects_mapping_table = None
+
     if self._objects_data_file:
       self._objects_data_file.Close()
       self._objects_data_file = None
@@ -2534,74 +2548,87 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       ClassDefinition: class definitions or None.
     """
-    class_name_data = class_name.upper().encode('utf-16-le')
-    if self.format_version == 1:
-      class_name_hash = hashlib.md5(class_name_data)
-    else:
-      class_name_hash = hashlib.sha256(class_name_data)
+    class_name_hash = self._GetHashFromString(class_name)
+    return self.GetClassDefinitionByHash(class_name_hash)
 
-    return self.GetClassDefinitionByHash(class_name_hash.hexdigest())
-
-  def GetInstanceByKey(self, key, object_record):
-    """Retrieves a class definition by name.
+  def GetClassValueMapByHash(self, class_name_hash):
+    """Retrieves a class value map by hash of the name.
 
     Args:
-      key (str): a CIM key.
-      object_record (ObjectRecord): object record.
+      class_name_hash (str): hash of the class definition.
 
     Returns:
-      Instance: instance or None.
+      ClassValueMap: class value map or None.
 
     Raises:
       RuntimeError: if a class definition cannot be found.
     """
-    # TODO: update method interface
-    _ = key
-    # object_record = self.GetObjectRecordByKey(key)
+    lookup_key = class_name_hash.lower()
 
-    instance = Instance(
-        self.format_version, debug=self._debug,
-        output_writer=self._output_writer)
-    instance.ReadObjectRecord(object_record)
-
-    class_definition = self.GetClassDefinitionByHash(instance.class_name_hash)
-    if not class_definition:
-      raise RuntimeError(
-          'Unable to retrieve definition of class with hash: {0:s}'.format(
-              instance.class_name_hash))
-
-    class_definitions = [class_definition]
-    while class_definition.super_class_name:
-      class_definition = self.GetClassDefinitionByName(
-          class_definition.super_class_name)
+    class_value_data_map = self._class_value_data_map_by_hash.get(
+        lookup_key, None)
+    if not class_value_data_map:
+      class_definition = self.GetClassDefinitionByHash(class_name_hash)
       if not class_definition:
         raise RuntimeError(
-            'Unable to retrieve definition of class with name: {0:s}'.format(
-                class_definition.super_class_name))
+            'Unable to retrieve definition of class with hash: {0:s}'.format(
+                class_name_hash))
 
-      class_definitions.append(class_definition)
+      class_definitions = [class_definition]
+      while class_definition.super_class_name:
+        class_definition = self.GetClassDefinitionByName(
+            class_definition.super_class_name)
+        if not class_definition:
+          raise RuntimeError(
+              'Unable to retrieve definition of class with name: {0:s}'.format(
+                  class_definition.super_class_name))
 
-    # The ClassValueDataMap.Build functions want the class definitions starting
-    # the with the base class first.
-    class_definitions.reverse()
+        class_definitions.append(class_definition)
 
-    if self._debug:
-      for class_definition in class_definitions:
-        self._DebugPrintClassDefinition(class_definition)
+      # The ClassValueDataMap.Build functions want the class definitions
+      # starting the with the base class first.
+      class_definitions.reverse()
 
-    # TODO: cache class value data map
-    class_value_data_map = ClassValueDataMap()
-    class_value_data_map.Build(class_definitions)
+      if self._debug:
+        for class_definition in class_definitions:
+          self._DebugPrintClassDefinition(class_definition)
 
-    instance.ReadInstanceBlockData(class_value_data_map)
+      # TODO: cache class value data map
+      class_value_data_map = ClassValueDataMap()
+      class_value_data_map.Build(class_definitions)
 
-    if self._debug:
-      self._DebugPrintInstance(instance)
+      self._class_value_data_map_by_hash[lookup_key] = class_value_data_map
+
+    return class_value_data_map
+
+  def GetInstanceByKey(self, key):
+    """Retrieves an instance by name.
+
+    Args:
+      key (str): a CIM key.
+
+    Returns:
+      Instance: instance or None.
+    """
+    key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+    key_segment = key_segments[1]
+
+    object_record = self.GetObjectRecordByKey(key)
+    instance = self._ReadInstanceFromObjectRecord(object_record)
+
+    namespace = None
+    if key_segment.startswith('NS_'):
+      namespace_hash = key_segment[3:].lower()
+      namespace = self._namespaces_by_hash.get(namespace_hash, None)
 
     # pylint: disable=attribute-defined-outside-init
+    class_value_data_map = self.GetClassValueMapByHash(
+        instance.class_name_hash)
+
     instance.class_name = class_value_data_map.class_name
     instance.derivation = class_value_data_map.derivation
     instance.dynasty = class_value_data_map.dynasty
+    instance.namespace = namespace
     instance.super_class_name = class_value_data_map.super_class_name
 
     return instance
@@ -2613,7 +2640,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       str: a CIM key.
     """
     if self._index_binary_tree_file:
-      index_page = self._index_binary_tree_file.GetRootPage()
+      index_page = self._GetIndexRootPage()
       for key in self._GetKeysFromIndexPage(index_page):
         yield key
 
@@ -2627,71 +2654,105 @@ class CIMRepository(data_format.BinaryDataFormat):
       ObjectRecord: an object record or None.
 
     Raises:
+      ParseError: if the objects records could not be parsed.
       RuntimeError: if the objects data file was not opened.
     """
     if not self._objects_data_file:
       raise RuntimeError('Objects.data file was not opened.')
 
-    return self._objects_data_file.GetObjectRecordByKey(key)
+    key, mapped_page_number, record_identifier, data_size = self._GetKeyValues(
+        key)
+
+    data_segments = []
+    is_data_page = False
+    data_segment_index = 0
+    while data_size > 0:
+      object_page = self._GetObjectsPageByMappedPageNumber(
+          mapped_page_number, is_data_page)
+      if not object_page:
+        errors.ParseError(
+            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
+                record_identifier, data_segment_index))
+
+      if not is_data_page:
+        object_descriptor = object_page.GetObjectDescriptor(
+            record_identifier, data_size)
+
+        data_offset = object_descriptor.data_offset
+        is_data_page = True
+      else:
+        data_offset = 0
+
+      data_segment = self._objects_data_file.ReadObjectRecordData(
+          object_page, data_offset, data_size)
+      if not data_segment:
+        errors.ParseError(
+            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
+                record_identifier, data_segment_index))
+
+      data_segments.append(data_segment)
+      data_size -= len(data_segment)
+      data_segment_index += 1
+      mapped_page_number += 1
+
+    key_segment = key.split(self._KEY_SEGMENT_SEPARATOR)[-1]
+    data_type, _, _ = key_segment.partition('_')
+    object_record_data = b''.join(data_segments)
+
+    return ObjectRecord(data_type, object_record_data)
 
   def Open(self, path):
     """Opens the CIM repository.
 
     Args:
-      path (str): path to the CIM repository.
+      path (str): path to the CIM repository or an individual file.
     """
+    basename = os.path.basename(path).lower()
+
+    if basename in ('index.map', 'mapping1.map', 'mapping2.map', 'mapping3.map',
+                    'objects.map'):
+      path = os.path.dirname(path)
+      self._OpenMappingFile(path, basename)
+
+      return
+
+    if basename in ('cim.rep', 'index.btr'):
+      path = os.path.dirname(path)
+
     active_mapping_file = None
 
-    index_mapping_file = self._OpenMappingFile(path, 'index.map')
-    if not index_mapping_file:
-      active_mapping_file = self._GetActiveMappingFile(path)
-      index_mapping_file = active_mapping_file
+    if basename != 'cim.rep':
+      index_mapping_file = self._OpenMappingFile(path, 'index.map')
+      if not index_mapping_file:
+        active_mapping_file = self._GetActiveMappingFile(path)
+        index_mapping_file = active_mapping_file
 
-    self.format_version = index_mapping_file.format_version
-    index_mapping_table = index_mapping_file.GetIndexMappingTable()
+      self.format_version = index_mapping_file.format_version
+      self._index_mapping_table = index_mapping_file.GetIndexMappingTable()
 
-    if not active_mapping_file:
-      index_mapping_file.Close()
+      if basename == 'index.btr' or not active_mapping_file:
+        index_mapping_file.Close()
 
-    self._index_binary_tree_file = self._OpenIndexBinaryTreeFile(
-        path, index_mapping_table)
+      self._index_binary_tree_file = self._OpenIndexBinaryTreeFile(path)
 
-    objects_mapping_file = active_mapping_file
+    if basename == 'index.btr':
+      return
+
+    # TODO:
+    if basename == 'cim.rep':
+      return
+
+    objects_mapping_file = self._OpenMappingFile(path, 'objects.map')
     if not objects_mapping_file:
-      objects_mapping_file = self._OpenMappingFile(path, 'objects.map')
+      if not active_mapping_file:
+        active_mapping_file = self._GetActiveMappingFile(path)
+      objects_mapping_file = active_mapping_file
 
-    object_mapping_table = objects_mapping_file.GetObjectsMappingTable()
+    self._objects_mapping_table = objects_mapping_file.GetObjectsMappingTable()
 
     objects_mapping_file.Close()
 
-    self._objects_data_file = self._OpenObjectsDataFile(
-        path, object_mapping_table)
+    self._objects_data_file = self._OpenObjectsDataFile(path)
 
     self._ReadClassDefinitions()
-
-  def OpenIndexBinaryTree(self, path):
-    """Opens the CIM repository index binary tree.
-
-    Args:
-      path (str): path to the CIM repository.
-    """
-    index_mapping_file = self._OpenMappingFile(path, 'index.map')
-    if not index_mapping_file:
-      index_mapping_file = self._GetActiveMappingFile(path)
-
-    self.format_version = index_mapping_file.format_version
-    index_mapping_table = index_mapping_file.GetIndexMappingTable()
-
-    index_mapping_file.Close()
-
-    self._index_binary_tree_file = self._OpenIndexBinaryTreeFile(
-        path, index_mapping_table)
-
-  def OpenMappingFile(self, path):
-    """Opens a CIM repository mapping file.
-
-    Args:
-      path (str): path to the CIM repository.
-    """
-    path, _, filename = path.rpartition(os.path.sep)
-    self._OpenMappingFile(path, filename)
+    self._ReadNamespaces()

@@ -85,7 +85,7 @@ the directory:
 * `CIM.REC`;
 * `CIM.REP`;
 
-[yellow-background]*Determine format*
+This document refers to this format as version 1.0.
 
 === Windows XP and Windows 2003
 
@@ -139,11 +139,142 @@ information within this document:
 * Windows 10
 * Windows 11
 
-== The index binary-tree file (index.btr)
+== CIM repository
 
-The index binary-tree file (index.btr) consists of:
+The CIM repository contains:
 
-* an array of pages
+* class definitions
+* (class) instances
+* registration
+
+=== [[cim_identifier_strings]]Identifier strings
+
+The following information applies to format version 2 only.
+
+A CIM repository uses identifier strings to map to <<object_records,object records>>.
+
+The identifier strings are stored in the <<index_binary_tree_file,index binary-tree (Index.btr) file>>.
+The object records are stored in the <<objects_data_file,objects data file>>.
+
+An example of a format version 2.1 identifier string:
+
+....
+R_7F02F51F97C31228F1ADE773040492C4
+....
+
+An example of a format version 2.2 identier string:
+
+....
+CD_41C53E6DB1ACF2453CEFD41398198E613F10DFF47709ECAB1D7F037756AC8CE7.0.2079881926.209
+....
+
+The identifier string consist of the following components:
+
+* Type prefix
+* Separator "_"
+* Digest hash
+* Optional object record values:
+  * Separator "."
+  * Mapped page number of the object record in objects.data
+  * Separator "."
+  * Identifier of the object record in objects.data
+  * Data size of the object record in objects.data
+
+The following type prefixes are known:
+
+[cols="1,5",options="header"]
+|===
+| Prefix | Usage
+| C |
+| CD | Class definition
+| CI | [yellow-background]*Unknown (Class instance?)*
+| CR | [yellow-background]*Unknown (Class reference?)*
+| I | Instance
+| IL | Instance
+| KI |
+| KL |
+| NS | Name space
+| R | Registration
+|===
+
+The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
+is calculated from an upper case name, for example using Python to determine
+the identifier of the class name "__thisNAMESPACE":
+
+....
+hashlib.sha256('__thisNAMESPACE'.upper().encode('utf-16-le')).hexdigest()
+
+41c53e6db1acf2453cefd41398198e613f10dff47709ecab1d7f037756ac8ce7
+....
+
+=== [[cim_data_types]]CIM data types
+
+According to MSDN:
+
+[quote]
+____
+CimType is a 32-bit value of which only the lower 16 bits are used.
+____
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000000 | | [yellow-background]*None (Confirm this)* +
+A null value
+| | |
+| 0x00000002 | CIM-TYPE-SINT16 | A signed 16-bit integer
+| 0x00000003 | CIM-TYPE-SINT32 | A signed 32-bit integer
+| 0x00000004 | CIM-TYPE-REAL32 | A floating-point 32-bit number
+| 0x00000005 | CIM-TYPE-REAL64 | A floating-point 64-bit number
+| | |
+| 0x00000008 | CIM-TYPE-STRING | A string
+| | |
+| 0x0000000b | CIM-TYPE-BOOLEAN | A boolean +
+Stored as a 16-bit value where VARIANT_TRUE (–1) or VARIANT_FALSE (0)
+| | |
+| 0x0000000d | CIM-TYPE-OBJECT | [yellow-background]*An embedded object.*
+| | |
+| 0x00000010 | CIM-TYPE-SINT8 | A signed 8-bit integer
+| 0x00000011 | CIM-TYPE-UINT8 | An unsigned 8-bit integer
+| 0x00000012 | CIM-TYPE-UINT16 | An unsigned 16-bit integer
+| 0x00000013 | CIM-TYPE-UINT32 | An unsigned 32-bit integer
+| 0x00000014 | CIM-TYPE-SINT64 | A signed 64-bit integer
+| 0x00000015 | CIM-TYPE-UINT64 | An unsigned 64-bit integer
+| | |
+| 0x00000065 | CIM-TYPE-DATETIME | A date or time value +
+Contains a string in DMTF date/time format: yyyymmddHHMMSS.mmmmmmsUUU +
+where yyyymmdd is the date in year/month/day; +
+HHMMSS is the time in hours/minutes/seconds; +
+mmmmmm is the number of microseconds in 6 digits; +
+and sUUU is a sign (+ or -) and a 3-digit UTC offset
+| 0x00000066 | CIM-TYPE-REFERENCE | A reference to another object. +
+[yellow-background]*This is represented by a string containing the path to the referenced object.* +
+[yellow-background]*This value maps to the signed 16-bit integer type (CIM-TYPE-SINT16). (Confirm this)*
+| 0x00000067 | CIM-TYPE-CHAR16 | A 16-bit character
+| | |
+| 0x00002000 | | The array (or multi-value) flag. +
+Array property types are identified with CIM-ARRAY instead of CIM-TYPE e.g. CIM-ARRAY-UINT8
+| 0x00004000 | | [yellow-background]*Unknown flag*
+|===
+
+==== [[cim_string]]CIM string
+
+The CIM string is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)*
+| 1 | ... | | Property name string +
+Contains a string with end-of-string character
+|===
+
+== [[index_binary_tree_file]]The index binary-tree file (index.btr)
+
+The index binary-tree file (index.btr) is used by format version 2 and consists
+of:
+
+* an array of index binary-tree pages
 
 === Index binary-tree page
 
@@ -293,7 +424,10 @@ The offset is 2 bytes of size and consists of:
 The offset is relative to the start of the index binary-tree page value data
 |===
 
-== Index.map, Mapping#.map and Objects.map
+== The mapping file (Index.map, Mapping#.map and Objects.map)
+
+The mapping file (Index.map, Mapping#.map and Objects.map) is used by format
+version 2.
 
 Windows XP and Windows 2003 use the following version 2.1 mapping files:
 
@@ -441,22 +575,25 @@ The file footer - version 2.2 is 8 bytes of size and consists of:
 Seen: 0, 1
 |===
 
-== Mapping.ver
+== The active mapping file (Mapping.ver)
 
-The `Mapping.ver` file is used in Windows XP and Windows 2003 to indicate the
-active `Mapping#.map` file.
+The active mapping file (Mapping.ver) is used by format version 2.
+
+The active mapping file is used in Windows XP and Windows 2003 to indicate
+the which `Mapping#.map` file is active (should be used).
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | The active mapping file.
+| 0 | 4 | | The active mapping file number
 |===
 
-== Objects.data
+== [[objects_data_file]]The objects data file (Objects.data)
 
-The Objects.data file consists of:
+The objects data file (Objects.data) is used by format version 2 and consists
+of:
 
-* an array of pages
+* an array of objects data pages
 
 === Objects data page
 
@@ -498,7 +635,7 @@ The offset is relative to the start of the object descriptors
 Contains a CRC-32 with polynomial 0xedb88320 and initial value 0 of the object record data
 |===
 
-==== Object records
+==== [[object_records]]Object records
 
 The object record is defined by the object descriptor and its structure depends
 on the data type.
@@ -647,6 +784,32 @@ CIM-TYPE-REFERENCE |
 | 10 | "type" | CIM-TYPE-STRING |
 |===
 
+==== Type qualifiers
+
+It is currently presumed that the class definition type qualifier is a direct
+mapping of a MOF data type.
+
+[cols="1,1,5",options="header"]
+|===
+| Value | CIM data type | Description
+| boolean | CIM-TYPE-BOOLEAN |
+| char16 | CIM-TYPE-CHAR16 |
+| datetime | CIM-TYPE-DATETIME |
+| object | CIM-TYPE-OBJECT |
+| real32 | CIM-TYPE-REAL32 |
+| real64 | CIM-TYPE-REAL64 |
+| ref | CIM-TYPE-REFERENCE |
+| sint16 | CIM-TYPE-SINT16 |
+| sint32 | CIM-TYPE-SINT32 |
+| sint64 | CIM-TYPE-SINT54 |
+| sint8 | CIM-TYPE-SINT8 |
+| string | CIM-TYPE-STRING |
+| uint16 | CIM-TYPE-UINT16 |
+| uint32 | CIM-TYPE-UINT32 |
+| uint64 | CIM-TYPE-UINT64 |
+| uint8 | CIM-TYPE-UINT8 |
+|===
+
 === Registration (R)
 
 [cols="1,1,1,5",options="header"]
@@ -673,68 +836,6 @@ Contains an UTF-16 little-endian string without end-of-string character.
 
 [NOTE]
 The attribute value contains a CIM key
-
-=== [[cim_data_types]]CIM data types
-
-According to MSDN:
-
-[quote]
-____
-CimType is a 32-bit value of which only the lower 16 bits are used.
-____
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x00000000 | | [yellow-background]*None (Confirm this)* +
-A null value
-| | |
-| 0x00000002 | CIM-TYPE-SINT16 | A signed 16-bit integer
-| 0x00000003 | CIM-TYPE-SINT32 | A signed 32-bit integer
-| 0x00000004 | CIM-TYPE-REAL32 | A floating-point 32-bit number
-| 0x00000005 | CIM-TYPE-REAL64 | A floating-point 64-bit number
-| | |
-| 0x00000008 | CIM-TYPE-STRING | A string
-| | |
-| 0x0000000b | CIM-TYPE-BOOLEAN | A boolean +
-Stored as a 16-bit value
-| | |
-| 0x0000000d | CIM-TYPE-OBJECT | [yellow-background]*An embedded object.*
-| | |
-| 0x00000010 | CIM-TYPE-SINT8 | A signed 8-bit integer
-| 0x00000011 | CIM-TYPE-UINT8 | An unsigned 8-bit integer
-| 0x00000012 | CIM-TYPE-UINT16 | An unsigned 16-bit integer
-| 0x00000013 | CIM-TYPE-UINT32 | An unsigned 32-bit integer
-| 0x00000014 | CIM-TYPE-SINT64 | A signed 64-bit integer
-| 0x00000015 | CIM-TYPE-UINT64 | An unsigned 64-bit integer
-| | |
-| 0x00000065 | CIM-TYPE-DATETIME | A date or time value +
-Contains a string in DMTF date/time format: yyyymmddHHMMSS.mmmmmmsUUU +
-where yyyymmdd is the date in year/month/day; +
-HHMMSS is the time in hours/minutes/seconds; +
-mmmmmm is the number of microseconds in 6 digits; +
-and sUUU is a sign (+ or -) and a 3-digit UTC offset
-| 0x00000066 | CIM-TYPE-REFERENCE | A reference to another object. +
-[yellow-background]*This is represented by a string containing the path to the referenced object.* +
-[yellow-background]*This value maps to the signed 16-bit integer type (CIM-TYPE-SINT16). (Confirm this)*
-| 0x00000067 | CIM-TYPE-CHAR16 | A 16-bit character
-| | |
-| 0x00002000 | | The array (or multi-value) flag. +
-Array property types are identified with CIM-ARRAY instead of CIM-TYPE e.g. CIM-ARRAY-UINT8
-| 0x00004000 | | [yellow-background]*Unknown flag*
-|===
-
-==== [[cim_string]]CIM string
-
-The CIM string is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (string type/flags?)*
-| 1 | ... | | Property name string +
-Contains a string with end-of-string character
-|===
 
 === Instance (I and IL)
 
@@ -824,75 +925,67 @@ Includes the 4 bytes of the size
 | 4 | ... | | [yellow-background]*Unknown*
 |===
 
-== CIM repository
+== The CIM.REC file
 
-=== [[cim_identifier_strings]]Identifier strings
+Seen on Windows 2000, is this a recovery file ?
 
-The page values in the index binary-tree (Index.btr) contain identifier strings
-that map to object records.
-
-An example of a version 2.1 identifier string:
-
-....
-R_7F02F51F97C31228F1ADE773040492C4
-....
-
-And an example of a version 2.2 identier string:
-
-....
-CD_41C53E6DB1ACF2453CEFD41398198E613F10DFF47709ECAB1D7F037756AC8CE7.0.2079881926.209
-....
-
-The identifier string consist of the following components
-
-* Type prefix
-* Separator "_"
-* Digest hash
-* Optional values:
-  * Separator "."
-  * Mapped page number of the object record in objects.data
-  * Separator "."
-  * Identifier of the object record in objects.data
-  * Data size of the object record in objects.data
-
-The following type prefixes are known:
-
-[cols="1,5",options="header"]
+[cols="1,1,1,5",options="header"]
 |===
-| Prefix | Usage
-| C |
-| CD | Class definition
-| CI | [yellow-background]*Unknown (Class instance?)*
-| CR | [yellow-background]*Unknown (Class reference?)*
-| I | Instance
-| IL | Instance
-| KI |
-| KL |
-| NS | Name space
-| R | Registration
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (signature?)*
+| 4 | 4 | 0x8000 | [yellow-background]*Unknown (page or uncompressed block size?)*
+| 8 | 8 | | [yellow-background]*Unknown (date and time)* +
+Contains a FILETIME
+| 16 | 8 | | [yellow-background]*Unknown (total uncompressed data size?)*
 |===
 
-The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
-is calculated from an upper case name, for example using Python to determine
-the identifier of the class name "__thisNAMESPACE":
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | 1 | [yellow-background]*Unknown (version?)*
+| 4 | 4 | | Compressed block size
+| 8 | 4 | 0x8000 | Uncompressed block size
+4+| _Compressed data?_
+| 12 | 2 | "DS" | [yellow-background]*Unknown (compression signature?)*
+| 14 | ... | | [yellow-background]*Unknown (compressed data)*
+|===
 
 ....
-hashlib.sha256('__thisNAMESPACE'.upper().encode('utf-16-le')).hexdigest()
+00000000  01 01 01 78 00 80 00 00  80 74 ab 8b e4 00 d4 01  |...x.....t......|
+00000010  91 47 25 00 00 00 00 00                           |.G%..........'..|
 
-41c53e6db1acf2453cefd41398198e613f10dff47709ecab1d7f037756ac8ce7
+00000010                           01 00 00 00 c0 27 00 00  |.G%..........'..|
+00000020  00 80 00 00 44 53 00 01  ca 2d 0b b7 2c 5e b8 33  |....DS...-..,^.3|
+00000030  03 02 08 aa 80 90 52 01  3e 11 24 15 45 1e 20 24  |......R.>.$.E. $|
+...
+000027e0  26 ff ff 01                                       |&........$......|
+
+000027e0              01 00 00 00  ff 24 00 00 00 80 00 00  |&........$......|
+000027f0  44 53 00 01 8e 0c 08 20  a8 d3 b7 6e cb 18 4d ea  |DS..... ...n..M.|
+...
+00004ce0  4b 33 a6 d1 99 37 6f 0a  85 9d 1d 6c f0 ff 0f     |K3...7o....l....|
+
+00004ce0                                                01  |K3...7o....l....|
+00004cf0  00 00 00 dd 22 00 00 00  80 00 00 44 53 00 01 b6  |...."......DS...|
+00004d00  8c 19 93 ac cc 96 38 6b  1a 1d da 12 46 20 8d e2  |......8k....F ..|
+...
+00006fc0  e1 f7 a2 33 61 12 ff b6  15 1a d4 68 f1 96 46 ad  |...3a......h..F.|
+00006fd0  5d d1 de d2 60 ff ff 01  01 00 00 00 c8 1f 00 00  |]...`...........|
+00006fe0  00 80 00 00 44 53 00 01  02 34 0b 14 40 80 72 08  |....DS...4..@.r.|
+...
+000ae340  ff 07                                             |...........G..DS|
+000ae340        01 00 00 00 e2 0a  00 00 91 47 00 00 44 53  |...........G..DS|
+000ae350  00 01 02 a4 0b b0 2e c0  b9 00 a1 02 94 0b f0 0d  |................|
+...
+000aee20  ad c8 01 3e 89 c0 d3 00  06 3a 02 83 c1 f9 ff 03  |...>.....:......|
+
+Footer or terminator block?
+000aee30  00 00 00 00 00 00 00 00  91 47 00 00              |.........G..|
 ....
 
-=== Notes
+== The CIM.REP file
 
-....
-Name space: ROOT\WMI
-Class name: MSTapeDriver
-....
-
-....
-Name space: NS_8DFCCA0B7FAB09C32755407485035A60
-Class name: CD_29C96FE3708DDF22ABBE770FCB770099
-....
+Seen on Windows 2000
 
 == Notes
 
@@ -915,34 +1008,6 @@ Get-CimInstance
 === CIM OOO
 
 http://www.wbemsolutions.com/tutorials/DMTF/cim-ooo.html
-
-=== CIM data types
-
-http://www.wbemsolutions.com/tutorials/DMTF/meta-property.html
-
-....
-INTRINSIC DATA TYPE
-
-INTERPRETATION
-
-uint8	Unsigned 8-bit integer
-sint8	Signed 8-bit integer
-uint16	Unsigned 16-bit integer
-sint16	Signed 16-bit integer
-uint32	Unsigned 32-bit integer
-sint32	Signed 32-bit integer
-uint64	Unsigned 64-bit integer
-sint64	Signed 64-bit integer
-string	UCS-2 string
-boolean	Boolean
-real32	IEEE 4-byte floating-point
-real64	IEEE 8-byte floating-point
-datetime	A string containing a date-time
-<classname> ref
-
-Strongly typed reference
-char16	16-bit UCS-2 character
-....
 
 :numbered!:
 [appendix]

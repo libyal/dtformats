@@ -35,11 +35,9 @@ class IndexBinaryTreeFileTest(test_lib.BaseTestCase):
     test_file_path = self._GetTestFilePath(['cim', 'INDEX.MAP'])
     self._SkipIfPathNotExists(test_file_path)
 
-    mapping_file = wmi_repository.MappingFile(test_file_path)
-
     output_writer = test_lib.TestOutputWriter()
     test_file = wmi_repository.IndexBinaryTreeFile(
-        1, mapping_file, output_writer=output_writer)
+        output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cim', 'INDEX.BTR'])
     self._SkipIfPathNotExists(test_file_path)
@@ -135,11 +133,9 @@ class ObjectsDataFileTest(test_lib.BaseTestCase):
     test_file_path = self._GetTestFilePath(['cim', 'OBJECTS.MAP'])
     self._SkipIfPathNotExists(test_file_path)
 
-    mapping_file = wmi_repository.MappingFile(test_file_path)
-
     output_writer = test_lib.TestOutputWriter()
     test_file = wmi_repository.ObjectsDataFile(
-        mapping_file, output_writer=output_writer)
+        output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['cim', 'OBJECTS.DATA'])
     self._SkipIfPathNotExists(test_file_path)

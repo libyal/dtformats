@@ -31,7 +31,7 @@ def PrintInstance(instance):
   property_count = '{0:d}'.format(len(instance.properties))
   derivation = '{{{0:s}}}'.format(', '.join(instance.derivation))
   server = 'TEST'
-  namespace = 'ROOT'
+  namespace = instance.namespace or 'ROOT'
   path = '\\\\{0:s}\\{1:s}:{2:s}'.format(server, namespace, relpath)
 
   name_value_pairs = [
@@ -63,6 +63,17 @@ def PrintInstance(instance):
   print('')
 
 
+def PrintNamespace(instance):
+  """Writes a namespace to stdout.
+
+  Args:
+    instance (Instance): instance.
+  """
+  if instance.class_name.upper() == '__NAMESPACE':
+    name_property = instance.properties.get('Name', None)
+    print(name_property or '')
+
+
 def Main():
   """The main program function.
 
@@ -76,6 +87,11 @@ def Main():
   argument_parser.add_argument(
       '-d', '--debug', dest='debug', action='store_true', default=False,
       help='enable debug output.')
+
+  # TODO: make this more descriptive.
+  argument_parser.add_argument(
+      '--output_mode', '--output-mode', dest='output_mode', action='store',
+      default='instances', help='output mode.')
 
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='PATH',
@@ -104,48 +120,54 @@ def Main():
     print('')
     return False
 
-  source_basename = os.path.basename(options.source)
-  source_basename = source_basename.lower()
+  source_basename = os.path.basename(options.source).lower()
+  if source_basename == 'index.btr':
+    options.output_mode = 'keys'
 
   cim_repository = wmi_repository.CIMRepository(
       debug=options.debug, output_writer=output_writer)
 
-  if source_basename == 'index.btr':
-    source = os.path.dirname(options.source)
-    cim_repository.OpenIndexBinaryTree(source)
+  cim_repository.Open(options.source)
 
-  elif source_basename in (
-      'index.map', 'mapping1.map', 'mapping2.map', 'mapping3.map',
-      'objects.map'):
-    cim_repository.OpenMappingFile(options.source)
+  object_record_keys = {}
+  for key in cim_repository.GetKeys():
+    if '.' not in key:
+      continue
 
-  else:
-    cim_repository.Open(options.source)
+    key_segment = key.split('\\')[-1]
+    key_name, _, _ = key_segment.partition('.')
 
-    object_record_keys = {}
-    for key in cim_repository.GetKeys():
+    if key_name not in object_record_keys:
+      object_record_keys[key_name] = []
+
+    object_record_keys[key_name].append(key)
+
+  for key_name, keys in object_record_keys.items():
+    for key in keys:
+      if options.output_mode == 'keys':
+        print(key)
+        continue
+
       if '.' not in key:
         continue
 
-      _, _, key_name = key.rpartition('\\')
-      key_name, _, _ = key_name.partition('.')
+      key_segment = key.split('\\')[-1]
+      data_type, _, _ = key_segment.partition('_')
 
-      if key_name not in object_record_keys:
-        object_record_keys[key_name] = []
+      # TODO: for namespaces filter on hash of "__NAMESPACE"
 
-      object_record_keys[key_name].append(key)
+      if data_type in ('I', 'IL'):
+        if options.output_mode in ('debug', 'instances', 'namespaces'):
+          instance = cim_repository.GetInstanceByKey(key)
 
-    for key_name, keys in object_record_keys.items():
-      for key in keys:
-        print(key)
+          if options.output_mode == 'namespaces':
+            PrintNamespace(instance)
+          else:
+            PrintInstance(instance)
 
-        object_record = cim_repository.GetObjectRecordByKey(key)
-
-        if object_record.data_type in ('I', 'IL'):
-          interface = cim_repository.GetInstanceByKey(key, object_record)
-          PrintInstance(interface)
-
-        elif object_record.data_type == 'R':
+      elif data_type == 'R':
+        if options.output_mode == 'debug':
+          object_record = cim_repository.GetObjectRecordByKey(key)
           registration = wmi_repository.Registration(
               debug=options.debug, output_writer=output_writer)
           registration.ReadObjectRecord(object_record)
