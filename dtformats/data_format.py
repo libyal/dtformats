@@ -11,6 +11,7 @@ from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 from dtfabric.runtime import fabric as dtfabric_fabric
 
+from dtformats import decorators
 from dtformats import errors
 
 
@@ -377,7 +378,8 @@ class BinaryDataFormat(object):
     """
     return '{0:d} (0x{0:08x})'.format(integer)
 
-  # TODO: replace by _FormatArrayOfIntegersAsIPv4Address
+  # Deprecated in favor of _FormatArrayOfIntegersAsIPv4Address
+  @decorators.deprecated
   def _FormatPackedIPv4Address(self, packed_ip_address):
     """Formats a packed IPv4 address as a human readable string.
 
@@ -389,7 +391,8 @@ class BinaryDataFormat(object):
     """
     return '.'.join(['{0:d}'.format(octet) for octet in packed_ip_address[:4]])
 
-  # TODO: replace by _FormatArrayOfIntegersAsIPv6Address
+  # Deprecated in favor of _FormatArrayOfIntegersAsIPv6Address
+  @decorators.deprecated
   def _FormatPackedIPv6Address(self, packed_ip_address):
     """Formats a packed IPv6 address as a human readable string.
 
@@ -547,7 +550,8 @@ class BinaryDataFormat(object):
 
     return data
 
-  # TODO: deprecate in favor of _ReadStructureFromFileObject
+  # Deprecated in favor of _ReadStructureFromFileObject
+  @decorators.deprecated
   def _ReadStructure(
       self, file_object, file_offset, data_size, data_type_map, description):
     """Reads a structure.
