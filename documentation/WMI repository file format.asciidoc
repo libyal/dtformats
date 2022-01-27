@@ -269,6 +269,139 @@ The CIM string is variable of size and consists of:
 Contains a string with end-of-string character
 |===
 
+==== [[class_definition_block]]Class definition block
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | [yellow-background]*Unknown (empty values?)*
+| 1 | 4 | | Class name offset +
+The offset is relative to the start of the properties block data +
+See section: <<cim_string,CIM string>>
+| 5 | 4 | | [yellow-background]*Unknown (Default values size?)*
+| 9 | 4 | | Super class name block size +
+Includes the 4 bytes of the size
+| 14 | ... | | Super class name block data +
+Contians a <<cim_string,CIM string>>
+| ... | 4 | | Qualifiers block size
+Includes the 4 bytes of the size
+| ... | ... | | Qualifiers block data +
+See section: <<qualifiers_block,qualifiers block>>
+| ... | 4 | | Number of property descriptors
+| ... | ... | | Property descriptors array +
+See section: <<property_descriptor,Property descriptor>>
+| ... | ... | |  [yellow-background]*Unknown (Default values data? bitmap?)*
+| ... | 4 | | Values data size
+Does not include the 4 bytes of the size +
+[yellow-background]*TODO: What is the MSB used for?*
+| ... | ... | | Values data
+|===
+
+==== [[qualifiers_block]]Qualifiers block
+
+The class qualifiers block is variable of size and consists of:
+
+* zero or more qualifier descriptors
+
+===== Qualifier descriptor
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Name offset +
+The offset is relative to the start of the properties block data +
+If the MSB is set the name is predefined and the remainder of the value contains the name index +
+See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
+| 4 | 1 | | [yellow-background]*Unknown*
+| 5 | 4 | | Value data type (CimType) +
+See section: <<cim_data_types,CIM data types>>
+| 9 | ... | | Inline stored value or 32-bit offset to value data
+|===
+
+[NOTE]
+The qualifier name is case insensitive.
+
+==== [[property_descriptor]]Property descriptor
+
+The property descriptor is 8 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Property name offset +
+The offset is relative to the start of the properties block data +
+If the MSB is set the name is predefined and the remainder of the value contains the name index
+See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
+| 4 | 4 | | Property definition offset +
+The offset is relative to the start of the properties block data +
+See section: <<property_definition,Property definition>>
+|===
+
+===== [[property_definition]]Property definition
+
+The property defintion is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Property data type (CimType) +
+See section: <<cim_data_types,CIM data types>>
+| 4 | 2 | | Property index
+| 6 | 4 | | Value data offset
+| 10 | 4 | | [yellow-background]*Unknown (level?)*
+| 14 | 4 | | Qualifiers block size +
+Includes the 4 bytes of the size
+| 18 | ... | | Qualifiers block data +
+See section: <<qualifiers_block,qualifiers block>>
+|===
+
+*TODO: seen other multiple optional strings e.g. "WmiDataId" and "WmiSizeIs"*
+
+==== [[predefined_names]]Predefined names
+
+Predefined qualifier and property names:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Name index | Name | Data type | Description
+| 1 | "key" | CIM-TYPE-BOOLEAN |
+4+|
+| 3 | "read" | CIM-TYPE-BOOLEAN |
+| 4 | "write" | CIM-TYPE-BOOLEAN |
+| 5 | [yellow-background]*Unknown (volatile?)* | |
+| 6 | "provider" | CIM-TYPE-STRING +
+CIM-TYPE-REFERENCE |
+| 7 | "dynamic" | CIM-TYPE-BOOLEAN |
+4+|
+| 10 | "type" | CIM-TYPE-STRING |
+|===
+
+==== Type qualifiers
+
+It is currently assumed that the class definition type qualifier is a direct
+mapping of a MOF data type.
+
+[cols="1,1,5",options="header"]
+|===
+| Value | CIM data type | Notes
+| boolean | CIM-TYPE-BOOLEAN |
+| char16 | CIM-TYPE-CHAR16 |
+| datetime | CIM-TYPE-DATETIME |
+| object | CIM-TYPE-OBJECT |
+| real32 | CIM-TYPE-REAL32 |
+| real64 | CIM-TYPE-REAL64 |
+| ref | CIM-TYPE-REFERENCE |
+| sint8 | CIM-TYPE-SINT8 |
+| sint16 | CIM-TYPE-SINT16 |
+| sint32 | CIM-TYPE-SINT32 |
+| sint64 | CIM-TYPE-SINT54 |
+| string | CIM-TYPE-STRING |
+| uint8 | CIM-TYPE-UINT8 | [yellow-background]*Unknown (Observed to require 32-bit in storage)*
+| uint16 | CIM-TYPE-UINT16 |
+| uint32 | CIM-TYPE-UINT32 |
+| uint64 | CIM-TYPE-UINT64 |
+|===
+
 == [[index_binary_tree_file]]The index binary-tree file (index.btr)
 
 The index binary-tree file (index.btr) is used by format version 2 and consists
@@ -514,22 +647,19 @@ The mapping table entry - version 2.0 is 24 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Page number
+| 0 | 4 | | Page number +
+Contains 0 if not set or 0xffffffff if unavailable
 |===
 
-[yellow-background]*TODO: what about MSB in the page number*
-[yellow-background]*TODO: 0xffffffff unavailable*
-
 === Mapping table entry - version 2.1
-
-[yellow-background]*TODO: check?*
 
 The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Page number
+| 0 | 4 | | Page number +
+Contains 0 if not set or 0xffffffff if unavailable
 | 4 | 4 | | [yellow-background]*Unknown (checksum)* +
 [yellow-background]*Contains a CRC-32?*
 | 8 | 4 | | [yellow-background]*Unknown (free space?)*
@@ -537,8 +667,6 @@ The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 | 16 | 4 | | [yellow-background]*Unknown (related to identifiers in the header)*
 | 20 | 4 | | [yellow-background]*Unknown (related to identifiers in the header)*
 |===
-
-[yellow-background]*TODO: what about MSB in page number*
 
 === Unknown table
 
@@ -667,140 +795,7 @@ Includes the 4 bytes of the size
 | ... | ... | | Methods block data
 |===
 
-[yellow-background]*TODO: if the class name is empty it refers to __SystemClass?*
-
-====== [[class_definition_block]]Class definition block
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown (empty values?)*
-| 1 | 4 | | Class name offset +
-The offset is relative to the start of the properties block data +
-See section: <<cim_string,CIM string>>
-| 5 | 4 | | [yellow-background]*Unknown (Default values size?)*
-| 9 | 4 | | Super class name block size +
-Includes the 4 bytes of the size
-| 14 | ... | | Super class name block data +
-Contians a <<cim_string,CIM string>>
-| ... | 4 | | Qualifiers block size
-Includes the 4 bytes of the size
-| ... | ... | | Qualifiers block data +
-See section: <<qualifiers_block,qualifiers block>>
-| ... | 4 | | Number of property descriptors
-| ... | ... | | Property descriptors array +
-See section: <<property_descriptor,Property descriptor>>
-| ... | ... | |  [yellow-background]*Unknown (Default values data? bitmap?)*
-| ... | 4 | | Values data size
-Does not include the 4 bytes of the size +
-[yellow-background]*TODO: What is the MSB used for?*
-| ... | ... | | Values data
-|===
-
-==== [[qualifiers_block]]Qualifiers block
-
-The class qualifiers block is variable of size and consists of:
-
-* zero or more qualifier descriptors
-
-===== Qualifier descriptor
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Name offset +
-The offset is relative to the start of the properties block data +
-If the MSB is set the name is predefined and the remainder of the value contains the name index +
-See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
-| 4 | 1 | | [yellow-background]*Unknown*
-| 5 | 4 | | Value data type (CimType) +
-See section: <<cim_data_types,CIM data types>>
-| 9 | ... | | Inline stored value or 32-bit offset to value data
-|===
-
-[NOTE]
-The qualifier name is case insensitive.
-
-==== [[property_descriptor]]Property descriptor
-
-The property descriptor is 8 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Property name offset +
-The offset is relative to the start of the properties block data +
-If the MSB is set the name is predefined and the remainder of the value contains the name index
-See section: <<cim_string,CIM string>> and <<predefined_names,predefined names>>
-| 4 | 4 | | Property definition offset +
-The offset is relative to the start of the properties block data +
-See section: <<property_definition,Property definition>>
-|===
-
-===== [[property_definition]]Property definition
-
-The property defintion is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Property data type (CimType) +
-See section: <<cim_data_types,CIM data types>>
-| 4 | 2 | | Property index
-| 6 | 4 | | Value data offset
-| 10 | 4 | | [yellow-background]*Unknown (level?)*
-| 14 | 4 | | Qualifiers block size +
-Includes the 4 bytes of the size
-| 18 | ... | | Qualifiers block data +
-See section: <<qualifiers_block,qualifiers block>>
-|===
-
-*TODO: seen other multiple optional strings e.g. "WmiDataId" and "WmiSizeIs"*
-
-==== [[predefined_names]]Predefined names
-
-[cols="1,1,1,5",options="header"]
-|===
-| Name index | Name | Data type | Description
-| 1 | "key" | CIM-TYPE-BOOLEAN |
-4+|
-| 3 | "read" | CIM-TYPE-BOOLEAN |
-| 4 | "write" | CIM-TYPE-BOOLEAN |
-| 5 | [yellow-background]*Unknown (volatile?)* | |
-| 6 | "provider" | CIM-TYPE-STRING +
-CIM-TYPE-REFERENCE |
-| 7 | "dynamic" | CIM-TYPE-BOOLEAN |
-4+|
-| 10 | "type" | CIM-TYPE-STRING |
-|===
-
-==== Type qualifiers
-
-It is currently presumed that the class definition type qualifier is a direct
-mapping of a MOF data type.
-
-[cols="1,1,5",options="header"]
-|===
-| Value | CIM data type | Description
-| boolean | CIM-TYPE-BOOLEAN |
-| char16 | CIM-TYPE-CHAR16 |
-| datetime | CIM-TYPE-DATETIME |
-| object | CIM-TYPE-OBJECT |
-| real32 | CIM-TYPE-REAL32 |
-| real64 | CIM-TYPE-REAL64 |
-| ref | CIM-TYPE-REFERENCE |
-| sint16 | CIM-TYPE-SINT16 |
-| sint32 | CIM-TYPE-SINT32 |
-| sint64 | CIM-TYPE-SINT54 |
-| sint8 | CIM-TYPE-SINT8 |
-| string | CIM-TYPE-STRING |
-| uint16 | CIM-TYPE-UINT16 |
-| uint32 | CIM-TYPE-UINT32 |
-| uint64 | CIM-TYPE-UINT64 |
-| uint8 | CIM-TYPE-UINT8 |
-|===
-
-=== Registration (R)
+===== Registration (R)
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -827,9 +822,9 @@ Contains an UTF-16 little-endian string without end-of-string character.
 [NOTE]
 The attribute value contains a CIM key
 
-=== Instance (I and IL)
+===== Instance (I and IL)
 
-==== Instance - version 2.0
+====== Instance - version 2.0
 
 The interface - version 2.0 is variable of size and consists of:
 
@@ -848,7 +843,7 @@ Includes the 4 bytes of the size
 | 84 | ... | | Instance block data
 |===
 
-==== Instance - version 2.1
+====== Instance - version 2.1
 
 Instance - version 2.1 is used by Windows Vista and later.
 
@@ -869,9 +864,9 @@ Includes the 4 bytes of the size
 | 148 | ... | | Instance block data
 |===
 
-==== Instance block data
+====== Instance block data
 
-===== Instance block header
+======= Instance block header
 
 The instance block header is variable of size and consists of:
 
@@ -903,9 +898,9 @@ Seen: 1 and 2
 [yellow-background]*Can dynamic block type 2 be used if the class definition
 does not specify the dynprops qualifier as True? Related to MOF `[DYNPROPS]`?*
 
-===== Instance dynamic property
+======= Instance dynamic property
 
-The instance block header is variable of size and consists of:
+The instance dynamic property is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -920,7 +915,7 @@ Includes the 4 bytes of the size
 The repostitory file (cim.reg) is used by format version 1 and consists of:
 
 * file header
-* one or more data blocks
+* one or more node cells
 * unused space
 
 === File header
@@ -930,7 +925,7 @@ The file header is 40 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Number of data block with <<class_definition_root_node,class definition root node>> of "__SystemClass"
+| 0 | 4 | | Number of node cell with <<class_definition_root_node,class definition root node>> of "__SystemClass"
 | 4 | 4 | | [yellow-background]*Unknown (root block number?)*
 | 8 | 4 | | Total data size
 | 12 | 4 | | [yellow-background]*Unknown*
@@ -938,21 +933,20 @@ The file header is 40 bytes of size and consists of:
 | 20 | 4 | | Offset of unused space
 | 24 | 4 | | [yellow-background]*Unknown*
 | 28 | 4 | | [yellow-background]*Unknown*
-| 32 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block 0?)*
+| 32 | 4 | | [yellow-background]*Unknown (Offset + 4 to node cell 0?)*
 | 36 | 4 | | [yellow-background]*Unknown*
 |===
 
-=== Data block
+=== Node cell
 
-The data block is variable of size and consists of:
+The node cell is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Data size
 Includes the 4 bytes of the size
-| 4 | ... | | [yellow-background]*Unknown (data)*
-| ... | 12 | | [yellow-background]*Unknown (footer?)*
+| 4 | ... | | Data
 |===
 
 === [[class_definition_root_node]]Class definition root node
@@ -962,13 +956,13 @@ The class definition root node is 44 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block, parent index?)*
-| 4 | 4 | | Offset + 4 to data block with <<class_definition_branch_node,class definition branch node>>
-| 8 | 4 | | Offset + 4 to data block with <<class_definition_root_node,class definition root node>> of the parent class +
+| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to node cell, parent index?)*
+| 4 | 4 | | Offset + 4 to node cell with <<class_definition_branch_node,class definition branch node>>
+| 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of the parent class +
 Contains 0 if the class has no parent class
 | 12 | 4 | | [yellow-background]*Unknown*
-| 16 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 20 | 4 | | Offset + 4 to data block with <<sub_classes_root_node,sub classes root node>>
+| 16 | 4 | | [yellow-background]*Unknown (Offset + 4 to node cell)*
+| 20 | 4 | | Offset + 4 to node cell with <<sub_classes_root_node,sub classes root node>>
 | 24 | 4 | | [yellow-background]*Unknown (empty)*
 | 28 | 4 | | [yellow-background]*Unknown (empty)*
 | 32 | 12 | | [yellow-background]*Unknown (footer?)*
@@ -981,10 +975,10 @@ The class definition branch node is 32 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block, parent index?)*
-| 4 | 4 | | Offset + 4 to data block with <<class_definition_root_node,class definition root node>>
+| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to node cell, parent index?)*
+| 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
 | 8 | 4 | 1 | [yellow-background]*Unknown (data type?)*
-| 12 | 4 | | Offset + 4 to data block with <<class_definition_leaf_node,class definition leaf node>>
+| 12 | 4 | | Offset + 4 to node cell with <<class_definition_leaf_node,class definition leaf node>>
 | 16 | 4 | | [yellow-background]*Unknown (empty)*
 | 20 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
@@ -1003,7 +997,7 @@ See section: <<class_definition_block,Class definition block>>
 | ... | 4 | | Unknown block size +
 Includes the 4 bytes of the size
 | ... | ... | | Unknown block data
-| ... | 3 | | [yellow-background]*Unknown (alignment padding?)*
+| ... | ... | | 32-bit alignment padding
 | ... | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
@@ -1015,10 +1009,18 @@ The sub classes root node is 24 bytes of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | 2 | [yellow-background]*Unknown*
-| 4 | 4 | 5 | [yellow-background]*Unknown*
-| 8 | 4 | | Offset + 4 to data block with <<sub_classes_branch_node,sub classes branch node>>
+| 4 | 4 | | Number of leaf values
+| 8 | 4 | | Offset + 4 to node cell with <<sub_classes_branch_node,sub classes branch node>>
 | 12 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
+
+If unknown is 1 the size of branch node differs.
+
+....
+0x00000000  b0 00 00 00 40 06 00 00  e4 03 00 00 01 00 00 00  ....@...........
+0x00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
+0x00000020  00 00 00 00 fe fe fe fe  fe fe fe fe              ............
+....
 
 === [[sub_classes_branch_node]]Sub classes branch node
 
@@ -1027,10 +1029,10 @@ The sub classes branch node is 28 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | 5 | [yellow-background]*Unknown*
-| 4 | 4 | 10 | [yellow-background]*Unknown*
-| 8 | 4 | 5 | [yellow-background]*Unknown*
-| 12 | 4 | | Offset + 4 to data block with <<sub_classes_leaf_node,sub classes leaf node>>
+| 0 | 4 | | Number of leaf values
+| 4 | 4 | | Maximum (or available) number of leaf values
+| 8 | 4 | | [yellow-background]*Unknown*
+| 12 | 4 | | Offset + 4 to node cell with <<sub_classes_leaf_node,sub classes leaf node>>
 | 16 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
@@ -1041,16 +1043,16 @@ The sub classes leaf node is 52 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 4 | 4 | | Offset + 4 to data block with <<class_definition_root_node,class definition root node>>
-| 8 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 12 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 16 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 20 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 24 | 4 | | [yellow-background]*Unknown (Offset + 4 to data block)*
-| 28 | 4 | | [yellow-background]*Unknown*
-| 32 | 4 | | [yellow-background]*Unknown*
-| 36 | 4 | | [yellow-background]*Unknown*
+| 0 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 12 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 16 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 20 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 24 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 28 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 32 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
+| 36 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of sub class
 | 40 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 

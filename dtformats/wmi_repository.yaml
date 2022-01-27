@@ -904,7 +904,7 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: system_class_block_number
+- name: system_class_cell_number
   data_type: uint32
 - name: unknown2
   data_type: uint32
@@ -925,7 +925,7 @@ members:
 - name: unknown10
   data_type: uint32
 ---
-name: cim_rep_data_block
+name: cim_rep_node_cell
 type: structure
 attributes:
   byte_order: little-endian
@@ -935,7 +935,7 @@ members:
 - name: data
   type: stream
   element_data_type: byte
-  elements_data_size: cim_rep_data_block.size - 4
+  elements_data_size: cim_rep_node_cell.size - 4
 ---
 name: cim_rep_class_definition_branch_node
 type: structure
@@ -974,10 +974,9 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: cim_rep_class_definition_leaf_node.unknown_block_size - 4
-- name: unknown1
-  type: stream
-  element_data_type: byte
-  elements_data_size: 3
+- name: alignment_padding
+  type: padding
+  alignment_size: 4
 - name: footer
   type: stream
   element_data_type: byte
@@ -1014,7 +1013,7 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: unknown1
+- name: number_of_leaf_values
   data_type: uint32
 - name: unknown2
   data_type: uint32
@@ -1032,25 +1031,25 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: unknown1
+- name: class_definition_root_node_offset1
   data_type: uint32
-- name: class_definition_root_node_offset
+- name: class_definition_root_node_offset2
   data_type: uint32
-- name: unknown2
+- name: class_definition_root_node_offset3
   data_type: uint32
-- name: unknown3
+- name: class_definition_root_node_offset4
   data_type: uint32
-- name: unknown4
+- name: class_definition_root_node_offset5
   data_type: uint32
-- name: unknown5
+- name: class_definition_root_node_offset6
   data_type: uint32
-- name: unknown6
+- name: class_definition_root_node_offset7
   data_type: uint32
-- name: unknown7
+- name: class_definition_root_node_offset8
   data_type: uint32
-- name: unknown8
+- name: class_definition_root_node_offset9
   data_type: uint32
-- name: unknown9
+- name: class_definition_root_node_offset10
   data_type: uint32
 - name: footer
   type: stream
@@ -1064,7 +1063,7 @@ attributes:
 members:
 - name: unknown1
   data_type: uint32
-- name: unknown2
+- name: number_of_leaf_values
   data_type: uint32
 - name: branch_node_offset
   data_type: uint32
