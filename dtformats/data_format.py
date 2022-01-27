@@ -536,9 +536,11 @@ class BinaryDataFormat(object):
 
     try:
       data = file_object.read(data_size)
+      read_count = len(data)
 
-      if len(data) != data_size:
-        read_error = 'missing data'
+      if read_count != data_size:
+        read_error = 'missing data (read: {0:d}, requested: {1:d})'.format(
+            read_count, data_size)
 
     except IOError as exception:
       read_error = '{0!s}'.format(exception)

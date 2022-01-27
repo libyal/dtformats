@@ -46,7 +46,7 @@ class WindowsTaskSchedularJobFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      file_object.seek(test_file._FIXED_LENGTH_DATA_SECTION_SIZE, os.SEEK_SET)
+      file_object.seek(68, os.SEEK_SET)
 
       test_file._ReadVariableLengthDataSection(file_object)
 

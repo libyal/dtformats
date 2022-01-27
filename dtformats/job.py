@@ -17,14 +17,6 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
   # TODO: add job signature
   # https://msdn.microsoft.com/en-us/library/cc248299.aspx
 
-  _FIXED_LENGTH_DATA_SECTION = _FABRIC.CreateDataTypeMap(
-      'job_fixed_length_data_section')
-
-  _FIXED_LENGTH_DATA_SECTION_SIZE = _FIXED_LENGTH_DATA_SECTION.GetByteSize()
-
-  _VARIABLE_LENGTH_DATA_SECTION = _FABRIC.CreateDataTypeMap(
-      'job_variable_length_data_section')
-
   _DEBUG_INFO_FIXED_LENGTH_DATA_SECTION = [
       ('signature', 'Signature', '_FormatIntegerAsProductVersion'),
       ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
@@ -182,9 +174,11 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       IOError: if the fixed-length data section cannot be read.
     """
     file_offset = file_object.tell()
-    data_section = self._ReadStructure(
-        file_object, file_offset, self._FIXED_LENGTH_DATA_SECTION_SIZE,
-        self._FIXED_LENGTH_DATA_SECTION, 'fixed-length data section')
+
+    data_type_map = self._GetDataTypeMap('job_fixed_length_data_section')
+
+    data_section, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'fixed-length data section')
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -200,10 +194,11 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       IOError: if the variable-length data section cannot be read.
     """
     file_offset = file_object.tell()
-    data_size = self._file_size - file_offset
-    data_section = self._ReadStructure(
-        file_object, file_offset, data_size,
-        self._VARIABLE_LENGTH_DATA_SECTION, 'variable-length data section')
+
+    data_type_map = self._GetDataTypeMap('job_variable_length_data_section')
+
+    data_section, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'variable-length data section')
 
     if self._debug:
       self._DebugPrintStructureObject(
