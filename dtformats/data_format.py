@@ -581,7 +581,8 @@ class BinaryDataFormat(object):
     data = self._ReadData(file_object, file_offset, data_size, description)
 
     if self._debug:
-      data_description = '{0:s} data'.format(description.title())
+      data_description = '{0:s}{1:s} data'.format(
+          description[0].upper(), description[1:])
       self._DebugPrintData(data_description, data)
 
     return self._ReadStructureFromByteStream(
@@ -672,7 +673,8 @@ class BinaryDataFormat(object):
             data, context=context)
 
         if self._debug:
-          data_description = '{0:s} data'.format(description.title())
+          data_description = '{0:s}{1:s} data'.format(
+              description[0].upper(), description[1:])
           self._DebugPrintData(data_description, data)
 
         return structure_values_object, data_size
