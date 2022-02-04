@@ -402,6 +402,50 @@ mapping of a MOF data type.
 | uint64 | CIM-TYPE-UINT64 |
 |===
 
+==== [[instance_block]]Instance block
+
+The instance block is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Name offset
+| 4 | 1 | | [yellow-background]*Unknown*
+| 5 | ... | | [yellow-background]*Unknown (property state bits?)* +
+Contains an array of 2 bits per property, that is stored byte aligned +
+The number of properties corresponds to the number of unique property names (including those of the super classes)
+| ... | ... | | Property values data +
+The size of the data can be determined by the property with the largest offset (including those of the super classes) and its size
+| ... | ... | | [yellow-background]*Unknown (related to property state bits?)* +
+| ... | 4 | | Qualifiers block size +
+Includes the 4 bytes of the size
+| ... | ... | | Qualifiers block +
+See section: <<qualifiers_block,qualifiers block>>
+| ... | 1 | | [yellow-background]*Unknown (dynamic block type?)* +
+Seen: 1 and 2
+4+| _If dynamic block type is 2_
+| ... | 4 | | Number of (instance) dynamic properties
+| ... | ... | | Array of (instance) dynamic properties
+4+| _Common_
+| ... | 4 | | [yellow-background]*Unknown (offset?)*
+| ... | ... | | Data
+|===
+
+[yellow-background]*Can dynamic block type 2 be used if the class definition
+does not specify the dynprops qualifier as True? Related to MOF `[DYNPROPS]`?*
+
+===== Instance dynamic property
+
+The instance dynamic property is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Data size +
+Includes the 4 bytes of the size
+| 4 | ... | | [yellow-background]*Unknown*
+|===
+
 == [[index_binary_tree_file]]The index binary-tree file (index.btr)
 
 The index binary-tree file (index.btr) is used by format version 2 and consists
@@ -772,9 +816,9 @@ If the object record data is larger than the page size of 8196 the remaining
 data is stored spanning multiple pages. Successive pages do not contain object
 descriptors and must resolved using mapped page numbers.
 
-===== Class definition (CD)
+===== Class definition (CD) object record
 
-The class definition is variable of size and consists of:
+The class definition object record is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -822,11 +866,11 @@ Contains an UTF-16 little-endian string without end-of-string character.
 [NOTE]
 The attribute value contains a CIM key
 
-===== Instance (I and IL)
+===== Instance (I and IL) object record
 
-====== Instance - version 2.0
+====== Instance object record - version 2.0
 
-The interface - version 2.0 is variable of size and consists of:
+The instance object record - version 2.0 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -844,9 +888,9 @@ Includes the 4 bytes of the size
 See section: <<instance_block,instance block>>
 |===
 
-====== Instance - version 2.1
+====== Instance object record - version 2.1
 
-Instance - version 2.1 is used by Windows Vista and later.
+Instanceobject record  - version 2.1 is used by Windows Vista and later.
 
 The interface - version 2.1 is variable of size and consists of:
 
@@ -866,57 +910,15 @@ Includes the 4 bytes of the size
 See section: <<instance_block,instance block>>
 |===
 
-====== [[instance_block]]Instance block
-
-The instance block is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Name offset
-| 4 | 1 | | [yellow-background]*Unknown*
-| 5 | ... | | [yellow-background]*Unknown (property state bits?)* +
-Contains an array of 2 bits per property, that is stored byte aligned +
-The number of properties corresponds to the number of unique property names (including those of the super classes)
-| ... | ... | | Property values data +
-The size of the data can be determined by the property with the largest offset (including those of the super classes) and its size
-| ... | ... | | [yellow-background]*Unknown (related to property state bits?)* +
-| ... | 4 | | Qualifiers block size +
-Includes the 4 bytes of the size
-| ... | ... | | Qualifiers block +
-See section: <<qualifiers_block,qualifiers block>>
-| ... | 1 | | [yellow-background]*Unknown (dynamic block type?)* +
-Seen: 1 and 2
-4+| _If dynamic block type is 2_
-| ... | 4 | | Number of (instance) dynamic properties
-| ... | ... | | Array of (instance) dynamic properties
-4+| _Common_
-| ... | 4 | | [yellow-background]*Unknown (offset?)*
-| ... | ... | | Data
-|===
-
-[yellow-background]*Can dynamic block type 2 be used if the class definition
-does not specify the dynprops qualifier as True? Related to MOF `[DYNPROPS]`?*
-
-======= Instance dynamic property
-
-The instance dynamic property is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Data size +
-Includes the 4 bytes of the size
-| 4 | ... | | [yellow-background]*Unknown*
-|===
-
 == The repository file (cim.rep)
 
 The repostitory file (cim.reg) is used by format version 1 and consists of:
 
-* one or more node bins
-  * file header, which is stored in the first node bin
-  * node bin header, which is used for successive node bins
+* first node bin
+  * file header
+  * one or more node cells
+* zero or more successive node bins
+  * node bin header
   * one or more node cells
 * unused space
 
@@ -927,8 +929,10 @@ The file header is 40 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Number of node cell with <<class_definition_root_node,class definition root node>> of "__SystemClass"
-| 4 | 4 | | Number of node cell with <<index_root_node,index root node>>
+| 0 | 4 | | Number of node cell with <<class_definition_root_node,class definition root node>> of "__SystemClass" +
+Where 0 is the first node cell in the repository file
+| 4 | 4 | | Number of node cell with <<index_root_node,index root node>> of "ROOT" +
+Where 0 is the first node cell in the repository file
 | 8 | 4 | | Total data size
 | 12 | 4 | | [yellow-background]*Unknown*
 | 16 | 4 | | [yellow-background]*Unknown*
@@ -940,7 +944,14 @@ The file header is 40 bytes of size and consists of:
 Includes the 4 bytes of the size
 |===
 
-=== Node bin header
+=== Node bins
+
+A node bin contains:
+
+* header (file header or node bin header)
+* one or more node cells
+
+==== Node bin header
 
 The node bin header is 4 bytes of size and consists of:
 
@@ -951,7 +962,7 @@ The node bin header is 4 bytes of size and consists of:
 Includes the 4 bytes of the size
 |===
 
-=== Node cell
+==== Node cell
 
 The node cell is variable of size and consists of:
 
@@ -996,7 +1007,7 @@ If sub type is 9 the sub type node cell offset points to:
 0x00000000  01 00 00 00 01 00 00 00  98 05 00 00 00 00 00 00  ................
 0x00000010  fe fe fe fe fe fe fe fe                           ........
 
-If sub type is 10 the sub type node cell offset points to: a child classes root node.
+If sub type is 10 the sub type node cell offset points to: a child objects root node.
 ....
 
 ==== [[class_definition_branch_node]]Class definition branch node
@@ -1032,20 +1043,18 @@ Includes the 4 bytes of the size
 | ... | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-=== Child classes hierarchy
+=== Child objects hierarchy
 
-TODO: rename this, this seems to be a more generic purpose hierarchy
+==== [[child_objects_root_node]]Child objects root node
 
-==== [[child_classes_root_node]]Child classes root node
-
-The child classes root node is 24 bytes of size and consists of:
+The child objects root node is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | 2 | Branch node type
 | 4 | 4 | | Number of leaf values
-| 8 | 4 | | Offset + 4 to node cell with <<child_classes_branch_node,child classes branch node>>
+| 8 | 4 | | Offset + 4 to node cell with <<child_objects_branch_node,child objects branch node>>
 | 12 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
@@ -1057,9 +1066,9 @@ If branch node type is 1 the size of branch node differs:
 0x00000020  00 00 00 00 fe fe fe fe  fe fe fe fe              ............
 ....
 
-==== [[child_classes_branch_node]]Child classes branch node
+==== [[child_objects_branch_node]]Child objects branch node
 
-The child classes branch node is 28 bytes of size and consists of:
+The child objects branch node is 28 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1068,27 +1077,27 @@ The child classes branch node is 28 bytes of size and consists of:
 | 4 | 4 | | Maximum (or available) number of leaf values
 | 8 | 4 | | [yellow-background]*Unknown* +
 Seen: 5
-| 12 | 4 | | Offset + 4 to node cell with <<child_classes_leaf_node,child classes leaf node>>
+| 12 | 4 | | Offset + 4 to node cell with <<child_objects_leaf_node,child objects leaf node>>
 | 16 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-==== [[child_classes_leaf_node]]Child classes leaf node
+==== [[child_objects_leaf_node]]Child objects leaf node
 
-The child classes leaf node is 52 bytes of size and consists of:
+The child objects leaf node is 52 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 12 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 16 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 20 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 24 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 28 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 32 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
-| 36 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of child class
+| 0 | 4 | | Offset + 4 to node cell with leaf value node
+| 4 | 4 | | Offset + 4 to node cell with leaf value node
+| 8 | 4 | | Offset + 4 to node cell with leaf value node
+| 12 | 4 | | Offset + 4 to node cell with leaf value node
+| 16 | 4 | | Offset + 4 to node cell with leaf value node
+| 20 | 4 | | Offset + 4 to node cell with leaf value node
+| 24 | 4 | | Offset + 4 to node cell with leaf value node
+| 28 | 4 | | Offset + 4 to node cell with leaf value node
+| 32 | 4 | | Offset + 4 to node cell with leaf value node
+| 36 | 4 | | Offset + 4 to node cell with leaf value node
 | 40 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
@@ -1106,22 +1115,71 @@ Or instance hierarchy?
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<child_classes_root_node,child classes root node>>
-| 4 | 4 | | Offset + 4 to node cell with <<name_node,name>>
-| 8 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 12 | 4 | 8 | [yellow-background]*Unknown (sub node type?)*
-| 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 0 | 4 | | Offset + 4 to node cell with <<child_objects_root_node,child objects root node>> +
+Contains 0xffffffff (-1) if [yellow-background]*not set?*
+| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
+| 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
+| 12 | 4 | 8 | [yellow-background]*Unknown (sub node type indicator?)*
+| 16 | 4 | | Offset + 4 to node cell with <<unknown_node4,unknown node 4>>
 | 16 | 4 | | [yellow-background]*Unknown (empty values?)*
-| 24 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 24 | 4 | | Offset + 4 to node cell with <<unknown_node5,unknown node 5>>
 | 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
+
+==== [[instance_leaf_node]]Instance leaf node
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Offset + 4 to node cell with parent <<index_root_node,index root node>> +
+Contains 0 if not set
+| 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
+| 8 | 4 | 2 | [yellow-background]*Unknown (type indicator?)*
+| 12 | 4 | | Offset + 4 to node cell with <<instance_node,instance node>>
+| 16 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 20 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[unknown_node4]]Unknown node 4
+
+....
+Unknown: index root node
+Unknown: unknown node 6
+Unknown: name node
+Unknown:
+Unknown:
+Footer
+0x00000000  d8 02 00 00 d0 01 00 00  9c 78 00 00 1f 00 00 00  .........x......
+0x00000010  37 00 00 00 00 00 00 00  fe fe fe fe fe fe fe fe  7...............
+....
+
+==== [[unknown_node5]]Unknown node 5
+
+....
+Unknown: block size?
+Unknown: block data?
+Footer
+0x00000000  40 00 00 00 01 00 00 00  01 00 00 00 02 00 00 00  @...............
+0x00000010  00 00 00 00 00 02 18 00  3f 00 06 00 01 02 00 00  ........?.......
+0x00000020  00 00 00 05 20 00 00 00  20 02 00 00 00 02 14 00  .... ... .......
+0x00000030  13 00 00 00 01 01 00 00  00 00 00 01 00 00 00 00  ................
+0x00000040  00 00 00 00 fe fe fe fe  fe fe fe fe              ............
+....
+
+==== [[unknown_node6]]Unknown node 6
+
+....
+0x00000000  01 00 00 00 a4 01 00 00  74 01 00 00 88 0a 00 00  ........t.......
+0x00000010  d4 4b 00 00 00 00 00 00  d8 02 00 00 00 00 00 00  .K..............
+0x00000020  fe fe fe fe fe fe fe fe                           ........
+....
 
 ==== [[index_leaf_value_node]]Index leaf value node
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<name_node,name>>
+| 0 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
 | 4 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
 | 8 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
@@ -1143,8 +1201,8 @@ Contains an UTF-16 little-endian string with end-of-string character.
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 4 | 4 | | Offset + 4 to node cell with <<name_node,name>>
-| 8 | 4 | | Offset + 4 to node cell with <<unknown_node2,unknown node 2>>
+| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
+| 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
 | 12 | 4 | | [yellow-background]*Unknown* +
 Seen: 1 and 8
 | 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
@@ -1169,19 +1227,6 @@ Data:
 0x00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
 0x00000010  fe fe fe fe fe fe fe fe                           ........
 ....
-
-==== [[unknown_node2]]Unknown node 2
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<index_root_node,index root node>>
-| 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
-| 8 | 4 | | [yellow-background]*Unknown*
-| 12 | 4 | | Offset + 4 to node cell with <<instance_node,instance node>>
-| 16 | 4 | | [yellow-background]*Unknown (empty values?)*
-| 20 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
 
 ==== [[instance_node]]Instance node
 

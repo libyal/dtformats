@@ -1016,7 +1016,7 @@ members:
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_child_classes_branch_node
+name: cim_rep_child_objects_branch_node
 type: structure
 attributes:
   byte_order: little-endian
@@ -1034,37 +1034,37 @@ members:
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_child_classes_leaf_node
+name: cim_rep_child_objects_leaf_node
 type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: class_definition_root_node_offset1
+- name: leaf_value_node_offset1
   data_type: uint32
-- name: class_definition_root_node_offset2
+- name: leaf_value_node_offset2
   data_type: uint32
-- name: class_definition_root_node_offset3
+- name: leaf_value_node_offset3
   data_type: uint32
-- name: class_definition_root_node_offset4
+- name: leaf_value_node_offset4
   data_type: uint32
-- name: class_definition_root_node_offset5
+- name: leaf_value_node_offset5
   data_type: uint32
-- name: class_definition_root_node_offset6
+- name: leaf_value_node_offset6
   data_type: uint32
-- name: class_definition_root_node_offset7
+- name: leaf_value_node_offset7
   data_type: uint32
-- name: class_definition_root_node_offset8
+- name: leaf_value_node_offset8
   data_type: uint32
-- name: class_definition_root_node_offset9
+- name: leaf_value_node_offset9
   data_type: uint32
-- name: class_definition_root_node_offset10
+- name: leaf_value_node_offset10
   data_type: uint32
 - name: footer
   type: stream
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_child_classes_root_node
+name: cim_rep_child_objects_root_node
 type: structure
 attributes:
   byte_order: little-endian
@@ -1085,11 +1085,11 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: child_classes_root_node_offset
+- name: child_objects_root_node_offset
   data_type: uint32
 - name: name_node_offset
   data_type: uint32
-- name: unknown1
+- name: instance_leaf_node_offset
   data_type: uint32
 - name: unknown2
   data_type: uint32
@@ -1145,7 +1145,7 @@ members:
   data_type: uint32
 - name: name_node_offset
   data_type: uint32
-- name: unknown3
+- name: instance_leaf_node_offset
   data_type: uint32
 - name: unknown4
   data_type: uint32
@@ -1160,7 +1160,7 @@ members:
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_unknown_node2
+name: cim_rep_instance_leaf_node
 type: structure
 attributes:
   byte_order: little-endian
@@ -1171,6 +1171,7 @@ members:
   data_type: uint32
 - name: unknown1
   data_type: uint32
+  value: 2
 - name: instance_node_offset
   data_type: uint32
 - name: unknown3
