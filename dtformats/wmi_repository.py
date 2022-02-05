@@ -20,7 +20,8 @@ class ClassDefinitionProperty(object):
     index (int): index of the property.
     name (str): name of the property.
     qualifiers (dict[str, object]): qualifiers.
-    value_data_offset (int): offset of the property value data.
+    value_data_offset (int): the property value data offset.
+    value_data_type (int): the property value data type.
   """
 
   def __init__(self):
@@ -30,6 +31,7 @@ class ClassDefinitionProperty(object):
     self.name = None
     self.qualifiers = {}
     self.value_data_offset = None
+    self.value_data_type = None
 
 
 class ClassValueDataMap(object):
@@ -47,24 +49,17 @@ class ClassValueDataMap(object):
   """
 
   _PROPERTY_TYPE_VALUE_DATA_SIZE = {
-      'boolean': 2,
-      'char16': 2,
-      'datetime': 4,
-      'object': 4,
-      'real32': 4,
-      'real64': 8,
-      'ref': 4,
-      # Assumed since the behavior of uint8.
-      'sint8': 4,
-      'sint16': 2,
-      'sint32': 4,
-      'sint64': 8,
-      'string': 4,
-      # For some reason an uint8 seems to be stored as 4 bytes.
-      'uint8': 4,
-      'uint16': 2,
-      'uint32': 4,
-      'uint64': 8}
+      0x00000002: 2,
+      0x00000003: 4,
+      0x00000004: 4,
+      0x00000005: 8,
+      0x0000000b: 2,
+      0x00000010: 1,
+      0x00000011: 1,
+      0x00000012: 2,
+      0x00000013: 4,
+      0x00000014: 8,
+      0x00000015: 8}
 
   def __init__(self):
     """Initializes a class value data map."""
@@ -112,22 +107,17 @@ class ClassValueDataMap(object):
               'Missing type qualifier for property: {0:s} of class: '
               '{1:s}').format(property_definition.name, class_definition.name))
 
+        value_data_size = self._PROPERTY_TYPE_VALUE_DATA_SIZE.get(
+            property_definition.value_data_type, 4)
+
+        property_map = PropertyValueDataMap(
+            property_definition.name, property_definition.value_data_type,
+            property_definition.value_data_offset, value_data_size)
+
         type_qualifier_lower = type_qualifier.lower()
         if ':' in type_qualifier_lower:
           type_qualifier_lower, _, _ = type_qualifier_lower.partition(':')
 
-        value_data_size = self._PROPERTY_TYPE_VALUE_DATA_SIZE.get(
-            type_qualifier_lower, None)
-        if value_data_size is None:
-          raise errors.ParseError((
-              'Unsupported type qualifier: {0:s} of property: {1:s} of class: '
-              '{2:s}').format(
-                  type_qualifier, property_definition.name,
-                  class_definition.name))
-
-        property_map = PropertyValueDataMap(
-            property_definition.name, property_definition.value_data_offset,
-            value_data_size)
         property_map.type_qualifier = type_qualifier_lower
 
         # TODO: compare property_map against property map of parent classes.
@@ -272,21 +262,24 @@ class PropertyValueDataMap(object):
   """Property value data map.
 
   Attributes:
+    data_type (int): property value data type.
     name (str): name of the property.
     offset (int): offset of the property in value data.
     size (int): size of the property in value data.
     type_qualifier (str): type qualifier of the property.
   """
 
-  def __init__(self, name, offset, size):
+  def __init__(self, name, data_type, offset, size):
     """Initializes a property value data map.
 
     Args:
       name (str): name of the property.
+      data_type (int): property value data type.
       offset (int): offset of the property in value data.
       size (int): size of the property in value data.
     """
     super(PropertyValueDataMap, self).__init__()
+    self.data_type = data_type
     self.name = name
     self.offset = offset
     self.size = size
@@ -2217,8 +2210,8 @@ class CIMObject(data_format.BinaryDataFormat):
     Returns:
       str: integer formatted as a data type.
     """
-    data_type_string = self._CIM_DATA_TYPES.GetName(integer & 0x0fff)
-    # TODO: format flags 0x2000 and 0x4000
+    data_type_string = self._CIM_DATA_TYPES.GetName(integer & 0x3fff)
+    # TODO: format flag 0x4000
     return '0x{0:08x} ({1:s})'.format(integer, data_type_string or 'UNKNOWN')
 
   def _ReadCIMString(
@@ -2233,7 +2226,7 @@ class CIMObject(data_format.BinaryDataFormat):
       description (str): description of the structure.
 
     Returns:
-      str: qualifier value.
+      str: string.
 
     Raises:
       ParseError: if the qualifier value cannot be read.
@@ -2301,18 +2294,18 @@ class ClassDefinition(CIMObject):
       ('value_offset', 'Value offset', '_FormatIntegerAsOffset')]
 
   _DEBUG_INFO_PROPERTY_DEFINITION = [
-      ('value_data_type', 'Value data type', '_FormatIntegerAsDataType'),
-      ('index', 'Index', '_FormatIntegerAsDecimal'),
-      ('value_data_offset', 'Value data offset', '_FormatIntegerAsOffset'),
-      ('level', 'Level', '_FormatIntegerAsDecimal'),
-      ('qualifiers_block_size', 'Qualifiers block size',
+      ('value_data_type', '  Value data type', '_FormatIntegerAsDataType'),
+      ('index', '  Index', '_FormatIntegerAsDecimal'),
+      ('value_data_offset', '  Value data offset', '_FormatIntegerAsOffset'),
+      ('level', '  Level', '_FormatIntegerAsDecimal'),
+      ('qualifiers_block_size', '  Qualifiers block size',
        '_FormatIntegerAsDecimal'),
-      ('qualifiers_block_data', 'Qualifiers block data',
+      ('qualifiers_block_data', '  Qualifiers block data',
        '_FormatDataInHexadecimal'),
-      ('value_boolean', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_floating_point', 'Value', '_FormatFloatingPoint'),
-      ('value_integer', 'Value', '_FormatIntegerAsDecimal'),
-      ('value_offset', 'Value offset', '_FormatIntegerAsOffset')]
+      ('value_boolean', '  Value', '_FormatIntegerAsDecimal'),
+      ('value_floating_point', '  Value', '_FormatFloatingPoint'),
+      ('value_integer', '  Value', '_FormatIntegerAsDecimal'),
+      ('value_offset', '  Value offset', '_FormatIntegerAsOffset')]
 
   _PREDEFINED_NAMES = {
       1: 'key',
@@ -2335,34 +2328,6 @@ class ClassDefinition(CIMObject):
     self.super_class_name = None
     self.properties = {}
     self.qualifiers = {}
-
-  def _DebugPrintQualifierName(self, index, cim_string):
-    """Prints qualifier name information.
-
-    Args:
-      index (int): qualifier index.
-      cim_string (cim_string): CIM string.
-    """
-    description = 'Qualifier: {0:d} name string flags'.format(index)
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
-    self._DebugPrintValue(description, value_string)
-
-    description = 'Qualifier: {0:d} name string'.format(index)
-    self._DebugPrintValue(description, cim_string.string)
-
-  def _DebugPrintPropertyName(self, index, cim_string):
-    """Prints property name information.
-
-    Args:
-      index (int): property index.
-      cim_string (cim_string): CIM string.
-    """
-    description = 'Property: {0:d} name string flags'.format(index)
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
-    self._DebugPrintValue(description, value_string)
-
-    description = 'Property: {0:d} name string'.format(index)
-    self._DebugPrintValue(description, cim_string.string)
 
   def _FormatArrayOfPropertyDescriptors(self, array_of_property_descriptors):
     """Formats an array of property descriptors.
@@ -2436,10 +2401,11 @@ class ClassDefinition(CIMObject):
           'Methods block data', class_definition_methods.methods_block_data)
 
   def _ReadClassDefinitionPropertyDefinition(
-      self, definition_offset, values_data, values_data_offset):
+      self, property_index, definition_offset, values_data, values_data_offset):
     """Reads a class definition property definition.
 
     Args:
+      property_index (int): property index.
       definition_offset (int): definition offset.
       values_data (bytes): values data.
       values_data_offset (int): offset of the values data relative to the start
@@ -2451,12 +2417,17 @@ class ClassDefinition(CIMObject):
     Raises:
       ParseError: if the property name cannot be read.
     """
+    if self._debug:
+      self._DebugPrintText(
+          'Property: {0:d} definition:\n'.format(property_index))
+
     record_data_offset = values_data_offset + definition_offset
     data_type_map = self._GetDataTypeMap('property_definition')
 
+    description = 'property: {0:d} definition'.format(property_index)
     property_definition = self._ReadStructureFromByteStream(
         values_data[definition_offset:], record_data_offset, data_type_map,
-        'property definition')
+        description)
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -2469,7 +2440,7 @@ class ClassDefinition(CIMObject):
     """Reads a class definition property name.
 
     Args:
-      index (int): property index.
+      property_index (int): property index.
       name_offset (int): name offset.
       values_data (bytes): values data.
       values_dataoffset (int): offset of the values data relative to the start
@@ -2527,7 +2498,7 @@ class ClassDefinition(CIMObject):
           values_data_offset)
 
       property_definition = self._ReadClassDefinitionPropertyDefinition(
-          property_descriptor.definition_offset, values_data,
+          property_index, property_descriptor.definition_offset, values_data,
           values_data_offset)
 
       qualifiers_block_offset = property_descriptor.definition_offset + 18
@@ -2541,6 +2512,8 @@ class ClassDefinition(CIMObject):
       class_definition_property.index = property_definition.index
       class_definition_property.value_data_offset = (
           property_definition.value_data_offset)
+      class_definition_property.value_data_type = (
+          property_definition.value_data_type)
       class_definition_property.qualifiers = property_qualifiers
 
       properties[property_name] = class_definition_property
@@ -2645,9 +2618,10 @@ class ClassDefinition(CIMObject):
         qualifier_value = qualifier_descriptor.value_floating_point
 
       elif cim_data_type == 'CIM-TYPE-STRING':
+        description = 'qualifier: {0:d} value'.format(qualifier_index)
         qualifier_value = self._ReadCIMString(
             qualifier_descriptor.value_offset, values_data, values_data_offset,
-            'qualifier value')
+            description)
 
       elif cim_data_type == 'CIM-TYPE-DATETIME':
         # TODO: implement
@@ -2837,8 +2811,8 @@ class Instance(CIMObject):
 
   _DEBUG_INFO_INSTANCE_OBJECT_RECORD = [
       ('class_name_hash', 'Class name hash', '_FormatString'),
-      ('date_time1', 'Unknown data and time1', '_FormatIntegerAsFiletime'),
-      ('date_time2', 'Unknown data and time2', '_FormatIntegerAsFiletime'),
+      ('date_time1', 'Unknown date and time1', '_FormatIntegerAsFiletime'),
+      ('date_time2', 'Unknown date and time2', '_FormatIntegerAsFiletime'),
       ('instance_block_size', 'Instance block size', '_FormatIntegerAsDecimal'),
       ('instance_block_data', 'Instance block data',
        '_FormatDataInHexadecimal')]
@@ -2864,6 +2838,12 @@ class Instance(CIMObject):
   _DEBUG_INFO_DYNAMIC_TYPE2_ENTRY = [
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
+
+  _FIXED_SIZE_VALUE_DATA_TYPES = frozenset([
+      0x00000002, 0x00000003, 0x00000004, 0x00000005, 0x0000000b, 0x00000010,
+      0x00000011, 0x00000012, 0x00000013, 0x00000014, 0x00000015])
+
+  _STRING_VALUE_DATA_TYPES = frozenset([0x00000008, 0x00000065, 0x00000066])
 
   def __init__(self, format_version, debug=False, output_writer=None):
     """Initializes an instance.
@@ -2989,7 +2969,7 @@ class Instance(CIMObject):
 
     self.class_name = self._ReadCIMString(
         instance_block.class_name_offset, values_data, data_offset,
-        'instance class name')
+        'class name')
 
     property_values_data = instance_block.property_values_data
     property_values_data_offset = 5 + len(instance_block.property_state_bits)
@@ -2998,11 +2978,10 @@ class Instance(CIMObject):
       property_map_offset = property_value_data_map.offset
 
       description = 'property: {0:s} value: {1:s}'.format(
-           property_value_data_map.name, property_value_data_map.type_qualifier)
+          property_value_data_map.name, property_value_data_map.type_qualifier)
 
       property_value = None
-      if property_value_data_map.type_qualifier in (
-          'boolean', 'sint32', 'uint8', 'uint16', 'uint32', 'uint64'):
+      if property_value_data_map.data_type in self._FIXED_SIZE_VALUE_DATA_TYPES:
         data_type_map_name = 'property_value_{0:s}'.format(
             property_value_data_map.type_qualifier)
         data_type_map = self._GetDataTypeMap(data_type_map_name)
@@ -3018,7 +2997,10 @@ class Instance(CIMObject):
                property_value_data_map.type_qualifier)
           self._DebugPrintValue(description, property_value)
 
-      elif property_value_data_map.type_qualifier in ('datetime', 'string'):
+      elif property_value_data_map.data_type in self._STRING_VALUE_DATA_TYPES:
+        description = 'Property: {0:s} value: string offset'.format(
+            property_value_data_map.name)
+
         data_type_map = self._GetDataTypeMap('property_value_offset')
 
         string_offset = self._ReadStructureFromByteStream(
@@ -3026,10 +3008,64 @@ class Instance(CIMObject):
              property_values_data_offset + property_map_offset, data_type_map,
              description)
 
+        if self._debug:
+          self._DebugPrintValue(description, string_offset)
+
         # A string offset of 0 appears to indicate not set.
         if string_offset > 0:
+          description = 'property: {0:s} value'.format(
+              property_value_data_map.name)
           property_value = self._ReadCIMString(
               string_offset, values_data, data_offset, description)
+
+      elif property_value_data_map.data_type == 0x00002008:
+        description = 'Property: {0:s} value: string array offset'.format(
+             property_value_data_map.name)
+
+        data_type_map = self._GetDataTypeMap('property_value_offset')
+
+        string_array_offset = self._ReadStructureFromByteStream(
+             property_values_data[property_map_offset:],
+             property_values_data_offset + property_map_offset, data_type_map,
+             description)
+
+        if self._debug:
+          self._DebugPrintValue(description, string_array_offset)
+
+        # A string array offset of 0 appears to indicate not set.
+        if string_array_offset > 0:
+          description = 'Property: {0:s} value: string array'.format(
+               property_value_data_map.name)
+
+          data_type_map = self._GetDataTypeMap('cim_string_array')
+
+          string_array = self._ReadStructureFromByteStream(
+               values_data[string_array_offset:],
+               data_offset + string_array_offset, data_type_map, description)
+
+          property_value = []
+          for string_index, string_offset in enumerate(
+              string_array.string_offsets):
+            description = 'property: {0:s} value entry: {1:d}'.format(
+                property_value_data_map.name, string_index)
+            string_value = self._ReadCIMString(
+                string_offset, values_data, data_offset, description)
+
+            property_value.append(string_value)
+
+      else:
+        description = 'Property: {0:s} value: array offset'.format(
+             property_value_data_map.name)
+
+        data_type_map = self._GetDataTypeMap('property_value_offset')
+
+        array_offset = self._ReadStructureFromByteStream(
+             property_values_data[property_map_offset:],
+             property_values_data_offset + property_map_offset, data_type_map,
+             description)
+
+        if self._debug:
+          self._DebugPrintValue(description, array_offset)
 
       self.properties[property_value_data_map.name] = property_value
 
@@ -3609,7 +3645,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     class_value_data_map = self.GetClassValueMapByHash(
         instance_object_record.class_name_hash)
     instance.ReadInstanceBlockData(
-        class_value_data_map, object_record.data,
+        class_value_data_map, instance_object_record.instance_block_data,
         record_data_offset=instance_block_offset)
 
     if self._debug:

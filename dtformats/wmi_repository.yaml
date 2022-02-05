@@ -199,6 +199,18 @@ members:
   element_data_type: byte
   elements_terminator: "\x00"
 ---
+name: cim_string_array
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_strings
+  data_type: uint32
+- name: string_offsets
+  type: sequence
+  element_data_type: uint32
+  number_of_elements: cim_string_array.number_of_strings
+---
 name: qualifier_descriptor_base
 type: structure
 attributes:
