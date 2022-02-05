@@ -586,7 +586,7 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: name_offset
+- name: class_name_offset
   data_type: uint32
 - name: unknown1
   data_type: byte
@@ -906,21 +906,21 @@ attributes:
 members:
 - name: system_class_cell_number
   data_type: uint32
-- name: index_cell_number
+- name: root_namespace_cell_number
   data_type: uint32
 - name: data_size
+  data_type: uint32
+- name: unknown1
+  data_type: uint32
+- name: unknown2
+  data_type: uint32
+- name: unused_space_offset
+  data_type: uint32
+- name: unknown3
   data_type: uint32
 - name: unknown4
   data_type: uint32
 - name: unknown5
-  data_type: uint32
-- name: unused_space_offset
-  data_type: uint32
-- name: unknown7
-  data_type: uint32
-- name: unknown8
-  data_type: uint32
-- name: unknown9
   data_type: uint32
 - name: node_bin_size
   data_type: uint32
@@ -950,13 +950,13 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: unknown1
+- name: instance_root_node_offset
   data_type: uint32
-- name: root_node_offset
+- name: class_definition_root_node_offset
   data_type: uint32
 - name: unknown2
   data_type: uint32
-- name: leaf_node_offset
+- name: class_definition_leaf_node_offset
   data_type: uint32
 - name: unknown3
   data_type: uint32
@@ -995,17 +995,17 @@ type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: index_root_node_offset
+- name: instance_root_node_offset
   data_type: uint32
-- name: branch_node_offset
+- name: class_definition_branch_node_offset
   data_type: uint32
 - name: parent_class_root_node_offset
   data_type: uint32
-- name: sub_type
+- name: sub_node_type
   data_type: uint32
-- name: unknown3
+- name: unknown_node2_offset
   data_type: uint32
-- name: sub_type_root_node_offset
+- name: sub_node_offset
   data_type: uint32
 - name: unknown4
   data_type: uint32
@@ -1071,6 +1071,7 @@ attributes:
 members:
 - name: branch_node_type
   data_type: uint32
+  values: [1, 2]
 - name: number_of_leaf_values
   data_type: uint32
 - name: branch_node_offset
@@ -1080,7 +1081,57 @@ members:
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_index_root_node
+name: cim_rep_instance_leaf_node
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: instance_root_node_offset
+  data_type: uint32
+- name: class_definition_root_node_offset
+  data_type: uint32
+- name: unknown1
+  data_type: uint32
+- name: instance_node_offset
+  data_type: uint32
+- name: unknown3
+  data_type: uint32
+- name: footer
+  type: stream
+  element_data_type: byte
+  elements_data_size: 12
+---
+name: cim_rep_instance_leaf_value_node
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: name_node_offset
+  data_type: uint32
+- name: unknown_node1_offset
+  data_type: uint32
+- name: footer
+  type: stream
+  element_data_type: byte
+  elements_data_size: 12
+---
+name: cim_rep_instance_node
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: instance_block_size
+  data_type: uint32
+- name: instance_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: cim_rep_instance_node.instance_block_size - 4
+- name: footer
+  type: stream
+  element_data_type: byte
+  elements_data_size: 12
+---
+name: cim_rep_instance_root_node
 type: structure
 attributes:
   byte_order: little-endian
@@ -1091,27 +1142,13 @@ members:
   data_type: uint32
 - name: instance_leaf_node_offset
   data_type: uint32
+- name: unknown1
+  data_type: uint32
+- name: unknown_node4_offset
+  data_type: uint32
 - name: unknown2
   data_type: uint32
-- name: unknown3
-  data_type: uint32
-- name: unknown4
-  data_type: uint32
-- name: unknown5
-  data_type: uint32
-- name: footer
-  type: stream
-  element_data_type: byte
-  elements_data_size: 12
----
-name: cim_rep_index_leaf_value_node
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: name_node_offset
-  data_type: uint32
-- name: unknown1
+- name: unknown_node5_offset
   data_type: uint32
 - name: footer
   type: stream
@@ -1160,38 +1197,81 @@ members:
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_instance_leaf_node
+name: cim_rep_unknown_node2
 type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: index_root_node_offset
+- name: unknown_node3_offset1
   data_type: uint32
-- name: class_definition_root_node_offset
+- name: first_unknown_node3_offset
   data_type: uint32
-- name: unknown1
+- name: last_unknown_node3_offset
   data_type: uint32
-  value: 2
-- name: instance_node_offset
+- name: unknown4
   data_type: uint32
-- name: unknown3
+- name: unknown5
   data_type: uint32
 - name: footer
   type: stream
   element_data_type: byte
   elements_data_size: 12
 ---
-name: cim_rep_instance_node
+name: cim_rep_unknown_node3
 type: structure
 attributes:
   byte_order: little-endian
 members:
-- name: instance_block_size
+- name: unknown1
   data_type: uint32
-- name: instance_block_data
+- name: name_node_offset
+  data_type: uint32
+- name: unknown3
+  data_type: uint32
+- name: unknown_node3_offset1
+  data_type: uint32
+- name: unknown_node3_offset2
+  data_type: uint32
+- name: previous_unknown_node3_offset
+  data_type: uint32
+- name: next_unknown_node3_offset
+  data_type: uint32
+- name: footer
   type: stream
   element_data_type: byte
-  elements_data_size: cim_rep_instance_node.instance_block_size - 4
+  elements_data_size: 12
+---
+name: cim_rep_unknown_node4
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: parent_instance_root_node_offset
+  data_type: uint32
+- name: unknown_node6_offset
+  data_type: uint32
+- name: unknown3
+  data_type: uint32
+- name: unknown4
+  data_type: uint32
+- name: unknown5
+  data_type: uint32
+- name: footer
+  type: stream
+  element_data_type: byte
+  elements_data_size: 12
+---
+name: cim_rep_unknown_node5
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: unknown_block_size
+  data_type: uint32
+- name: unknown_block_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: cim_rep_unknown_node5.unknown_block_size - 4
 - name: footer
   type: stream
   element_data_type: byte

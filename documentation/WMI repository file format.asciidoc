@@ -51,6 +51,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.6 | J.B. Metz | April 2017 | Textual changes.
 | 0.0.7 | J.B. Metz | May 2017 | Textual changes.
 | 0.0.8 | J.B. Metz | Janunary 2022 | Additional information about format.
+| 0.0.8 | J.B. Metz | February 2022 | Additional information about format.
 |===
 
 :numbered:
@@ -85,7 +86,7 @@ the directory:
 * `CIM.REC`;
 * `CIM.REP`;
 
-This document refers to this format as version 1.0.
+This document refers to this format as version 2.0.
 
 === Windows XP and Windows 2003
 
@@ -95,7 +96,7 @@ In Windows XP and Windows 2003 the CIM repository can be found in the directory:
 %SystemRoot%\System32\WBEM\Repository\FS\
 ....
 
-This document refers to this format as version 2.0.
+This document refers to this format as version 2.1.
 
 [NOTE]
 A copy of the CIM repository can be stored in the system restore points.
@@ -117,7 +118,7 @@ In Windows Vista and later the CIM repository can be found in the directory:
 ** `[1-3]` in Windows Vista and later
 * `Mapping.ver`; mappings version file contains # of the active mappings file.
 
-This document refers to this format as version 2.1.
+This document refers to this format as version 2.2.
 
 === Test version
 
@@ -156,13 +157,13 @@ A CIM repository uses identifier strings to map to <<object_records,object recor
 The identifier strings are stored in the <<index_binary_tree_file,index binary-tree (Index.btr) file>>.
 The object records are stored in the <<objects_data_file,objects data file>>.
 
-An example of a format version 2.0 identifier string:
+An example of a format version 2.1 identifier string:
 
 ....
 R_7F02F51F97C31228F1ADE773040492C4
 ....
 
-An example of a format version 2.1 identier string:
+An example of a format version 2.2 identier string:
 
 ....
 CD_41C53E6DB1ACF2453CEFD41398198E613F10DFF47709ECAB1D7F037756AC8CE7.0.2079881926.209
@@ -197,7 +198,7 @@ The following type prefixes are known:
 | R | Registration
 |===
 
-The hash is either and MD5 hash (version 2.0) or SHA-256 hash (version 2.1) and
+The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
 is calculated from an upper case name, for example using Python to determine
 the identifier of the class name "__thisNAMESPACE":
 
@@ -409,7 +410,7 @@ The instance block is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Name offset
+| 0 | 4 | | Class name offset
 | 4 | 1 | | [yellow-background]*Unknown*
 | 5 | ... | | [yellow-background]*Unknown (property state bits?)* +
 Contains an array of 2 bits per property, that is stored byte aligned +
@@ -482,11 +483,11 @@ The page number is mapped to the in-file page number via the index mappings file
 The page number is mapped to the in-file page number via the index mappings file
 |===
 
-In format version 2.0 the mapped index page 0 references an administrative page
+In format version 2.1 the mapped index page 0 references an administrative page
 (page type: 0xaddd). The index binary-tree page header of this page contains
 the mapped root page number.
 
-In format version 2.1 the mapped root page number is assumed to be always 1.
+In format version 2.2 the mapped root page number is assumed to be always 1.
 
 [yellow-background]*TODO: determine if this assumption holds.*
 
@@ -606,50 +607,50 @@ The offset is relative to the start of the index binary-tree page value data
 The mapping file (Index.map, Mapping#.map and Objects.map) is used by format
 version 2.
 
-Windows XP and Windows 2003 use the following version 2.0 mapping files:
+Windows XP and Windows 2003 use the following version 2.1 mapping files:
 
 * `Index.map` to resolve mapped page numbers to in-file page numbers in `Index.btr`
 * `Objects.map` to resolve mapped page numbers to in-file page numbers in `Objects.data`
 * `Mapping[1-2].map` contains a backup of the information in `Objects.map`
 
-A version 2.0 mapping file consists of:
-
-* version 2.0 file header
-* index or objects mapping table
-* unknown table, presumably used for free space tracking
-* version 2.0 file footer
-
-In Windows 2003 and XP 64-bit the information of `Index.map` was moved into
-a single version version 2.0 mapping file where `Mapping[1-2].map` contain
-multiple backups.
-
-* version 2.0 file header
-* objects mapping table
-* unknown table, presumably used for free space tracking
-* version 2.0 file footer
-* version 2.0 file header
-* index mapping table
-* version 2.0 file footer
-
-In Windows Vista the format changed to version 2.1. and an additional
-`Mapping3.map` file was added.
-
 A version 2.1 mapping file consists of:
 
 * version 2.1 file header
-* objects mapping table
-* unknown table, presumably used for free space tracking
-* version 2.0 file footer
-* version 2.1 file header
-* index mapping table
+* index or objects mapping table
 * unknown table, presumably used for free space tracking
 * version 2.1 file footer
 
+In Windows 2003 and XP 64-bit the information of `Index.map` was moved into
+a single version version 2.1 mapping file where `Mapping[1-2].map` contain
+multiple backups.
+
+* version 2.1 file header
+* objects mapping table
+* unknown table, presumably used for free space tracking
+* version 2.1 file footer
+* version 2.1 file header
+* index mapping table
+* version 2.1 file footer
+
+In Windows Vista the format changed to version 2.2. and an additional
+`Mapping3.map` file was added.
+
+A version 2.2 mapping file consists of:
+
+* version 2.2 file header
+* objects mapping table
+* unknown table, presumably used for free space tracking
+* version 2.1 file footer
+* version 2.2 file header
+* index mapping table
+* unknown table, presumably used for free space tracking
+* version 2.2 file footer
+
 === File header
 
-==== File header - version 2.0
+==== File header - version 2.1
 
-The file header - version 2.0 is 12 bytes of size and consists of:
+The file header - version 2.1 is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -659,9 +660,9 @@ The file header - version 2.0 is 12 bytes of size and consists of:
 | 8 | 4 | | Number of pages
 |===
 
-==== File header - version 2.1
+==== File header - version 2.2
 
-The file header - version 2.1 is 20 bytes of size and consists of:
+The file header - version 2.2 is 20 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -684,9 +685,9 @@ The mapping table is variable of size and consists of:
 | 4 | ... | | Array of entries
 |===
 
-=== Mapping table entry - version 2.0
+=== Mapping table entry - version 2.1
 
-The mapping table entry - version 2.0 is 24 bytes of size and consists of:
+The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -695,9 +696,9 @@ The mapping table entry - version 2.0 is 24 bytes of size and consists of:
 Contains 0 if not set or 0xffffffff if unavailable
 |===
 
-=== Mapping table entry - version 2.1
+=== Mapping table entry - version 2.2
 
-The mapping table entry - version 2.1 is 24 bytes of size and consists of:
+The mapping table entry - version 2.2 is 24 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -725,9 +726,9 @@ The unknown table is variable of size and consists of:
 
 === File footer
 
-==== File footer - version 2.0
+==== File footer - version 2.1
 
-The file footer - version 2.0 is 4 bytes of size and consists of:
+The file footer - version 2.1 is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -735,9 +736,9 @@ The file footer - version 2.0 is 4 bytes of size and consists of:
 | 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
 |===
 
-==== File footer - version 2.1
+==== File footer - version 2.2
 
-The file footer - version 2.1 is 8 bytes of size and consists of:
+The file footer - version 2.2 is 8 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -868,9 +869,9 @@ The attribute value contains a CIM key
 
 ===== Instance (I and IL) object record
 
-====== Instance object record - version 2.0
+====== Instance object record - version 2.1
 
-The instance object record - version 2.0 is variable of size and consists of:
+The instance object record - version 2.1 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -888,11 +889,11 @@ Includes the 4 bytes of the size
 See section: <<instance_block,instance block>>
 |===
 
-====== Instance object record - version 2.1
+====== Instance object record - version 2.2
 
-Instanceobject record  - version 2.1 is used by Windows Vista and later.
+Instanceobject record  - version 2.2 is used by Windows Vista and later.
 
-The interface - version 2.1 is variable of size and consists of:
+The interface - version 2.2 is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -931,7 +932,7 @@ The file header is 40 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Number of node cell with <<class_definition_root_node,class definition root node>> of "__SystemClass" +
 Where 0 is the first node cell in the repository file
-| 4 | 4 | | Number of node cell with <<index_root_node,index root node>> of "ROOT" +
+| 4 | 4 | | Number of node cell with <<instance_root_node,instance root node>> of "__NAMESPACE" instance "ROOT" +
 Where 0 is the first node cell in the repository file
 | 8 | 4 | | Total data size
 | 12 | 4 | | [yellow-background]*Unknown*
@@ -984,30 +985,29 @@ The class definition root node is 44 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<index_root_node,index root node>>
+| 0 | 4 | | Offset + 4 to node cell with <<instance_root_node,instance root node>>
 | 4 | 4 | | Offset + 4 to node cell with <<class_definition_branch_node,class definition branch node>>
 | 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of the parent class +
 Contains 0 if the class has no parent class
-| 12 | 4 | | [yellow-background]*Unknown (sub node type?)*
-| 16 | 4 | | [yellow-background]*Unknown (Offset + 4 to node cell)*
-| 20 | 4 | | Offset + 4 to node cell with sub root note
+| 12 | 4 | | Sub node type
+| 16 | 4 | | Offset + 4 to node cell with <<unknown_node2,unknown node 2>> +
+Contains 0 if not set
+| 20 | 4 | | Offset + 4 to node cell with sub node +
+Contains 0 if not set
 | 24 | 4 | | [yellow-background]*Unknown (empty)*
 | 28 | 4 | | [yellow-background]*Unknown (empty)*
 | 32 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
 ....
-If sub type is 1 the node cell offset before the sub type node cell offset points to:
+Is sub node type some combination of flags?
 
-0x00000000  84 e3 00 00 84 e3 00 00  8c dd 24 00 1f 00 00 00  ..........$.....
-0x00000010  05 00 00 00 00 00 00 00  fe fe fe fe fe fe fe fe  ................
+If sub node type is 0x01, offset + 4 to node cell with sub node is not set (0)?
+If sub node type is 0x02, offset + 4 to node cell with sub node is not set (0)?
+If sub node type is 0x81, offset + 4 to node cell with sub node is not set (0)?
 
-If sub type is 9 the sub type node cell offset points to:
-
-0x00000000  01 00 00 00 01 00 00 00  98 05 00 00 00 00 00 00  ................
-0x00000010  fe fe fe fe fe fe fe fe                           ........
-
-If sub type is 10 the sub type node cell offset points to: a child objects root node.
+If sub node type is 0x09, offset + 4 to node cell with sub node refers to: a child objects root node.
+If sub node type is 0x0a, offset + 4 to node cell with sub node refers to: a child objects root node.
 ....
 
 ==== [[class_definition_branch_node]]Class definition branch node
@@ -1017,7 +1017,7 @@ The class definition branch node is 32 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (Offset + 4 to node cell, parent index?)*
+| 0 | 4 | | Offset + 4 to node cell with corresponding <<instance_root_node,instance root node>>
 | 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
 | 8 | 4 | 1 | [yellow-background]*Unknown (leaf node type?)*
 | 12 | 4 | | Offset + 4 to node cell with <<class_definition_leaf_node,class definition leaf node>>
@@ -1043,6 +1043,47 @@ Includes the 4 bytes of the size
 | ... | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
+==== [[unknown_node2]]Unknown node 2
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>>
+| 4 | 4 | | Offset + 4 to node cell with first <<unknown_node3,unknown node 3>>
+| 8 | 4 | | Offset + 4 to node cell with last <<unknown_node3,unknown node 3>>
+| 12 | 4 | 31 | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown* +
+Seen: 1 and 5
+| 20 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[unknown_node3]]Unknown node 3
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown (node level?)* +
+Seen: 0 and 1
+| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
+| 8 | 4 | | Offset + 4 to node cell with <<unknown_node7,unknown node 7>>
+| 12 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>> +
+Contains 0 if not set
+| 16 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>> +
+Contains 0 if not set
+| 20 | 4 | | Offset + 4 to node cell with previous <<unknown_node3,unknown node 3>> +
+Contains 0 if not set
+| 24 | 4 | | Offset + 4 to node cell with next <<unknown_node3,unknown node 3>> +
+Contains 0 if not set
+| 28 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[unknown_node7]]Unknown node 7
+
+....
+0x00000000  b0 00 00 00 80 02 00 00  02 00 00 00 b0 e3 00 00  ................
+0x00000010  00 00 00 00 00 00 00 00  fe fe fe fe fe fe fe fe  ................
+....
+
 === Child objects hierarchy
 
 ==== [[child_objects_root_node]]Child objects root node
@@ -1052,19 +1093,15 @@ The child objects root node is 24 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | 2 | Branch node type
+| 0 | 4 | 1 or 2 | Branch node type (or depth?)
 | 4 | 4 | | Number of leaf values
+4+| _If branch node type == 1_
+| 8 | 4 | | Offset + 4 to node cell with leaf value node
+4+| _If branch node type == 2_
 | 8 | 4 | | Offset + 4 to node cell with <<child_objects_branch_node,child objects branch node>>
+4+| _Common_
 | 12 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
-
-....
-If branch node type is 1 the size of branch node differs:
-
-0x00000000  b0 00 00 00 40 06 00 00  e4 03 00 00 01 00 00 00  ....@...........
-0x00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-0x00000020  00 00 00 00 fe fe fe fe  fe fe fe fe              ............
-....
 
 ==== [[child_objects_branch_node]]Child objects branch node
 
@@ -1106,11 +1143,9 @@ It is possible that the number of leaf value node cell offsets in the leaf
 node is controlled by the maximum (or available) number of leaf values in
 the branch node.
 
-=== Index hierarchy
+=== Instance hierarchy
 
-Or instance hierarchy?
-
-==== [[index_root_node]]Index root node
+==== [[instance_root_node]]Instance root node
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1119,51 +1154,85 @@ Or instance hierarchy?
 Contains 0xffffffff (-1) if [yellow-background]*not set?*
 | 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
 | 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
-| 12 | 4 | 8 | [yellow-background]*Unknown (sub node type indicator?)*
+| 12 | 4 | 8 | [yellow-background]*Unknown (type indicator or offset?)*
 | 16 | 4 | | Offset + 4 to node cell with <<unknown_node4,unknown node 4>>
-| 16 | 4 | | [yellow-background]*Unknown (empty values?)*
+| 16 | 4 | 0 | [yellow-background]*Unknown (empty values?)*
 | 24 | 4 | | Offset + 4 to node cell with <<unknown_node5,unknown node 5>>
 | 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
+
+Note that format of instance root node is different in parent instance hierarchy
 
 ==== [[instance_leaf_node]]Instance leaf node
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with parent <<index_root_node,index root node>> +
+| 0 | 4 | | Offset + 4 to node cell with corresponding <<instance_root_node,instance root node>> +
 Contains 0 if not set
 | 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
-| 8 | 4 | 2 | [yellow-background]*Unknown (type indicator?)*
+| 8 | 4 | 2 | [yellow-background]*Unknown (type indicator or offset?)*
 | 12 | 4 | | Offset + 4 to node cell with <<instance_node,instance node>>
 | 16 | 4 | | [yellow-background]*Unknown (empty values?)*
 | 20 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
+....
+Alternate variant seen in parent instance hierarchy
+0x00000000  b0 00 00 00 20 03 00 00  74 01 00 00 01 00 00 00  .... ...t.......
+0x00000010  1c e3 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
+0x00000020  00 00 00 00 fe fe fe fe  fe fe fe fe              ............
+....
+
+==== [[instance_leaf_value_node]]Instance leaf value node
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
+| 4 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 8 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
 ==== [[unknown_node4]]Unknown node 4
 
-....
-Unknown: index root node
-Unknown: unknown node 6
-Unknown: name node
-Unknown:
-Unknown:
-Footer
-0x00000000  d8 02 00 00 d0 01 00 00  9c 78 00 00 1f 00 00 00  .........x......
-0x00000010  37 00 00 00 00 00 00 00  fe fe fe fe fe fe fe fe  7...............
-....
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Offset + 4 to node cell with parent <<instance_root_node,instance root node>> +
+Contains 0 if not set
+| 4 | 4 | | Offset + 4 to node cell with <<unknown_node6,unknown node 6>>
+| 8 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 12 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 20 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
 
 ==== [[unknown_node5]]Unknown node 5
 
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown* block size +
+Includes the 4 bytes of the size
+| 4 | ... | | [yellow-background]*Unknown* block data +
+| ... | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
 ....
-Unknown: block size?
-Unknown: block data?
-Footer
-0x00000000  40 00 00 00 01 00 00 00  01 00 00 00 02 00 00 00  @...............
-0x00000010  00 00 00 00 00 02 18 00  3f 00 06 00 01 02 00 00  ........?.......
-0x00000020  00 00 00 05 20 00 00 00  20 02 00 00 00 02 14 00  .... ... .......
-0x00000030  13 00 00 00 01 01 00 00  00 00 00 01 00 00 00 00  ................
-0x00000040  00 00 00 00 fe fe fe fe  fe fe fe fe              ............
+Unknown block data:
+0x00000000  01 00 00 00 01 00 00 00  02 00 00 00 00 00 00 00  ................
+
+0x00000010  00 02 18 00 3f 00 06 00                           ....?...........
+
+SID?
+0x00000010                           01 02 00 00 00 00 00 05  ....?...........
+0x00000020  20 00 00 00 20 02 00 00                            ... ...........
+
+0x00000020                           00 02 14 00 13 00 00 00   ... ...........
+
+SID?
+0x00000030  01 01 00 00 00 00 00 01  00 00 00 00              ............
 ....
 
 ==== [[unknown_node6]]Unknown node 6
@@ -1173,16 +1242,6 @@ Footer
 0x00000010  d4 4b 00 00 00 00 00 00  d8 02 00 00 00 00 00 00  .K..............
 0x00000020  fe fe fe fe fe fe fe fe                           ........
 ....
-
-==== [[index_leaf_value_node]]Index leaf value node
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 4 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 8 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
 
 ==== [[name_node]]Name node
 
