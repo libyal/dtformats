@@ -186,16 +186,17 @@ The following type prefixes are known:
 [cols="1,5",options="header"]
 |===
 | Prefix | Usage
-| C |
+| C | Class
 | CD | Class definition
-| CI | [yellow-background]*Unknown (Class instance?)*
-| CR | [yellow-background]*Unknown (Class reference?)*
+| CI | Class instance
+| CR | Class reference
 | I | Instance
-| IL | Instance
-| KI |
+| IL | Instance location
+| IR | Instance reference
+| KI | Class instance with key
 | KL |
-| NS | Name space
-| R | Registration
+| NS | Namespace
+| R | Reference
 |===
 
 The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
@@ -1053,20 +1054,19 @@ Contains 0 if not set
 | 20 | 4 | | Offset + 4 to node cell with sub node +
 Contains 0 if not set
 | 24 | 4 | | [yellow-background]*Unknown (empty)*
-| 28 | 4 | | [yellow-background]*Unknown (empty)*
+| 28 | 4 | | Offset + 4 to node cell with <<child_objects_root_node,child objects root node>> +
+Contains 0 if not set, the child leaf value nodes refer to a <<name_node,name node>>
 | 32 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-....
-Is sub node type some combination of flags?
+TODO: Determine if sub node type some combination of flags?
 
-If sub node type is 0x01, offset + 4 to node cell with sub node is not set (0)?
-If sub node type is 0x02, offset + 4 to node cell with sub node is not set (0)?
-If sub node type is 0x81, offset + 4 to node cell with sub node is not set (0)?
+* If sub node type is 0x01, offset + 4 to node cell with sub node is not set (0)?
+* If sub node type is 0x02, offset + 4 to node cell with sub node is not set (0)?
+* If sub node type is 0x81, offset + 4 to node cell with sub node is not set (0)?
 
-If sub node type is 0x09, offset + 4 to node cell with sub node refers to: a child objects root node.
-If sub node type is 0x0a, offset + 4 to node cell with sub node refers to: a child objects root node.
-....
+* If sub node type is 0x09, offset + 4 to node cell with sub node refers to: a <<child_objects_root_node,child objects root node>>.
+* If sub node type is 0x0a, offset + 4 to node cell with sub node refers to: a <<child_objects_root_node,child objects root node>>.
 
 ==== [[class_definition_branch_node]]Class definition branch node
 
@@ -1110,8 +1110,7 @@ Includes the 4 bytes of the size
 | 4 | 4 | | Offset + 4 to node cell with first <<unknown_node3,unknown node 3>>
 | 8 | 4 | | Offset + 4 to node cell with last <<unknown_node3,unknown node 3>>
 | 12 | 4 | 31 | [yellow-background]*Unknown*
-| 16 | 4 | | [yellow-background]*Unknown* +
-Seen: 1 and 5
+| 16 | 4 | | [yellow-background]*Unknown (Number of elements in list)*
 | 20 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
@@ -1123,7 +1122,7 @@ Seen: 1 and 5
 | 0 | 4 | | [yellow-background]*Unknown (node level?)* +
 Seen: 0 and 1
 | 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 8 | 4 | | Offset + 4 to node cell with <<unknown_node7,unknown node 7>>
+| 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
 | 12 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>> +
 Contains 0 if not set
 | 16 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>> +
@@ -1135,13 +1134,6 @@ Contains 0 if not set
 | 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-==== [[unknown_node7]]Unknown node 7
-
-....
-0x00000000  b0 00 00 00 80 02 00 00  02 00 00 00 b0 e3 00 00  ................
-0x00000010  00 00 00 00 00 00 00 00  fe fe fe fe fe fe fe fe  ................
-....
-
 === Child objects hierarchy
 
 ==== [[child_objects_root_node]]Child objects root node
@@ -1151,11 +1143,12 @@ The child objects root node is 24 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | 1 or 2 | Branch node type (or depth?)
+| 0 | 4 | 0, 1, 2 | Branch node type (or depth?)
 | 4 | 4 | | Number of leaf values
-4+| _If branch node type == 1_
-| 8 | 4 | | Offset + 4 to node cell with leaf value node
-4+| _If branch node type == 2_
+4+| _If branch node type is 0 or 1_
+| 8 | 4 | | Offset + 4 to node cell with leaf value node +
+Contains 0 if not set
+4+| _If branch node type is 2_
 | 8 | 4 | | Offset + 4 to node cell with <<child_objects_branch_node,child objects branch node>>
 4+| _Common_
 | 12 | 12 | | [yellow-background]*Unknown (footer?)*
@@ -1208,20 +1201,19 @@ the branch node.
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<child_objects_root_node,child objects root node>> +
-Contains 0xffffffff (-1) if [yellow-background]*not set?*
+| 0 | 4 | | Offset + 4 to node cell with <<child_objects_root_node,child objects root node>>
 | 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
 | 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
-| 12 | 4 | 8 | [yellow-background]*Unknown (type indicator or offset?)*
+| 12 | 4 | 1, 8 | [yellow-background]*Unknown (type indicator or offset?)*
 | 16 | 4 | | Offset + 4 to node cell with <<unknown_node4,unknown node 4>>
-| 16 | 4 | 0 | [yellow-background]*Unknown (empty values?)*
+| 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
 | 24 | 4 | | Offset + 4 to node cell with <<unknown_node5,unknown node 5>>
 | 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-Note that format of instance root node is different in parent instance hierarchy
-
 ==== [[instance_leaf_node]]Instance leaf node
+
+The instance leaf node is 32 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1257,13 +1249,29 @@ Alternate variant seen in parent instance hierarchy
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with parent <<instance_root_node,instance root node>> +
+| 0 | 4 | | Offset + 4 to node cell with <<class_instance_root_node,class instance root node>> +
 Contains 0 if not set
 | 4 | 4 | | Offset + 4 to node cell with <<unknown_node6,unknown node 6>>
 | 8 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
 | 12 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
 | 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
 | 20 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[class_instance_root_node]]Class instance root node
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown* +
+Contains 0xffffffff if [yellow-background]*unknown*
+| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
+| 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
+| 12 | 4 | | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown*
+| 24 | 4 | | [yellow-background]*Unknown*
+| 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
 ==== [[unknown_node5]]Unknown node 5
@@ -1311,39 +1319,6 @@ Contains an UTF-16 little-endian string with end-of-string character.
 | ... | ... | | 32-bit alignment padding
 | ... | 12 | | [yellow-background]*Unknown (footer?)*
 |===
-
-==== [[unknown_node1]]Unknown node 1
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
-| 12 | 4 | | [yellow-background]*Unknown* +
-Seen: 1 and 8
-| 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 20 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 24 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 28 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-....
-Offset first unknown value refers to:
-
-Data offset                                                             : 89236 (0x00015c94)
-Node cell number                                                        : 1084
-Size                                                                    : 28
-Data:
-0x00000000  02 00 00 00 02 00 00 00  24 5e 0e 00 00 00 00 00  ........$^......
-0x00000010  fe fe fe fe fe fe fe fe                           ........
-
-0x00000000  01 00 00 00 01 00 00 00  74 07 06 00 00 00 00 00  ........t.......
-0x00000010  fe fe fe fe fe fe fe fe                           ........
-
-0x00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
-0x00000010  fe fe fe fe fe fe fe fe                           ........
-....
 
 ==== [[instance_node]]Instance node
 

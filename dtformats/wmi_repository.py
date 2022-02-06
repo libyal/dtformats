@@ -244,18 +244,21 @@ class ObjectRecord(object):
   Attributes:
     data (bytes): object record data.
     data_type (str): object record data type.
+    offset (int): offset of the record data.
   """
 
-  def __init__(self, data_type, data):
+  def __init__(self, data_type, data, offset=0):
     """Initializes an object record.
 
     Args:
       data_type (str): object record data type.
       data (bytes): object record data.
+      offset (int): offset of the record data.
     """
     super(ObjectRecord, self).__init__()
     self.data = data
     self.data_type = data_type
+    self.offset = offset
 
 
 class PropertyValueDataMap(object):
@@ -1041,8 +1044,8 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     """
     self._file_object = file_object
 
-  def ReadObjectRecordData(self, objects_page, data_offset, data_size):
-    """Reads the data of an object record.
+  def ReadObjectRecordDataSegment(self, objects_page, data_offset, data_size):
+    """Reads a data segment of an object record.
 
     Args:
       objects_page (ObjectsDataPage): objects data page.
@@ -1051,10 +1054,10 @@ class ObjectsDataFile(data_format.BinaryDataFile):
       data_size (int): object record data size.
 
     Returns:
-      bytes: object record data.
+      bytes: object record data segment.
 
     Raises:
-      ParseError: if the object record cannot be read.
+      ParseError: if the object record data segment cannot be read.
     """
     # Make the offset relative to the start of the file.
     file_offset = objects_page.page_offset + data_offset
@@ -1062,9 +1065,9 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     self._file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      self._DebugPrintText(
-          'Reading object record at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          'Reading object record data segment at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
 
     available_page_size = self._PAGE_SIZE - data_offset
 
@@ -1155,7 +1158,19 @@ class RepositoryFile(data_format.BinaryDataFile):
        '_FormatIntegerAsOffset'),
       ('sub_node_offset', 'Sub node offset', '_FormatIntegerAsOffset'),
       ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8'),
+      ('child_objects_root_node_offset', 'Child objects root node offset',
+       '_FormatIntegerAsOffset'),
+      ('footer', 'Footer', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_CLASS_INSTANCE_ROOT_NODE = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsOffset'),
+      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
+      ('class_definition_root_node_offset', 'Class definition root node offset',
+       '_FormatIntegerAsOffset'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsOffset'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsOffset'),
+      ('unknown5', 'Unknown5', '_FormatIntegerAsOffset'),
+      ('unknown6', 'Unknown6', '_FormatIntegerAsOffset'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_FILE_HEADER = [
@@ -1181,8 +1196,8 @@ class RepositoryFile(data_format.BinaryDataFile):
   _DEBUG_INFO_INSTANCE_LEAF_NODE = [
       ('instance_root_node_offset', 'Instance root node offset',
        '_FormatIntegerAsOffset'),
-      ('class_definition_root_node_offset',
-       'Class definition root node offset', '_FormatIntegerAsOffset'),
+      ('class_definition_root_node_offset', 'Class definition root node offset',
+       '_FormatIntegerAsOffset'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
       ('instance_node_offset', 'Instance node offset',
        '_FormatIntegerAsOffset'),
@@ -1191,7 +1206,7 @@ class RepositoryFile(data_format.BinaryDataFile):
 
   _DEBUG_INFO_INSTANCE_LEAF_VALUE_NODE = [
       ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('unknown_node1_offset', 'Unknown node 1 offset',
+      ('instance_root_node_offset', 'Instance root node offset',
        '_FormatIntegerAsOffset'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
@@ -1204,7 +1219,7 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
       ('unknown_node4_offset', 'Unknown node 4 offset',
        '_FormatIntegerAsOffset'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsDecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsOffset'),
       ('unknown_node5_offset', 'Unknown node 5 offset',
        '_FormatIntegerAsOffset'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
@@ -1221,17 +1236,6 @@ class RepositoryFile(data_format.BinaryDataFile):
   _DEBUG_INFO_NODE_BIN_HEADER = [
       ('node_bin_size', 'Node bin size', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_INFO_UNKNOWN_NODE1 = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsOffset'),
-      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('instance_leaf_node_offset', 'Instance leaf node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsOffset'),
-      ('unknown6', 'Unknown6', '_FormatIntegerAsOffset'),
-      ('unknown7', 'Unknown7', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
   _DEBUG_INFO_UNKNOWN_NODE2 = [
       ('unknown_node3_offset1', 'Unknown node 3 offset 1',
        '_FormatIntegerAsOffset'),
@@ -1240,13 +1244,14 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('last_unknown_node3_offset', 'Last unknown node 3 offset',
        '_FormatIntegerAsOffset'),
       ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsDecimal'),
+      ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_UNKNOWN_NODE3 = [
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
       ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsOffset'),
+      ('instance_leaf_node_offset', 'Instance leaf node offset',
+       '_FormatIntegerAsOffset'),
       ('unknown_node3_offset1', 'Unknown node 3 offset 1',
        '_FormatIntegerAsOffset'),
       ('unknown_node3_offset2', 'Unknown node 3 offset 2',
@@ -1258,7 +1263,7 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_UNKNOWN_NODE4 = [
-      ('parent_instance_root_node_offset', 'Parent instance root node offset',
+      ('class_instance_root_node_offset', 'Class instance root node offset',
        '_FormatIntegerAsOffset'),
       ('unknown_node6_offset', 'Unknown node 6 offset',
        '_FormatIntegerAsOffset'),
@@ -1281,6 +1286,7 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     super(RepositoryFile, self).__init__(
         debug=debug, output_writer=output_writer)
+    self._root_namespace_node_offset = None
     self._system_class_definition_root_node_offset = None
 
   def _ReadClassDefinitionBranchNode(self, block_data, file_offset):
@@ -1466,40 +1472,35 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     return class_definition_root_node
 
-  def _ReadNodeCell(self, file_object, file_offset, cell_number=None):
-    """Reads a node cell.
+  def _ReadClassInstanceRootNode(self, block_data, file_offset):
+    """Reads a class instance root node.
 
     Args:
-      file_object (file): file-like object.
+      block_data (bytes): block data.
       file_offset (int): offset of the node cell relative to the start of
           the file.
-      cell_number (Optional[int]): cell number.
 
     Returns:
-      cim_rep_node_cell: node cell.
+      cim_rep_class_instance_root_node: class instance root node.
 
     Raises:
-      ParseError: if the node cell cannot be read.
+      ParseError: if the class instance root node cannot be read.
     """
-    data_type_map = self._GetDataTypeMap('cim_rep_node_cell')
+    if self._debug:
+      self._DebugPrintText((
+          'Reading class instance root node at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
 
-    node_cell, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'node cell')
+    data_type_map = self._GetDataTypeMap('cim_rep_class_instance_root_node')
+
+    class_instance_root_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'class instance root node')
 
     if self._debug:
-      value_string = self._FormatIntegerAsOffset(file_offset)
-      self._DebugPrintValue('Node cell offset', value_string)
+      self._DebugPrintStructureObject(
+          class_instance_root_node, self._DEBUG_INFO_CLASS_INSTANCE_ROOT_NODE)
 
-      value_string = self._FormatIntegerAsOffset(file_offset + 4)
-      self._DebugPrintValue('Data offset', value_string)
-
-      if cell_number is not None:
-        value_string = self._FormatIntegerAsDecimal(cell_number)
-        self._DebugPrintValue('Node cell number', value_string)
-
-      self._DebugPrintStructureObject(node_cell, self._DEBUG_INFO_NODE_CELL)
-
-    return node_cell
+    return class_instance_root_node
 
   def _ReadFileHeader(self, file_object):
     """Reads a file header.
@@ -1667,35 +1668,40 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     return node_bin_header
 
-  def _ReadUnknownNode1(self, block_data, file_offset):
-    """Reads an unknown node 1.
+  def _ReadNodeCell(self, file_object, file_offset, cell_number=None):
+    """Reads a node cell.
 
     Args:
-      block_data (bytes): block data.
+      file_object (file): file-like object.
       file_offset (int): offset of the node cell relative to the start of
           the file.
+      cell_number (Optional[int]): cell number.
 
     Returns:
-      cim_rep_unknown_node1: unknown node.
+      cim_rep_node_cell: node cell.
 
     Raises:
-      ParseError: if the unknown node cannot be read.
+      ParseError: if the node cell cannot be read.
     """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading unknown node 1 at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+    data_type_map = self._GetDataTypeMap('cim_rep_node_cell')
 
-    data_type_map = self._GetDataTypeMap('cim_rep_unknown_node1')
-
-    unknown_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'unknown node 1')
+    node_cell, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'node cell')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          unknown_node, self._DEBUG_INFO_UNKNOWN_NODE1)
+      value_string = self._FormatIntegerAsOffset(file_offset)
+      self._DebugPrintValue('Node cell offset', value_string)
 
-    return unknown_node
+      value_string = self._FormatIntegerAsOffset(file_offset + 4)
+      self._DebugPrintValue('Data offset', value_string)
+
+      if cell_number is not None:
+        value_string = self._FormatIntegerAsDecimal(cell_number)
+        self._DebugPrintValue('Node cell number', value_string)
+
+      self._DebugPrintStructureObject(node_cell, self._DEBUG_INFO_NODE_CELL)
+
+    return node_cell
 
   def _ReadUnknownNode2(self, block_data, file_offset):
     """Reads an unknown node 2.
@@ -1847,89 +1853,6 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     return instance_leaf_node
 
-  def _ReadClassDefinitionLevel(self, file_object, root_node_offset):
-    """Reads a class definition level (root, branch and leaf nodes).
-
-    Args:
-      file_object (file): file-like object.
-      root_node_offset (int): offset of the root node relative to the start of
-          the file.
-
-    Returns:
-      ClassDefinition: class definition or None if not available.
-    """
-    node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
-    root_node = self._ReadClassDefinitionRootNode(
-        node_cell.data, root_node_offset)
-
-    branch_node_offset = root_node.class_definition_branch_node_offset
-    if branch_node_offset <= 40:
-      return None
-
-    node_cell = self._ReadNodeCell(file_object, branch_node_offset - 4)
-    branch_node = self._ReadClassDefinitionBranchNode(
-        node_cell.data, branch_node_offset)
-
-    leaf_node_offset = branch_node.class_definition_leaf_node_offset
-    if leaf_node_offset <= 40:
-      return None
-
-    node_cell = self._ReadNodeCell(file_object, leaf_node_offset - 4)
-    leaf_node = self._ReadClassDefinitionLeafNode(
-        node_cell.data, leaf_node_offset)
-
-    class_definition = ClassDefinition(
-        debug=self._debug, output_writer=self._output_writer)
-    class_definition.ReadClassDefinitionBlock(
-        leaf_node.class_definition_block_data,
-        record_data_offset=leaf_node_offset)
-
-    return class_definition
-
-  def _ReadInstanceLeafLevel(self, file_object, node_offset):
-    """Reads an unknown node 2 level.
-
-    Args:
-      file_object (file): file-like object.
-      node_offset (int): offset of the node relative to the start of the file.
-
-    Returns:
-      instance: instance or None if not available.
-    """
-    node_cell = self._ReadNodeCell(file_object, node_offset - 4)
-    instance_leaf_node = self._ReadInstanceLeafNode(node_cell.data, node_offset)
-
-    if (instance_leaf_node.class_definition_root_node_offset <= 40 or
-        instance_leaf_node.instance_node_offset <= 40):
-      return None
-
-    if instance_leaf_node.unknown1 != 2:
-      return None
-
-    class_definition = self._ReadClassDefinitionLevel(
-        file_object, instance_leaf_node.class_definition_root_node_offset)
-
-    node_cell = self._ReadNodeCell(
-        file_object, instance_leaf_node.instance_node_offset - 4)
-    instance_node = self._ReadInstanceNode(
-        node_cell.data, instance_leaf_node.instance_node_offset)
-
-    instance = Instance(
-        '2.0', debug=self._debug, output_writer=self._output_writer)
-
-    class_value_data_map = ClassValueDataMap()
-    class_value_data_map.Build([class_definition])
-
-    instance.ReadInstanceBlockData(
-        class_value_data_map, instance_node.instance_block_data,
-        record_data_offset=instance_leaf_node.instance_node_offset + 4)
-
-    if self._debug:
-      class_definition.DebugPrint()
-      instance.DebugPrint()
-
-    return instance
-
   def _ReadClassDefinitionHierarchy(self, file_object, root_node_offset):
     """Reads the class definition hierarchy.
 
@@ -1939,7 +1862,7 @@ class RepositoryFile(data_format.BinaryDataFile):
           the file.
 
     Yields:
-      ClassDefinition: class definition.
+      ClassDefinitionReference: class definition reference.
     """
     node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
     root_node = self._ReadClassDefinitionRootNode(
@@ -1953,30 +1876,50 @@ class RepositoryFile(data_format.BinaryDataFile):
 
       leaf_node_offset = branch_node.class_definition_leaf_node_offset
       if leaf_node_offset > 40:
-        node_cell = self._ReadNodeCell(file_object, leaf_node_offset - 4)
-        leaf_node = self._ReadClassDefinitionLeafNode(
-            node_cell.data, leaf_node_offset)
+        class_definition_reference = self._ReadClassDefinitionReference(
+            file_object, leaf_node_offset)
+        yield class_definition_reference
 
-        class_definition = ClassDefinition(
-            debug=self._debug, output_writer=self._output_writer)
-        class_definition.ReadClassDefinitionBlock(
-            leaf_node.class_definition_block_data,
-            record_data_offset=leaf_node_offset)
+    if root_node.unknown_node2_offset > 40:
+      self._ReadUnknownNode2Hierarchy(
+          file_object, root_node.unknown_node2_offset)
 
-        yield class_definition
+    if root_node.sub_node_offset > 40 and root_node.sub_node_type in (9, 10):
+      for leaf_value_node_offset in self._ReadChildObjectsHierarchy(
+          file_object, root_node.sub_node_offset):
+        if leaf_value_node_offset > 40:
+          for class_definition_reference in self._ReadClassDefinitionHierarchy(
+              file_object, leaf_value_node_offset):
+            yield class_definition_reference
 
-        if root_node.unknown_node2_offset > 40:
-          self._ReadUnknownNode2Hierarchy(
-              file_object, root_node.unknown_node2_offset)
+    if root_node.child_objects_root_node_offset > 40:
+      for leaf_value_node_offset in self._ReadChildObjectsHierarchy(
+          file_object, root_node.child_objects_root_node_offset):
+        if leaf_value_node_offset > 40:
+          node_cell = self._ReadNodeCell(
+              file_object, leaf_value_node_offset - 4)
+          self._ReadNameNode(node_cell.data, leaf_value_node_offset)
 
-        if root_node.sub_node_offset > 40:
-          if root_node.sub_node_type in (9, 10):
-            for leaf_value_offset in self._ReadChildObjectsHierarchy(
-                file_object, root_node.sub_node_offset):
-              if leaf_value_offset > 40:
-                for class_definition in self._ReadClassDefinitionHierarchy(
-                    file_object, leaf_value_offset):
-                  yield class_definition
+  def _ReadClassDefinitionReference(self, file_object, leaf_node_offset):
+    """Reads a class definition reference from a class defintion leaf node.
+
+    Args:
+      file_object (file): file-like object.
+      leaf_node_offset (int): offset of the leaf node relative to the start of
+          the file.
+
+    Returns:
+      ClassDefinitionReference: class definition reference.
+    """
+    node_cell = self._ReadNodeCell(file_object, leaf_node_offset - 4)
+    leaf_node = self._ReadClassDefinitionLeafNode(
+        node_cell.data, leaf_node_offset)
+
+    class_definition_reference = ClassDefinitionReference(
+        debug=self._debug, output_writer=self._output_writer)
+    class_definition_reference.data = leaf_node.class_definition_block_data
+    class_definition_reference.offset = leaf_node_offset
+    return class_definition_reference
 
   def _ReadChildObjectsHierarchy(self, file_object, root_node_offset):
     """Reads a child objects hierarchy.
@@ -2029,6 +1972,9 @@ class RepositoryFile(data_format.BinaryDataFile):
       file_object (file): file-like object.
       root_node_offset (int): offset of the root node relative to the start of
           the file.
+
+    Yields:
+      InstanceReference: instance reference.
     """
     node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
     instance_root_node = self._ReadInstanceRootNode(
@@ -2039,19 +1985,40 @@ class RepositoryFile(data_format.BinaryDataFile):
           file_object, instance_root_node.name_node_offset - 4)
       self._ReadNameNode(node_cell.data, instance_root_node.name_node_offset)
 
-    if instance_root_node.instance_leaf_node_offset > 40:
-      self._ReadInstanceLeafLevel(
-          file_object, instance_root_node.instance_leaf_node_offset)
-
+    class_name = None
     if instance_root_node.unknown_node4_offset > 40:
       node_cell = self._ReadNodeCell(
           file_object, instance_root_node.unknown_node4_offset - 4)
       unknown_node4 = self._ReadUnknownNode4(
           node_cell.data, instance_root_node.unknown_node4_offset)
 
-      if unknown_node4.parent_instance_root_node_offset > 40:
-        self._ReadInstanceHierarchy(
-            file_object, unknown_node4.parent_instance_root_node_offset)
+      if unknown_node4.class_instance_root_node_offset > 40:
+        node_cell = self._ReadNodeCell(
+            file_object, unknown_node4.class_instance_root_node_offset - 4)
+        class_instance_root_node = self._ReadClassInstanceRootNode(
+            node_cell.data, unknown_node4.class_instance_root_node_offset)
+
+        if class_instance_root_node.name_node_offset > 40:
+          node_cell = self._ReadNodeCell(
+              file_object, class_instance_root_node.name_node_offset - 4)
+          name_node = self._ReadNameNode(
+              node_cell.data, class_instance_root_node.name_node_offset)
+
+          class_name = name_node.name
+
+    if instance_root_node.instance_leaf_node_offset > 40:
+      node_cell = self._ReadNodeCell(
+          file_object, instance_root_node.instance_leaf_node_offset - 4)
+      instance_leaf_node = self._ReadInstanceLeafNode(
+          node_cell.data, instance_root_node.instance_leaf_node_offset)
+
+      if instance_leaf_node.instance_node_offset > 40:
+        if instance_leaf_node.unknown1 == 2:
+          instance_reference = self._ReadInstanceReference(
+              file_object, instance_leaf_node.instance_node_offset)
+          instance_reference.class_name = class_name
+
+          yield instance_reference
 
     if (instance_root_node.unknown_node5_offset > 40 and
         instance_root_node.unknown2 == 0):
@@ -2063,16 +2030,15 @@ class RepositoryFile(data_format.BinaryDataFile):
       # TODO: clean up after debugging
       _ = unknown_node5
 
-    if instance_root_node.child_objects_root_node_offset == 0xffffffff:
-      return
-
-    if instance_root_node.child_objects_root_node_offset > 40:
-      for leaf_value_offset in self._ReadChildObjectsHierarchy(
+    if (instance_root_node.child_objects_root_node_offset > 40 and
+        instance_root_node.child_objects_root_node_offset != 0xffffffff):
+      for leaf_value_node_offset in self._ReadChildObjectsHierarchy(
           file_object, instance_root_node.child_objects_root_node_offset):
-        if leaf_value_offset > 40:
-          node_cell = self._ReadNodeCell(file_object, leaf_value_offset - 4)
+        if leaf_value_node_offset > 40:
+          node_cell = self._ReadNodeCell(
+              file_object, leaf_value_node_offset - 4)
           instance_leaf_value_node = self._ReadInstanceLeafValueNode(
-              node_cell.data, leaf_value_offset)
+              node_cell.data, leaf_value_node_offset)
 
           if instance_leaf_value_node.name_node_offset > 40:
             node_cell = self._ReadNodeCell(
@@ -2080,20 +2046,32 @@ class RepositoryFile(data_format.BinaryDataFile):
             self._ReadNameNode(
                 node_cell.data, instance_leaf_value_node.name_node_offset)
 
-          if instance_leaf_value_node.unknown_node1_offset > 40:
-            node_cell = self._ReadNodeCell(
-                file_object, instance_leaf_value_node.unknown_node1_offset - 4)
-            unknown_node1 = self._ReadUnknownNode1(
-                node_cell.data, instance_leaf_value_node.unknown_node1_offset)
+          if instance_leaf_value_node.instance_root_node_offset > 40:
+            for instance_reference in self._ReadInstanceHierarchy(
+                file_object,
+                instance_leaf_value_node.instance_root_node_offset):
+              yield instance_reference
 
-            if unknown_node1.name_node_offset > 40:
-              node_cell = self._ReadNodeCell(
-                  file_object, unknown_node1.name_node_offset - 4)
-              self._ReadNameNode(node_cell.data, unknown_node1.name_node_offset)
+  def _ReadInstanceReference(self, file_object, instance_node_offset):
+    """Reads an instance reference.
 
-            if unknown_node1.instance_leaf_node_offset > 40:
-              self._ReadInstanceLeafLevel(
-                  file_object, unknown_node1.instance_leaf_node_offset)
+    Args:
+      file_object (file): file-like object.
+      instance_node_offset (int): offset of the instance node relative to
+          the start of the file.
+
+    Returns:
+      InstanceReference: instance reference.
+    """
+    node_cell = self._ReadNodeCell(file_object, instance_node_offset - 4)
+    instance_node = self._ReadInstanceNode(node_cell.data, instance_node_offset)
+
+    instance_reference = InstanceReference(
+        '2.0', debug=self._debug, output_writer=self._output_writer)
+    instance_reference.data = instance_node.instance_block_data
+    instance_reference.offset = instance_node_offset
+
+    return instance_reference
 
   def _ReadUnknownNode2Hierarchy(self, file_object, unknown_node2_offset):
     """Reads an unknown node 2 hierarchy.
@@ -2117,18 +2095,43 @@ class RepositoryFile(data_format.BinaryDataFile):
             file_object, unknown_node3.name_node_offset - 4)
         self._ReadNameNode(node_cell.data, unknown_node3.name_node_offset)
 
+      if unknown_node3.instance_leaf_node_offset > 40:
+        node_cell = self._ReadNodeCell(
+            file_object, unknown_node3.instance_leaf_node_offset - 4)
+        instance_leaf_node = self._ReadInstanceLeafNode(
+            node_cell.data, unknown_node3.instance_leaf_node_offset)
+
+        if instance_leaf_node.instance_node_offset > 40:
+          if instance_leaf_node.unknown1 == 2:
+            instance_reference = self._ReadInstanceReference(
+                file_object, instance_leaf_node.instance_node_offset)
+
+          # TODO: clean up after debugging
+          _ = instance_reference
+
       next_unknown_node3_offset = unknown_node3.next_unknown_node3_offset
 
-  def ReadClassDefinitions(self):
-    """Reads the class definitions.
+  def ReadClassDefinitionReferences(self):
+    """Reads the class definition references.
 
     Yields:
-      ClassDefinition: class definition.
+      ClassDefinitionReference: class definition reference.
     """
     if self._system_class_definition_root_node_offset > 40:
-      for class_definition in self._ReadClassDefinitionHierarchy(
+      for class_definition_reference in self._ReadClassDefinitionHierarchy(
           self._file_object, self._system_class_definition_root_node_offset):
-        yield class_definition
+        yield class_definition_reference
+
+  def ReadInstanceReferences(self):
+    """Reads instance references.
+
+    Yields:
+      InstanceReference: instance reference.
+    """
+    if self._root_namespace_node_offset > 40:
+      for instance_reference in self._ReadInstanceHierarchy(
+          self._file_object, self._root_namespace_node_offset):
+        yield instance_reference
 
   def ReadFileObject(self, file_object):
     """Reads a mappings file-like object.
@@ -2150,7 +2153,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     cell_number = 0
 
     next_node_bin_offset = file_header.node_bin_size
-    root_namespace_node_offset = None
+
+    self._root_namespace_node_offset = None
     self._system_class_definition_root_node_offset = None
 
     while file_offset < file_size:
@@ -2166,15 +2170,12 @@ class RepositoryFile(data_format.BinaryDataFile):
         break
 
       if file_header.root_namespace_cell_number == cell_number:
-        root_namespace_node_offset = file_offset + 4
+        self._root_namespace_node_offset = file_offset + 4
       elif file_header.system_class_cell_number == cell_number:
         self._system_class_definition_root_node_offset = file_offset + 4
 
       file_offset += node_cell.size & 0x7ffffff
       cell_number += 1
-
-    if root_namespace_node_offset > 40:
-      self._ReadInstanceHierarchy(file_object, root_namespace_node_offset)
 
 
 class CIMObject(data_format.BinaryDataFormat):
@@ -2252,16 +2253,6 @@ class ClassDefinition(CIMObject):
     qualifiers (dict[str, object]): qualifiers.
     super_class_name (str): name of the parent class.
   """
-
-  _DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD = [
-      ('super_class_name_size', 'Super class name size',
-       '_FormatIntegerAsDecimal'),
-      ('super_class_name', 'Super class name', '_FormatString'),
-      ('date_time', 'Unknown date and time', '_FormatIntegerAsFiletime'),
-      ('class_definition_block_size', 'Class definition block size',
-       '_FormatIntegerAsDecimal'),
-      ('class_definition_block_data', 'Class definition block data',
-       '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_CLASS_DEFINITION_BLOCK = [
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
@@ -2754,14 +2745,57 @@ class ClassDefinition(CIMObject):
     self.qualifiers = class_qualifiers
     self.super_class_name = super_class_name
 
+    # TODO: complete handling methods
+    # data_offset = (
+    #     12 + (class_definition_object_record.super_class_name_size * 2) +
+    #     class_definition_object_record.class_definition_block_size)
+
+    # if data_offset < len(object_record_data):
+    #   if self._debug:
+    #     self._DebugPrintData('Methods data', object_record_data[data_offset:])
+
+    #   self._ReadClassDefinitionMethods(object_record_data[data_offset:])
+
+
+class ClassDefinitionReference(CIMObject):
+  """Class definition reference.
+
+  Attributes:
+    data (bytes): instance block data.
+    offset (int): offset of the instance block data.
+    super_class_name (str): name of the parent class.
+  """
+
+  _DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD = [
+      ('super_class_name_size', 'Super class name size',
+       '_FormatIntegerAsDecimal'),
+      ('super_class_name', 'Super class name', '_FormatString'),
+      ('date_time', 'Unknown date and time', '_FormatIntegerAsFiletime'),
+      ('class_definition_block_size', 'Class definition block size',
+       '_FormatIntegerAsDecimal'),
+      ('class_definition_block_data', 'Class definition block data',
+       '_FormatDataInHexadecimal')]
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes an instance reference.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(ClassDefinitionReference, self).__init__()
+    self.data = None
+    self.offset = None
+    self.super_class_name = None
+
   def ReadObjectRecord(self, object_record_data):
-    """Reads a class definition from object record data.
+    """Reads an instance reference from object record data.
 
     Args:
       object_record_data (bytes): object record data.
 
     Raises:
-      ParseError: if the class definition cannot be read.
+      ParseError: if the instance reference cannot be read.
     """
     if self._debug:
       self._DebugPrintText('Reading class definition object record.\n')
@@ -2775,38 +2809,24 @@ class ClassDefinition(CIMObject):
         object_record_data, 0, data_type_map,
         'class definition object record', context=context)
 
-    record_data_offset = context.byte_size
-
     if self._debug:
       self._DebugPrintStructureObject(
           class_definition_object_record,
           self._DEBUG_INFO_CLASS_DEFINITION_OBJECT_RECORD)
 
-    self.ReadClassDefinitionBlock(
-        class_definition_object_record.class_definition_block_data,
-        record_data_offset=record_data_offset)
-
-    data_offset = (
-        12 + (class_definition_object_record.super_class_name_size * 2) +
-        class_definition_object_record.class_definition_block_size)
-
-    if data_offset < len(object_record_data):
-      # TODO: complete handling methods
-      if self._debug:
-        self._DebugPrintData('Methods data', object_record_data[data_offset:])
-
-      self._ReadClassDefinitionMethods(object_record_data[data_offset:])
-
-    if not self.super_class_name:
-      self.super_class_name = class_definition_object_record.super_class_name
+    self.data = class_definition_object_record.class_definition_block_data
+    self.offset = context.byte_size
+    self.super_class_name = class_definition_object_record.super_class_name
 
 
-class Instance(CIMObject):
-  """Instance.
+class InstanceReference(CIMObject):
+  """Instance reference.
 
   Attributes:
-    class_name (str): class name.
-    properties (dict[str, object]): instance property names and values.
+    class_name(str): class name.
+    class_name_hash (str): hash of the class name.
+    data (bytes): instance block data.
+    offset (int): offset of the instance block data.
   """
 
   _DEBUG_INFO_INSTANCE_OBJECT_RECORD = [
@@ -2816,6 +2836,63 @@ class Instance(CIMObject):
       ('instance_block_size', 'Instance block size', '_FormatIntegerAsDecimal'),
       ('instance_block_data', 'Instance block data',
        '_FormatDataInHexadecimal')]
+
+  def __init__(self, format_version, debug=False, output_writer=None):
+    """Initializes an instance reference.
+
+    Args:
+      format_version (str): format version.
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(InstanceReference, self).__init__()
+    self._format_version = format_version
+    self.class_name = None
+    self.class_name_hash = None
+    self.data = None
+    self.offset = None
+
+  def ReadObjectRecord(self, object_record_data):
+    """Reads an instance reference from object record data.
+
+    Args:
+      object_record_data (bytes): object record data.
+
+    Raises:
+      ParseError: if the instance reference cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText('Reading instance object record.\n')
+      self._DebugPrintData('Object record data', object_record_data)
+
+    if self._format_version == '2.1':
+      data_type_map = self._GetDataTypeMap('instance_object_record_v1')
+    else:
+      data_type_map = self._GetDataTypeMap('instance_object_record_v2')
+
+    instance_object_record = self._ReadStructureFromByteStream(
+        object_record_data, 0, data_type_map, 'instance object record')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          instance_object_record, self._DEBUG_INFO_INSTANCE_OBJECT_RECORD)
+
+    if self._format_version == '2.1':
+      self.offset = 84
+    else:
+      self.offset = 144
+
+    self.class_name_hash = instance_object_record.class_name_hash
+    self.data = instance_object_record.instance_block_data
+
+
+class Instance(CIMObject):
+  """Instance.
+
+  Attributes:
+    class_name (str): class name.
+    properties (dict[str, object]): instance property names and values.
+  """
 
   _DEBUG_INFO_INSTANCE_BLOCK = [
       ('class_name_offset', 'Class name offset', '_FormatIntegerAsOffset'),
@@ -2845,17 +2922,14 @@ class Instance(CIMObject):
 
   _STRING_VALUE_DATA_TYPES = frozenset([0x00000008, 0x00000065, 0x00000066])
 
-  def __init__(self, format_version, debug=False, output_writer=None):
+  def __init__(self, debug=False, output_writer=None):
     """Initializes an instance.
 
     Args:
-      format_version (str): format version.
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(Instance, self).__init__(debug=debug, output_writer=output_writer)
-    self._format_version = format_version
-
     self.class_name = None
     self.properties = {}
 
@@ -3072,37 +3146,6 @@ class Instance(CIMObject):
     if self._debug:
       self._DebugPrintText('\n')
 
-  def ReadObjectRecord(self, object_record_data):  # pylint: disable=missing-return-type-doc
-    """Reads an instance from object record data.
-
-    Args:
-      object_record_data (bytes): object record data.
-
-    Returns:
-      instance_object_record_v1|instance_object_record_v2: instance object
-          record.
-
-    Raises:
-      ParseError: if the instance cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText('Reading instance object record.\n')
-      self._DebugPrintData('Object record data', object_record_data)
-
-    if self._format_version in ('2.0', '2.1'):
-      data_type_map = self._GetDataTypeMap('instance_object_record_v1')
-    else:
-      data_type_map = self._GetDataTypeMap('instance_object_record_v2')
-
-    instance_object_record = self._ReadStructureFromByteStream(
-        object_record_data, 0, data_type_map, 'instance object record')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          instance_object_record, self._DEBUG_INFO_INSTANCE_OBJECT_RECORD)
-
-    return instance_object_record
-
 
 class Registration(CIMObject):
   """Registration.
@@ -3183,7 +3226,6 @@ class CIMRepository(data_format.BinaryDataFormat):
     super(CIMRepository, self).__init__()
     self._debug = debug
     self._class_definitions_by_hash = {}
-    self._class_definitions_by_name = {}
     self._class_value_data_map_by_hash = {}
     self._index_binary_tree_file = None
     self._index_mapping_table = None
@@ -3290,6 +3332,83 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     return active_mapping_file
 
+  def _GetClassDefinitionByName(self, class_name):
+    """Retrieves a class definition by name.
+
+    Args:
+      class_name (str): name of the class definition.
+
+    Returns:
+      ClassDefinition: class definitions or None.
+    """
+    class_name_hash = self._GetHashFromString(class_name)
+    return self._GetClassDefinitionByHash(class_name_hash)
+
+  def _GetClassDefinitionByHash(self, class_name_hash):
+    """Retrieves a class definition by hash of the name.
+
+    Args:
+      class_name_hash (str): hash of the class name.
+
+    Returns:
+      ClassDefinition: class definitions or None.
+    """
+    # TODO: change to resolve on demand and cache the resulting class
+    # definition.
+    class_definition = self._class_definitions_by_hash.get(
+        class_name_hash.lower(), None)
+    return class_definition
+
+  def _GetClassValueMapByHash(self, class_name_hash):
+    """Retrieves a class value map by hash of the name.
+
+    Args:
+      class_name_hash (str): hash of the class name.
+
+    Returns:
+      ClassValueMap: class value map or None.
+
+    Raises:
+      RuntimeError: if a class definition cannot be found.
+    """
+    lookup_key = class_name_hash.lower()
+
+    class_value_data_map = self._class_value_data_map_by_hash.get(
+        lookup_key, None)
+    if not class_value_data_map:
+      class_definition = self._GetClassDefinitionByHash(class_name_hash)
+      if not class_definition:
+        raise RuntimeError(
+            'Unable to retrieve definition of class with hash: {0:s}'.format(
+                class_name_hash))
+
+      class_definitions = [class_definition]
+      while class_definition.super_class_name:
+        class_definition = self._GetClassDefinitionByName(
+            class_definition.super_class_name)
+        if not class_definition:
+          raise RuntimeError(
+              'Unable to retrieve definition of class with name: {0:s}'.format(
+                  class_definition.super_class_name))
+
+        class_definitions.append(class_definition)
+
+      # The ClassValueDataMap.Build functions want the class definitions
+      # starting the with the base class first.
+      class_definitions.reverse()
+
+      if self._debug:
+        for class_definition in class_definitions:
+          class_definition.DebugPrint()
+
+      # TODO: cache class value data map
+      class_value_data_map = ClassValueDataMap()
+      class_value_data_map.Build(class_definitions)
+
+      self._class_value_data_map_by_hash[lookup_key] = class_value_data_map
+
+    return class_value_data_map
+
   def _GetHashFromString(self, string):
     """Retrieves the hash of a string.
 
@@ -3300,7 +3419,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       str: hash of the string.
     """
     string_data = string.upper().encode('utf-16-le')
-    if self.format_version == '2.1':
+    if self.format_version in ('2.0', '2.1'):
       string_hash = hashlib.md5(string_data)
     else:
       string_hash = hashlib.sha256(string_data)
@@ -3394,47 +3513,6 @@ class CIMRepository(data_format.BinaryDataFormat):
         for key in self._GetKeysFromIndexPage(sub_index_page):
           yield key
 
-  def _GetKeyValues(self, key):
-    """Retrieves the key values from the key.
-
-    Args:
-      key (str): a CIM key.
-
-    Returns:
-      tuple[str, int, int, int]: name of the key, corresponding page number,
-          record identifier and record data size or None.
-    """
-    key_segment = key.split(self._KEY_SEGMENT_SEPARATOR)[-1]
-
-    if self._KEY_VALUE_SEPARATOR not in key_segment:
-      return None, None, None, None
-
-    key_values = key_segment.split(self._KEY_VALUE_SEPARATOR)
-    if not len(key_values) == 4:
-      logging.warning('Unsupported number of key values.')
-      return None, None, None, None
-
-    try:
-      page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
-    except ValueError:
-      logging.warning('Unsupported key value page number.')
-      return None, None, None, None
-
-    try:
-      record_identifier = int(
-          key_values[self._KEY_VALUE_RECORD_IDENTIFIER_INDEX], 10)
-    except ValueError:
-      logging.warning('Unsupported key value record identifier.')
-      return None, None, None, None
-
-    try:
-      data_size = int(key_values[self._KEY_VALUE_DATA_SIZE_INDEX], 10)
-    except ValueError:
-      logging.warning('Unsupported key value data size.')
-      return None, None, None, None
-
-    return key_values[0], page_number, record_identifier, data_size
-
   def _GetObjectsPageByMappedPageNumber(self, mapped_page_number, is_data_page):
     """Retrieves a specific objects page by mapped page number.
 
@@ -3455,6 +3533,102 @@ class CIMRepository(data_format.BinaryDataFormat):
       return None
 
     return objects_page
+
+  def _GetObjectRecord(
+      self, data_type, mapped_page_number, record_identifier, data_size):
+    """Retrieves a specific object record.
+
+    Args:
+      data_type (str): key data type.
+      mapped_page_number (int): mapped page number.
+      record_identifier (int): record identifier.
+      data_size (int): data size.
+
+    Returns:
+      ObjectRecord: an object record or None.
+
+    Raises:
+      ParseError: if the objects records could not be parsed.
+      RuntimeError: if the objects data file was not opened.
+    """
+    if not self._objects_data_file:
+      raise RuntimeError('Objects.data file was not opened.')
+
+    data_segments = []
+    is_data_page = False
+    data_segment_index = 0
+    while data_size > 0:
+      object_page = self._GetObjectsPageByMappedPageNumber(
+          mapped_page_number, is_data_page)
+      if not object_page:
+        errors.ParseError(
+            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
+                record_identifier, data_segment_index))
+
+      if not is_data_page:
+        object_descriptor = object_page.GetObjectDescriptor(
+            record_identifier, data_size)
+
+        data_offset = object_descriptor.data_offset
+        is_data_page = True
+      else:
+        data_offset = 0
+
+      data_segment = self._objects_data_file.ReadObjectRecordDataSegment(
+          object_page, data_offset, data_size)
+      if not data_segment:
+        errors.ParseError(
+            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
+                record_identifier, data_segment_index))
+
+      data_segments.append(data_segment)
+      data_size -= len(data_segment)
+      data_segment_index += 1
+      mapped_page_number += 1
+
+    object_record_data = b''.join(data_segments)
+    return ObjectRecord(data_type, object_record_data)
+
+  def _GetObjectRecordValuesFromKey(self, key_segment):
+    """Retrieves the object record values from a key segment.
+
+    Args:
+      key_segment (str): an index key segment.
+
+    Returns:
+      tuple[str, str, int, int, int]: data type, name hash, page number, record
+          identifier and record data size of an object record or None.
+    """
+    if self._KEY_VALUE_SEPARATOR not in key_segment:
+      return None, None, None, None, None
+
+    key_values = key_segment.split(self._KEY_VALUE_SEPARATOR)
+    if not len(key_values) == 4:
+      logging.warning('Unsupported number of key values.')
+      return None, None, None, None, None
+
+    data_type, _, name_hash = key_values[0].partition('_')
+
+    try:
+      page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
+    except ValueError:
+      logging.warning('Unsupported key value page number.')
+      return None, None, None, None, None
+
+    try:
+      record_identifier = int(
+          key_values[self._KEY_VALUE_RECORD_IDENTIFIER_INDEX], 10)
+    except ValueError:
+      logging.warning('Unsupported key value record identifier.')
+      return None, None, None, None, None
+
+    try:
+      data_size = int(key_values[self._KEY_VALUE_DATA_SIZE_INDEX], 10)
+    except ValueError:
+      logging.warning('Unsupported key value data size.')
+      return None, None, None, None, None
+
+    return data_type, name_hash, page_number, record_identifier, data_size
 
   def _OpenIndexBinaryTreeFile(self, path):
     """Opens an index binary tree.
@@ -3577,52 +3751,105 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     return repository_file
 
-  def _ReadClassDefinitionFromObjectRecords(self):
-    """Reads class definition from object records.
+  def _ReadClassDefinitionObjectRecords(self):
+    """Reads class definition object records.
 
     Yields:
-      tuple[str, ClassDefinition]: name hash and class definition.
+      tuple[str, ObjectRecord]: name hash and class definition object record.
     """
     index_page = self._GetIndexRootPage()
     for key in self._GetKeysFromIndexPage(index_page):
-      key_segment = key.split(self._KEY_SEGMENT_SEPARATOR)[-1]
-      data_type, _, key_segment = key_segment.partition('_')
+      key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+
+      data_type, name_hash, mapped_page_number, record_identifier, data_size = (
+          self._GetObjectRecordValuesFromKey(key_segments[-1]))
+
       if data_type != 'CD':
         continue
 
-      if '.' not in key_segment:
-        continue
-
-      name_hash, _, _ = key_segment.partition('.')
       name_hash = name_hash.lower()
 
-      object_record = self.GetObjectRecordByKey(key)
+      object_record = self._GetObjectRecord(
+          data_type, mapped_page_number, record_identifier, data_size)
 
-      class_definition = ClassDefinition(
-          debug=self._debug, output_writer=self._output_writer)
-      class_definition.ReadObjectRecord(object_record.data)
-
-      yield name_hash, class_definition
+      yield name_hash, object_record
 
   def _ReadClassDefinitions(self):
     """Reads the class definitions."""
     if self._repository_file:
-      for class_definition in self._repository_file.ReadClassDefinitions():
-        self._class_definitions_by_name[class_definition.name] = (
-            class_definition)
+      for class_definition_reference in (
+          self._repository_file.ReadClassDefinitionReferences()):
+        class_definition = ClassDefinition(
+            debug=self._debug, output_writer=self._output_writer)
+        class_definition.ReadClassDefinitionBlock(
+            class_definition_reference.data,
+            record_data_offset=class_definition_reference.offset)
+
+        name_hash = self._GetHashFromString(class_definition.name)
+        self._class_definitions_by_hash[name_hash] = class_definition
 
     else:
-      for name_hash, class_definition in (
-          self._ReadClassDefinitionFromObjectRecords()):
-        self._class_definitions_by_name[class_definition.name] = (
-            class_definition)
+      for name_hash, object_record in self._ReadClassDefinitionObjectRecords():
+        class_definition_reference = ClassDefinitionReference(
+            debug=self._debug, output_writer=self._output_writer)
+        class_definition_reference.ReadObjectRecord(object_record.data)
+
+        class_definition = ClassDefinition(
+            debug=self._debug, output_writer=self._output_writer)
+        class_definition.ReadClassDefinitionBlock(
+            class_definition_reference.data,
+            record_data_offset=class_definition_reference.offset)
+
         self._class_definitions_by_hash[name_hash] = class_definition
 
     if self._debug:
       self._DebugPrintText('Class definitions:\n')
-      for class_definition in self._class_definitions_by_name.values():
+      for class_definition in self._class_definitions_by_hash.values():
         class_definition.DebugPrint()
 
+  def _ReadInstance(self, instance_reference):
+    """Reads an instance.
+
+    Args:
+      instance_reference (InstanceReference): instance reference.
+
+    Returns:
+      Instance: instance.
+    """
+    class_name_hash = instance_reference.class_name_hash
+    if not class_name_hash:
+      class_name_hash = self._GetHashFromString(instance_reference.class_name)
+
+    class_value_data_map = self._GetClassValueMapByHash(class_name_hash)
+
+    instance = Instance(debug=self._debug, output_writer=self._output_writer)
+
+    instance.ReadInstanceBlockData(
+        class_value_data_map, instance_reference.data,
+        record_data_offset=instance_reference.offset)
+
+    # pylint: disable=attribute-defined-outside-init
+    instance.class_name = class_value_data_map.class_name
+    instance.derivation = class_value_data_map.derivation
+    instance.dynasty = class_value_data_map.dynasty
+    instance.super_class_name = class_value_data_map.super_class_name
+
+    # key_segment = key_segments[1]
+    # if key_segment.startswith('NS_'):
+    #   namespace_hash = key_segment[3:].lower()
+    #   namespace = self._namespaces_by_hash.get(namespace_hash, None)
+    # else:
+    #   namespace = None
+
+    namespace = None
+    instance.namespace = namespace
+
+    if self._debug:
+      instance.DebugPrint()
+
+    return instance
+
+  # TODO: remove after refactor
   def _ReadInstanceFromObjectRecord(self, object_record):
     """Reads an instance.
 
@@ -3632,21 +3859,20 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       Instance: instance or None.
     """
-    instance = Instance(
+    instance_reference = InstanceReference(
         self.format_version, debug=self._debug,
         output_writer=self._output_writer)
-    instance_object_record = instance.ReadObjectRecord(object_record.data)
 
-    if self.format_version in ('2.0', '2.1'):
-      instance_block_offset = 84
-    else:
-      instance_block_offset = 144
+    instance_reference.ReadObjectRecord(object_record.data)
 
-    class_value_data_map = self.GetClassValueMapByHash(
-        instance_object_record.class_name_hash)
+    instance = Instance(
+        debug=self._debug, output_writer=self._output_writer)
+
+    class_value_data_map = self._GetClassValueMapByHash(
+        instance_reference.class_name_hash)
     instance.ReadInstanceBlockData(
-        class_value_data_map, instance_object_record.instance_block_data,
-        record_data_offset=instance_block_offset)
+        class_value_data_map, instance_reference.data,
+        record_data_offset=instance_reference.offset)
 
     if self._debug:
       instance.DebugPrint()
@@ -3659,6 +3885,29 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     return instance
 
+  def _ReadInstanceObjectRecords(self):
+    """Reads instance object records.
+
+    Yields:
+      tuple[str, ObjectRecord]: name hash and instance object record.
+    """
+    index_page = self._GetIndexRootPage()
+    for key in self._GetKeysFromIndexPage(index_page):
+      key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+
+      data_type, name_hash, mapped_page_number, record_identifier, data_size = (
+          self._GetObjectRecordValuesFromKey(key_segments[-1]))
+
+      if data_type not in ('I', 'IL'):
+        continue
+
+      name_hash = name_hash.lower()
+
+      object_record = self._GetObjectRecord(
+          data_type, mapped_page_number, record_identifier, data_size)
+
+      yield name_hash, object_record
+
   def _ReadNamespaces(self):
     """Reads the namespaces."""
     if self._repository_file:
@@ -3668,28 +3917,28 @@ class CIMRepository(data_format.BinaryDataFormat):
     else:
       self._ReadNamespacesFromObjectRecords()
 
+  # TODO: remove after refactor
   def _ReadNamespacesFromObjectRecords(self):
     """Reads namespaces from object records."""
-    # TODO: Get the __NAMESPACE class definition on demand
-
     class_name_hash = self._GetHashFromString('__NAMESPACE')
 
     index_page = self._GetIndexRootPage()
     for key in self._GetKeysFromIndexPage(index_page):
-      if '.' not in key:
-        continue
-
       key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
 
       _, _, key_segment = key_segments[2].partition('_')
       if key_segment.lower() != class_name_hash:
         continue
 
-      data_type, _, _ = key_segments[-1].partition('_')
+      data_type, _, mapped_page_number, record_identifier, data_size = (
+          self._GetObjectRecordValuesFromKey(key_segments[-1]))
+
       if data_type not in ('I', 'IL'):
         continue
 
-      object_record = self.GetObjectRecordByKey(key)
+      object_record = self._GetObjectRecord(
+          data_type, mapped_page_number, record_identifier, data_size)
+
       instance = self._ReadInstanceFromObjectRecord(object_record)
 
       name_property = instance.properties.get('Name', None)
@@ -3701,7 +3950,6 @@ class CIMRepository(data_format.BinaryDataFormat):
   def Close(self):
     """Closes the CIM repository."""
     self._class_definitions_by_hash = {}
-    self._class_definitions_by_name = {}
     self._class_value_data_map_by_hash = {}
     self._namespaces_by_hash = {}
 
@@ -3717,107 +3965,25 @@ class CIMRepository(data_format.BinaryDataFormat):
       self._index_binary_tree_file.Close()
       self._index_binary_tree_file = None
 
-  def GetClassDefinitionByHash(self, class_name_hash):
-    """Retrieves a class definition by hash of the name.
+  def GetInstances(self):
+    """Retrieves instances.
 
-    Args:
-      class_name_hash (str): hash of the class definition.
-
-    Returns:
-      ClassDefinition: class definitions or None.
+    Yields:
+      Instance: an instance.
     """
-    # TODO: change to resolve on demand and cache the resulting class
-    # definition.
-    class_definition = self._class_definitions_by_hash.get(
-        class_name_hash.lower(), None)
-    return class_definition
+    if self._repository_file:
+      for instance_reference in self._repository_file.ReadInstanceReferences():
+        yield self._ReadInstance(instance_reference)
 
-  def GetClassDefinitionByName(self, class_name):
-    """Retrieves a class definition by name.
+    else:
+      for _, object_record in self._ReadInstanceObjectRecords():
+        instance_reference = InstanceReference(
+            self.format_version, debug=self._debug,
+            output_writer=self._output_writer)
 
-    Args:
-      class_name (str): name of the class definition.
+        instance_reference.ReadObjectRecord(object_record.data)
 
-    Returns:
-      ClassDefinition: class definitions or None.
-    """
-    class_name_hash = self._GetHashFromString(class_name)
-    return self.GetClassDefinitionByHash(class_name_hash)
-
-  def GetClassValueMapByHash(self, class_name_hash):
-    """Retrieves a class value map by hash of the name.
-
-    Args:
-      class_name_hash (str): hash of the class definition.
-
-    Returns:
-      ClassValueMap: class value map or None.
-
-    Raises:
-      RuntimeError: if a class definition cannot be found.
-    """
-    lookup_key = class_name_hash.lower()
-
-    class_value_data_map = self._class_value_data_map_by_hash.get(
-        lookup_key, None)
-    if not class_value_data_map:
-      class_definition = self.GetClassDefinitionByHash(class_name_hash)
-      if not class_definition:
-        raise RuntimeError(
-            'Unable to retrieve definition of class with hash: {0:s}'.format(
-                class_name_hash))
-
-      class_definitions = [class_definition]
-      while class_definition.super_class_name:
-        class_definition = self.GetClassDefinitionByName(
-            class_definition.super_class_name)
-        if not class_definition:
-          raise RuntimeError(
-              'Unable to retrieve definition of class with name: {0:s}'.format(
-                  class_definition.super_class_name))
-
-        class_definitions.append(class_definition)
-
-      # The ClassValueDataMap.Build functions want the class definitions
-      # starting the with the base class first.
-      class_definitions.reverse()
-
-      if self._debug:
-        for class_definition in class_definitions:
-          class_definition.DebugPrint()
-
-      # TODO: cache class value data map
-      class_value_data_map = ClassValueDataMap()
-      class_value_data_map.Build(class_definitions)
-
-      self._class_value_data_map_by_hash[lookup_key] = class_value_data_map
-
-    return class_value_data_map
-
-  def GetInstanceByKey(self, key):
-    """Retrieves an instance by name.
-
-    Args:
-      key (str): a CIM key.
-
-    Returns:
-      Instance: instance or None.
-    """
-    key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
-    key_segment = key_segments[1]
-
-    object_record = self.GetObjectRecordByKey(key)
-    instance = self._ReadInstanceFromObjectRecord(object_record)
-
-    namespace = None
-    if key_segment.startswith('NS_'):
-      namespace_hash = key_segment[3:].lower()
-      namespace = self._namespaces_by_hash.get(namespace_hash, None)
-
-    # pylint: disable=attribute-defined-outside-init
-    instance.namespace = namespace
-
-    return instance
+        yield self._ReadInstance(instance_reference)
 
   def GetKeys(self):
     """Retrieves the keys.
@@ -3830,6 +3996,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       for key in self._GetKeysFromIndexPage(index_page):
         yield key
 
+  # TODO: remove after debugging.
   def GetObjectRecordByKey(self, key):
     """Retrieves a specific object record.
 
@@ -3838,54 +4005,14 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     Returns:
       ObjectRecord: an object record or None.
-
-    Raises:
-      ParseError: if the objects records could not be parsed.
-      RuntimeError: if the objects data file was not opened.
     """
-    if not self._objects_data_file:
-      raise RuntimeError('Objects.data file was not opened.')
+    key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
 
-    key, mapped_page_number, record_identifier, data_size = self._GetKeyValues(
-        key)
+    data_type, _, mapped_page_number, record_identifier, data_size = (
+        self._GetObjectRecordValuesFromKey(key_segments[-1]))
 
-    data_segments = []
-    is_data_page = False
-    data_segment_index = 0
-    while data_size > 0:
-      object_page = self._GetObjectsPageByMappedPageNumber(
-          mapped_page_number, is_data_page)
-      if not object_page:
-        errors.ParseError(
-            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
-                record_identifier, data_segment_index))
-
-      if not is_data_page:
-        object_descriptor = object_page.GetObjectDescriptor(
-            record_identifier, data_size)
-
-        data_offset = object_descriptor.data_offset
-        is_data_page = True
-      else:
-        data_offset = 0
-
-      data_segment = self._objects_data_file.ReadObjectRecordData(
-          object_page, data_offset, data_size)
-      if not data_segment:
-        errors.ParseError(
-            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
-                record_identifier, data_segment_index))
-
-      data_segments.append(data_segment)
-      data_size -= len(data_segment)
-      data_segment_index += 1
-      mapped_page_number += 1
-
-    key_segment = key.split(self._KEY_SEGMENT_SEPARATOR)[-1]
-    data_type, _, _ = key_segment.partition('_')
-    object_record_data = b''.join(data_segments)
-
-    return ObjectRecord(data_type, object_record_data)
+    return self._GetObjectRecord(
+        data_type, mapped_page_number, record_identifier, data_size)
 
   def Open(self, path):
     """Opens the CIM repository.

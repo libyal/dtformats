@@ -129,48 +129,33 @@ def Main():
 
   cim_repository.Open(options.source)
 
-  object_record_keys = {}
-  for key in cim_repository.GetKeys():
-    if '.' not in key:
-      continue
-
-    key_segment = key.split('\\')[-1]
-    key_name, _, _ = key_segment.partition('.')
-
-    if key_name not in object_record_keys:
-      object_record_keys[key_name] = []
-
-    object_record_keys[key_name].append(key)
-
-  for key_name, keys in object_record_keys.items():
-    for key in keys:
-      if options.output_mode == 'keys':
+  if options.output_mode == 'keys':
+    for key in cim_repository.GetKeys():
+      # TODO: what about non-object record keys?
+      if '.' in key:
         print(key)
-        continue
 
-      if '.' not in key:
-        continue
-
-      key_segment = key.split('\\')[-1]
-      data_type, _, _ = key_segment.partition('_')
-
+  elif options.output_mode in ('instances', 'namespaces'):
+    for instance in cim_repository.GetInstances():
       # TODO: for namespaces filter on hash of "__NAMESPACE"
 
-      if data_type in ('I', 'IL'):
-        if options.output_mode in ('debug', 'instances', 'namespaces'):
-          instance = cim_repository.GetInstanceByKey(key)
+      if options.output_mode == 'namespaces':
+        PrintNamespace(instance)
+      else:
+        PrintInstance(instance)
 
-          if options.output_mode == 'namespaces':
-            PrintNamespace(instance)
-          else:
-            PrintInstance(instance)
+  elif options.output_mode == 'debug':
+    for key in cim_repository.GetKeys():
+      if '.' in key:
+        key_segment = key.split('\\')[-1]
+        data_type, _, _ = key_segment.partition('_')
 
-      elif data_type == 'R':
-        if options.output_mode == 'debug':
-          object_record = cim_repository.GetObjectRecordByKey(key)
-          registration = wmi_repository.Registration(
-              debug=options.debug, output_writer=output_writer)
-          registration.ReadObjectRecord(object_record)
+        if data_type == 'R':
+          if options.output_mode == 'debug':
+            object_record = cim_repository.GetObjectRecordByKey(key)
+            registration = wmi_repository.Registration(
+                debug=options.debug, output_writer=output_writer)
+            registration.ReadObjectRecord(object_record)
 
   cim_repository.Close()
 
