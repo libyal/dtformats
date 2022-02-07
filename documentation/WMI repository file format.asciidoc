@@ -321,6 +321,8 @@ The CIM string array (CIM-ARRAY-STRING) is variable of size and consists of:
 
 ==== [[class_definition_block]]Class definition block
 
+The class definition block is variable of size and consists of:
+
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
@@ -1035,6 +1037,112 @@ Includes the 4 bytes of the size +
 | 4 | ... | | Data
 |===
 
+=== Child objects list
+
+==== [[child_objects_list_node]]Child objects list node
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Offset + 4 to node cell with <<child_objects_list_element_node,child objects list element node>>
+| 4 | 4 | | Offset + 4 to node cell with first <<child_objects_list_element_node,child objects list element node>>
+| 8 | 4 | | Offset + 4 to node cell with last <<child_objects_list_element_node,child objects list element node>>
+| 12 | 4 | 31 | [yellow-background]*Unknown*
+| 16 | 4 | | [yellow-background]*Unknown (Number of elements in list)*
+| 20 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[child_objects_list_element_node]]Child objects list element node
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | [yellow-background]*Unknown* +
+Seen: 0 (first element?), 1 and -1 (0xffffffff)
+| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
+| 8 | 4 | | Offset + 4 to node cell with element value node
+| 12 | 4 | | Offset + 4 to node cell with <<child_objects_list_element_node,child objects list element node>> +
+Contains 0 if not set
+| 16 | 4 | | Offset + 4 to node cell with <<child_objects_list_element_node,child objects list element node>> +
+Contains 0 if not set
+| 20 | 4 | | Offset + 4 to node cell with previous <<child_objects_list_element_node,child objects list element node>> +
+Contains 0 if not set
+| 24 | 4 | | Offset + 4 to node cell with next <<child_objects_list_element_node,child objects list element node>> +
+Contains 0 if not set
+| 28 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+The element value node contains:
+
+* <<instance_branch_node,instance branch node>> if referenced from a <<class_definition_root_node,class definition root node>>
+* <<class_definition_root_node,class definition root node>> if referenced from a <<instance_root_node,instance root node>>
+
+=== Child objects tree
+
+==== [[child_objects_root_node]]Child objects root node
+
+TODO: rename to child objects tree root node
+
+The child objects root node is 24 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | 0, 1, 2 | Depth
+| 4 | 4 | | Number of leaf values
+4+| _If depth is 0 or 1_
+| 8 | 4 | | Offset + 4 to node cell with leaf value node +
+Contains 0 if not set
+4+| _If depth is 2_
+| 8 | 4 | | Offset + 4 to node cell with <<child_objects_branch_node,child objects branch node>>
+4+| _Common_
+| 12 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[child_objects_branch_node]]Child objects branch node
+
+TODO: rename to child objects tree branch node
+
+The child objects branch node is 28 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Number of leaf values
+| 4 | 4 | | Maximum (or available) number of leaf values
+| 8 | 4 | | [yellow-background]*Unknown* +
+Seen: 5
+| 12 | 4 | | Offset + 4 to node cell with <<child_objects_leaf_node,child objects leaf node>>
+| 16 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+==== [[child_objects_leaf_node]]Child objects leaf node
+
+TODO: rename to child objects tree leaf node
+
+The child objects leaf node is 52 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Offset + 4 to node cell with leaf value node
+| 4 | 4 | | Offset + 4 to node cell with leaf value node
+| 8 | 4 | | Offset + 4 to node cell with leaf value node
+| 12 | 4 | | Offset + 4 to node cell with leaf value node
+| 16 | 4 | | Offset + 4 to node cell with leaf value node
+| 20 | 4 | | Offset + 4 to node cell with leaf value node
+| 24 | 4 | | Offset + 4 to node cell with leaf value node
+| 28 | 4 | | Offset + 4 to node cell with leaf value node
+| 32 | 4 | | Offset + 4 to node cell with leaf value node
+| 36 | 4 | | Offset + 4 to node cell with leaf value node
+| 40 | 12 | | [yellow-background]*Unknown (footer?)*
+|===
+
+[NOTE]
+It is possible that the number of leaf value node cell offsets in the leaf
+node is controlled by the maximum (or available) number of leaf values in
+the branch node.
+
 === Class definition hierarchy
 
 ==== [[class_definition_root_node]]Class definition root node
@@ -1046,10 +1154,10 @@ The class definition root node is 44 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Offset + 4 to node cell with <<instance_root_node,instance root node>>
 | 4 | 4 | | Offset + 4 to node cell with <<class_definition_branch_node,class definition branch node>>
-| 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>> of the parent class +
-Contains 0 if the class has no parent class
+| 8 | 4 | | Offset + 4 to node cell with the parent <<class_definition_root_node,class definition root node>> +
+Contains 0 if not set
 | 12 | 4 | | Sub node type
-| 16 | 4 | | Offset + 4 to node cell with <<unknown_node2,unknown node 2>> +
+| 16 | 4 | | Offset + 4 to node cell with <<child_objects_list_node,child objects list node>> +
 Contains 0 if not set
 | 20 | 4 | | Offset + 4 to node cell with sub node +
 Contains 0 if not set
@@ -1101,119 +1209,28 @@ Includes the 4 bytes of the size
 | ... | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-==== [[unknown_node2]]Unknown node 2
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>>
-| 4 | 4 | | Offset + 4 to node cell with first <<unknown_node3,unknown node 3>>
-| 8 | 4 | | Offset + 4 to node cell with last <<unknown_node3,unknown node 3>>
-| 12 | 4 | 31 | [yellow-background]*Unknown*
-| 16 | 4 | | [yellow-background]*Unknown (Number of elements in list)*
-| 20 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-==== [[unknown_node3]]Unknown node 3
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (node level?)* +
-Seen: 0 and 1
-| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
-| 12 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>> +
-Contains 0 if not set
-| 16 | 4 | | Offset + 4 to node cell with <<unknown_node3,unknown node 3>> +
-Contains 0 if not set
-| 20 | 4 | | Offset + 4 to node cell with previous <<unknown_node3,unknown node 3>> +
-Contains 0 if not set
-| 24 | 4 | | Offset + 4 to node cell with next <<unknown_node3,unknown node 3>> +
-Contains 0 if not set
-| 28 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-=== Child objects hierarchy
-
-==== [[child_objects_root_node]]Child objects root node
-
-The child objects root node is 24 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | 0, 1, 2 | Branch node type (or depth?)
-| 4 | 4 | | Number of leaf values
-4+| _If branch node type is 0 or 1_
-| 8 | 4 | | Offset + 4 to node cell with leaf value node +
-Contains 0 if not set
-4+| _If branch node type is 2_
-| 8 | 4 | | Offset + 4 to node cell with <<child_objects_branch_node,child objects branch node>>
-4+| _Common_
-| 12 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-==== [[child_objects_branch_node]]Child objects branch node
-
-The child objects branch node is 28 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Number of leaf values
-| 4 | 4 | | Maximum (or available) number of leaf values
-| 8 | 4 | | [yellow-background]*Unknown* +
-Seen: 5
-| 12 | 4 | | Offset + 4 to node cell with <<child_objects_leaf_node,child objects leaf node>>
-| 16 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-==== [[child_objects_leaf_node]]Child objects leaf node
-
-The child objects leaf node is 52 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with leaf value node
-| 4 | 4 | | Offset + 4 to node cell with leaf value node
-| 8 | 4 | | Offset + 4 to node cell with leaf value node
-| 12 | 4 | | Offset + 4 to node cell with leaf value node
-| 16 | 4 | | Offset + 4 to node cell with leaf value node
-| 20 | 4 | | Offset + 4 to node cell with leaf value node
-| 24 | 4 | | Offset + 4 to node cell with leaf value node
-| 28 | 4 | | Offset + 4 to node cell with leaf value node
-| 32 | 4 | | Offset + 4 to node cell with leaf value node
-| 36 | 4 | | Offset + 4 to node cell with leaf value node
-| 40 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-[NOTE]
-It is possible that the number of leaf value node cell offsets in the leaf
-node is controlled by the maximum (or available) number of leaf values in
-the branch node.
-
 === Instance hierarchy
 
 ==== [[instance_root_node]]Instance root node
+
+The instance root node is 40 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Offset + 4 to node cell with <<child_objects_root_node,child objects root node>>
 | 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 8 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
+| 8 | 4 | | Offset + 4 to node cell with <<instance_branch_node,instance branch node>>
 | 12 | 4 | 1, 8 | [yellow-background]*Unknown (type indicator or offset?)*
-| 16 | 4 | | Offset + 4 to node cell with <<unknown_node4,unknown node 4>>
+| 16 | 4 | | Offset + 4 to node cell with <<child_objects_list_node,child objects list node>>
 | 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
 | 24 | 4 | | Offset + 4 to node cell with <<unknown_node5,unknown node 5>>
 | 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
-==== [[instance_leaf_node]]Instance leaf node
+==== [[instance_branch_node]]Instance branch node
 
-The instance leaf node is 32 bytes of size and consists of:
+The instance branch node is 32 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1222,7 +1239,7 @@ The instance leaf node is 32 bytes of size and consists of:
 Contains 0 if not set
 | 4 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
 | 8 | 4 | 2 | [yellow-background]*Unknown (type indicator or offset?)*
-| 12 | 4 | | Offset + 4 to node cell with <<instance_node,instance node>>
+| 12 | 4 | | Offset + 4 to node cell with <<instance_leaf_node,instance leaf node>>
 | 16 | 4 | | [yellow-background]*Unknown (empty values?)*
 | 20 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
@@ -1240,38 +1257,8 @@ Alternate variant seen in parent instance hierarchy
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 4 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
+| 4 | 4 | | Offset + 4 to node cell with <<instance_root_node,instance root node>>
 | 8 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-==== [[unknown_node4]]Unknown node 4
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Offset + 4 to node cell with <<class_instance_root_node,class instance root node>> +
-Contains 0 if not set
-| 4 | 4 | | Offset + 4 to node cell with <<unknown_node6,unknown node 6>>
-| 8 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 12 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 16 | 4 | | Offset + 4 to node cell with [yellow-background]*Unknown*
-| 20 | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-==== [[class_instance_root_node]]Class instance root node
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown* +
-Contains 0xffffffff if [yellow-background]*unknown*
-| 4 | 4 | | Offset + 4 to node cell with <<name_node,name node>>
-| 8 | 4 | | Offset + 4 to node cell with <<class_definition_root_node,class definition root node>>
-| 12 | 4 | | [yellow-background]*Unknown*
-| 16 | 4 | | [yellow-background]*Unknown*
-| 16 | 4 | | [yellow-background]*Unknown*
-| 24 | 4 | | [yellow-background]*Unknown*
-| 28 | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 
 ==== [[unknown_node5]]Unknown node 5
@@ -1301,13 +1288,17 @@ SID?
 0x00000030  01 01 00 00 00 00 00 01  00 00 00 00              ............
 ....
 
-==== [[unknown_node6]]Unknown node 6
+==== [[instance_leaf_node]]Instance leaf node
 
-....
-0x00000000  01 00 00 00 a4 01 00 00  74 01 00 00 88 0a 00 00  ........t.......
-0x00000010  d4 4b 00 00 00 00 00 00  d8 02 00 00 00 00 00 00  .K..............
-0x00000020  fe fe fe fe fe fe fe fe                           ........
-....
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Instance block size +
+Includes the 4 bytes of the size
+| 4 | ... | | Instance block data +
+See section: <<instance_block,instance block>>
+| ... | 12 | | [yellow-background]*Unknown (footer?)*
+|===
 
 ==== [[name_node]]Name node
 
@@ -1317,18 +1308,6 @@ SID?
 | 0 | ... | | Name +
 Contains an UTF-16 little-endian string with end-of-string character.
 | ... | ... | | 32-bit alignment padding
-| ... | 12 | | [yellow-background]*Unknown (footer?)*
-|===
-
-==== [[instance_node]]Instance node
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Instance block size +
-Includes the 4 bytes of the size
-| 4 | ... | | Instance block data +
-See section: <<instance_block,instance block>>
 | ... | 12 | | [yellow-background]*Unknown (footer?)*
 |===
 

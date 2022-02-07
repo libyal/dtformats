@@ -1086,7 +1086,32 @@ class RepositoryFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _DEBUG_INFO_CHILD_CLASSES_BRANCH_NODE = [
+  _DEBUG_INFO_CHILD_OBJECTS_LIST_NODE = [
+      ('list_element_node_offset1', 'List element node offset 1',
+       '_FormatIntegerAsOffset'),
+      ('first_list_element_node_offset', 'First list element node offset',
+       '_FormatIntegerAsOffset'),
+      ('last_list_element_node_offset', 'Last list element node offset',
+       '_FormatIntegerAsOffset'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
+      ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
+      ('footer', 'Footer', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_CHILD_OBJECTS_LIST_ELEMENT_NODE = [
+      ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
+      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
+      ('value_node_offset', 'Value node offset', '_FormatIntegerAsOffset'),
+      ('list_element_node_offset1', 'Unknown node 3 offset 1',
+       '_FormatIntegerAsOffset'),
+      ('list_element_node_offset2', 'Unknown node 3 offset 2',
+       '_FormatIntegerAsOffset'),
+      ('previous_list_element_node_offset', 'Previous list element node offset',
+       '_FormatIntegerAsOffset'),
+      ('next_list_element_node_offset', 'Next list element node offset',
+       '_FormatIntegerAsOffset'),
+      ('footer', 'Footer', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_CHILD_OBJECTS_BRANCH_NODE = [
       ('number_of_leaf_values', 'Number of leaf values',
        '_FormatIntegerAsDecimal'),
       ('maximum_number_of_leaf_values', 'Maximum number of leaf values',
@@ -1095,31 +1120,21 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('leaf_node_offset', 'Leaf node offset', '_FormatIntegerAsOffset'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
-  _DEBUG_INFO_CHILD_CLASSES_LEAF_NODE = [
-      ('leaf_value_node_offset1', 'Leaf value node offset1',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset2', 'Leaf value node offset2',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset3', 'Leaf value node offset3',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset4', 'Leaf value node offset4',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset5', 'Leaf value node offset5',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset6', 'Leaf value node offset6',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset7', 'Leaf value node offset7',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset8', 'Leaf value node offset8',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset9', 'Leaf value node offset9',
-       '_FormatIntegerAsOffset'),
-      ('leaf_value_node_offset10', 'Leaf value node offset10',
-       '_FormatIntegerAsOffset'),
+  _DEBUG_INFO_CHILD_OBJECTS_LEAF_NODE = [
+      ('value_node_offset1', 'Value node offset1', '_FormatIntegerAsOffset'),
+      ('value_node_offset2', 'Value node offset2', '_FormatIntegerAsOffset'),
+      ('value_node_offset3', 'Value node offset3', '_FormatIntegerAsOffset'),
+      ('value_node_offset4', 'Value node offset4', '_FormatIntegerAsOffset'),
+      ('value_node_offset5', 'Value node offset5', '_FormatIntegerAsOffset'),
+      ('value_node_offset6', 'Value node offset6', '_FormatIntegerAsOffset'),
+      ('value_node_offset7', 'Value node offset7', '_FormatIntegerAsOffset'),
+      ('value_node_offset8', 'Value node offset8', '_FormatIntegerAsOffset'),
+      ('value_node_offset9', 'Value node offset9', '_FormatIntegerAsOffset'),
+      ('value_node_offset10', 'Value node offset10', '_FormatIntegerAsOffset'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
-  _DEBUG_INFO_CHILD_CLASSES_ROOT_NODE = [
-      ('branch_node_type', 'Branch node type', '_FormatIntegerAsDecimal'),
+  _DEBUG_INFO_CHILD_OBJECTS_ROOT_NODE = [
+      ('depth', 'Depth', '_FormatIntegerAsDecimal'),
       ('number_of_leaf_values', 'Number of leaf values',
        '_FormatIntegerAsDecimal'),
       ('branch_node_offset', 'Branch node offset', '_FormatIntegerAsOffset'),
@@ -1154,23 +1169,12 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('parent_class_root_node_offset', 'Parent class root node offset',
        '_FormatIntegerAsOffset'),
       ('sub_node_type', 'Sub node type', '_FormatIntegerAsHexadecimal2'),
-      ('unknown_node2_offset', 'Unknown node 2 offset',
+      ('child_objects_list_node_offset', 'Child objects list node offset',
        '_FormatIntegerAsOffset'),
       ('sub_node_offset', 'Sub node offset', '_FormatIntegerAsOffset'),
       ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
       ('child_objects_root_node_offset', 'Child objects root node offset',
        '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_INSTANCE_ROOT_NODE = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsOffset'),
-      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('class_definition_root_node_offset', 'Class definition root node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsOffset'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsOffset'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsOffset'),
-      ('unknown6', 'Unknown6', '_FormatIntegerAsOffset'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_FILE_HEADER = [
@@ -1187,21 +1191,21 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8'),
       ('node_bin_size', 'Node bin size', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_INFO_INSTANCE_NODE = [
-      ('instance_block_size', 'Instance block size', '_FormatIntegerAsDecimal'),
-      ('instance_block_data', 'Instance block data',
-       '_FormatDataInHexadecimal'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_INSTANCE_LEAF_NODE = [
+  _DEBUG_INFO_INSTANCE_BRANCH_NODE = [
       ('instance_root_node_offset', 'Instance root node offset',
        '_FormatIntegerAsOffset'),
       ('class_definition_root_node_offset', 'Class definition root node offset',
        '_FormatIntegerAsOffset'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('instance_node_offset', 'Instance node offset',
+      ('instance_leaf_node_offset', 'Instance leaf node offset',
        '_FormatIntegerAsOffset'),
       ('unknown3', 'Unknown3', '_FormatIntegerAsOffset'),
+      ('footer', 'Footer', '_FormatDataInHexadecimal')]
+
+  _DEBUG_INFO_INSTANCE_LEAF_NODE = [
+      ('instance_block_size', 'Instance block size', '_FormatIntegerAsDecimal'),
+      ('instance_block_data', 'Instance block data',
+       '_FormatDataInHexadecimal'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_INSTANCE_LEAF_VALUE_NODE = [
@@ -1214,10 +1218,10 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('child_objects_root_node_offset', 'Child objects root node offset',
        '_FormatIntegerAsOffset'),
       ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('instance_leaf_node_offset', 'Instance leaf node offset',
+      ('instance_branch_node_offset', 'Instance branch node offset',
        '_FormatIntegerAsOffset'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('unknown_node4_offset', 'Unknown node 4 offset',
+      ('child_objects_list_node_offset', 'Child objects list node offset',
        '_FormatIntegerAsOffset'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsOffset'),
       ('unknown_node5_offset', 'Unknown node 5 offset',
@@ -1236,42 +1240,6 @@ class RepositoryFile(data_format.BinaryDataFile):
   _DEBUG_INFO_NODE_BIN_HEADER = [
       ('node_bin_size', 'Node bin size', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_INFO_UNKNOWN_NODE2 = [
-      ('unknown_node3_offset1', 'Unknown node 3 offset 1',
-       '_FormatIntegerAsOffset'),
-      ('first_unknown_node3_offset', 'First unknown node 3 offset',
-       '_FormatIntegerAsOffset'),
-      ('last_unknown_node3_offset', 'Last unknown node 3 offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
-      ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_UNKNOWN_NODE3 = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('instance_leaf_node_offset', 'Instance leaf node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown_node3_offset1', 'Unknown node 3 offset 1',
-       '_FormatIntegerAsOffset'),
-      ('unknown_node3_offset2', 'Unknown node 3 offset 2',
-       '_FormatIntegerAsOffset'),
-      ('previous_unknown_node3_offset', 'Previous unknown node 3 offset',
-       '_FormatIntegerAsOffset'),
-      ('next_unknown_node3_offset', 'Next unknown node 3 offset',
-       '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_UNKNOWN_NODE4 = [
-      ('class_instance_root_node_offset', 'Class instance root node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown_node6_offset', 'Unknown node 6 offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsOffset'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsOffset'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
   _DEBUG_INFO_UNKNOWN_NODE5 = [
       ('unknown_block_size', 'Unknown block size', '_FormatIntegerAsDecimal'),
       ('unknown_block_data', 'Unknown block data', '_FormatDataInHexadecimal'),
@@ -1289,6 +1257,243 @@ class RepositoryFile(data_format.BinaryDataFile):
     self._root_namespace_node_offset = None
     self._system_class_definition_root_node_offset = None
 
+  def _ReadChildObjectsList(self, file_object, list_node_offset):
+    """Reads a child objects list.
+
+    Args:
+      file_object (file): file-like object.
+      list_node_offset (int): offset of the list node relative to the start
+          of the file.
+
+    Yields:
+      int: element value offset.
+    """
+    node_cell = self._ReadNodeCell(file_object, list_node_offset - 4)
+    list_node = self._ReadChildObjectsListNode(node_cell.data, list_node_offset)
+
+    list_element = 1
+    next_list_element_node_offset = list_node.first_list_element_node_offset
+
+    while next_list_element_node_offset > 40:
+      if self._debug:
+        self._DebugPrintText('Reading list element: {0:d}\n'.format(
+            list_element))
+
+      node_cell = self._ReadNodeCell(
+          file_object, next_list_element_node_offset - 4)
+      list_element_node = self._ReadChildObjectsListElementNode(
+          node_cell.data, next_list_element_node_offset)
+
+      if list_element_node.name_node_offset > 40:
+        node_cell = self._ReadNodeCell(
+            file_object, list_element_node.name_node_offset - 4)
+        self._ReadNameNode(node_cell.data, list_element_node.name_node_offset)
+
+      yield list_element_node.value_node_offset
+
+      list_element += 1
+      next_list_element_node_offset = (
+          list_element_node.next_list_element_node_offset)
+
+  def _ReadChildObjectsListNode(self, block_data, file_offset):
+    """Reads a child objects list node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_child_objects_list_node: child objects list node.
+
+    Raises:
+      ParseError: if the child objects list node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText((
+          'Reading child objects list node at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
+
+    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_list_node')
+
+    list_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'child objects list node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          list_node, self._DEBUG_INFO_CHILD_OBJECTS_LIST_NODE)
+
+    return list_node
+
+  def _ReadChildObjectsListElementNode(self, block_data, file_offset):
+    """Reads a child objects list element node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_child_objects_list_element_node: child objects list element node.
+
+    Raises:
+      ParseError: if the list element node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText((
+          'Reading child objects list element node at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
+
+    data_type_map = self._GetDataTypeMap(
+        'cim_rep_child_objects_list_element_node')
+
+    list_element_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map,
+        'child objects list element node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          list_element_node, self._DEBUG_INFO_CHILD_OBJECTS_LIST_ELEMENT_NODE)
+
+    return list_element_node
+
+  def _ReadChildObjectsTree(self, file_object, root_node_offset):
+    """Reads a child objects tree.
+
+    Args:
+      file_object (file): file-like object.
+      root_node_offset (int): offset of the root node relative to the start of
+          the file.
+
+    Yields:
+      int: leaf value offset.
+    """
+    node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
+    root_node = self._ReadChildObjectsTreeRootNode(
+        node_cell.data, root_node_offset)
+
+    if root_node.depth == 1:
+      yield root_node.branch_node_offset
+
+    elif root_node.depth == 2:
+      if root_node.branch_node_offset > 40:
+        node_cell = self._ReadNodeCell(
+            file_object, root_node.branch_node_offset - 4)
+        branch_node = self._ReadChildObjectsTreeBranchNode(
+            node_cell.data, root_node.branch_node_offset)
+
+        if branch_node.leaf_node_offset > 40:
+          node_cell = self._ReadNodeCell(
+              file_object, branch_node.leaf_node_offset - 4)
+          leaf_node = self._ReadChildObjectsTreeLeafNode(
+              node_cell.data, branch_node.leaf_node_offset)
+
+          for node_offset in (
+              leaf_node.value_node_offset1,
+              leaf_node.value_node_offset2,
+              leaf_node.value_node_offset3,
+              leaf_node.value_node_offset4,
+              leaf_node.value_node_offset5,
+              leaf_node.value_node_offset6,
+              leaf_node.value_node_offset7,
+              leaf_node.value_node_offset8,
+              leaf_node.value_node_offset9,
+              leaf_node.value_node_offset10):
+            yield node_offset
+
+  # TODO: rename
+  def _ReadChildObjectsTreeBranchNode(self, block_data, file_offset):
+    """Reads a child objects tree branch node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_child_objects_branch_node: child objects branch node.
+
+    Raises:
+      ParseError: if the child objects branch node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText((
+          'Reading child objects branch node at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
+
+    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_branch_node')
+
+    branch_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'child objects branch node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          branch_node, self._DEBUG_INFO_CHILD_OBJECTS_BRANCH_NODE)
+
+    return branch_node
+
+  def _ReadChildObjectsTreeLeafNode(self, block_data, file_offset):
+    """Reads a child objects tree leaf node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_child_objects_leaf_node: child objects leaf node.
+
+    Raises:
+      ParseError: if the child objects leaf node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText((
+          'Reading child objects leaf node at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
+
+    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_leaf_node')
+
+    leaf_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'child objects leaf node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          leaf_node, self._DEBUG_INFO_CHILD_OBJECTS_LEAF_NODE)
+
+    return leaf_node
+
+  # TODO: rename
+  def _ReadChildObjectsTreeRootNode(self, block_data, file_offset):
+    """Reads a child objects tree root node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_child_objects_root_node: child objects root node.
+
+    Raises:
+      ParseError: if the child objects root node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText((
+          'Reading child objects root node at offset: {0:d} '
+          '(0x{0:08x})\n').format(file_offset))
+
+    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_root_node')
+
+    root_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'child objects root node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          root_node, self._DEBUG_INFO_CHILD_OBJECTS_ROOT_NODE)
+
+    return root_node
+
+  # TODO: rename
   def _ReadClassDefinitionBranchNode(self, block_data, file_offset):
     """Reads a class definition branch node.
 
@@ -1319,96 +1524,6 @@ class RepositoryFile(data_format.BinaryDataFile):
           self._DEBUG_INFO_CLASS_DEFINITION_BRANCH_NODE)
 
     return class_definition_branch_node
-
-  def _ReadChildObjectsBranchNode(self, block_data, file_offset):
-    """Reads a child objects branch node.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_child_objects_branch_node: child objects branch node.
-
-    Raises:
-      ParseError: if the child objects branch node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          'Reading child objects branch node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_branch_node')
-
-    child_objects_branch_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'child objects branch node')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          child_objects_branch_node, self._DEBUG_INFO_CHILD_CLASSES_BRANCH_NODE)
-
-    return child_objects_branch_node
-
-  def _ReadChildObjectsLeafNode(self, block_data, file_offset):
-    """Reads a child objects leaf node.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_child_objects_leaf_node: child objects leaf node.
-
-    Raises:
-      ParseError: if the child objects leaf node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          'Reading child objects leaf node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_leaf_node')
-
-    child_objects_leaf_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'child objects leaf node')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          child_objects_leaf_node, self._DEBUG_INFO_CHILD_CLASSES_LEAF_NODE)
-
-    return child_objects_leaf_node
-
-  def _ReadChildObjectsRootNode(self, block_data, file_offset):
-    """Reads a child objects root node.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_child_objects_root_node: child objects root node.
-
-    Raises:
-      ParseError: if the child objects root node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          'Reading child objects root node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_child_objects_root_node')
-
-    child_objects_root_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'child objects root node')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          child_objects_root_node, self._DEBUG_INFO_CHILD_CLASSES_ROOT_NODE)
-
-    return child_objects_root_node
 
   def _ReadClassDefinitionLeafNode(self, block_data, file_offset):
     """Reads a class definition leaf node.
@@ -1472,36 +1587,6 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     return class_definition_root_node
 
-  def _ReadClassInstanceRootNode(self, block_data, file_offset):
-    """Reads a class instance root node.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_class_instance_root_node: class instance root node.
-
-    Raises:
-      ParseError: if the class instance root node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          'Reading class instance root node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_class_instance_root_node')
-
-    class_instance_root_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'class instance root node')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          class_instance_root_node, self._DEBUG_INFO_CLASS_INSTANCE_ROOT_NODE)
-
-    return class_instance_root_node
-
   def _ReadFileHeader(self, file_object):
     """Reads a file header.
 
@@ -1523,6 +1608,66 @@ class RepositoryFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     return file_header
+
+  def _ReadInstanceBranchNode(self, block_data, file_offset):
+    """Reads an instance branch node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_instance_branch_node: instance branch node.
+
+    Raises:
+      ParseError: if the instance branch node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText(
+          'Reading instance branch node at offset: {0:d} (0x{0:08x})\n'.format(
+              file_offset))
+
+    data_type_map = self._GetDataTypeMap('cim_rep_instance_branch_node')
+
+    instance_branch_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'instance branch node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          instance_branch_node, self._DEBUG_INFO_INSTANCE_BRANCH_NODE)
+
+    return instance_branch_node
+
+  def _ReadInstanceLeafNode(self, block_data, file_offset):
+    """Reads an instance leaf node.
+
+    Args:
+      block_data (bytes): block data.
+      file_offset (int): offset of the node cell relative to the start of
+          the file.
+
+    Returns:
+      cim_rep_instance_leaf_node: instance leaf node.
+
+    Raises:
+      ParseError: if the instance leaf node cannot be read.
+    """
+    if self._debug:
+      self._DebugPrintText(
+          'Reading instance leaf node at offset: {0:d} (0x{0:08x})\n'.format(
+              file_offset))
+
+    data_type_map = self._GetDataTypeMap('cim_rep_instance_leaf_node')
+
+    instance_leaf_node = self._ReadStructureFromByteStream(
+        block_data, file_offset, data_type_map, 'instance leaf node')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          instance_leaf_node, self._DEBUG_INFO_INSTANCE_LEAF_NODE)
+
+    return instance_leaf_node
 
   def _ReadInstanceLeafValueNode(self, block_data, file_offset):
     """Reads an instance leaf value node.
@@ -1583,36 +1728,6 @@ class RepositoryFile(data_format.BinaryDataFile):
           instance_root_node, self._DEBUG_INFO_INSTANCE_ROOT_NODE)
 
     return instance_root_node
-
-  def _ReadInstanceNode(self, block_data, file_offset):
-    """Reads an instance node.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_instance_node: instance node.
-
-    Raises:
-      ParseError: if the instance node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading instance node at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_instance_node')
-
-    instance_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'instance node')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          instance_node, self._DEBUG_INFO_INSTANCE_NODE)
-
-    return instance_node
 
   def _ReadNameNode(self, block_data, file_offset):
     """Reads a name node.
@@ -1703,96 +1818,6 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     return node_cell
 
-  def _ReadUnknownNode2(self, block_data, file_offset):
-    """Reads an unknown node 2.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_unknown_node2: unknown node.
-
-    Raises:
-      ParseError: if the unknown node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading unknown node 2 at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_unknown_node2')
-
-    unknown_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'unknown node 2')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          unknown_node, self._DEBUG_INFO_UNKNOWN_NODE2)
-
-    return unknown_node
-
-  def _ReadUnknownNode3(self, block_data, file_offset):
-    """Reads an unknown node 3.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_unknown_node3: unknown node.
-
-    Raises:
-      ParseError: if the unknown node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading unknown node 3 at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_unknown_node3')
-
-    unknown_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'unknown node 3')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          unknown_node, self._DEBUG_INFO_UNKNOWN_NODE3)
-
-    return unknown_node
-
-  def _ReadUnknownNode4(self, block_data, file_offset):
-    """Reads an unknown node 4.
-
-    Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
-
-    Returns:
-      cim_rep_unknown_node4: unknown node.
-
-    Raises:
-      ParseError: if the unknown node cannot be read.
-    """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading unknown node 4 at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
-
-    data_type_map = self._GetDataTypeMap('cim_rep_unknown_node4')
-
-    unknown_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'unknown node 4')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          unknown_node, self._DEBUG_INFO_UNKNOWN_NODE4)
-
-    return unknown_node
-
   def _ReadUnknownNode5(self, block_data, file_offset):
     """Reads an unknown node 5.
 
@@ -1823,35 +1848,48 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     return unknown_node
 
-  def _ReadInstanceLeafNode(self, block_data, file_offset):
-    """Reads an instance leaf node.
+  def _ReadClassDefinition(self, file_object, branch_node_offset):
+    """Reads a class definition.
 
     Args:
-      block_data (bytes): block data.
-      file_offset (int): offset of the node cell relative to the start of
-          the file.
+      file_object (file): file-like object.
+      branch_node_offset (int): offset of the branch node relative to the start
+          of the file.
 
     Returns:
-      cim_rep_instance_leaf_node: instance leaf node.
-
-    Raises:
-      ParseError: if the instance leaf node cannot be read.
+      ClassDefinition: class definition.
     """
-    if self._debug:
-      self._DebugPrintText(
-          'Reading instance leaf node at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+    node_cell = self._ReadNodeCell(file_object, branch_node_offset - 4)
+    branch_node = self._ReadClassDefinitionBranchNode(
+        node_cell.data, branch_node_offset)
 
-    data_type_map = self._GetDataTypeMap('cim_rep_instance_leaf_node')
+    leaf_node_offset = branch_node.class_definition_leaf_node_offset
+    if leaf_node_offset <= 40:
+      return None
 
-    instance_leaf_node = self._ReadStructureFromByteStream(
-        block_data, file_offset, data_type_map, 'instance leaf node')
+    node_cell = self._ReadNodeCell(file_object, leaf_node_offset - 4)
+    leaf_node = self._ReadClassDefinitionLeafNode(
+        node_cell.data, leaf_node_offset)
 
-    if self._debug:
-      self._DebugPrintStructureObject(
-          instance_leaf_node, self._DEBUG_INFO_INSTANCE_LEAF_NODE)
+    class_definition = ClassDefinition(
+        debug=self._debug, output_writer=self._output_writer)
+    class_definition.ReadClassDefinitionBlock(
+        leaf_node.class_definition_block_data,
+        record_data_offset=leaf_node_offset)
 
-    return instance_leaf_node
+    return class_definition
+
+  def _ReadClassDefinitionInstance(self, file_object, root_node_offset):
+    """Reads an instance from a class definition.
+
+    Args:
+      file_object (file): file-like object.
+      root_node_offset (int): offset of the root node relative to the start of
+          the file.
+
+    Return:
+      Instance: instance.
+    """
 
   def _ReadClassDefinitionHierarchy(self, file_object, root_node_offset):
     """Reads the class definition hierarchy.
@@ -1862,7 +1900,7 @@ class RepositoryFile(data_format.BinaryDataFile):
           the file.
 
     Yields:
-      ClassDefinitionReference: class definition reference.
+      Instance: instance.
     """
     node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
     root_node = self._ReadClassDefinitionRootNode(
@@ -1876,94 +1914,107 @@ class RepositoryFile(data_format.BinaryDataFile):
 
       leaf_node_offset = branch_node.class_definition_leaf_node_offset
       if leaf_node_offset > 40:
-        class_definition_reference = self._ReadClassDefinitionReference(
-            file_object, leaf_node_offset)
-        yield class_definition_reference
+        node_cell = self._ReadNodeCell(file_object, leaf_node_offset - 4)
+        leaf_node = self._ReadClassDefinitionLeafNode(
+            node_cell.data, leaf_node_offset)
 
-    if root_node.unknown_node2_offset > 40:
-      self._ReadUnknownNode2Hierarchy(
-          file_object, root_node.unknown_node2_offset)
+        class_definition = ClassDefinition(
+            debug=self._debug, output_writer=self._output_writer)
+        class_definition.ReadClassDefinitionBlock(
+            leaf_node.class_definition_block_data,
+            record_data_offset=leaf_node_offset)
+
+        if self._debug:
+          class_definition.DebugPrint()
+
+    if root_node.child_objects_list_node_offset > 40:
+      for value_node_offset in self._ReadChildObjectsList(
+          file_object, root_node.child_objects_list_node_offset):
+        if value_node_offset > 40:
+          instance = self._ReadInstance(file_object, value_node_offset)
+          yield instance
 
     if root_node.sub_node_offset > 40 and root_node.sub_node_type in (9, 10):
-      for leaf_value_node_offset in self._ReadChildObjectsHierarchy(
+      for value_node_offset in self._ReadChildObjectsTree(
           file_object, root_node.sub_node_offset):
-        if leaf_value_node_offset > 40:
-          for class_definition_reference in self._ReadClassDefinitionHierarchy(
-              file_object, leaf_value_node_offset):
-            yield class_definition_reference
+        if value_node_offset > 40:
+          for instance in self._ReadClassDefinitionHierarchy(
+              file_object, value_node_offset):
+            yield instance
 
-    if root_node.child_objects_root_node_offset > 40:
-      for leaf_value_node_offset in self._ReadChildObjectsHierarchy(
-          file_object, root_node.child_objects_root_node_offset):
-        if leaf_value_node_offset > 40:
-          node_cell = self._ReadNodeCell(
-              file_object, leaf_value_node_offset - 4)
-          self._ReadNameNode(node_cell.data, leaf_value_node_offset)
+    if self._debug:
+      if root_node.child_objects_root_node_offset > 40:
+        for value_node_offset in self._ReadChildObjectsTree(
+            file_object, root_node.child_objects_root_node_offset):
+          if value_node_offset > 40:
+            node_cell = self._ReadNodeCell(file_object, value_node_offset - 4)
+            self._ReadNameNode(node_cell.data, value_node_offset)
 
-  def _ReadClassDefinitionReference(self, file_object, leaf_node_offset):
-    """Reads a class definition reference from a class defintion leaf node.
+  def _ReadInstance(self, file_object, branch_node_offset):
+    """Reads an instance.
 
     Args:
       file_object (file): file-like object.
-      leaf_node_offset (int): offset of the leaf node relative to the start of
-          the file.
+      branch_node_offset (int): offset of the branch node relative to the start
+          of the file.
 
     Returns:
-      ClassDefinitionReference: class definition reference.
+      Instance: instance.
     """
-    node_cell = self._ReadNodeCell(file_object, leaf_node_offset - 4)
-    leaf_node = self._ReadClassDefinitionLeafNode(
-        node_cell.data, leaf_node_offset)
+    node_cell = self._ReadNodeCell(file_object, branch_node_offset - 4)
+    instance_branch_node = self._ReadInstanceBranchNode(
+        node_cell.data, branch_node_offset)
 
-    class_definition_reference = ClassDefinitionReference(
+    if instance_branch_node.class_definition_root_node_offset <= 40:
+      return None
+
+    if instance_branch_node.instance_leaf_node_offset <= 40:
+      return None
+
+    if instance_branch_node.unknown1 != 2:
+      return None
+
+    node_cell = self._ReadNodeCell(
+        file_object, instance_branch_node.class_definition_root_node_offset - 4)
+    root_node = self._ReadClassDefinitionRootNode(
+        node_cell.data, instance_branch_node.class_definition_root_node_offset)
+
+    if root_node.class_definition_branch_node_offset <= 40:
+      return None
+
+    class_definition = self._ReadClassDefinition(
+        file_object, root_node.class_definition_branch_node_offset)
+
+    node_cell = self._ReadNodeCell(
+        file_object, instance_branch_node.instance_leaf_node_offset - 4)
+    leaf_node = self._ReadInstanceLeafNode(
+        node_cell.data, instance_branch_node.instance_leaf_node_offset)
+
+    # TODO: read class definition hierarcy
+    class_definitions = [class_definition]
+
+    class_value_data_map = ClassValueDataMap()
+    class_value_data_map.Build(class_definitions)
+
+    instance = Instance(
         debug=self._debug, output_writer=self._output_writer)
-    class_definition_reference.data = leaf_node.class_definition_block_data
-    class_definition_reference.offset = leaf_node_offset
-    return class_definition_reference
 
-  def _ReadChildObjectsHierarchy(self, file_object, root_node_offset):
-    """Reads a child objects hierarchy.
+    instance.ReadInstanceBlockData(
+        class_value_data_map, leaf_node.instance_block_data,
+        record_data_offset=instance_branch_node.instance_leaf_node_offset)
 
-    Args:
-      file_object (file): file-like object.
-      root_node_offset (int): offset of the root node relative to the start of
-          the file.
+    # pylint: disable=attribute-defined-outside-init
+    instance.class_name = class_value_data_map.class_name
+    instance.derivation = class_value_data_map.derivation
+    instance.dynasty = class_value_data_map.dynasty
+    instance.super_class_name = class_value_data_map.super_class_name
+    instance.namespace = None
 
-    Yields:
-      int: leaf value offset.
-    """
-    node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
-    child_objects_root_node = self._ReadChildObjectsRootNode(
-        node_cell.data, root_node_offset)
+    if self._debug:
+      class_definition.DebugPrint()
+      instance.DebugPrint()
 
-    if child_objects_root_node.branch_node_offset > 40:
-      if child_objects_root_node.branch_node_type == 1:
-        yield child_objects_root_node.branch_node_offset
-
-      elif child_objects_root_node.branch_node_type == 2:
-        node_cell = self._ReadNodeCell(
-            file_object, child_objects_root_node.branch_node_offset - 4)
-        child_objects_branch_node = self._ReadChildObjectsBranchNode(
-            node_cell.data, child_objects_root_node.branch_node_offset)
-
-        if child_objects_branch_node.leaf_node_offset > 40:
-          node_cell = self._ReadNodeCell(
-              file_object, child_objects_branch_node.leaf_node_offset - 4)
-          child_objects_leaf_node = self._ReadChildObjectsLeafNode(
-              node_cell.data, child_objects_branch_node.leaf_node_offset)
-
-          for node_offset in (
-              child_objects_leaf_node.leaf_value_node_offset1,
-              child_objects_leaf_node.leaf_value_node_offset2,
-              child_objects_leaf_node.leaf_value_node_offset3,
-              child_objects_leaf_node.leaf_value_node_offset4,
-              child_objects_leaf_node.leaf_value_node_offset5,
-              child_objects_leaf_node.leaf_value_node_offset6,
-              child_objects_leaf_node.leaf_value_node_offset7,
-              child_objects_leaf_node.leaf_value_node_offset8,
-              child_objects_leaf_node.leaf_value_node_offset9,
-              child_objects_leaf_node.leaf_value_node_offset10):
-            yield node_offset
+    return instance
 
   def _ReadInstanceHierarchy(self, file_object, root_node_offset):
     """Reads an instance hierarchy.
@@ -1974,164 +2025,89 @@ class RepositoryFile(data_format.BinaryDataFile):
           the file.
 
     Yields:
-      InstanceReference: instance reference.
+      Instance: instance.
     """
     node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
-    instance_root_node = self._ReadInstanceRootNode(
-        node_cell.data, root_node_offset)
+    root_node = self._ReadInstanceRootNode(node_cell.data, root_node_offset)
 
-    if instance_root_node.name_node_offset > 40:
-      node_cell = self._ReadNodeCell(
-          file_object, instance_root_node.name_node_offset - 4)
-      self._ReadNameNode(node_cell.data, instance_root_node.name_node_offset)
-
-    class_name = None
-    if instance_root_node.unknown_node4_offset > 40:
-      node_cell = self._ReadNodeCell(
-          file_object, instance_root_node.unknown_node4_offset - 4)
-      unknown_node4 = self._ReadUnknownNode4(
-          node_cell.data, instance_root_node.unknown_node4_offset)
-
-      if unknown_node4.class_instance_root_node_offset > 40:
+    if self._debug:
+      if root_node.name_node_offset > 40:
         node_cell = self._ReadNodeCell(
-            file_object, unknown_node4.class_instance_root_node_offset - 4)
-        class_instance_root_node = self._ReadClassInstanceRootNode(
-            node_cell.data, unknown_node4.class_instance_root_node_offset)
+            file_object, root_node.name_node_offset - 4)
+        self._ReadNameNode(node_cell.data, root_node.name_node_offset)
 
-        if class_instance_root_node.name_node_offset > 40:
-          node_cell = self._ReadNodeCell(
-              file_object, class_instance_root_node.name_node_offset - 4)
-          name_node = self._ReadNameNode(
-              node_cell.data, class_instance_root_node.name_node_offset)
+    if root_node.instance_branch_node_offset > 40:
+      instance = self._ReadInstance(
+          file_object, root_node.instance_branch_node_offset)
 
-          class_name = name_node.name
+      yield instance
 
-    if instance_root_node.instance_leaf_node_offset > 40:
-      node_cell = self._ReadNodeCell(
-          file_object, instance_root_node.instance_leaf_node_offset - 4)
-      instance_leaf_node = self._ReadInstanceLeafNode(
-          node_cell.data, instance_root_node.instance_leaf_node_offset)
+    if self._debug:
+      if root_node.unknown_node5_offset > 40 and root_node.unknown2 == 0:
+        node_cell = self._ReadNodeCell(
+            file_object, root_node.unknown_node5_offset - 4)
+        unknown_node5 = self._ReadUnknownNode5(
+            node_cell.data, root_node.unknown_node5_offset)
 
-      if instance_leaf_node.instance_node_offset > 40:
-        if instance_leaf_node.unknown1 == 2:
-          instance_reference = self._ReadInstanceReference(
-              file_object, instance_leaf_node.instance_node_offset)
-          instance_reference.class_name = class_name
+        # TODO: clean up after debugging
+        _ = unknown_node5
 
-          yield instance_reference
-
-    if (instance_root_node.unknown_node5_offset > 40 and
-        instance_root_node.unknown2 == 0):
-      node_cell = self._ReadNodeCell(
-          file_object, instance_root_node.unknown_node5_offset - 4)
-      unknown_node5 = self._ReadUnknownNode5(
-          node_cell.data, instance_root_node.unknown_node5_offset)
-
-      # TODO: clean up after debugging
-      _ = unknown_node5
-
-    if (instance_root_node.child_objects_root_node_offset > 40 and
-        instance_root_node.child_objects_root_node_offset != 0xffffffff):
-      for leaf_value_node_offset in self._ReadChildObjectsHierarchy(
-          file_object, instance_root_node.child_objects_root_node_offset):
-        if leaf_value_node_offset > 40:
-          node_cell = self._ReadNodeCell(
-              file_object, leaf_value_node_offset - 4)
+    if (root_node.child_objects_root_node_offset > 40 and
+        root_node.child_objects_root_node_offset != 0xffffffff):
+      for value_node_offset in self._ReadChildObjectsTree(
+          file_object, root_node.child_objects_root_node_offset):
+        if value_node_offset > 40:
+          node_cell = self._ReadNodeCell(file_object, value_node_offset - 4)
           instance_leaf_value_node = self._ReadInstanceLeafValueNode(
-              node_cell.data, leaf_value_node_offset)
+              node_cell.data, value_node_offset)
 
-          if instance_leaf_value_node.name_node_offset > 40:
-            node_cell = self._ReadNodeCell(
-                file_object, instance_leaf_value_node.name_node_offset - 4)
-            self._ReadNameNode(
-                node_cell.data, instance_leaf_value_node.name_node_offset)
+          if self._debug:
+            if instance_leaf_value_node.name_node_offset > 40:
+              node_cell = self._ReadNodeCell(
+                  file_object, instance_leaf_value_node.name_node_offset - 4)
+              self._ReadNameNode(
+                  node_cell.data, instance_leaf_value_node.name_node_offset)
 
           if instance_leaf_value_node.instance_root_node_offset > 40:
-            for instance_reference in self._ReadInstanceHierarchy(
+            for instance in self._ReadInstanceHierarchy(
                 file_object,
                 instance_leaf_value_node.instance_root_node_offset):
-              yield instance_reference
+              yield instance
 
-  def _ReadInstanceReference(self, file_object, instance_node_offset):
-    """Reads an instance reference.
+    if self._debug:
+      if root_node.child_objects_list_node_offset > 40:
+        for value_node_offset in self._ReadChildObjectsList(
+            file_object, root_node.child_objects_list_node_offset):
+          if value_node_offset > 40:
+            node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
+            root_node = self._ReadClassDefinitionRootNode(
+                node_cell.data, root_node_offset)
 
-    Args:
-      file_object (file): file-like object.
-      instance_node_offset (int): offset of the instance node relative to
-          the start of the file.
+            if root_node.class_definition_branch_node_offset > 40:
+              self._ReadClassDefinition(
+                  file_object, root_node.class_definition_branch_node_offset)
 
-    Returns:
-      InstanceReference: instance reference.
-    """
-    node_cell = self._ReadNodeCell(file_object, instance_node_offset - 4)
-    instance_node = self._ReadInstanceNode(node_cell.data, instance_node_offset)
-
-    instance_reference = InstanceReference(
-        '2.0', debug=self._debug, output_writer=self._output_writer)
-    instance_reference.data = instance_node.instance_block_data
-    instance_reference.offset = instance_node_offset
-
-    return instance_reference
-
-  def _ReadUnknownNode2Hierarchy(self, file_object, unknown_node2_offset):
-    """Reads an unknown node 2 hierarchy.
-
-    Args:
-      file_object (file): file-like object.
-      unknown_node2_offset (int): offset of the unknown node 2 relative to
-         the start of the file.
-    """
-    node_cell = self._ReadNodeCell(file_object, unknown_node2_offset - 4)
-    unknown_node2 = self._ReadUnknownNode2(node_cell.data, unknown_node2_offset)
-
-    next_unknown_node3_offset = unknown_node2.first_unknown_node3_offset
-    while next_unknown_node3_offset > 40:
-      node_cell = self._ReadNodeCell(file_object, next_unknown_node3_offset - 4)
-      unknown_node3 = self._ReadUnknownNode3(
-          node_cell.data, next_unknown_node3_offset)
-
-      if unknown_node3.name_node_offset > 40:
-        node_cell = self._ReadNodeCell(
-            file_object, unknown_node3.name_node_offset - 4)
-        self._ReadNameNode(node_cell.data, unknown_node3.name_node_offset)
-
-      if unknown_node3.instance_leaf_node_offset > 40:
-        node_cell = self._ReadNodeCell(
-            file_object, unknown_node3.instance_leaf_node_offset - 4)
-        instance_leaf_node = self._ReadInstanceLeafNode(
-            node_cell.data, unknown_node3.instance_leaf_node_offset)
-
-        if instance_leaf_node.instance_node_offset > 40:
-          if instance_leaf_node.unknown1 == 2:
-            instance_reference = self._ReadInstanceReference(
-                file_object, instance_leaf_node.instance_node_offset)
-
-          # TODO: clean up after debugging
-          _ = instance_reference
-
-      next_unknown_node3_offset = unknown_node3.next_unknown_node3_offset
-
-  def ReadClassDefinitionReferences(self):
-    """Reads the class definition references.
+  def ReadInstances(self):
+    """Reads instances.
 
     Yields:
-      ClassDefinitionReference: class definition reference.
-    """
-    if self._system_class_definition_root_node_offset > 40:
-      for class_definition_reference in self._ReadClassDefinitionHierarchy(
-          self._file_object, self._system_class_definition_root_node_offset):
-        yield class_definition_reference
-
-  def ReadInstanceReferences(self):
-    """Reads instance references.
-
-    Yields:
-      InstanceReference: instance reference.
+      Instance: instance.
     """
     if self._root_namespace_node_offset > 40:
-      for instance_reference in self._ReadInstanceHierarchy(
+      for instance in self._ReadInstanceHierarchy(
           self._file_object, self._root_namespace_node_offset):
-        yield instance_reference
+        yield instance
+
+  def ReadNamespaces(self):
+    """Reads namespace instances.
+
+    Yields:
+      Instance: instance.
+    """
+    if self._system_class_definition_root_node_offset > 40:
+      for instance in self._ReadClassDefinitionHierarchy(
+          self._file_object, self._system_class_definition_root_node_offset):
+        yield instance
 
   def ReadFileObject(self, file_object):
     """Reads a mappings file-like object.
@@ -2176,6 +2152,10 @@ class RepositoryFile(data_format.BinaryDataFile):
 
       file_offset += node_cell.size & 0x7ffffff
       cell_number += 1
+
+      if (not self._debug and self._root_namespace_node_offset is not None and
+          self._system_class_definition_root_node_offset is not None):
+        break
 
 
 class CIMObject(data_format.BinaryDataFormat):
@@ -3401,7 +3381,6 @@ class CIMRepository(data_format.BinaryDataFormat):
         for class_definition in class_definitions:
           class_definition.DebugPrint()
 
-      # TODO: cache class value data map
       class_value_data_map = ClassValueDataMap()
       class_value_data_map.Build(class_definitions)
 
@@ -3777,30 +3756,20 @@ class CIMRepository(data_format.BinaryDataFormat):
   def _ReadClassDefinitions(self):
     """Reads the class definitions."""
     if self._repository_file:
-      for class_definition_reference in (
-          self._repository_file.ReadClassDefinitionReferences()):
-        class_definition = ClassDefinition(
-            debug=self._debug, output_writer=self._output_writer)
-        class_definition.ReadClassDefinitionBlock(
-            class_definition_reference.data,
-            record_data_offset=class_definition_reference.offset)
+      return
 
-        name_hash = self._GetHashFromString(class_definition.name)
-        self._class_definitions_by_hash[name_hash] = class_definition
+    for name_hash, object_record in self._ReadClassDefinitionObjectRecords():
+      class_definition_reference = ClassDefinitionReference(
+          debug=self._debug, output_writer=self._output_writer)
+      class_definition_reference.ReadObjectRecord(object_record.data)
 
-    else:
-      for name_hash, object_record in self._ReadClassDefinitionObjectRecords():
-        class_definition_reference = ClassDefinitionReference(
-            debug=self._debug, output_writer=self._output_writer)
-        class_definition_reference.ReadObjectRecord(object_record.data)
+      class_definition = ClassDefinition(
+          debug=self._debug, output_writer=self._output_writer)
+      class_definition.ReadClassDefinitionBlock(
+          class_definition_reference.data,
+          record_data_offset=class_definition_reference.offset)
 
-        class_definition = ClassDefinition(
-            debug=self._debug, output_writer=self._output_writer)
-        class_definition.ReadClassDefinitionBlock(
-            class_definition_reference.data,
-            record_data_offset=class_definition_reference.offset)
-
-        self._class_definitions_by_hash[name_hash] = class_definition
+      self._class_definitions_by_hash[name_hash] = class_definition
 
     if self._debug:
       self._DebugPrintText('Class definitions:\n')
@@ -3972,8 +3941,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       Instance: an instance.
     """
     if self._repository_file:
-      for instance_reference in self._repository_file.ReadInstanceReferences():
-        yield self._ReadInstance(instance_reference)
+      for instance in self._repository_file.ReadInstances():
+        yield instance
 
     else:
       for _, object_record in self._ReadInstanceObjectRecords():

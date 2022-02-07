@@ -30,7 +30,7 @@ def PrintInstance(instance):
 
   property_count = '{0:d}'.format(len(instance.properties))
   derivation = '{{{0:s}}}'.format(', '.join(instance.derivation))
-  server = 'TEST'
+  server = '.'
   namespace = instance.namespace or 'ROOT'
   path = '\\\\{0:s}\\{1:s}:{2:s}'.format(server, namespace, relpath)
 
