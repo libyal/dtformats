@@ -148,38 +148,42 @@ The CIM repository contains:
 * (class) instances
 * registration
 
-=== [[cim_identifier_strings]]Identifier strings
+=== [[cim_index_key]]Index keys
 
-The following information applies to format version 2 only.
+The following information applies to format version 2.1 and 2.2 only.
 
-A CIM repository uses identifier strings to map to <<object_records,object records>>.
+A CIM repository uses index keys to map to <<object_records,object records>>.
 
-The identifier strings are stored in the <<index_binary_tree_file,index binary-tree (Index.btr) file>>.
+The index keys are stored in the <<index_binary_tree_file,index binary-tree (Index.btr) file>>.
 The object records are stored in the <<objects_data_file,objects data file>>.
 
-An example of a format version 2.1 identifier string:
+An example of a format version 2.1 index key:
 
 ....
-R_7F02F51F97C31228F1ADE773040492C4
+\NS_23EB0A7DE1179904A21E3157C42921A7\CD_438C7C1081B292AE9BF1DEC3208615CB.6.498779.181
 ....
 
-An example of a format version 2.2 identier string:
+An example of a format version 2.2 index key:
 
 ....
-CD_41C53E6DB1ACF2453CEFD41398198E613F10DFF47709ECAB1D7F037756AC8CE7.0.2079881926.209
+\NS_FCBAF5A1255D45B1176570C0B63AA60199749700C79A11D5811D54A83A1F4EFD\CD_0783FC4315F6719B07F6F7780EAC7B73D0B0471C3E21E23BC45CB6B44FFECA8E.5.1.9646
 ....
 
-The identifier string consist of the following components:
+An index key consist of multiple segments separated by '\\'.
+
+An index key segment consist of the following components:
 
 * Type prefix
 * Separator "_"
-* Digest hash
+* Name hash
 * Optional object record values:
   * Separator "."
   * Mapped page number of the object record in objects.data
   * Separator "."
   * Identifier of the object record in objects.data
   * Data size of the object record in objects.data
+
+==== Type prefixes
 
 The following type prefixes are known:
 
@@ -194,13 +198,15 @@ The following type prefixes are known:
 | IL | Instance location
 | IR | Instance reference
 | KI | Class instance with key
-| KL |
+| KL | Not observed
 | NS | Namespace
 | R | Reference
 |===
 
-The hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2) and
-is calculated from an upper case name, for example using Python to determine
+==== [[name_hash]]Name hash
+
+The name hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2)
+and is calculated from an upper case name, for example using Python to determine
 the identifier of the class name "__thisNAMESPACE":
 
 ....
@@ -507,6 +513,35 @@ The instance dynamic property is variable of size and consists of:
 Includes the 4 bytes of the size
 | 4 | ... | | [yellow-background]*Unknown*
 |===
+
+=== Namespace
+
+In version 2.0 namespaces are stored as a hierarchy of instances of
+the "__NAMESPACE" class.
+
+In version 2.1 and 2.2 no longer store an instance for each part of the
+namespace and needs to be derived from the index key. For example the index key:
+
+....
+\NS_C82638BEBD36E6F8E4573C4F475C62BF\KI_E5844D1645B0B6E6F2AF610EB14BFC34\I_CB3C05A33F2F537FEA797CE790EDD4C4.63.507235.12
+....
+
+Where:
+
+* "C82638BEBD36E6F8E4573C4F475C62BF" is the <<name_hash,name hash>> of "ROOT"
+* "E5844D1645B0B6E6F2AF610EB14BFC34" is the <<name_hash,name hash>> of "__NAMESPACE"
+* "CB3C05A33F2F537FEA797CE790EDD4C4" is the <<name_hash,name hash>> of "directory"
+
+Which represents the namespace: "ROOT\\directory", however no corresponding
+instance of the "__NAMESPACE" class "ROOT" is stored in the repository.
+
+==== Localization namespaces
+
+....
+ROOT\CIMV2\ms_409
+....
+
+Here 409 represents the language code identifier (LCID) in hexadecimal representation.
 
 == [[index_binary_tree_file]]The index binary-tree file (index.btr)
 
@@ -914,19 +949,16 @@ Contains an UTF-16 little-endian string without end-of-string character.
 Contains the number of UTF-16 characters (16-bit values)
 | ... | ... | | Class string +
 Contains an UTF-16 little-endian string without end-of-string character.
-| ... | 4 | | Attribute name string size +
+| ... | 4 | | Instance name string size +
 Contains the number of UTF-16 characters (16-bit values)
-| ... | ... | | Attribute name string +
+| ... | ... | | Instance name string +
 Contains an UTF-16 little-endian string without end-of-string character.
-| ... | 4 | | Attribute value string size +
+| ... | 4 | | Index key string size +
 Contains the number of UTF-16 characters (16-bit values)
-| ... | ... | | Attribute value string +
+| ... | ... | | Index key string +
 Contains an UTF-16 little-endian string without end-of-string character.
 | ... | 8 | | [yellow-background]*Unknown (empty values or unused strings?)*
 |===
-
-[NOTE]
-The attribute value contains a CIM key
 
 ===== Instance (I and IL) object record
 
@@ -939,7 +971,7 @@ The instance object record - version 2.1 is variable of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 64 | | MD5 hash of the class name +
 Contains an UTF-16 little-endian string without end-of-string character +
-See section: <<cim_identifier_strings,identifier strings>>
+See section: <<cim_index_key,index key path>>
 | 64 | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
 | 72 | 8 | | [yellow-background]*Unknown (date and time)* +
@@ -961,7 +993,7 @@ The interface - version 2.2 is variable of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 128 | | SHA-256 hash of the class name +
 Contains an UTF-16 little-endian string without end-of-string character. +
-See section: <<cim_identifier_strings,identifier strings>>
+See section: <<cim_index_key,index key path>>
 | 128 | 8 | | [yellow-background]*Unknown (date and time)* +
 Contains a FILETIME
 | 136 | 8 | | [yellow-background]*Unknown (date and time)* +

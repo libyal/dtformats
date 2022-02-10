@@ -701,20 +701,20 @@ members:
   encoding: utf-16-le
   element_data_type: wchar16
   number_of_elements: registration_object_record.class_name_string_size
-- name: attribute_name_string_size
+- name: instance_name_string_size
   data_type: uint32
-- name: attribute_name_string
+- name: instance_name_string
   type: string
   encoding: utf-16-le
   element_data_type: wchar16
-  number_of_elements: registration_object_record.attribute_name_string_size
-- name: attribute_value_string_size
+  number_of_elements: registration_object_record.instance_name_string_size
+- name: index_key_string_size
   data_type: uint32
-- name: attribute_value_string
+- name: index_key_string
   type: string
   encoding: utf-16-le
   element_data_type: wchar16
-  number_of_elements: registration_object_record.attribute_value_string_size
+  number_of_elements: registration_object_record.index_key_string_size
 - name: unknown1
   type: stream
   element_data_type: byte

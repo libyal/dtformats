@@ -2008,7 +2008,6 @@ class RepositoryFile(data_format.BinaryDataFile):
     instance.derivation = class_value_data_map.derivation
     instance.dynasty = class_value_data_map.dynasty
     instance.super_class_name = class_value_data_map.super_class_name
-    instance.namespace = None
 
     if self._debug:
       class_definition.DebugPrint()
@@ -2087,6 +2086,61 @@ class RepositoryFile(data_format.BinaryDataFile):
               self._ReadClassDefinition(
                   file_object, root_node.class_definition_branch_node_offset)
 
+  def _ReadNamespaceInstanceHierarchy(
+      self, file_object, root_node_offset, parent_namespace_segments):
+    """Reads a namespace instance hierarchy.
+
+    Args:
+      file_object (file): file-like object.
+      root_node_offset (int): offset of the root node relative to the start of
+          the file.
+      parent_namespace_segments (list[str]): segments of the parent namespace.
+
+    Yields:
+      Instance: instance.
+    """
+    node_cell = self._ReadNodeCell(file_object, root_node_offset - 4)
+    root_node = self._ReadInstanceRootNode(node_cell.data, root_node_offset)
+
+    if root_node.instance_branch_node_offset > 40:
+      instance = self._ReadInstance(
+          file_object, root_node.instance_branch_node_offset)
+
+      name_property = instance.properties.get('Name', None)
+
+      namespace_segments = list(parent_namespace_segments)
+      namespace_segments.append(name_property)
+      instance.namespace = '\\'.join(namespace_segments)
+
+      yield instance
+
+      if (root_node.child_objects_root_node_offset > 40 and
+          root_node.child_objects_root_node_offset != 0xffffffff):
+        for value_node_offset in self._ReadChildObjectsTree(
+            file_object, root_node.child_objects_root_node_offset):
+          if value_node_offset > 40:
+            node_cell = self._ReadNodeCell(file_object, value_node_offset - 4)
+            instance_leaf_value_node = self._ReadInstanceLeafValueNode(
+                node_cell.data, value_node_offset)
+
+            if instance_leaf_value_node.instance_root_node_offset > 40:
+              for instance in self._ReadNamespaceInstanceHierarchy(
+                  file_object,
+                  instance_leaf_value_node.instance_root_node_offset,
+                  namespace_segments):
+                yield instance
+
+  def ReadClassDefinitions(self):
+    """Reads class definitions.
+
+    Yields:
+      Instance: instance.
+    """
+    if self._system_class_definition_root_node_offset > 40:
+      for instance in self._ReadClassDefinitionHierarchy(
+          self._file_object, self._system_class_definition_root_node_offset):
+        yield instance
+
   def ReadInstances(self):
     """Reads instances.
 
@@ -2104,9 +2158,9 @@ class RepositoryFile(data_format.BinaryDataFile):
     Yields:
       Instance: instance.
     """
-    if self._system_class_definition_root_node_offset > 40:
-      for instance in self._ReadClassDefinitionHierarchy(
-          self._file_object, self._system_class_definition_root_node_offset):
+    if self._root_namespace_node_offset > 40:
+      for instance in self._ReadNamespaceInstanceHierarchy(
+          self._file_object, self._root_namespace_node_offset, []):
         yield instance
 
   def ReadFileObject(self, file_object):
@@ -2871,6 +2925,8 @@ class Instance(CIMObject):
 
   Attributes:
     class_name (str): class name.
+    class_name_hash (str): hash of the class name.
+    namespace (str): namespace.
     properties (dict[str, object]): instance property names and values.
   """
 
@@ -2911,16 +2967,21 @@ class Instance(CIMObject):
     """
     super(Instance, self).__init__(debug=debug, output_writer=output_writer)
     self.class_name = None
+    self.class_name_hash = None
+    self.namespace = None
     self.properties = {}
 
   def DebugPrint(self):
     """Prints instance information."""
     self._DebugPrintText('Instance:\n')
+
+    if self.namespace:
+      self._DebugPrintValue('    Namespace', self.namespace)
+
     self._DebugPrintValue('    Class name', self.class_name)
 
-    class_name_hash = getattr(self, 'class_name_hash', None)
-    if class_name_hash:
-      self._DebugPrintValue('    Class name hash', class_name_hash)
+    if self.class_name_hash:
+      self._DebugPrintValue('    Class name hash', self.class_name_hash)
 
     for property_name, property_value in self.properties.items():
       description = '    Property: {0:s}'.format(property_name)
@@ -3141,12 +3202,12 @@ class Registration(CIMObject):
       ('class_name_string_size', 'Class name string size',
        '_FormatIntegerAsDecimal'),
       ('class_name_string', 'Class name string', '_FormatString'),
-      ('attribute_name_string_size', 'Attribute name string size',
+      ('instance_name_string_size', 'Instance name string size',
        '_FormatIntegerAsDecimal'),
-      ('attribute_name_string', 'Attribute name string', '_FormatString'),
-      ('attribute_value_string_size', 'Attribute value string size',
+      ('instance_name_string', 'Instance name string', '_FormatString'),
+      ('index_key_string_size', 'Index key string size',
        '_FormatIntegerAsDecimal'),
-      ('attribute_value_string', 'Attribute value string', '_FormatString')]
+      ('index_key_string', 'Index key string', '_FormatString')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a registration.
@@ -3210,7 +3271,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     self._index_binary_tree_file = None
     self._index_mapping_table = None
     self._index_root_page = None
-    self._namespaces_by_hash = {}
+    self._namespace_instances = []
     self._objects_data_file = None
     self._objects_mapping_table = None
     self._output_writer = output_writer
@@ -3588,6 +3649,8 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     data_type, _, name_hash = key_values[0].partition('_')
 
+    name_hash = name_hash.lower()
+
     try:
       page_number = int(key_values[self._KEY_VALUE_PAGE_NUMBER_INDEX], 10)
     except ValueError:
@@ -3746,18 +3809,13 @@ class CIMRepository(data_format.BinaryDataFormat):
       if data_type != 'CD':
         continue
 
-      name_hash = name_hash.lower()
-
       object_record = self._GetObjectRecord(
           data_type, mapped_page_number, record_identifier, data_size)
 
       yield name_hash, object_record
 
-  def _ReadClassDefinitions(self):
-    """Reads the class definitions."""
-    if self._repository_file:
-      return
-
+  def _ReadClassDefinitionsFromObjectRecords(self):
+    """Reads the class definitions from object records."""
     for name_hash, object_record in self._ReadClassDefinitionObjectRecords():
       class_definition_reference = ClassDefinitionReference(
           debug=self._debug, output_writer=self._output_writer)
@@ -3802,16 +3860,6 @@ class CIMRepository(data_format.BinaryDataFormat):
     instance.derivation = class_value_data_map.derivation
     instance.dynasty = class_value_data_map.dynasty
     instance.super_class_name = class_value_data_map.super_class_name
-
-    # key_segment = key_segments[1]
-    # if key_segment.startswith('NS_'):
-    #   namespace_hash = key_segment[3:].lower()
-    #   namespace = self._namespaces_by_hash.get(namespace_hash, None)
-    # else:
-    #   namespace = None
-
-    namespace = None
-    instance.namespace = namespace
 
     if self._debug:
       instance.DebugPrint()
@@ -3870,30 +3918,27 @@ class CIMRepository(data_format.BinaryDataFormat):
       if data_type not in ('I', 'IL'):
         continue
 
-      name_hash = name_hash.lower()
-
       object_record = self._GetObjectRecord(
           data_type, mapped_page_number, record_identifier, data_size)
 
       yield name_hash, object_record
 
-  def _ReadNamespaces(self):
-    """Reads the namespaces."""
-    if self._repository_file:
-      # TODO: implement
-      pass
-
-    else:
-      self._ReadNamespacesFromObjectRecords()
-
-  # TODO: remove after refactor
   def _ReadNamespacesFromObjectRecords(self):
     """Reads namespaces from object records."""
     class_name_hash = self._GetHashFromString('__NAMESPACE')
 
+    object_record_values = set()
+    instances_per_namespace = {}
+
     index_page = self._GetIndexRootPage()
     for key in self._GetKeysFromIndexPage(index_page):
       key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+
+      key_segment = key_segments[1]
+      if not key_segment.startswith('NS_'):
+        continue
+
+      namespace_hash = key_segment[3:].lower()
 
       _, _, key_segment = key_segments[2].partition('_')
       if key_segment.lower() != class_name_hash:
@@ -3905,22 +3950,54 @@ class CIMRepository(data_format.BinaryDataFormat):
       if data_type not in ('I', 'IL'):
         continue
 
+      if (mapped_page_number, record_identifier) in object_record_values:
+        continue
+
       object_record = self._GetObjectRecord(
           data_type, mapped_page_number, record_identifier, data_size)
 
+      object_record_values.add((mapped_page_number, record_identifier))
+
       instance = self._ReadInstanceFromObjectRecord(object_record)
 
-      name_property = instance.properties.get('Name', None)
-      if name_property:
-        namespace = 'ROOT\\{0:s}'.format(name_property)
+      if namespace_hash not in instances_per_namespace:
+        instances_per_namespace[namespace_hash] = []
+
+      instances_per_namespace[namespace_hash].append(instance)
+
+    root_namespace_hash = self._GetHashFromString('ROOT')
+    namespaces_by_hash = {root_namespace_hash: 'ROOT'}
+
+    unresolved_namespaces = [root_namespace_hash]
+
+    while unresolved_namespaces:
+      parent_namespace_hash = unresolved_namespaces.pop(0)
+      parent_namespace = namespaces_by_hash[parent_namespace_hash]
+
+      instances = instances_per_namespace.get(parent_namespace_hash, None)
+      if not instances:
+        continue
+
+      for instance in instances:
+        name_property = instance.properties.get('Name', None)
+
+        namespace = '\\'.join([parent_namespace, name_property])
+
         namespace_hash = self._GetHashFromString(namespace)
-        self._namespaces_by_hash[namespace_hash] = namespace
+        namespaces_by_hash[namespace_hash] = namespace
+
+        unresolved_namespaces.append(namespace_hash)
+
+        instance.namespace = namespace
+        self._namespace_instances.append(instance)
+
+      del instances_per_namespace[parent_namespace_hash]
 
   def Close(self):
     """Closes the CIM repository."""
     self._class_definitions_by_hash = {}
     self._class_value_data_map_by_hash = {}
-    self._namespaces_by_hash = {}
+    self._namespace_instances = []
 
     self._index_mapping_table = None
     self._index_root_page = None
@@ -3954,11 +4031,28 @@ class CIMRepository(data_format.BinaryDataFormat):
 
         yield self._ReadInstance(instance_reference)
 
-  def GetKeys(self):
-    """Retrieves the keys.
+  def GetNamespaces(self):
+    """Retrieves namespaces.
 
     Yields:
-      str: a CIM key.
+      Instance: an instance.
+    """
+    if self._repository_file:
+      for instance in self._repository_file.ReadNamespaces():
+        yield instance
+
+    else:
+      if not self._namespace_instances:
+        self._ReadNamespacesFromObjectRecords()
+
+      for instance in self._namespace_instances:
+        yield instance
+
+  def GetIndexKeys(self):
+    """Retrieves the index keys.
+
+    Yields:
+      str: an index key path.
     """
     if self._index_binary_tree_file:
       index_page = self._GetIndexRootPage()
@@ -4041,5 +4135,4 @@ class CIMRepository(data_format.BinaryDataFormat):
 
       self._objects_data_file = self._OpenObjectsDataFile(path)
 
-    self._ReadClassDefinitions()
-    self._ReadNamespaces()
+      self._ReadClassDefinitionsFromObjectRecords()

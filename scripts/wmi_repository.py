@@ -69,9 +69,7 @@ def PrintNamespace(instance):
   Args:
     instance (Instance): instance.
   """
-  if instance.class_name.upper() == '__NAMESPACE':
-    name_property = instance.properties.get('Name', None)
-    print(name_property or '')
+  print(instance.namespace or '')
 
 
 def Main():
@@ -122,30 +120,29 @@ def Main():
 
   source_basename = os.path.basename(options.source).lower()
   if source_basename == 'index.btr':
-    options.output_mode = 'keys'
+    options.output_mode = 'index'
 
   cim_repository = wmi_repository.CIMRepository(
       debug=options.debug, output_writer=output_writer)
 
   cim_repository.Open(options.source)
 
-  if options.output_mode == 'keys':
-    for key in cim_repository.GetKeys():
-      # TODO: what about non-object record keys?
-      if '.' in key:
-        print(key)
+  if options.output_mode == 'index':
+    for key_path in cim_repository.GetIndexKeys():
+      print(key_path)
 
-  elif options.output_mode in ('instances', 'namespaces'):
+  elif options.output_mode == 'instances':
     for instance in cim_repository.GetInstances():
-      # TODO: for namespaces filter on hash of "__NAMESPACE"
+      PrintInstance(instance)
 
-      if options.output_mode == 'namespaces':
-        PrintNamespace(instance)
-      else:
-        PrintInstance(instance)
+  elif options.output_mode == 'namespaces':
+    for instance in sorted(
+        cim_repository.GetNamespaces(),
+        key=lambda instance: instance.namespace):
+      PrintNamespace(instance)
 
   elif options.output_mode == 'debug':
-    for key in cim_repository.GetKeys():
+    for key in cim_repository.GetIndexKeys():
       if '.' in key:
         key_segment = key.split('\\')[-1]
         data_type, _, _ = key_segment.partition('_')
@@ -155,7 +152,7 @@ def Main():
             object_record = cim_repository.GetObjectRecordByKey(key)
             registration = wmi_repository.Registration(
                 debug=options.debug, output_writer=output_writer)
-            registration.ReadObjectRecord(object_record)
+            registration.ReadObjectRecord(object_record.data)
 
   cim_repository.Close()
 
