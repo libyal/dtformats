@@ -1,4 +1,4 @@
-= The Windows Job file format
+= Windows Defender scan DetectionHistory file format
 
 :toc:
 :toclevels: 4
@@ -7,12 +7,13 @@
 [abstract]
 == Summary
 
-The Windows Job file format is used by the Task Scheduler subsystem of
-Windows. This specification is based on available documentation and was
-enhanced by analyzing test data.
+The Windows Defender scan DetectionHistory file is used by the Windows Defender
+Protection History. This specification is based on publicly available
+documentation and was enhanced by analyzing test data.
 
-This document is intended as a working document for the Windows Job file
-format specification.
+This document is intended as a working document for the Windows Defender scan
+DetectionHistory file format specification.
+
 
 [preface]
 == Document information
@@ -20,16 +21,16 @@ format specification.
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | This document contains information about the Windows Job file format
+| Abstract: | Windows Defender scan DetectionHistory file format
 | Classification: | Public
-| Keywords: | Job file, .job
+| Keywords: | Windows Defender
 |===
 
 [preface]
 == License
 
 ....
-Copyright (C) 2016-2022, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2022, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -43,349 +44,297 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
-| 0.0.1 | J.B. Metz | January 2016 | Initial version.
-| 0.0.2 | J.B. Metz | July 2016 | Additional information.
-| 0.0.3 | J.B. Metz | May 2017 | Textual changes.
-| 0.0.4 | J.B. Metz | May 2018 | Textual changes.
-| 0.0.5 | J.B. Metz | January 2022 | Formatting changes.
+| 0.0.1 | J.B. Metz | February 2022 | Initial version.
 |===
 
 :numbered:
 == Overview
 
-The job file consists of:
-
-* fixed size data section
-* variable size data section
-
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
 | Byte order | little-endian
-| Date and time values | System time
+| Date and time values |
 | Character strings | Unicode strings are stored in UTF-16 little-endian without the byte order mark (BOM).
 |===
 
-=== Fixed size data section
-
-The fixed size data (FIXDLEN_DATA) section is 68 bytes of size and consists of:
+=== Header
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | | Product version +
-See section: <<product_versions,Product versions>>
-| 2 | 2 | | Format version
-| 4 | 16 | | Job identifier +
-Contains a UUID stored in little-endian
-| 20 | 2 | | Application name offset +
-Offset to the start of the application name in the variable-length data section +
-The offset is relative from the start of the file
-| 22 | 2 | | Triggers offset +
-Offset to the start of the <<variable_length_triggers,triggers>> in the variable-length data section +
-The offset is relative from the start of the file
-| 24 | 2 | | Error retry count
-| 26 | 2 | | Error retry interval +
-Contains a value in minutes
-| 28 | 2 | | Idle deadline +
-Contains a value in minutes
-| 30 | 2 | | Idle wait +
-Contains a value in minutes
-| 32 | 4 | | Priority +
-See section: <<priority,Priority>>
-| 36 | 4 | | Maximum run time +
-Contains a value in milliseconds
-| 40 | 4 | | Exit code
-| 44 | 4 | | Status +
-See section: <<status,Status>>
-| 48 | 4 | | Flags +
-See section: <<flags,Flags>>
-| 52 | 16 | | Last run time +
-Contains a <<system_time,system time>> or 0 if not set. +
-[yellow-background]*TODO: confirm this is local time.*
+| 0 | 4 | 8 | [yellow-background]*Unknown*
+| 4 | 4 | 8 | [yellow-background]*Unknown*
+| 8 | 8 | | [yellow-background]*Unknown*
 |===
 
-==== [[system_time]]System time
-
-The system time is 16 bytes of size and consists of:
+=== Value
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | | Year +
-Contains a value ranging from 1601 to (including) 30827
-| 2 | 2 | | Month +
-Contains a value ranging from 1 to (including) 12, where 1 represents January
-| 4 | 2 | | Weekday +
-Contains a value ranging from 0 to (including) 6, where 0 represents Sunday
-| 6 | 2 | | Day +
-Contains a value ranging from 1 to (including) 31
-| 8 | 2 | | Hours +
-Contains a value ranging from 1 to (including) 23
-| 10 | 2 | | Minutes +
-Contains a value ranging from 0 to (including) 59
-| 12 | 2 | | Seconds +
-Contains a value ranging from 0 to (including) 59
-| 14 | 2 | | Milliseconds +
-Contains a value ranging from 0 to (including) 999
+| 0 | 4 | | Data size
+| 4 | 4 | | Data type
+| 8 | ... | | Data
+| ... | ... | | 64-bit alignment padding
 |===
 
-==== [[product_versions]]Product versions
+=== Data types
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x0400 | | Windows NT 4.0
-| 0x0500 | | Windows 2000
-| 0x0501 | | Windows XP
-| 0x0600 | | Windows Vista
-| 0x0601 | | Windows 7
-| 0x0602 | | Windows 8
-| 0x0603 | | Windows 8.1
-| 0x0a00 | | Windows 10
+| 0x00000000 | | [yellow-background]*Unknown (NULL?)*
+3+|
+| 0x00000005 | | [yellow-background]*Unknown (32-bit integer?)*
+| 0x00000006 | | [yellow-background]*Unknown (32-bit integer?)*
+3+|
+| 0x0000000a | | Filetime
+3+|
+| 0x00000015 | | Unicode string
+3+|
+| 0x0000001e | | GUID
+3+|
+| 0x00000028 | | [yellow-background]*Unknown (binary data?)*
 |===
 
-[NOTE]
-The values above are those defined by MS-TSCH, they are known to be an
-approximation to the actual Windows product version, and should be considered
-more of a Window API (WINAPI) compatibility version.
+=== Known values
 
-==== [[priority]]Priority
+[cols="1,1,5",options="header"]
+|===
+| Index | Value | Description
+| 0 | | Identifier +
+Contains the GUID corresponding to the file name
+| 1 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
+| 2 | | Name of the threat that was detected +
+For example: "Virus:DOS/EICAR_Test_File"
+| 3 | | [yellow-background]*Unknown* +
+Seen: 0
+| 4 | | [yellow-background]*Unknown* +
+Seen: 5
+| 5 | | Category +
+See section: <<category,Category>>
+| 6 | | [yellow-background]*Unknown* +
+Seen: 0x6e
+| 7 | | [yellow-background]*Unknown (Severity?)* +
+Seen: 4
+| 8 | | [yellow-background]*Unknown* +
+Seen: 3
+| 9 | | [yellow-background]*Unknown* +
+Seen: 3
+| 10 | | [yellow-background]*Unknown* +
+Seen: 3
+| 11 | | [yellow-background]*Unknown* +
+Seen: 3
+| 12 | | [yellow-background]*Unknown* +
+Seen: 2
+| 13 | | [yellow-background]*Unknown* +
+Seen: 6
+| 14 | | [yellow-background]*Unknown* +
+Seen: 1
+| 15 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
+| 16 | "file" | [yellow-background]*Unknown*
+| 17 | | [yellow-background]*Unknown (path of file)*
+| 18 | | [yellow-background]*Unknown* +
+Seen: 0x10000001
+| 19 | | [yellow-background]*Unknown (threat data size?)*
+| 20 | | [yellow-background]*Unknown (threat data?)*
+|===
+
+=== [[category]]Category
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000020 | NORMAL_PRIORITY_CLASS | Normal priority class; no special scheduling requirements.
-| 0x00000040 | HIGH_PRIORITY_CLASS | High priority class; preempt the threads of normal or idle priority class processes
-| 0x00000080 | IDLE_PRIORITY_CLASS | Idle priority class; run only when the machine is idle.
-| 0x00000100 | REALTIME_PRIORITY_CLASS | Real-time priority class; preempt the threads of all other processes, including operating system processes performing important tasks.
+| 0 | INVALID |
+| 1 | ADWARE |
+| 2 | SPYWARE |
+| 3 | PASSWORDSTEALER |
+| 4 | TROJANDOWNLOADER |
+| 5 | WORM |
+| 6 | BACKDOOR |
+| 7 | REMOTEACCESSTROJAN |
+| 8 | TROJAN |
+| 9 | EMAILFLOODER |
+| 10 | KEYLOGGER |
+| 11 | DIALER |
+| 12 | MONITORINGSOFTWARE |
+| 13 | BROWSERMODIFIER |
+| 14 | COOKIE |
+| 15 | BROWSERPLUGIN |
+| 16 | AOLEXPLOIT |
+| 17 | NUKER |
+| 18 | SECURITYDISABLER |
+| 19 | JOKEPROGRAM |
+| 20 | HOSTILEACTIVEXCONTROL |
+| 21 | SOFTWAREBUNDLER |
+| 22 | STEALTHNOTIFIER |
+| 23 | SETTINGSMODIFIER |
+| 24 | TOOLBAR |
+| 25 | REMOTECONTROLSOFTWARE |
+| 26 | TROJANFTP |
+| 27 | POTENTIALUNWANTEDSOFTWARE |
+| 28 | ICQEXPLOIT |
+| 29 | TROJANTELNET |
+| 30 | FILESHARINGPROGRAM |
+| 31 | MALWARE_CREATION_TOOL |
+| 32 | REMOTE_CONTROL_SOFTWARE |
+| 33 | TOOL |
+| 34 | TROJAN_DENIALOFSERVICE |
+| 36 | TROJAN_DROPPER |
+| 37 | TROJAN_MASSMAILER |
+| 38 | TROJAN_MONITORINGSOFTWARE |
+| 39 | TROJAN_PROXYSERVER |
+| 40 | VIRUS |
+| 42 | KNOWN |
+| 43 | UNKNOWN |
+| 44 | SPP |
+| 45 | BEHAVIOR |
+| 46 | VULNERABILTIY |
+| 47 | POLICY |
 |===
 
-==== [[status]]Status
-
-[cols="1,1,5",options="header"]
-|===
-| 0x00041300 | SCHED_S_TASK_READY | Task is not running but is scheduled to run at some time in the future.
-| 0x00041301 | SCHED_S_TASK_RUNNING | Task is currently running.
-| 0x00041305 | SCHED_S_TASK_NOT_SCHEDULED | The task is not running and has no valid triggers.
-|===
-
-==== [[flags]]Flags
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x00000001 | TASK_FLAG_INTERACTIVE | The task can interact with the logged-on user
-| 0x00000002 | TASK_FLAG_DELETE_WHEN_DONE | The task can be deleted when there are no more scheduled run times
-| 0x00000004 | TASK_FLAG_DISABLED | The task is disabled
-| | |
-| 0x00000010 | TASK_FLAG_START_ONLY_IF_IDLE | The task begins only if the computer is not in use at the scheduled time
-| 0x00000020 | TASK_FLAG_KILL_ON_IDLE_END | The task can be terminated if the computer makes an idle to non-idle transition while the task is running
-| 0x00000040 | TASK_FLAG_DONT_START_IF_ON_BATTERIES | The task cannot start if its target computer is running on battery power
-| 0x00000080 | TASK_FLAG_KILL_IF_GOING_ON_BATTERIES | The task can end, and the associated application quit if the task's target computer switches to battery power
-| 0x00000100 | TASK_FLAG_RUN_ONLY_IF_DOCKED | [yellow-background]*Unused*
-| 0x00000200 | TASK_FLAG_HIDDEN | The task is hidden
-| 0x00000400 | TASK_FLAG_RUN_IF_CONNECTED_TO_INTERNET | [yellow-background]*Unused*
-| 0x00000800 | TASK_FLAG_RESTART_ON_IDLE_RESUME | The task can start again if the computer makes a non-idle to idle transition before all the task's triggers elapse
-| 0x00001000 | TASK_FLAG_SYSTEM_REQUIRED | The task can cause the system to resume, or awaken if the system is sleeping
-| 0x00002000 | TASK_FLAG_RUN_ONLY_IF_LOGGED_ON | The task can only run if the user specified in the task is logged on interactively
-| | |
-| [yellow-background]*0x00800000* | | [yellow-background]*Unknown*
-| | |
-| [yellow-background]*0x01000000* | TASK_APPLICATION_NAME | The task has an application name defined
-|===
-
-=== Variable-length data section
-
-The variable-length data section is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | | Running instance count
-| 2 | ... | | Application name +
-Contains a <<variable_length_unicode_string,Variable-length Unicode string>>
-| ... | ... | | Parameters +
-Contains a <<variable_length_unicode_string,Variable-length Unicode string>>
-| ... | ... | | Working Directory +
-Contains a <<variable_length_unicode_string,Variable-length Unicode string>>
-| ... | ... | | Author +
-Contains a <<variable_length_unicode_string,Variable-length Unicode string>>
-| ... | ... | | Comment +
-Contains a <<variable_length_unicode_string,Variable-length Unicode string>>
-| ... | ... | | User Data +
-Contains a <<variable_length_user_data,User data>>
-| ... | ... | | Reserved Data +
-Contains a <<variable_length_reserved_data,Reserved data>>
-| ... | ... | | Triggers +
-See section: <<variable_length_triggers,Triggers>>
-4+| _Optional_
-| ... | ... | | Job Signature
-|===
-
-==== [[variable_length_unicode_string]]Variable-length Unicode string
-
-The variable-length Unicode string is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | | String size +
-Contains the number of characters including the end-of-string character
-| 2 | ... | | String +
-Contains a UTF-16 little-endian formatted string with end-of-string character
-|===
-
-==== [[variable_length_user_data]]User data
-
-The user data is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | | Data size +
-Contains the number of bytes or 0 if not set
-| 2 | ... | | Data
-|===
-
-==== [[variable_length_reserved_data]]Reserved data
-
-The reserved data (TASKRESERVED1) is 2 or 10 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | 0 or 8 | Data size +
-Contains the number of bytes or 0 if not set
-| 2 | 4 | | Start error +
-Contains the HRESULT error from the most recent attempt to start the task.
-| 6 | 4 | | Task flags +
-According to `[MSDN]` the task flags are not used.
-|===
-
-==== [[variable_length_triggers]]Triggers
-
-The triggers are variable of size and consist of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | | Number of triggers
-| 2 | ... | | Array of triggers +
-See section: <<variable_length_trigger,Trigger>
-|===
-
-===== [[variable_length_trigger]]Trigger
-
-The trigger is 48 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | 48 | Trigger size +
-Contains the number of bytes
-| 2 | 2 | 0 | [yellow-background]*Unknown (reserved)*
-4+| _Start date_
-| 4 | 2 | | Start year +
-Contains a value in the range of 1601 to 30827
-| 6 | 2 | | Start month +
-Contains a value in the range of 1 to 12
-| 8 | 2 | | Start day of month +
-Contains a value in the range of 1 to 31
-4+| _End date_
-| 10 | 2 | | End year +
-Contains a value in the range of 1601 to 30827
-| 12 | 2 | | End month +
-Contains a value in the range of 1 to 12
-| 14 | 2 | | End day of month +
-Contains a value in the range of 1 to 31
-4+| _Start time_
-| 16 | 2 | | Start hours +
-Contains a value in range 0 to 23
-| 18 | 2 | | Start minutes +
-Contains a value in range 0 to 59
-4+|
-| 20 | 4 | | Duration in minutes
-| 24 | 4 | | Interval in minutes
-| 28 | 4 | | Trigger flags +
-See section: <<variable_length_trigger_flags,Trigger flags>>
-| 32 | 4 | | Trigger type +
-See section: <<variable_length_trigger_types,Trigger types>>
-| 36 | 3 x 2 | | Trigger specific values
-| 42 | 2 | 0 | [yellow-background]*Unknown (padding)*
-| 44 | 2 x 2 | 0 | [yellow-background]*Unknown (reserved)*
-|===
-
-==== [[variable_length_trigger_flags]]Trigger flags
+=== Severity
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000001 | TASK_TRIGGER_FLAG_HAS_END_DATE | Set if the task can stop at some point in time.
-| 0x00000002 | TASK_TRIGGER_FLAG_KILL_AT_DURATION_END | Set if the task can be stopped at the end of the repetition period.
-| 0x00000004 | TASK_TRIGGER_FLAG_DISABLED | Set if the trigger is disabled
+| 0 | | Unknown
+| 1 | | Low
+| 2 | | Moderate
+| 3 | | High
+| 4 | | Severe
 |===
 
-==== [[variable_length_trigger_types]]Trigger types
+=== Status
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000000 | ONCE | Not used according `[MSDN]`
-| 0x00000001 | DAILY | Daily
-| 0x00000002 | WEEKLY | Day of the week
-| 0x00000003 | MONTHLYDATE | Day of the month
-| 0x00000004 | MONTHLYDOW | Monthly day of week
-| 0x00000005 | EVENT_ON_IDLE | Not used according `[MSDN]`
-| 0x00000006 | EVENT_AT_SYSTEMSTART | Not used according `[MSDN]`
-| 0x00000007 | EVENT_AT_LOGON | Not used according `[MSDN]`
+| 0 | | Unknown
+| 1 | | Detected
+| 2 | | Cleaned
+| 3 | | Quarantined
+| 4 | | Removed
+| 5 | | Allowed
+| 6 | | Blocked
 |===
 
-[yellow-background]*TODO: describe trigger data*
+=== Type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | Known Bad
+| 1 | | Behavior
+| 2 | | Unknown
+| 3 | | Known Good
+| 4 | | NRI
+|===
+
+=== Threat data
+
 ....
-https://msdn.microsoft.com/en-us/library/cc248291.aspx
-....
+0x00000000  01 00 00 00 14 00 00 00  f9 04 00 00 0d 05 00 00  ................
+0x00000010  00 00 00 00 f9 04 00 00                           ........*...T.h.
 
-==== [[variable_length_job_signature]]Variable-length job signature
+Name:
+0x00000010                           2a 00 00 00 54 00 68 00  ........*...T.h.
+0x00000020  72 00 65 00 61 00 74 00  54 00 72 00 61 00 63 00  r.e.a.t.T.r.a.c.
+0x00000030  6b 00 69 00 6e 00 67 00  53 00 68 00 61 00 32 00  k.i.n.g.S.h.a.2.
+0x00000040  35 00 36 00 00 00                                 5.6...........1.
 
-The variable-length job signature (JOB_SIGNATURE_HEADER) is 68 bytes of size and consists of:
+0x00000040                    06 00  00 00                    5.6...........1.
 
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | 1 | Signature format version
-| 2 | 2 | 1 | Minimum client version
-| 4 | 64 | | Signature
-|===
+Value:
+0x00000040                                 82 00 00 00 31 00  5.6...........1.
+0x00000050  33 00 31 00 66 00 39 00  35 00 63 00 35 00 31 00  3.1.f.9.5.c.5.1.
+0x00000060  63 00 63 00 38 00 31 00  39 00 34 00 36 00 35 00  c.c.8.1.9.4.6.5.
+0x00000070  66 00 61 00 31 00 37 00  39 00 37 00 66 00 36 00  f.a.1.7.9.7.f.6.
+0x00000080  63 00 63 00 61 00 63 00  66 00 39 00 64 00 34 00  c.c.a.c.f.9.d.4.
+0x00000090  39 00 34 00 61 00 61 00  61 00 66 00 66 00 34 00  9.4.a.a.a.f.f.4.
+0x000000a0  36 00 66 00 61 00 33 00  65 00 61 00 63 00 37 00  6.f.a.3.e.a.c.7.
+0x000000b0  33 00 61 00 65 00 36 00  33 00 66 00 66 00 62 00  3.a.e.6.3.f.f.b.
+0x000000c0  64 00 66 00 64 00 38 00  32 00 36 00 37 00 00 00  d.f.d.8.2.6.7...
 
-[yellow-background]*TODO: notes*
-....
-The signature is calculated as follows:
-* The Security Identifier (SID) of the file owner, the uuidJob field of the
-  FIXDLEN_DATA structure, and the null-terminated string value from Application
-  Name in the variable-length data section is bytewise concatenated in a buffer.
-* A 16-byte MD5 [RFC1321] hash of the buffer is calculated.
-* A private key is obtained from the system to be used for the digital signature.
-* The hash is signed using MD5, and the signed hash is placed in the 64 bytes
-  after the JOB_SIGNATURE_HEADER.
+0x000000d0  2a 00 00 00 54 00 68 00  72 00 65 00 61 00 74 00  *...T.h.r.e.a.t.
+0x000000e0  54 00 72 00 61 00 63 00  6b 00 69 00 6e 00 67 00  T.r.a.c.k.i.n.g.
+0x000000f0  53 00 69 00 67 00 53 00  65 00 71 00 00 00 04 00  S.i.g.S.e.q.....
+0x00000100  00 00 b0 dd 2d dc 55 05  00 00 22 00 00 00 54 00  ....-.U..."...T.
+0x00000110  68 00 72 00 65 00 61 00  74 00 54 00 72 00 61 00  h.r.e.a.t.T.r.a.
+0x00000120  63 00 6b 00 69 00 6e 00  67 00 49 00 64 00 00 00  c.k.i.n.g.I.d...
+0x00000130  06 00 00 00 4a 00 00 00  36 00 41 00 44 00 36 00  ....J...6.A.D.6.
+0x00000140  31 00 36 00 42 00 37 00  2d 00 45 00 32 00 41 00  1.6.B.7.-.E.2.A.
+0x00000150  41 00 2d 00 34 00 33 00  38 00 37 00 2d 00 41 00  A.-.4.3.8.7.-.A.
+0x00000160  32 00 35 00 30 00 2d 00  37 00 38 00 33 00 38 00  2.5.0.-.7.8.3.8.
+0x00000170  46 00 34 00 44 00 31 00  42 00 31 00 39 00 41 00  F.4.D.1.B.1.9.A.
+0x00000180  00 00 30 00 00 00 54 00  68 00 72 00 65 00 61 00  ..0...T.h.r.e.a.
+0x00000190  74 00 54 00 72 00 61 00  63 00 6b 00 69 00 6e 00  t.T.r.a.c.k.i.n.
+0x000001a0  67 00 53 00 74 00 61 00  72 00 74 00 54 00 69 00  g.S.t.a.r.t.T.i.
+0x000001b0  6d 00 65 00 00 00 04 00  00 00 e5 1b 5b 1f a7 20  m.e.........[.. 
+0x000001c0  d8 01 32 00 00 00 54 00  68 00 72 00 65 00 61 00  ..2...T.h.r.e.a.
+0x000001d0  74 00 54 00 72 00 61 00  63 00 6b 00 69 00 6e 00  t.T.r.a.c.k.i.n.
+0x000001e0  67 00 54 00 68 00 72 00  65 00 61 00 74 00 4e 00  g.T.h.r.e.a.t.N.
+0x000001f0  61 00 6d 00 65 00 00 00  06 00 00 00 34 00 00 00  a.m.e.......4...
+0x00000200  56 00 69 00 72 00 75 00  73 00 3a 00 44 00 4f 00  V.i.r.u.s.:.D.O.
+0x00000210  53 00 2f 00 45 00 49 00  43 00 41 00 52 00 5f 00  S./.E.I.C.A.R._.
+0x00000220  54 00 65 00 73 00 74 00  5f 00 46 00 69 00 6c 00  T.e.s.t._.F.i.l.
+0x00000230  65 00 00 00 26 00 00 00  54 00 68 00 72 00 65 00  e...&...T.h.r.e.
+0x00000240  61 00 74 00 54 00 72 00  61 00 63 00 6b 00 69 00  a.t.T.r.a.c.k.i.
+0x00000250  6e 00 67 00 53 00 68 00  61 00 31 00 00 00 06 00  n.g.S.h.a.1.....
+0x00000260  00 00 52 00 00 00 63 00  66 00 38 00 62 00 64 00  ..R...c.f.8.b.d.
+0x00000270  39 00 64 00 66 00 64 00  64 00 66 00 66 00 30 00  9.d.f.d.d.f.f.0.
+0x00000280  30 00 37 00 66 00 37 00  35 00 61 00 64 00 66 00  0.7.f.7.5.a.d.f.
+0x00000290  34 00 63 00 32 00 62 00  65 00 34 00 38 00 30 00  4.c.2.b.e.4.8.0.
+0x000002a0  30 00 35 00 63 00 65 00  61 00 33 00 31 00 37 00  0.5.c.e.a.3.1.7.
+0x000002b0  63 00 36 00 32 00 00 00  2a 00 00 00 54 00 68 00  c.6.2...*...T.h.
+0x000002c0  72 00 65 00 61 00 74 00  54 00 72 00 61 00 63 00  r.e.a.t.T.r.a.c.
+0x000002d0  6b 00 69 00 6e 00 67 00  53 00 69 00 67 00 53 00  k.i.n.g.S.i.g.S.
+0x000002e0  68 00 61 00 00 00 06 00  00 00 52 00 00 00 37 00  h.a.......R...7.
+0x000002f0  32 00 61 00 61 00 66 00  39 00 62 00 61 00 62 00  2.a.a.f.9.b.a.b.
+0x00000300  39 00 34 00 38 00 32 00  36 00 64 00 39 00 63 00  9.4.8.2.6.d.9.c.
+0x00000310  36 00 37 00 65 00 63 00  33 00 38 00 63 00 39 00  6.7.e.c.3.8.c.9.
+0x00000320  30 00 64 00 65 00 37 00  64 00 62 00 38 00 32 00  0.d.e.7.d.b.8.2.
+0x00000330  34 00 36 00 66 00 62 00  31 00 35 00 37 00 00 00  4.6.f.b.1.5.7...
+0x00000340  26 00 00 00 54 00 68 00  72 00 65 00 61 00 74 00  &...T.h.r.e.a.t.
+0x00000350  54 00 72 00 61 00 63 00  6b 00 69 00 6e 00 67 00  T.r.a.c.k.i.n.g.
+0x00000360  53 00 69 00 7a 00 65 00  00 00 04 00 00 00 45 00  S.i.z.e.......E.
+0x00000370  00 00 00 00 00 00 24 00  00 00 54 00 68 00 72 00  ......$...T.h.r.
+0x00000380  65 00 61 00 74 00 54 00  72 00 61 00 63 00 6b 00  e.a.t.T.r.a.c.k.
+0x00000390  69 00 6e 00 67 00 4d 00  44 00 35 00 00 00 06 00  i.n.g.M.D.5.....
+0x000003a0  00 00 42 00 00 00 36 00  39 00 36 00 33 00 30 00  ..B...6.9.6.3.0.
+0x000003b0  65 00 34 00 35 00 37 00  34 00 65 00 63 00 36 00  e.4.5.7.4.e.c.6.
+0x000003c0  37 00 39 00 38 00 32 00  33 00 39 00 62 00 30 00  7.9.8.2.3.9.b.0.
+0x000003d0  39 00 31 00 63 00 64 00  61 00 34 00 33 00 64 00  9.1.c.d.a.4.3.d.
+0x000003e0  63 00 61 00 30 00 00 00  30 00 00 00 54 00 68 00  c.a.0...0...T.h.
+0x000003f0  72 00 65 00 61 00 74 00  54 00 72 00 61 00 63 00  r.e.a.t.T.r.a.c.
+0x00000400  6b 00 69 00 6e 00 67 00  53 00 63 00 61 00 6e 00  k.i.n.g.S.c.a.n.
+0x00000410  46 00 6c 00 61 00 67 00  73 00 00 00 03 00 00 00  F.l.a.g.s.......
+0x00000420  11 00 00 00 2e 00 00 00  54 00 68 00 72 00 65 00  ........T.h.r.e.
+0x00000430  61 00 74 00 54 00 72 00  61 00 63 00 6b 00 69 00  a.t.T.r.a.c.k.i.
+0x00000440  6e 00 67 00 49 00 73 00  45 00 73 00 75 00 53 00  n.g.I.s.E.s.u.S.
+0x00000450  69 00 67 00 00 00 05 00  00 00 00 2e 00 00 00 54  i.g............T
+0x00000460  00 68 00 72 00 65 00 61  00 74 00 54 00 72 00 61  .h.r.e.a.t.T.r.a
+0x00000470  00 63 00 6b 00 69 00 6e  00 67 00 54 00 68 00 72  .c.k.i.n.g.T.h.r
+0x00000480  00 65 00 61 00 74 00 49  00 64 00 00 00 03 00 00  .e.a.t.I.d......
+0x00000490  00 1b 8a 00 80 32 00 00  00 54 00 68 00 72 00 65  .....2...T.h.r.e
+0x000004a0  00 61 00 74 00 54 00 72  00 61 00 63 00 6b 00 69  .a.t.T.r.a.c.k.i
+0x000004b0  00 6e 00 67 00 53 00 63  00 61 00 6e 00 53 00 6f  .n.g.S.c.a.n.S.o
+0x000004c0  00 75 00 72 00 63 00 65  00 00 00 03 00 00 00 00  .u.r.c.e........
+0x000004d0  00 00 00 2e 00 00 00 54  00 68 00 72 00 65 00 61  .......T.h.r.e.a
+0x000004e0  00 74 00 54 00 72 00 61  00 63 00 6b 00 69 00 6e  .t.T.r.a.c.k.i.n
+0x000004f0  00 67 00 53 00 63 00 61  00 6e 00 54 00 79 00 70  .g.S.c.a.n.T.y.p
+0x00000500  00 65 00 00 00 03 00 00  00 00 00 00 00           .e...........
 ....
 
 :numbered!:
 [appendix]
 == References
 
-`[MSDN]`
-
 [cols="1,5",options="header"]
 |===
-| Title: | MS-TSCH: Task Scheduler Service Remoting Protocol
-| URL: | https://msdn.microsoft.com/en-us/library/cc248263.aspx
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | .JOB File Format
-| URL: | https://msdn.microsoft.com/en-us/library/cc248285.aspx
+| Title: | MSFT_MpThreat class
+| URL: | https://docs.microsoft.com/en-us/previous-versions/windows/desktop/defender/msft-mpthreat
 |===
 
 [appendix]
