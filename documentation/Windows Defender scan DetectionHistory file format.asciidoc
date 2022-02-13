@@ -50,22 +50,16 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
+The Windows Defender scan DetectionHistory file consists of:
+
+* one or more values
+
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
 | Byte order | little-endian
 | Date and time values |
 | Character strings | Unicode strings are stored in UTF-16 little-endian without the byte order mark (BOM).
-|===
-
-=== Header
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | 8 | [yellow-background]*Unknown*
-| 4 | 4 | 8 | [yellow-background]*Unknown*
-| 8 | 8 | | [yellow-background]*Unknown*
 |===
 
 === Value
@@ -84,10 +78,12 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000000 | | [yellow-background]*Unknown (NULL?)*
+| 0x00000000 | | [yellow-background]*Unknown (32-bit integer?)*
 3+|
 | 0x00000005 | | [yellow-background]*Unknown (32-bit integer?)*
 | 0x00000006 | | [yellow-background]*Unknown (32-bit integer?)*
+3+|
+| 0x00000008 | | [yellow-background]*Unknown (64-bit integer?)*
 3+|
 | 0x0000000a | | Filetime
 3+|
@@ -102,24 +98,24 @@ in the section entitled "GNU Free Documentation License".
 
 [cols="1,1,5",options="header"]
 |===
-| Index | Value | Description
-| 0 | | Identifier +
+| Value index | Value | Description
+3+| _Information related to MSFT_MpThreat class?_
+| 0 | | Threat identifier
+| 1 | | Identifier +
 Contains the GUID corresponding to the file name
-| 1 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
-| 2 | | Name of the threat that was detected +
+| 2 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
+| 3 | | Name of the threat that was detected +
 For example: "Virus:DOS/EICAR_Test_File"
-| 3 | | [yellow-background]*Unknown* +
-Seen: 0
 | 4 | | [yellow-background]*Unknown* +
+Seen: 0
+| 5 | | [yellow-background]*Unknown* +
 Seen: 5
-| 5 | | Category +
+| 6 | | Category +
 See section: <<category,Category>>
-| 6 | | [yellow-background]*Unknown* +
+| 7 | | [yellow-background]*Unknown* +
 Seen: 0x6e
-| 7 | | [yellow-background]*Unknown (Severity?)* +
+| 8 | | [yellow-background]*Unknown (Severity?)* +
 Seen: 4
-| 8 | | [yellow-background]*Unknown* +
-Seen: 3
 | 9 | | [yellow-background]*Unknown* +
 Seen: 3
 | 10 | | [yellow-background]*Unknown* +
@@ -127,18 +123,21 @@ Seen: 3
 | 11 | | [yellow-background]*Unknown* +
 Seen: 3
 | 12 | | [yellow-background]*Unknown* +
-Seen: 2
+Seen: 3
 | 13 | | [yellow-background]*Unknown* +
-Seen: 6
+Seen: 2
 | 14 | | [yellow-background]*Unknown* +
+Seen: 6
+| 15 | | [yellow-background]*Unknown* +
 Seen: 1
-| 15 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
-| 16 | "file" | [yellow-background]*Unknown*
-| 17 | | [yellow-background]*Unknown (path of file)*
-| 18 | | [yellow-background]*Unknown* +
+3+| _Information related to MSFT_MpThreatDetection class?_
+| 16 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
+| 17 | "file" | [yellow-background]*Unknown*
+| 18 | | [yellow-background]*Unknown (path of file)*
+| 19 | | [yellow-background]*Unknown* +
 Seen: 0x10000001
-| 19 | | [yellow-background]*Unknown (threat data size?)*
-| 20 | | [yellow-background]*Unknown (threat data?)*
+| 20 | | [yellow-background]*Unknown (threat data size?)*
+| 21 | | [yellow-background]*Unknown (threat data?)*
 |===
 
 === [[category]]Category
@@ -235,18 +234,27 @@ Seen: 0x10000001
 === Threat data
 
 ....
+* Format version: 1 ?
+* Header size ?
+* Data size?
+* Total data size?
+* Unknown
 0x00000000  01 00 00 00 14 00 00 00  f9 04 00 00 0d 05 00 00  ................
-0x00000010  00 00 00 00 f9 04 00 00                           ........*...T.h.
+0x00000010  00 00 00 00                                       ........*...T.h.
 
-Name:
+* Data size?
+0x00000010              f9 04 00 00                           ........*...T.h.
+
+Name size and string:
 0x00000010                           2a 00 00 00 54 00 68 00  ........*...T.h.
 0x00000020  72 00 65 00 61 00 74 00  54 00 72 00 61 00 63 00  r.e.a.t.T.r.a.c.
 0x00000030  6b 00 69 00 6e 00 67 00  53 00 68 00 61 00 32 00  k.i.n.g.S.h.a.2.
 0x00000040  35 00 36 00 00 00                                 5.6...........1.
 
+Value type?
 0x00000040                    06 00  00 00                    5.6...........1.
 
-Value:
+Value size and string:
 0x00000040                                 82 00 00 00 31 00  5.6...........1.
 0x00000050  33 00 31 00 66 00 39 00  35 00 63 00 35 00 31 00  3.1.f.9.5.c.5.1.
 0x00000060  63 00 63 00 38 00 31 00  39 00 34 00 36 00 35 00  c.c.8.1.9.4.6.5.
@@ -257,37 +265,62 @@ Value:
 0x000000b0  33 00 61 00 65 00 36 00  33 00 66 00 66 00 62 00  3.a.e.6.3.f.f.b.
 0x000000c0  64 00 66 00 64 00 38 00  32 00 36 00 37 00 00 00  d.f.d.8.2.6.7...
 
+Name size and string:
 0x000000d0  2a 00 00 00 54 00 68 00  72 00 65 00 61 00 74 00  *...T.h.r.e.a.t.
 0x000000e0  54 00 72 00 61 00 63 00  6b 00 69 00 6e 00 67 00  T.r.a.c.k.i.n.g.
-0x000000f0  53 00 69 00 67 00 53 00  65 00 71 00 00 00 04 00  S.i.g.S.e.q.....
-0x00000100  00 00 b0 dd 2d dc 55 05  00 00 22 00 00 00 54 00  ....-.U..."...T.
+0x000000f0  53 00 69 00 67 00 53 00  65 00 71 00 00 00        S.i.g.S.e.q.....
+
+Value type (64-bit integer?)
+0x000000f0                                             04 00  S.i.g.S.e.q.....
+0x00000100  00 00                                             ....-.U..."...T.
+
+Value data:
+0x00000100        b0 dd 2d dc 55 05  00 00                    ....-.U..."...T.
+
+Name size and string:
+0x00000100                                 22 00 00 00 54 00  ....-.U..."...T.
 0x00000110  68 00 72 00 65 00 61 00  74 00 54 00 72 00 61 00  h.r.e.a.t.T.r.a.
 0x00000120  63 00 6b 00 69 00 6e 00  67 00 49 00 64 00 00 00  c.k.i.n.g.I.d...
+
 0x00000130  06 00 00 00 4a 00 00 00  36 00 41 00 44 00 36 00  ....J...6.A.D.6.
 0x00000140  31 00 36 00 42 00 37 00  2d 00 45 00 32 00 41 00  1.6.B.7.-.E.2.A.
 0x00000150  41 00 2d 00 34 00 33 00  38 00 37 00 2d 00 41 00  A.-.4.3.8.7.-.A.
 0x00000160  32 00 35 00 30 00 2d 00  37 00 38 00 33 00 38 00  2.5.0.-.7.8.3.8.
 0x00000170  46 00 34 00 44 00 31 00  42 00 31 00 39 00 41 00  F.4.D.1.B.1.9.A.
-0x00000180  00 00 30 00 00 00 54 00  68 00 72 00 65 00 61 00  ..0...T.h.r.e.a.
+0x00000180  00 00                                             ..0...T.h.r.e.a.
+
+0x00000180        30 00 00 00 54 00  68 00 72 00 65 00 61 00  ..0...T.h.r.e.a.
 0x00000190  74 00 54 00 72 00 61 00  63 00 6b 00 69 00 6e 00  t.T.r.a.c.k.i.n.
 0x000001a0  67 00 53 00 74 00 61 00  72 00 74 00 54 00 69 00  g.S.t.a.r.t.T.i.
-0x000001b0  6d 00 65 00 00 00 04 00  00 00 e5 1b 5b 1f a7 20  m.e.........[.. 
-0x000001c0  d8 01 32 00 00 00 54 00  68 00 72 00 65 00 61 00  ..2...T.h.r.e.a.
+0x000001b0  6d 00 65 00 00 00                                 m.e.........[.. 
+
+0x000001b0                    04 00  00 00 e5 1b 5b 1f a7 20  m.e.........[.. 
+0x000001c0  d8 01                                             ..2...T.h.r.e.a.
+
+0x000001c0        32 00 00 00 54 00  68 00 72 00 65 00 61 00  ..2...T.h.r.e.a.
 0x000001d0  74 00 54 00 72 00 61 00  63 00 6b 00 69 00 6e 00  t.T.r.a.c.k.i.n.
 0x000001e0  67 00 54 00 68 00 72 00  65 00 61 00 74 00 4e 00  g.T.h.r.e.a.t.N.
-0x000001f0  61 00 6d 00 65 00 00 00  06 00 00 00 34 00 00 00  a.m.e.......4...
+0x000001f0  61 00 6d 00 65 00 00 00                           a.m.e.......4...
+
+0x000001f0                           06 00 00 00 34 00 00 00  a.m.e.......4...
 0x00000200  56 00 69 00 72 00 75 00  73 00 3a 00 44 00 4f 00  V.i.r.u.s.:.D.O.
 0x00000210  53 00 2f 00 45 00 49 00  43 00 41 00 52 00 5f 00  S./.E.I.C.A.R._.
 0x00000220  54 00 65 00 73 00 74 00  5f 00 46 00 69 00 6c 00  T.e.s.t._.F.i.l.
-0x00000230  65 00 00 00 26 00 00 00  54 00 68 00 72 00 65 00  e...&...T.h.r.e.
+0x00000230  65 00 00 00                                       e...&...T.h.r.e.
+
+0x00000230              26 00 00 00  54 00 68 00 72 00 65 00  e...&...T.h.r.e.
 0x00000240  61 00 74 00 54 00 72 00  61 00 63 00 6b 00 69 00  a.t.T.r.a.c.k.i.
-0x00000250  6e 00 67 00 53 00 68 00  61 00 31 00 00 00 06 00  n.g.S.h.a.1.....
+0x00000250  6e 00 67 00 53 00 68 00  61 00 31 00 00 00        n.g.S.h.a.1.....
+
+0x00000250                                             06 00  n.g.S.h.a.1.....
 0x00000260  00 00 52 00 00 00 63 00  66 00 38 00 62 00 64 00  ..R...c.f.8.b.d.
 0x00000270  39 00 64 00 66 00 64 00  64 00 66 00 66 00 30 00  9.d.f.d.d.f.f.0.
 0x00000280  30 00 37 00 66 00 37 00  35 00 61 00 64 00 66 00  0.7.f.7.5.a.d.f.
 0x00000290  34 00 63 00 32 00 62 00  65 00 34 00 38 00 30 00  4.c.2.b.e.4.8.0.
 0x000002a0  30 00 35 00 63 00 65 00  61 00 33 00 31 00 37 00  0.5.c.e.a.3.1.7.
-0x000002b0  63 00 36 00 32 00 00 00  2a 00 00 00 54 00 68 00  c.6.2...*...T.h.
+0x000002b0  63 00 36 00 32 00 00 00                           c.6.2...*...T.h.
+
+0x000002b0                           2a 00 00 00 54 00 68 00  c.6.2...*...T.h.
 0x000002c0  72 00 65 00 61 00 74 00  54 00 72 00 61 00 63 00  r.e.a.t.T.r.a.c.
 0x000002d0  6b 00 69 00 6e 00 67 00  53 00 69 00 67 00 53 00  k.i.n.g.S.i.g.S.
 0x000002e0  68 00 61 00 00 00 06 00  00 00 52 00 00 00 37 00  h.a.......R...7.
@@ -335,6 +368,12 @@ Value:
 |===
 | Title: | MSFT_MpThreat class
 | URL: | https://docs.microsoft.com/en-us/previous-versions/windows/desktop/defender/msft-mpthreat
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | MSFT_MpThreatDetection class
+| URL: | https://docs.microsoft.com/en-us/previous-versions/windows/desktop/defender/msft-mpthreatdetection
 |===
 
 [appendix]
