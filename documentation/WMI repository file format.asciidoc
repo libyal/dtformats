@@ -543,6 +543,101 @@ ROOT\CIMV2\ms_409
 
 Here 409 represents the language code identifier (LCID) in hexadecimal representation.
 
+==== Special namespaces
+
+[cols="1,1,5",options="header"]
+|===
+| Namespace | Description
+| "__SystemClass" |
+|===
+
+[yellow-background]*TODO: special namespace for "__thisNAMESPACE" and "__SystemSecurity" classes?*
+
+The "__thisNAMESPACE" class is used to store a security descriptor for a namespace.
+
+==== Web Based Enterprise Management (WBEM) namespaces
+
+[cols="1,5",options="header"]
+|===
+| Namespace | Description
+| "ROOT" | base (or root) of the namespace hierarchy
+| "ROOT\\Appv" |
+| "ROOT\\CIMV2" | defines the system objects
+| "ROOT\\CIMV2\\Applications" | defines the application-specific objects
+| "ROOT\\CIMV2\\Applications\\MicrosoftIE" |
+| "ROOT\\CIMV2\\mdm" |
+| "ROOT\\CIMV2\\mdm\\dmmap" |
+| "ROOT\\CIMV2\\power" |
+| "ROOT\\CIMV2\\Security" |
+| "ROOT\\CIMV2\\Security\\MicrosoftTpm" |
+| "ROOT\\CIMV2\\Security\\MicrosoftVolumeEncryption" |
+| "ROOT\\CIMV2\\TerminalServices" |
+| "ROOT\\Cli" | defines default WMIC aliases
+| "ROOT\\dcim" |
+| "ROOT\\dcim\\sysman" |
+| "ROOT\\dcim\\sysman\\biosattributes" |
+| "ROOT\\dcim\\sysman\\wmisecurity" |
+| "ROOT\\DEFAULT" | default namespace
+| "ROOT\\directory" | directory (as in directory server) related namespaces
+| "ROOT\\directory\\LDAP" | Lightweight Directory Access Protocol (LDAP) related namespaces
+| "ROOT\\Hardware" |
+| "ROOT\\Intel_ME" |
+| "ROOT\\Interop" |
+| "ROOT\\Microsoft" |
+| "ROOT\\Microsoft\\HomeNet" |
+| "ROOT\\Microsoft" | Microsoft related namespaces
+| "ROOT\\Microsoft\\protectionManagement" |
+| "ROOT\\Microsoft\\SecurityClient" |
+| "ROOT\\Microsoft\\Uev" |
+| "ROOT\\Microsoft\\Windows" |
+| "ROOT\\Microsoft\\Windows\\AppBackgroundTask" |
+| "ROOT\\Microsoft\\Windows\\CI" |
+| "ROOT\\Microsoft\\Windows\\Defender" |
+| "ROOT\\Microsoft\\Windows\\DesiredStateConfiguration" |
+| "ROOT\\Microsoft\\Windows\\DesiredStateConfigurationProxy" |
+| "ROOT\\Microsoft\\Windows\\DeviceGuard" |
+| "ROOT\\Microsoft\\Windows\\dfsn" |
+| "ROOT\\Microsoft\\Windows\\DHCP" |
+| "ROOT\\Microsoft\\Windows\\Dns" |
+| "ROOT\\Microsoft\\Windows\\EventTracingManagement" |
+| "ROOT\\Microsoft\\Windows\\HardwareManagement" |
+| "ROOT\\Microsoft\\Windows\\Hgs" |
+| "ROOT\\Microsoft\\Windows\\Powershellv3" |
+| "ROOT\\Microsoft\\Windows\\PS_MMAgent" |
+| "ROOT\\Microsoft\\Windows\\RemoteAccess" |
+| "ROOT\\Microsoft\\Windows\\RemoteAccess\\Client" |
+| "ROOT\\Microsoft\\Windows\\SMB" |
+| "ROOT\\Microsoft\\Windows\\SmbWitness" |
+| "ROOT\\Microsoft\\Windows\\Storage" |
+| "ROOT\\Microsoft\\Windows\\Storage\\Providers_v2" |
+| "ROOT\\Microsoft\\Windows\\Storage\\PT" |
+| "ROOT\\Microsoft\\Windows\\Storage\\PT\\Alt" |
+| "ROOT\\Microsoft\\Windows\\StorageReplica" |
+| "ROOT\\Microsoft\\Windows\\TaskScheduler" |
+| "ROOT\\Microsoft\\Windows\\Wdac" |
+| "ROOT\\Microsoft\\Windows\\WindowsUpdate" |
+| "ROOT\\Microsoft\\Windows\\winrm" |
+| "ROOT\\MSAPPS10" | Microsoft Office related namespaces
+| "ROOT\\msdtc" |
+| "ROOT\\MSPS" |
+| "ROOT\\nap" |
+| "ROOT\\NetFrameworkv1" | .NET framework related namespaces
+| "ROOT\\PEH" |
+| "ROOT\\Policy" | Group policy related namespaces
+| "ROOT\\RSOP" | centralized security policy administration related namespace
+| "ROOT\\RSOP\\Computer" |
+| "ROOT\\RSOP\\User" |
+| "ROOT\\RSOP\\User\\%SID%" | Where %SID% represents a Windows NT security identifier.
+| "ROOT\\SECURITY" | WMI system security related namespace
+| "ROOT\\SecurityCenter" |
+| "ROOT\\SecurityCenter2" |
+| "ROOT\\ServiceModel" |
+| "ROOT\\StandardCimv2" |
+| "ROOT\\StandardCimv2\\embedded" |
+| "ROOT\\subscription" | (event) trigger consumer related namespace
+| "ROOT\\WMI" | WMI WDM provider related namespace
+|===
+
 == [[index_binary_tree_file]]The index binary-tree file (index.btr)
 
 The index binary-tree file (index.btr) is used by format version 2 and consists
@@ -913,7 +1008,7 @@ If the object record data is larger than the page size of 8196 the remaining
 data is stored spanning multiple pages. Successive pages do not contain object
 descriptors and must resolved using mapped page numbers.
 
-===== Class definition (CD) object record
+===== Class definition object record
 
 The class definition object record is variable of size and consists of:
 
@@ -936,7 +1031,7 @@ Includes the 4 bytes of the size
 | ... | ... | | Methods block data
 |===
 
-===== Registration (R)
+===== Registration
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -960,7 +1055,7 @@ Contains an UTF-16 little-endian string without end-of-string character.
 | ... | 8 | | [yellow-background]*Unknown (empty values or unused strings?)*
 |===
 
-===== Instance (I and IL) object record
+===== Instance object record
 
 ====== Instance object record - version 2.1
 

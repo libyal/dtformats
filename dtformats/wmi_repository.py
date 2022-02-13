@@ -3257,6 +3257,84 @@ class CIMRepository(data_format.BinaryDataFormat):
   _KEY_VALUE_RECORD_IDENTIFIER_INDEX = 2
   _KEY_VALUE_DATA_SIZE_INDEX = 3
 
+  _COMMON_NAMESPACES = [
+      '__SystemClass',
+      'ROOT',
+      'ROOT\\Appv',
+      'ROOT\\CIMV2',
+      'ROOT\\CIMV2\\Applications',
+      'ROOT\\CIMV2\\Applications\\MicrosoftIE',
+      'ROOT\\CIMV2\\mdm',
+      'ROOT\\CIMV2\\mdm\\dmmap',
+      'ROOT\\CIMV2\\power',
+      'ROOT\\CIMV2\\Security',
+      'ROOT\\CIMV2\\Security\\MicrosoftTpm',
+      'ROOT\\CIMV2\\Security\\MicrosoftVolumeEncryption',
+      'ROOT\\CIMV2\\TerminalServices',
+      'ROOT\\Cli',
+      'ROOT\\dcim',
+      'ROOT\\dcim\\sysman',
+      'ROOT\\dcim\\sysman\\biosattributes',
+      'ROOT\\dcim\\sysman\\wmisecurity',
+      'ROOT\\DEFAULT',
+      'ROOT\\directory',
+      'ROOT\\directory\\LDAP',
+      'ROOT\\Hardware',
+      'ROOT\\Intel_ME',
+      'ROOT\\Interop',
+      'ROOT\\Microsoft',
+      'ROOT\\Microsoft\\HomeNet',
+      'ROOT\\Microsoft\\protectionManagement',
+      'ROOT\\Microsoft\\SecurityClient',
+      'ROOT\\Microsoft\\Uev',
+      'ROOT\\Microsoft\\Windows',
+      'ROOT\\Microsoft\\Windows\\AppBackgroundTask',
+      'ROOT\\Microsoft\\Windows\\CI',
+      'ROOT\\Microsoft\\Windows\\Defender',
+      'ROOT\\Microsoft\\Windows\\DeliveryOptimization',
+      'ROOT\\Microsoft\\Windows\\DesiredStateConfiguration',
+      'ROOT\\Microsoft\\Windows\\DesiredStateConfigurationProxy',
+      'ROOT\\Microsoft\\Windows\\DeviceGuard',
+      'ROOT\\Microsoft\\Windows\\dfsn',
+      'ROOT\\Microsoft\\Windows\\DHCP',
+      'ROOT\\Microsoft\\Windows\\Dns',
+      'ROOT\\Microsoft\\Windows\\EventTracingManagement',
+      'ROOT\\Microsoft\\Windows\\HardwareManagement',
+      'ROOT\\Microsoft\\Windows\\Hgs',
+      'ROOT\\Microsoft\\Windows\\Powershellv3',
+      'ROOT\\Microsoft\\Windows\\PS_MMAgent',
+      'ROOT\\Microsoft\\Windows\\RemoteAccess',
+      'ROOT\\Microsoft\\Windows\\RemoteAccess\\Client',
+      'ROOT\\Microsoft\\Windows\\SMB',
+      'ROOT\\Microsoft\\Windows\\SmbWitness',
+      'ROOT\\Microsoft\\Windows\\Storage',
+      'ROOT\\Microsoft\\Windows\\Storage\\Providers_v2',
+      'ROOT\\Microsoft\\Windows\\Storage\\PT',
+      'ROOT\\Microsoft\\Windows\\Storage\\PT\\Alt',
+      'ROOT\\Microsoft\\Windows\\StorageReplica',
+      'ROOT\\Microsoft\\Windows\\TaskScheduler',
+      'ROOT\\Microsoft\\Windows\\Wdac',
+      'ROOT\\Microsoft\\Windows\\WindowsUpdate',
+      'ROOT\\Microsoft\\Windows\\winrm',
+      'ROOT\\MSAPPS10',
+      'ROOT\\msdtc',
+      'ROOT\\MSPS',
+      'ROOT\\nap',
+      'ROOT\\NetFrameworkv1',
+      'ROOT\\PEH',
+      'ROOT\\Policy',
+      'ROOT\\RSOP',
+      'ROOT\\RSOP\\Computer',
+      'ROOT\\RSOP\\User',
+      'ROOT\\SECURITY',
+      'ROOT\\SecurityCenter',
+      'ROOT\\SecurityCenter2',
+      'ROOT\\ServiceModel',
+      'ROOT\\StandardCimv2',
+      'ROOT\\StandardCimv2\\embedded',
+      'ROOT\\subscription',
+      'ROOT\\WMI']
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a CIM repository.
 
@@ -3929,6 +4007,7 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     object_record_values = set()
     instances_per_namespace = {}
+    parent_namespaces = set()
 
     index_page = self._GetIndexRootPage()
     for key in self._GetKeysFromIndexPage(index_page):
@@ -3939,6 +4018,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         continue
 
       namespace_hash = key_segment[3:].lower()
+      parent_namespaces.add(namespace_hash)
 
       _, _, key_segment = key_segments[2].partition('_')
       if key_segment.lower() != class_name_hash:
@@ -3965,33 +4045,37 @@ class CIMRepository(data_format.BinaryDataFormat):
 
       instances_per_namespace[namespace_hash].append(instance)
 
-    root_namespace_hash = self._GetHashFromString('ROOT')
-    namespaces_by_hash = {root_namespace_hash: 'ROOT'}
+    namespaces_by_hash = {}
+    for namespace in self._COMMON_NAMESPACES:
+      namespace_hash = self._GetHashFromString(namespace)
+      namespaces_by_hash[namespace_hash] = namespace
 
-    unresolved_namespaces = [root_namespace_hash]
+    for _ in range(5):
+      unresolved_namespaces = set()
+      for parent_namespace_hash in parent_namespaces:
+        parent_namespace = namespaces_by_hash.get(parent_namespace_hash, None)
+        if not parent_namespace:
+          unresolved_namespaces.add(parent_namespace_hash)
+          continue
 
-    while unresolved_namespaces:
-      parent_namespace_hash = unresolved_namespaces.pop(0)
-      parent_namespace = namespaces_by_hash[parent_namespace_hash]
+        instances = instances_per_namespace.get(parent_namespace_hash, None)
+        if not instances:
+          continue
 
-      instances = instances_per_namespace.get(parent_namespace_hash, None)
-      if not instances:
-        continue
+        for instance in instances:
+          name_property = instance.properties.get('Name', None)
 
-      for instance in instances:
-        name_property = instance.properties.get('Name', None)
+          namespace = '\\'.join([parent_namespace, name_property])
 
-        namespace = '\\'.join([parent_namespace, name_property])
+          namespace_hash = self._GetHashFromString(namespace)
+          namespaces_by_hash[namespace_hash] = namespace
 
-        namespace_hash = self._GetHashFromString(namespace)
-        namespaces_by_hash[namespace_hash] = namespace
+          instance.namespace = namespace
+          self._namespace_instances.append(instance)
 
-        unresolved_namespaces.append(namespace_hash)
+      parent_namespaces = unresolved_namespaces
 
-        instance.namespace = namespace
-        self._namespace_instances.append(instance)
-
-      del instances_per_namespace[parent_namespace_hash]
+    print("UR:", unresolved_namespaces)
 
   def Close(self):
     """Closes the CIM repository."""

@@ -650,9 +650,7 @@ class BinaryDataFormat(object):
     data = b''
     last_data_size = 0
 
-    data_size = data_type_map.GetByteSize()
-    if not data_size:
-      data_size = data_type_map.GetSizeHint()
+    data_size = data_type_map.GetSizeHint()
 
     if self._debug:
       self._DebugPrintText(
