@@ -96,49 +96,129 @@ The Windows Defender scan DetectionHistory file consists of:
 
 === Known values
 
+The known values consists of multiple sets of values that are separated by
+a value containing the string "Magic.Version:1.2".
+
+* set 1, which contains basic information
+* set 2, which contains threat information
+* one of more set 3, which contains information about threat detection resources
+
+[yellow-background]*TODO: if information is related to MSFT_MpThreat or MSFT_MpThreatDetection classes?*
+
+==== Known values - set 1
+
 [cols="1,1,5",options="header"]
 |===
 | Value index | Value | Description
-3+| _Information related to MSFT_MpThreat class?_
 | 0 | | Threat identifier
 | 1 | | Identifier +
 Contains the GUID corresponding to the file name
-| 2 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
-| 3 | | Name of the threat that was detected +
+|===
+
+==== Known values - set 2
+
+[cols="1,1,5",options="header"]
+|===
+| Value index | Value | Description
+| 0 | "Magic.Version:1.2" | Known values set separator
+| 1 | | Name of the threat that was detected +
 For example: "Virus:DOS/EICAR_Test_File"
-| 4 | | [yellow-background]*Unknown* +
+| 2 | | [yellow-background]*Unknown* +
 Seen: 0
-| 5 | | [yellow-background]*Unknown* +
+| 3 | | [yellow-background]*Unknown* +
 Seen: 5
-| 6 | | Category +
+| 4 | | Category +
 See section: <<category,Category>>
-| 7 | | [yellow-background]*Unknown* +
-Seen: 0x6e
-| 8 | | [yellow-background]*Unknown (Severity?)* +
+| 5 | | [yellow-background]*Unknown* +
+Seen: 49 (last value index 10), 63 (last value index 12), 110 (last value index 13)
+| 6 | | [yellow-background]*Unknown (Severity?)* +
 Seen: 4
+| 7 | | [yellow-background]*Unknown* +
+Seen: 3
+| 8 | | [yellow-background]*Unknown* +
+Seen: 3
 | 9 | | [yellow-background]*Unknown* +
 Seen: 3
 | 10 | | [yellow-background]*Unknown* +
 Seen: 3
+3+| _Optional values_
 | 11 | | [yellow-background]*Unknown* +
-Seen: 3
-| 12 | | [yellow-background]*Unknown* +
-Seen: 3
-| 13 | | [yellow-background]*Unknown* +
 Seen: 2
-| 14 | | [yellow-background]*Unknown* +
+| 12 | | [yellow-background]*Unknown* +
 Seen: 6
-| 15 | | [yellow-background]*Unknown* +
+| 13 | | [yellow-background]*Unknown* +
 Seen: 1
-3+| _Information related to MSFT_MpThreatDetection class?_
-| 16 | "Magic.Version:1.2" | [yellow-background]*Unknown (signature and version?)*
-| 17 | "file" | [yellow-background]*Unknown*
-| 18 | | [yellow-background]*Unknown (path of file)*
-| 19 | | [yellow-background]*Unknown* +
-Seen: 0x10000001
-| 20 | | [yellow-background]*Unknown (threat data size?)*
-| 21 | | [yellow-background]*Unknown (threat data?)*
 |===
+
+==== Known values - set 3
+
+[cols="1,1,5",options="header"]
+|===
+| Value index | Value | Description
+| 0 | "Magic.Version:1.2" | Known values set separator
+| 1 | | Resource type +
+Seen: "file", "regkey", "regkeyvalue", "startup", "uninstall"
+| 2 | | Resource location +
+Seen: file path, Windows Registry key path
+| 3 | | [yellow-background]*Unknown* +
+Seen: 0, 0x10000001
+| 4 | | Thread data size
+| 5 | | Thread data
+3+| _Optional values_
+| 6 | | [yellow-background]*Unknown date and time*
+| 7 | | [yellow-background]*Unknown* +
+Seen: 0
+| 8 | | [yellow-background]*Unknown* +
+Seen: 0
+| 9 | | [yellow-background]*Unknown GUID*
+| 10 | | [yellow-background]*Unknown* +
+Seen: 0, 1
+| 11 | | [yellow-background]*Unknown* +
+Seen: 2, 6
+| 12 | | User/System account name
+| 13 | | [yellow-background]*Unknown* +
+Seen: 2, 3
+| 14 | | [yellow-background]*Unknown (parent process?)* +
+Seen: Path of parent process executable, "Unknown"
+| 15 | | [yellow-background]*Unknown* +
+Seen: 2, 3
+| 16 | | [yellow-background]*Unknown* +
+Seen: 0, 1
+| 17 | | [yellow-background]*Unknown* +
+Seen: 0
+| 18 | | [yellow-background]*Unknown date and time*
+| 19 | | [yellow-background]*Unknown* +
+Seen: 0, 3
+| 20 | | [yellow-background]*Unknown date and time*
+| 21 | | [yellow-background]*Unknown* +
+Seen: 0
+| 22 | | [yellow-background]*Unknown* +
+Seen: 0
+| 23 | | [yellow-background]*Unknown* +
+Seen: 0
+| 24 | | User/System account name
+| 25 | | [yellow-background]*Unknown* +
+Seen: 0
+| 26 | | [yellow-background]*Unknown* +
+Seen: 0
+| 27 | | [yellow-background]*Unknown* +
+Seen: 0
+| 28 | | [yellow-background]*Unknown* +
+Seen: 0
+| 29 | | [yellow-background]*Unknown* +
+Seen: 0
+| 30 | | [yellow-background]*Unknown* +
+Seen: 0
+| 31 | | [yellow-background]*Unknown* +
+Seen: 1
+|===
+
+....
+Possible date and time values:
+InitialDetectionTime
+LastThreatStatusChangeTime
+RemediationTime
+....
 
 === [[category]]Category
 
