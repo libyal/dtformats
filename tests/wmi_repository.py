@@ -66,7 +66,7 @@ class MappingFileTest(test_lib.BaseTestCase):
     with open(test_file_path, 'rb') as file_object:
       file_object.seek(-4, os.SEEK_END)
 
-      test_file._ReadFileFooter(file_object, format_version=1)
+      test_file._ReadFileFooter(file_object)
 
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
@@ -77,7 +77,7 @@ class MappingFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      test_file._ReadFileHeader(file_object)
+      test_file._ReadFileHeader(file_object, format_version=1)
 
   def testReadMappingTable(self):
     """Tests the _ReadMappingTable function."""

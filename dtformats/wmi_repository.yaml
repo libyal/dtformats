@@ -798,7 +798,7 @@ members:
   element_data_type: uint16
   number_of_elements: cim_page_key.number_of_segments
 ---
-name: cim_map_footer_v1
+name: cim_map_footer
 type: structure
 attributes:
   byte_order: little-endian
@@ -806,18 +806,6 @@ members:
 - name: signature
   data_type: uint32
   value: 0x0000dcba
----
-name: cim_map_footer_v2
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: signature
-  data_type: uint32
-  value: 0x0000dcba
-- name: unknown1
-  data_type: uint32
-  values: [0, 1]
 ---
 name: cim_map_header_v1
 type: structure

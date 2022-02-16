@@ -630,8 +630,7 @@ class MappingFile(data_format.BinaryDataFile):
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
   _DEBUG_INFO_FILE_FOOTER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
+      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8')]
 
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
@@ -655,8 +654,7 @@ class MappingFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(MappingFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+    super(MappingFile, self).__init__(debug=debug, output_writer=output_writer)
     self._mapping_table1 = None
     self._mapping_table2 = None
     self._unavailable_page_numbers = set([0xffffffff])
@@ -713,7 +711,25 @@ class MappingFile(data_format.BinaryDataFile):
 
     return '{0:d}'.format(integer)
 
-  def _ReadFileFooter(self, file_object, format_version=None):
+  def _ReadDetermineFormatVersion(self, file_object):
+    """Reads the file footer to determine the format version.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file footer cannot be read.
+    """
+    file_object.seek(0, os.SEEK_SET)
+
+    file_header = self._ReadFileHeader(file_object, format_version=2)
+
+    if file_header.unknown1 == file_header.unknown2 + 1:
+      self.format_version = 2
+    else:
+      self.format_version = 1
+
+  def _ReadFileFooter(self, file_object):
     """Reads the file footer.
 
     Args:
@@ -726,15 +742,9 @@ class MappingFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file footer cannot be read.
     """
-    if not format_version:
-      format_version = self.format_version
-
     file_offset = file_object.tell()
 
-    if format_version == 1:
-      data_type_map = self._GetDataTypeMap('cim_map_footer_v1')
-    else:
-      data_type_map = self._GetDataTypeMap('cim_map_footer_v2')
+    data_type_map = self._GetDataTypeMap('cim_map_footer')
 
     file_footer, _ = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'file footer')
@@ -744,43 +754,12 @@ class MappingFile(data_format.BinaryDataFile):
 
     return file_footer
 
-  def _ReadDetermineFormatVersion(self, file_object):
-    """Reads the file footer to determine the format version.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the file footer cannot be read.
-    """
-    file_object.seek(-4, os.SEEK_END)
-
-    try:
-      file_footer = self._ReadFileFooter(file_object, format_version=1)
-      self.format_version = 1
-
-    except errors.ParseError:
-      file_footer = None
-
-    self._file_size = file_object.tell()
-
-    if not file_footer:
-      file_object.seek(-8, os.SEEK_END)
-
-      try:
-        file_footer = self._ReadFileFooter(file_object, format_version=2)
-        self.format_version = 2
-      except errors.ParseError:
-        file_footer = None
-
-    if not file_footer:
-      raise errors.ParseError('Unable to read file footer.')
-
-  def _ReadFileHeader(self, file_object):
+  def _ReadFileHeader(self, file_object, format_version=None):
     """Reads the file header.
 
     Args:
       file_object (file): file-like object.
+      format_version (Optional[int]): format version.
 
     Returns:
       cim_map_header: file header.
@@ -790,7 +769,7 @@ class MappingFile(data_format.BinaryDataFile):
     """
     file_offset = file_object.tell()
 
-    if self.format_version == 1:
+    if format_version == 1:
       data_type_map = self._GetDataTypeMap('cim_map_header_v1')
     else:
       data_type_map = self._GetDataTypeMap('cim_map_header_v2')
@@ -883,19 +862,21 @@ class MappingFile(data_format.BinaryDataFile):
 
     file_object.seek(0, os.SEEK_SET)
 
-    file_header = self._ReadFileHeader(file_object)
+    file_header = self._ReadFileHeader(
+        file_object, format_version=self.format_version)
     self.sequence_number = file_header.sequence_number
 
     self._mapping_table1 = self._ReadMappingTable(file_object)
 
     self._ReadUnknownTable(file_object)
-    self._ReadFileFooter(file_object, format_version=1)
+    self._ReadFileFooter(file_object)
 
     file_offset = file_object.tell()
 
     if self.format_version == 2 or file_offset < self._file_size:
       try:
-        file_header = self._ReadFileHeader(file_object)
+        file_header = self._ReadFileHeader(
+            file_object, format_version=self.format_version)
       except errors.ParseError:
         file_header = None
 
@@ -907,8 +888,7 @@ class MappingFile(data_format.BinaryDataFile):
         self._mapping_table2 = self._ReadMappingTable(file_object)
 
         self._ReadUnknownTable(file_object)
-        self._ReadFileFooter(
-            file_object, format_version=self.format_version)
+        self._ReadFileFooter(file_object)
 
 
 class ObjectsDataFile(data_format.BinaryDataFile):
@@ -3250,6 +3230,10 @@ class CIMRepository(data_format.BinaryDataFormat):
     format_version (str): format version.
   """
 
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
+
   _KEY_SEGMENT_SEPARATOR = '\\'
   _KEY_VALUE_SEPARATOR = '.'
 
@@ -4074,8 +4058,6 @@ class CIMRepository(data_format.BinaryDataFormat):
           self._namespace_instances.append(instance)
 
       parent_namespaces = unresolved_namespaces
-
-    print("UR:", unresolved_namespaces)
 
   def Close(self):
     """Closes the CIM repository."""

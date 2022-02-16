@@ -98,8 +98,14 @@ In Windows XP and Windows 2003 the CIM repository can be found in the directory:
 
 This document refers to this format as version 2.1.
 
-[NOTE]
-A copy of the CIM repository can be stored in the system restore points.
+Copies of the CIM repository can be stored in the system restore points.
+
+* `Index.btr`; index binary-tree file;
+* `Index.map`; (optional) index mappings file, only seen in Windows XP 32-bit
+* `Objects.data`; objects data file;
+* `Objects.map`; objects mappings file, only seen in Windows XP 32-bit
+* `Mapping[1-2].map`; mappings file
+* `Mapping.ver`; mappings version file contains # of the active mappings file
 
 === Windows Vista and later
 
@@ -109,16 +115,17 @@ In Windows Vista and later the CIM repository can be found in the directory:
 %SystemRoot%\System32\WBEM\Repository\
 ....
 
-* `Index.btr`; index binary-tree file;
-* `Index.map`; (optional) index mappings file;
-* `Objects.data`; objects data file;
-* `Objects.map`; objects mappings file;
-* `Mapping#.map`; mappings file where # is:
-** `[1-2]` in Windows XP and Windows 2003
-** `[1-3]` in Windows Vista and later
-* `Mapping.ver`; mappings version file contains # of the active mappings file.
-
 This document refers to this format as version 2.2.
+
+Copies of the CIM repository can be stored in directories named:
+
+....
+%SystemRoot%\System32\WBEM\Repository.00[1-9]\
+....
+
+* `Index.btr`; index binary-tree file;
+* `Objects.data`; objects data file;
+* `Mapping[1-3].map`; mappings file, where `Mapping3.map` was introduced in Windows 7
 
 === Test version
 
@@ -823,10 +830,8 @@ multiple backups.
 * index mapping table
 * version 2.1 file footer
 
-In Windows Vista the format changed to version 2.2. and an additional
-`Mapping3.map` file was added.
-
-A version 2.2 mapping file consists of:
+In Windows Vista the format changed to version 2.2 and in Windows 7
+an additional `Mapping3.map` file was added.
 
 * version 2.2 file header
 * objects mapping table
@@ -835,7 +840,8 @@ A version 2.2 mapping file consists of:
 * version 2.2 file header
 * index mapping table
 * unknown table, presumably used for free space tracking
-* version 2.2 file footer
+* version 2.1 file footer
+* trailing data
 
 === File header
 
@@ -860,8 +866,8 @@ The file header - version 2.2 is 20 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | 0x0000abcd | [yellow-background]*Unknown (signature)*
 | 4 | 4 | | Sequence number
-| 8 | 4 | | [yellow-background]*Unknown (current identifier)*
-| 12 | 4 | | [yellow-background]*Unknown (previous identifier)*
+| 8 | 4 | | [yellow-background]*Unknown (identifier)*
+| 12 | 4 | | [yellow-background]*Unknown (identifier - 1)*
 | 16 | 4 | | Number of pages
 |===
 
@@ -917,31 +923,17 @@ The unknown table is variable of size and consists of:
 
 === File footer
 
-==== File footer - version 2.1
-
-The file footer - version 2.1 is 4 bytes of size and consists of:
+The file footer is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
-|===
-
-==== File footer - version 2.2
-
-The file footer - version 2.2 is 8 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | 0x0000dcba | [yellow-background]*Unknown (signature)*
-| 4 | 4 | | [yellow-background]*Unknown* +
-Seen: 0, 1
 |===
 
 == The active mapping file (Mapping.ver)
 
-The active mapping file (Mapping.ver) is used by format version 2.
+The active mapping file (Mapping.ver) is used by format version 2.1.
 
 The active mapping file is used in Windows XP and Windows 2003 to indicate
 the which `Mapping#.map` file is active (should be used).
@@ -954,8 +946,8 @@ the which `Mapping#.map` file is active (should be used).
 
 == [[objects_data_file]]The objects data file (Objects.data)
 
-The objects data file (Objects.data) is used by format version 2 and consists
-of:
+The objects data file (Objects.data) is used by format version 2.1 and 2.2
+and consists of:
 
 * an array of objects data pages
 
