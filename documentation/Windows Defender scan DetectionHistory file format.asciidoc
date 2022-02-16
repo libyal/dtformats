@@ -103,8 +103,6 @@ a value containing the string "Magic.Version:1.2".
 * set 2, which contains threat information
 * one of more set 3, which contains information about threat detection resources
 
-[yellow-background]*TODO: if information is related to MSFT_MpThreat or MSFT_MpThreatDetection classes?*
-
 ==== Known values - set 1
 
 [cols="1,1,5",options="header"]
@@ -117,15 +115,17 @@ Contains the GUID corresponding to the file name
 
 ==== Known values - set 2
 
+[yellow-background]*TODO: information is related to MSFT_MpThreat and MSFT_MpThreatDetection CIM classes?*
+
 [cols="1,1,5",options="header"]
 |===
 | Value index | Value | Description
 | 0 | "Magic.Version:1.2" | Known values set separator
 | 1 | | Name of the threat that was detected +
 For example: "Virus:DOS/EICAR_Test_File"
-| 2 | | [yellow-background]*Unknown* +
+| 2 | | [yellow-background]*Unknown (TypeID?)* +
 Seen: 0
-| 3 | | [yellow-background]*Unknown* +
+| 3 | | [yellow-background]*Unknown (SeverityID?)* +
 Seen: 5
 | 4 | | Category +
 See section: <<category,Category>>
@@ -165,7 +165,7 @@ Seen: 0, 0x10000001
 | 4 | | Threat tracking data size
 | 5 | | Threat tracking data
 3+| _Optional values_
-| 6 | | [yellow-background]*Unknown date and time*
+| 6 | | [yellow-background]*Unknown date and time (LastThreatStatusChangeTime or RemediationTime?)*
 | 7 | | [yellow-background]*Unknown* +
 Seen: 0
 | 8 | | [yellow-background]*Unknown* +
@@ -175,28 +175,30 @@ Seen: 0
 Seen: 0, 1
 | 11 | | [yellow-background]*Unknown* +
 Seen: 2, 6
-| 12 | | User/System account name
+| 12 | | Domain user +
+Contains an user account name
 | 13 | | [yellow-background]*Unknown* +
 Seen: 2, 3
-| 14 | | [yellow-background]*Unknown (parent process?)* +
-Seen: Path of parent process executable, "Unknown"
+| 14 | | Process name +
+Contains the path of parent process executable or "Unknown"
 | 15 | | [yellow-background]*Unknown* +
 Seen: 2, 3
 | 16 | | [yellow-background]*Unknown* +
 Seen: 0, 1
 | 17 | | [yellow-background]*Unknown* +
 Seen: 0
-| 18 | | [yellow-background]*Unknown date and time*
+| 18 | | [yellow-background]*Unknown date and time (InitialDetectionTime?)*
 | 19 | | [yellow-background]*Unknown* +
 Seen: 0, 3
-| 20 | | [yellow-background]*Unknown date and time*
+| 20 | | [yellow-background]*Unknown date and time (LastThreatStatusChangeTime or RemediationTime?)*
 | 21 | | [yellow-background]*Unknown* +
 Seen: 0
 | 22 | | [yellow-background]*Unknown* +
 Seen: 0
 | 23 | | [yellow-background]*Unknown* +
 Seen: 0
-| 24 | | User/System account name
+| 24 | | Domain user +
+Contains an user account name
 | 25 | | [yellow-background]*Unknown* +
 Seen: 0
 | 26 | | [yellow-background]*Unknown* +

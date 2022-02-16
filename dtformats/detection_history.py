@@ -51,10 +51,11 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
        4: 'Threat tracking data size',
        5: 'Threat tracking data',
        6: 'Unknown date and time1',
-       12: 'User/System account name1',
+       12: 'Domain user1',
+       14: 'Process name',
        18: 'Unknown date and time2',
        20: 'Unknown date and time3',
-       24: 'User/System account name2'}]
+       24: 'Domain user2'}]
 
   _CATEGORY_NAME = {
       0: 'INVALID',
