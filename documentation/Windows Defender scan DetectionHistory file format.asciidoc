@@ -123,31 +123,31 @@ Contains the GUID corresponding to the file name
 | 0 | "Magic.Version:1.2" | Known values set separator
 | 1 | | Name of the threat that was detected +
 For example: "Virus:DOS/EICAR_Test_File"
-| 2 | | [yellow-background]*Unknown (TypeID?)* +
+| 2 | | [yellow-background]*Unknown (MSFT_MpThreat TypeID?)* +
 Seen: 0
-| 3 | | [yellow-background]*Unknown (SeverityID?)* +
-Seen: 5
+| 3 | | [yellow-background]*Unknown (MSFT_MpThreat SeverityID?)* +
+Seen: 1, 5
 | 4 | | Category +
 See section: <<category,Category>>
 | 5 | | [yellow-background]*Unknown* +
-Seen: 49, 63, 110
-| 6 | | [yellow-background]*Unknown (Severity?)* +
-Seen: 4
+Seen: 49, 63, 110, 112
+| 6 | | [yellow-background]*Unknown (MSFT_MpThreatDetection Severity?)* +
+Seen: 0, 4
 | 7 | | [yellow-background]*Unknown* +
-Seen: 3
+Seen: 1, 3, 103, 106
 | 8 | | [yellow-background]*Unknown* +
-Seen: 3
+Seen: 1, 3, 4
 | 9 | | [yellow-background]*Unknown* +
-Seen: 3
-| 10 | | [yellow-background]*Unknown* +
-Seen: 3
+Seen: 2, 3, 8
 3+| _Optional values_
+| 10 | | [yellow-background]*Unknown* +
+Seen: 1, 3
 | 11 | | [yellow-background]*Unknown* +
-Seen: 2
+Seen: 6, 2
 | 12 | | [yellow-background]*Unknown* +
-Seen: 6
-| 13 | | [yellow-background]*Unknown* +
-Seen: 1
+Seen: 1, 6, 7
+3+| _Common (last value)_
+| ... | | Number of threat detection resources (set 3)
 |===
 
 ==== Known values - set 3
@@ -159,13 +159,13 @@ Seen: 1
 | 1 | | Resource type +
 Seen: "containerfile", "file", "process", "regkey", "regkeyvalue", "runkey", "service", "startup", "taskscheduler", "uninstall", "webfile"
 | 2 | | Resource location +
-Seen: file path, Windows Registry key path
+Contains information about the location of a resource such as a file path or Windows Registry key path
 | 3 | | [yellow-background]*Unknown* +
-Seen: 0, 0x10000001
+Seen: 0, 0x10000001, 0x10000002
 | 4 | | Threat tracking data size
 | 5 | | Threat tracking data
-3+| _Optional values_
-| 6 | | [yellow-background]*Unknown date and time (LastThreatStatusChangeTime or RemediationTime?)*
+3+| _Optional values typically present in the last threat detection resource (set 3)_
+| 6 | | [yellow-background]*Unknown date and time (LastThreatStatusChangeTime?)*
 | 7 | | [yellow-background]*Unknown* +
 Seen: 0
 | 8 | | [yellow-background]*Unknown* +
@@ -190,7 +190,8 @@ Seen: 0
 | 18 | | [yellow-background]*Unknown date and time (InitialDetectionTime?)*
 | 19 | | [yellow-background]*Unknown* +
 Seen: 0, 3
-| 20 | | [yellow-background]*Unknown date and time (LastThreatStatusChangeTime or RemediationTime?)*
+| 20 | | [yellow-background]*Unknown date and time (RemediationTime?)* +
+Contains 0 if not set
 | 21 | | [yellow-background]*Unknown* +
 Seen: 0
 | 22 | | [yellow-background]*Unknown* +
@@ -212,15 +213,8 @@ Seen: 0
 | 30 | | [yellow-background]*Unknown* +
 Seen: 0
 | 31 | | [yellow-background]*Unknown* +
-Seen: 1
+Seen: 0, 1
 |===
-
-....
-Possible date and time values:
-InitialDetectionTime
-LastThreatStatusChangeTime
-RemediationTime
-....
 
 === [[category]]Category
 
@@ -321,6 +315,10 @@ The threat tracking data consists of:
 * values data size
 * values
 
+[NOTE]
+A containerfile resource can contain threat tracking data that only consists
+out of a header.
+
 ==== Threat tracking header
 
 [cols="1,1,1,5",options="header"]
@@ -342,6 +340,17 @@ The threat tracking data consists of:
 |===
 
 ==== Threat tracking value
+
+===== Threat tracking value - 8-bit integer
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Key string size
+| 4 | ... | | Key string
+| ... | 4 | 0x00000005 | Value type
+| ... | 1 | | Value integer
+|===
 
 ===== Threat tracking value - 32-bit integer
 
@@ -375,6 +384,27 @@ The threat tracking data consists of:
 | ... | 4 | 0x00000006 | Value type
 | ... | 4 | | Value string size
 | ... | ... | | Value string
+|===
+
+==== Threat tracking values
+
+[cols="1,1,5",options="header"]
+|===
+| Key string | Value type | Description
+| ThreatTrackingSha256 | string (0x00000006) |
+| ThreatTrackingSigSeq | 64-bit integer (0x00000004) |
+| ThreatTrackingId | string (0x00000006 ) |
+| ThreatTrackingStartTime | 64-bit integer (0x00000004) | Contains a FILETIME
+| ThreatTrackingThreatName | string (0x00000006) |
+| ThreatTrackingSha1 | string (0x00000006) |
+| ThreatTrackingSigSha | string (0x00000006) |
+| ThreatTrackingSize | 64-bit integer (0x00000004) |
+| ThreatTrackingMD5 | string (0x00000006) |
+| ThreatTrackingScanFlags | 32-bit integer (0x00000003) |
+| ThreatTrackingIsEsuSig | 8-bit integer (0x00000005) |
+| ThreatTrackingThreatId | 32-bit integer (0x00000003) |
+| ThreatTrackingScanSource | 32-bit integer (0x00000003) |
+| ThreatTrackingScanType | 32-bit integer (0x00000003) |
 |===
 
 :numbered!:
