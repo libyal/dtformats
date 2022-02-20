@@ -4,15 +4,41 @@
 from dtformats import data_format
 
 
-class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
+class WindowsTaskConfiguration(object):
+  """Windows Task configuration.
+
+  Attributes:
+    application_name (str): application name.
+    author (str): author.
+    comment (str): comment.
+    error_retry_count (int): error retry count.
+    error_retry_interval (int): error retry interval.
+    identifier (str): identifier.
+    parameters (str): parameters.
+    priority (int): priority.
+    working_directory (str): working directory.
+  """
+
+  def __init__(self):
+    """Initializes a Windows Task configuration."""
+    super(WindowsTaskConfiguration, self).__init__()
+    self.application_name = None
+    self.author = None
+    self.comment = None
+    self.error_retry_count = None
+    self.error_retry_interval = None
+    self.identifier = None
+    self.parameters = None
+    self.priority = None
+    self.working_directory = None
+
+
+class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
   """Windows Task Scheduler job (.job) file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('job.yaml')
-
-  # TODO: add format definition.
-  # https://msdn.microsoft.com/en-us/library/cc248285.aspx
 
   # TODO: add job signature
   # https://msdn.microsoft.com/en-us/library/cc248299.aspx
@@ -67,6 +93,17 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
       ('user_data', 'User data', '_FormatDataStream'),
       ('reserved_data', 'Reserved data', '_FormatDataStream'),
       ('number_of_triggers', 'Number of triggers', '_FormatIntegerAsDecimal')]
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes a Windows Task Scheduler job (.job) file.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(WindowsTaskSchedulerJobFile, self).__init__(
+        debug=debug, output_writer=output_writer)
+    self._task_configuration = WindowsTaskConfiguration()
 
   def _FormatDataStream(self, data_stream):
     """Formats a data stream structure
@@ -164,48 +201,13 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
     """
     return '{0:02d}:{1:02d}'.format(time.hours, time.minutes)
 
-  def _ReadFixedLengthDataSection(self, file_object):
-    """Reads the fixed-length data section.
+  def GetWindowsTaskConfiguration(self):
+    """Retrieves the Windows task configuration represented by the job file.
 
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      IOError: if the fixed-length data section cannot be read.
+    Return:
+     WindowsTaskConfiguration: Windows task configuration.
     """
-    file_offset = file_object.tell()
-
-    data_type_map = self._GetDataTypeMap('job_fixed_length_data_section')
-
-    data_section, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'fixed-length data section')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          data_section, self._DEBUG_INFO_FIXED_LENGTH_DATA_SECTION)
-
-  def _ReadVariableLengthDataSection(self, file_object):
-    """Reads the variable-length data section.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      IOError: if the variable-length data section cannot be read.
-    """
-    file_offset = file_object.tell()
-
-    data_type_map = self._GetDataTypeMap('job_variable_length_data_section')
-
-    data_section, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'variable-length data section')
-
-    if self._debug:
-      self._DebugPrintStructureObject(
-          data_section, self._DEBUG_INFO_VARIABLE_LENGTH_DATA_SECTION)
-
-      for trigger in data_section.triggers.triggers_array:
-        self._DebugPrintStructureObject(trigger, self._DEBUG_INFO_TRIGGER)
+    return self._task_configuration
 
   def ReadFileObject(self, file_object):
     """Reads a Windows Task Scheduler job file-like object.
@@ -216,5 +218,32 @@ class WindowsTaskSchedularJobFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    self._ReadFixedLengthDataSection(file_object)
-    self._ReadVariableLengthDataSection(file_object)
+    data_section = self._ReadStructureObjectFromFileObject(
+        file_object, 0, 'job_fixed_length_data_section',
+        'fixed-length data section',
+        self._DEBUG_INFO_FIXED_LENGTH_DATA_SECTION)
+
+    self._task_configuration.error_retry_count = data_section.error_retry_count
+    self._task_configuration.error_retry_interval = (
+        data_section.error_retry_interval)
+    self._task_configuration.identifier = str(data_section.job_identifier)
+    self._task_configuration.priority = data_section.priority
+
+    file_offset = file_object.tell()
+    data_section = self._ReadStructureObjectFromFileObject(
+        file_object, file_offset, 'job_variable_length_data_section',
+        'variable-length data section',
+        self._DEBUG_INFO_VARIABLE_LENGTH_DATA_SECTION)
+
+    if self._debug:
+      # TODO: refactor into debug info
+      for trigger in data_section.triggers.triggers_array:
+        self._DebugPrintStructureObject(trigger, self._DEBUG_INFO_TRIGGER)
+
+    self._task_configuration.application_name = (
+        data_section.application_name.string)
+    self._task_configuration.parameters = data_section.parameters.string
+    self._task_configuration.working_directory = (
+        data_section.working_directory.string)
+    self._task_configuration.author = data_section.author.string
+    self._task_configuration.comment = data_section.comment.string

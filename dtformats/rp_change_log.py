@@ -361,11 +361,12 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
       ParseError: if the record cannot be read.
     """
     data_type_map = self._GetDataTypeMap('rp_change_log_record_header')
+    context = dtfabric_data_maps.DataTypeMapContext()
 
     try:
       record_header = self._ReadStructureFromByteStream(
           record_data[record_data_offset:], record_data_offset, data_type_map,
-          'record header')
+          'record header', context=context)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
           'Unable to parse record header with error: {0!s}'.format(
@@ -378,7 +379,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintRecordHeader(record_header)
 
-    record_data_offset += data_type_map.GetByteSize()
+    record_data_offset += context.byte_size
 
     value_string = ''
     if record_header.record_type in (4, 5, 9):

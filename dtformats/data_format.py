@@ -644,19 +644,18 @@ class BinaryDataFormat(object):
 
     Raises:
       ParseError: if the structure cannot be read.
-      ValueError: if file-like object or data type map is missing.
+      ValueError: if the file-like object is missing.
     """
-    context = None
-    data = b''
-    last_data_size = 0
-
-    data_size = data_type_map.GetSizeHint()
-
     if self._debug:
       self._DebugPrintText(
           'Reading {0:s} at offset: {1:d} (0x{1:08x})\n'.format(
               description, file_offset))
 
+    context = None
+    data = b''
+    last_data_size = 0
+
+    data_size = data_type_map.GetSizeHint()
     while data_size != last_data_size:
       read_offset = file_offset + last_data_size
       read_size = data_size - last_data_size
@@ -691,6 +690,37 @@ class BinaryDataFormat(object):
     raise errors.ParseError(
         'Unable to read {0:s} at offset: {1:d} (0x{1:08x})'.format(
             description, file_offset))
+
+  def _ReadStructureObjectFromFileObject(
+      self, file_object, file_offset, data_type_map_name, description,
+      debug_info):
+    """Reads a structure object from a file-like object.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the structure data relative to the start
+          of the file-like object.
+      data_type_map_name (str): name of the data type map of the structure.
+      description (str): description of the structure.
+      debug_info (list[tuple[str, str, int]]): debug information.
+
+    Returns:
+      object: structure object.
+
+    Raises:
+      ParseError: if the structure cannot be read.
+      RuntimeError: if '_FABRIC' is not set.
+      ValueError: if the file-like object is missing.
+    """
+    data_type_map = self._GetDataTypeMap(data_type_map_name)
+
+    structure_object, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, description)
+
+    if self._debug:
+      self._DebugPrintStructureObject(structure_object, debug_info)
+
+    return structure_object
 
   @classmethod
   def ReadDefinitionFile(cls, filename):

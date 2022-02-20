@@ -48,12 +48,29 @@ def Main():
     print('')
     return False
 
-  job_file = job.WindowsTaskSchedularJobFile(
+  job_file = job.WindowsTaskSchedulerJobFile(
       debug=options.debug, output_writer=output_writer)
   job_file.Open(options.source)
 
-  output_writer.WriteText('Windows Task Scheduler job information:')
-  # TODO: print job information.
+  task_configuration = job_file.GetWindowsTaskConfiguration()
+
+  output_writer.WriteText('Windows Task Scheduler job information:\n')
+
+  output_writer.WriteText('\tIdentifier\t\t: {0:s}\n'.format(
+      task_configuration.identifier))
+  output_writer.WriteText('\tApplication name\t: {0:s}\n'.format(
+      task_configuration.application_name))
+  output_writer.WriteText('\tParameters\t\t: {0:s}\n'.format(
+      task_configuration.parameters))
+
+  output_writer.WriteText('\tAuthor\t\t\t: {0:s}\n'.format(
+      task_configuration.author))
+  output_writer.WriteText('\tComment\t\t\t: {0:s}\n'.format(
+      task_configuration.comment))
+
+  # TODO: print more task configuration information.
+
+  output_writer.WriteText('\n')
 
   job_file.Close()
 

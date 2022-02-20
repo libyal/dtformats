@@ -1,7 +1,9 @@
 name: job
 type: format
 description: Windows Job file format
-urls: ["https://github.com/libyal/dtformats/blob/main/documentation/Job%20file%20format.asciidoc"]
+urls:
+- "https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-tsch/96446df7-7683-40e0-a713-b01933b93b18"
+- "https://github.com/libyal/dtformats/blob/main/documentation/Job%20file%20format.asciidoc"
 ---
 name: byte
 type: integer
@@ -53,7 +55,7 @@ members:
 name: job_fixed_length_data_section
 aliases: [FIXDLEN_DATA]
 type: structure
-urls: ["https://msdn.microsoft.com/en-us/library/cc248286.aspx"]
+urls: ["https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-tsch/b6425baf-7eb1-46c9-be5f-b13649004d0c"]
 attributes:
   byte_order: little-endian
 members:
@@ -90,7 +92,7 @@ members:
 ---
 name: job_string
 type: structure
-urls: ["https://msdn.microsoft.com/en-us/library/cc248301.aspx"]
+urls: ["https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-tsch/3ee78c71-0c56-4ed7-801e-bb1e942abf9c"]
 attributes:
   byte_order: little-endian
 members:
@@ -104,7 +106,7 @@ members:
 ---
 name: job_user_data
 type: structure
-urls: ["https://msdn.microsoft.com/en-us/library/cc248306.aspx"]
+urls: ["https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-tsch/193a66b8-5fa8-47e5-bbd8-0b80fded37c7"]
 attributes:
   byte_order: little-endian
 members:
@@ -117,7 +119,7 @@ members:
 ---
 name: job_reserved_data
 type: structure
-urls: ["https://msdn.microsoft.com/en-us/library/cc248307.aspx"]
+urls: ["https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-tsch/47a468a4-566e-4f59-8d84-118cfcbd0acc"]
 attributes:
   byte_order: little-endian
 members:
@@ -196,7 +198,7 @@ members:
 ---
 name: job_variable_length_data_section
 type: structure
-urls: ["https://msdn.microsoft.com/en-us/library/cc248287.aspx"]
+urls: ["https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-tsch/1e7c0d2f-d126-4bf0-b080-c8cd46730d46"]
 attributes:
   byte_order: little-endian
 members:

@@ -655,8 +655,6 @@ class ChromeCacheParser(object):
 
   _UINT32LE = _FABRIC.CreateDataTypeMap('uint32le')
 
-  _UINT32LE_SIZE = _UINT32LE.GetByteSize()
-
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Chrome Cache parser.
 
@@ -767,7 +765,7 @@ class ChromeCacheParser(object):
       ParseError: if the file cannot be read.
     """
     with open(path, 'rb') as file_object:
-      signature_data = file_object.read(self._UINT32LE_SIZE)
+      signature_data = file_object.read(4)
 
       try:
         signature = self._UINT32LE.MapByteStream(signature_data)

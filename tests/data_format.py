@@ -52,12 +52,6 @@ members:
 
   _FABRIC = dtfabric_fabric.DataTypeFabric(yaml_definition=_DEFINITION)
 
-  POINT3D = _FABRIC.CreateDataTypeMap('point3d')
-
-  POINT3D_SIZE = POINT3D.GetByteSize()
-
-  SHAPE3D = _FABRIC.CreateDataTypeMap('shape3d')
-
 
 class ErrorBytesIO(io.BytesIO):
   """Bytes IO that errors."""
@@ -236,28 +230,31 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
+    data_type_map = test_format._GetDataTypeMap('point3d')
+    data_size = data_type_map.GetSizeHint()
+
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
-    test_format._ReadData(file_object, 0, test_format.POINT3D_SIZE, 'point3d')
+    test_format._ReadData(file_object, 0, data_size, 'point3d')
 
     # Test with missing file-like object.
     with self.assertRaises(ValueError):
-      test_format._ReadData(None, 0, test_format.POINT3D_SIZE, 'point3d')
+      test_format._ReadData(None, 0, data_size, 'point3d')
 
     # Test with file-like object with insufficient data.
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00')
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadData(file_object, 0, test_format.POINT3D_SIZE, 'point3d')
+      test_format._ReadData(file_object, 0, data_size, 'point3d')
 
     # Test with file-like object that raises an IOError.
     file_object = ErrorBytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     with self.assertRaises(errors.ParseError):
-      test_format._ReadData(file_object, 0, test_format.POINT3D_SIZE, 'point3d')
+      test_format._ReadData(file_object, 0, data_size, 'point3d')
 
   # TODO: add tests for _ReadDefinitionFile
 
@@ -267,12 +264,14 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
+    data_type_map = test_format._GetDataTypeMap('point3d')
+    data_size = data_type_map.GetSizeHint()
+
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
     test_format._ReadStructure(
-        file_object, 0, test_format.POINT3D_SIZE, test_format.POINT3D,
-        'point3d')
+        file_object, 0, data_size, data_type_map, 'point3d')
 
   def testReadStructureFromByteStream(self):
     """Tests the _ReadStructureFromByteStream function."""
@@ -280,14 +279,15 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     test_format = TestBinaryDataFormat(
         debug=True, output_writer=output_writer)
 
+    data_type_map = test_format._GetDataTypeMap('point3d')
     test_format._ReadStructureFromByteStream(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00', 0,
-        test_format.POINT3D, 'point3d')
+        data_type_map, 'point3d')
 
     # Test with missing byte stream.
     with self.assertRaises(ValueError):
       test_format._ReadStructureFromByteStream(
-          None, 0, test_format.POINT3D, 'point3d')
+          None, 0, data_type_map, 'point3d')
 
     # Test with missing data map type.
     with self.assertRaises(ValueError):
@@ -312,8 +312,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     file_object = io.BytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
+    data_type_map = test_format._GetDataTypeMap('point3d')
     test_format._ReadStructureFromFileObject(
-        file_object, 0, test_format.POINT3D, "point3d")
+        file_object, 0, data_type_map, 'point3d')
 
     file_object = io.BytesIO(
         b'\x03\x00\x00\x00'
@@ -321,8 +322,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         b'\x04\x00\x00\x00\x05\x00\x00\x00\x06\x00\x00\x00'
         b'\x06\x00\x00\x00\x07\x00\x00\x00\x08\x00\x00\x00')
 
+    data_type_map = test_format._GetDataTypeMap('shape3d')
     test_format._ReadStructureFromFileObject(
-        file_object, 0, test_format.SHAPE3D, "shape3d")
+        file_object, 0, data_type_map, 'shape3d')
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):
