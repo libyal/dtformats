@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: jump_lists
 type: format
 description: Jump lists formats

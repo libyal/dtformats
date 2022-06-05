@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: bool8
 aliases: [BOOLEAN]
 type: boolean

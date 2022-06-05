@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: vhdx
 type: format
 description: Virtual Hard Disk version 2 (VHDX) image format

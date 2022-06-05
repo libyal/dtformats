@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: byte
 type: integer
 attributes:
@@ -312,7 +314,7 @@ attributes:
 members:
 - name: record_type
   data_type: uint32
-      # TODO: link to emf_record_type
+  # TODO: link to emf_record_type
 - name: record_size
   data_type: uint32
 - name: bounds_rectangle
@@ -367,7 +369,7 @@ attributes:
 members:
 - name: record_type
   data_type: uint32
-      # TODO: link to emf_record_type
+  # TODO: link to emf_record_type
 - name: record_size
   data_type: uint32
 ---

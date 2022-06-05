@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: cpio
 type: format
 description: Copy in and out (CPIO) archive format

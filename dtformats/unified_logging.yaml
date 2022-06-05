@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: unified_logging
 type: format
 description: Apple Unified Logging and Activity Tracing formats

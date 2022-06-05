@@ -1,3 +1,5 @@
+# dtFabric format specification.
+---
 name: rp_change_log
 type: format
 description: Windows restore point change log format
