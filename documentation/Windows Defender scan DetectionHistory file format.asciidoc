@@ -446,6 +446,13 @@ out of a header.
 | URL: | https://docs.microsoft.com/en-us/previous-versions/windows/desktop/defender/msft-mpthreatdetection
 |===
 
+[cols="1,5",options="header"]
+|===
+| Title: | Defender Configuration Service (contains Threat Category mapping)
+| URL: | https://docs.microsoft.com/en-us/windows/client-management/mdm/defender-csp
+|===
+
+
 [appendix]
 == GNU Free Documentation License
 
