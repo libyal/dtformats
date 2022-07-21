@@ -45,7 +45,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | February 2022 | Initial version.
-| 0.0.2 | Fry | July 2023 | Additional information.
+| 0.0.2 | Fry | July 2022 | Additional information.
 |===
 
 :numbered:
