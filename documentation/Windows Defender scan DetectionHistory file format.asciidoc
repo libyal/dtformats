@@ -219,6 +219,11 @@ Seen: 0, 1
 
 === [[category]]Category
 
+The following values were obtained with Get-MpThreatCatalog on Windows 11.
+
+[NOTE]
+These values are likely to be Windows and/or Defender version dependent.
+
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
@@ -346,18 +351,6 @@ out of a header.
 
 ==== Threat tracking value
 
-===== Threat tracking value - 5-byte field
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 4 | | Key string size
-| 4 | ... | | Key string
-| ... | 4 | 0x00000007 | Value type
-| ... | 5-byte | | Value field
-|===
-
-
 ===== Threat tracking value - 8-bit integer
 
 [cols="1,1,1,5",options="header"]
@@ -401,6 +394,17 @@ out of a header.
 | ... | 4 | 0x00000006 | Value type
 | ... | 4 | | Value string size
 | ... | ... | | Value string
+|===
+
+===== Threat tracking value - 5-byte field
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Key string size
+| 4 | ... | | Key string
+| ... | 4 | 0x00000007 | Value type
+| ... | 5-byte | | Value field
 |===
 
 ==== Threat tracking values
@@ -451,7 +455,6 @@ out of a header.
 | Title: | Defender Configuration Service (contains Threat Category mapping)
 | URL: | https://docs.microsoft.com/en-us/windows/client-management/mdm/defender-csp
 |===
-
 
 [appendix]
 == GNU Free Documentation License
