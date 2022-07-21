@@ -27,7 +27,8 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
       ('value_type', 'Value type', '_FormatIntegerAsHexadecimal8'),
       ('value_integer', 'Value integer', '_FormatIntegerAsDecimal'),
       ('value_string_size', 'Value string size', '_FormatIntegerAsDecimal'),
-      ('value_string', 'Value string', '_FormatString')]
+      ('value_string', 'Value string', '_FormatString'),
+      ('value_data', 'Value data', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_VALUE = [
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
@@ -88,22 +89,26 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
       27: 'POTENTIALUNWANTEDSOFTWARE',
       28: 'ICQEXPLOIT',
       29: 'TROJANTELNET',
-      30: 'FILESHARINGPROGRAM',
-      31: 'MALWARE_CREATION_TOOL',
-      32: 'REMOTE_CONTROL_SOFTWARE',
-      33: 'TOOL',
-      34: 'TROJAN_DENIALOFSERVICE',
-      36: 'TROJAN_DROPPER',
-      37: 'TROJAN_MASSMAILER',
-      38: 'TROJAN_MONITORINGSOFTWARE',
-      39: 'TROJAN_PROXYSERVER',
-      40: 'VIRUS',
-      42: 'KNOWN',
-      43: 'UNKNOWN',
-      44: 'SPP',
-      45: 'BEHAVIOR',
-      46: 'VULNERABILTIY',
-      47: 'POLICY'}
+      30: 'EXPLOIT',
+      31: 'FILESHARINGPROGRAM',
+      32: 'MALWARE_CREATION_TOOL',
+      33: 'REMOTE_CONTROL_SOFTWARE',
+      34: 'TOOL',
+      36: 'TROJAN_DENIALOFSERVICE',
+      37: 'TROJAN_DROPPER',
+      38: 'TROJAN_MASSMAILER',
+      39: 'TROJAN_MONITORINGSOFTWARE',
+      40: 'TROJAN_PROXYSERVER',
+      42: 'VIRUS',
+      43: 'KNOWN',
+      44: 'UNKNOWN',
+      45: 'SPP',
+      46: 'BEHAVIOR',
+      47: 'VULNERABILTIY',
+      48: 'POLICY',
+      49: 'EUS',
+      50: 'RANSOM',
+      51: 'ASR'}
 
   def _ReadThreatTrackingData(self, threat_tracking_data, file_offset):
     """Reads the threat tracking data.
