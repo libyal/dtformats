@@ -58,29 +58,59 @@ type: uuid
 attributes:
   byte_order: big-endian
 ---
-name: dsc_range_descriptor
+name: dsc_range_descriptor_v1
 type: structure
-description: Shared-Cache strings (dsc) range descriptor.
+description: Shared-Cache strings (dsc) range descriptor version 1.
 attributes:
   byte_order: little-endian
 members:
 - name: uuid_descriptor_index
   data_type: uint32
-- name: range_offset
-  data_type: uint32
 - name: data_offset
+  data_type: uint32
+- name: range_offset
   data_type: uint32
 - name: range_size
   data_type: uint32
 ---
-name: dsc_uuid_descriptor
+name: dsc_range_descriptor_v2
 type: structure
-description: Shared-Cache strings (dsc) UUID descriptor.
+description: Shared-Cache strings (dsc) range descriptor version 2.
+attributes:
+  byte_order: little-endian
+members:
+  - name: unknown_offset
+    data_type: uint64
+  - name: range_offset
+    data_type: uint32
+  - name: range_size
+    data_type: uint32
+  - name: uuid_descriptor_index
+    data_type: uint64
+---
+name: dsc_uuid_descriptor_v1
+type: structure
+description: Shared-Cache strings (dsc) UUID descriptor version 1.
 attributes:
   byte_order: little-endian
 members:
 - name: text_offset
   data_type: uint32
+- name: text_size
+  data_type: uint32
+- name: sender_identifier
+  data_type: uuid_be
+- name: path_offset
+  data_type: uint32
+---
+name: dsc_uuid_descriptor_v2
+type: structure
+description: Shared-Cache strings (dsc) UUID descriptor version 2.
+attributes:
+  byte_order: little-endian
+members:
+- name: text_offset
+  data_type: uint64
 - name: text_size
   data_type: uint32
 - name: sender_identifier
@@ -106,14 +136,6 @@ members:
   data_type: uint32
 - name: number_of_uuids
   data_type: uint32
-- name: range_descriptors
-  type: sequence
-  element_data_type: dsc_range_descriptor
-  number_of_elements: dsc_file_header.number_of_ranges
-- name: uuid_descriptors
-  type: sequence
-  element_data_type: dsc_uuid_descriptor
-  number_of_elements: dsc_file_header.number_of_uuids
 ---
 name: tracev3_chunk_header
 type: structure

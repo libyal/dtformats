@@ -47,6 +47,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.3 | Y. Khatri | February 2019 | Additional changes based prior work.
 | 0.0.4 | J.B. Metz | February 2019 | Additional changes based on format analysis.
 | 0.0.5 | J.B. Metz | March 2019 | Additional changes based on format analysis.
+| 0.0.6 | R. Asselin | July 2022 | Additional changes based on format analysis.
 |===
 
 :numbered:
@@ -59,8 +60,8 @@ Apple Unified Logging and Activity Tracing consists of:
 
 === Diagnostics data
 
-The diagnostics data can be stored in a logarchive (directory) or on a Mac OS
-system in the directory:
+The diagnostics data can be stored in a logarchive (directory), as part of a
+sysdiagnose dump for iOS devices or on a Mac OSystem in the directory:
 
 ....
 /private/var/db/diagnostics/
@@ -893,13 +894,15 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | "hcsd" | Signature
-| 4 | 2 | 1 | Format major version
+| 4 | 2 | 1 or 2 | Format major version
 | 6 | 2 | 0 | Format minor version
 | 8 | 4 | | Number of ranges (range count)
 | 12 | 4 | | Number of UUIDs (uuid count)
 |===
 
 === Shared-Cache Strings (dsc) range descriptor
+
+==== Version 1 ====
 
 A Shared-Cache Strings (dsc) range descriptor is 16 bytes of size and consist
 of:
@@ -908,14 +911,30 @@ of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | UUID descriptor index
-| 4 | 4 | | (dsc) Range offset +
+| 4 | 4 | | (dsc) data offset +
 The offset is relative to [yellow-background]*unknown*
-| 8 | 4 | | Data offset +
+| 8 | 4 | | Range offset +
 The offset is relative to the start of the file
 | 12 | 4 | | (dsc) Range size
 |===
 
+==== Version 2 ====
+
+A Shared-Cache Strings (dsc) range descriptor is 24 bytes of size and consist
+of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Unknown Offset
+| 8 | 4 | | Range offset + The offset is relative to the start of the file
+| 12 | 4 | | (dsc) Range size
+| 16 | 8 | | UUID descriptor index
+|===
+
 === Shared-Cache Strings (dsc) UUID descriptor
+
+==== Version 1 ====
 
 A Shared-Cache Strings (dsc) UUID descriptor is 28 bytes of size and consist of:
 
@@ -929,6 +948,23 @@ The offset is relative to [yellow-background]*unknown*
 Contains a UUID stored in big-endian +
 [yellow-background]*Does this reference to the uuidtext file?*
 | 24 | 4 | | Path offset +
+The offset is relative to the start of the file
+|===
+
+==== Version 2 ====
+
+A Shared-Cache Strings (dsc) UUID descriptor is 32 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | (dsc) Text offset? +
+The offset is relative to [yellow-background]*unknown*
+| 8 | 4 | | (dsc) Text size?
+| 12 | 16 | | Sender (process or library) identifier +
+Contains a UUID stored in big-endian +
+[yellow-background]*Does this reference to the uuidtext file?*
+| 28 | 4 | | Path offset +
 The offset is relative to the start of the file
 |===
 
