@@ -45,6 +45,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | February 2022 | Initial version.
+| 0.0.2 | Fry | July 2022 | Additional information.
 |===
 
 :numbered:
@@ -130,13 +131,13 @@ Seen: 1, 5
 | 4 | | Category +
 See section: <<category,Category>>
 | 5 | | [yellow-background]*Unknown* +
-Seen: 49, 63, 110, 112
+Seen: 14, 49, 63, 69, 110, 112
 | 6 | | [yellow-background]*Unknown (MSFT_MpThreatDetection Severity?)* +
 Seen: 0, 4
 | 7 | | [yellow-background]*Unknown* +
-Seen: 1, 3, 103, 106
+Seen: 1, 3, 4, 102, 103, 104, 106
 | 8 | | [yellow-background]*Unknown* +
-Seen: 1, 3, 4
+Seen: 1, 2, 3, 4, 5
 | 9 | | [yellow-background]*Unknown* +
 Seen: 2, 3, 8
 3+| _Optional values_
@@ -157,11 +158,11 @@ Seen: 1, 6, 7
 | Value index | Value | Description
 | 0 | "Magic.Version:1.2" | Known values set separator
 | 1 | | Resource type +
-Seen: "containerfile", "file", "process", "regkey", "regkeyvalue", "runkey", "service", "startup", "taskscheduler", "uninstall", "webfile"
+Seen: "behavior", "clsid", "CmdLine", "containerfile", "contextmenu", "file", "internalbehavior", "internalCmdLine", "process", "regkey", "regkeyvalue", "runkey", "service", "shellextapproved", "startup", "taskscheduler", "uninstall", "webfile"
 | 2 | | Resource location +
 Contains information about the location of a resource such as a file path or Windows Registry key path
 | 3 | | [yellow-background]*Unknown* +
-Seen: 0, 0x10000001, 0x10000002
+Seen: 0, 1, 4, 5, 8, 0x10000001, 0x10000002
 | 4 | | Threat tracking data size
 | 5 | | Threat tracking data
 3+| _Optional values typically present in the last threat detection resource (set 3)_
@@ -218,6 +219,11 @@ Seen: 0, 1
 
 === [[category]]Category
 
+The following values were obtained with Get-MpThreatCatalog on Windows 11.
+
+[NOTE]
+These values are likely to be Windows and/or Defender version dependent.
+
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
@@ -251,22 +257,26 @@ Seen: 0, 1
 | 27 | POTENTIALUNWANTEDSOFTWARE |
 | 28 | ICQEXPLOIT |
 | 29 | TROJANTELNET |
-| 30 | FILESHARINGPROGRAM |
-| 31 | MALWARE_CREATION_TOOL |
-| 32 | REMOTE_CONTROL_SOFTWARE |
-| 33 | TOOL |
-| 34 | TROJAN_DENIALOFSERVICE |
-| 36 | TROJAN_DROPPER |
-| 37 | TROJAN_MASSMAILER |
-| 38 | TROJAN_MONITORINGSOFTWARE |
-| 39 | TROJAN_PROXYSERVER |
-| 40 | VIRUS |
-| 42 | KNOWN |
-| 43 | UNKNOWN |
-| 44 | SPP |
-| 45 | BEHAVIOR |
-| 46 | VULNERABILTIY |
-| 47 | POLICY |
+| 30 | EXPLOIT |
+| 31 | FILESHARINGPROGRAM |
+| 32 | MALWARE_CREATION_TOOL |
+| 33 | REMOTE_CONTROL_SOFTWARE |
+| 34 | TOOL |
+| 36 | TROJAN_DENIALOFSERVICE |
+| 37 | TROJAN_DROPPER |
+| 38 | TROJAN_MASSMAILER |
+| 39 | TROJAN_MONITORINGSOFTWARE |
+| 40 | TROJAN_PROXYSERVER |
+| 42 | VIRUS |
+| 43 | KNOWN |
+| 44 | UNKNOWN |
+| 45 | SPP |
+| 46 | BEHAVIOR |
+| 47 | VULNERABILTIY |
+| 48 | POLICY |
+| 49 | EUS |
+| 50 | RANSOM |
+| 51 | ASR |
 |===
 
 === Severity
@@ -386,6 +396,17 @@ out of a header.
 | ... | ... | | Value string
 |===
 
+===== Threat tracking value - 5-byte field
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Key string size
+| 4 | ... | | Key string
+| ... | 4 | 0x00000007 | Value type
+| ... | 5-byte | | Value field
+|===
+
 ==== Threat tracking values
 
 [cols="1,1,5",options="header"]
@@ -394,7 +415,11 @@ out of a header.
 | ThreatTrackingSha256 | string (0x00000006) |
 | ThreatTrackingSigSeq | 64-bit integer (0x00000004) |
 | ThreatTrackingId | string (0x00000006 ) |
+| ThreatTrackingIdList | string (0x00000006) |
 | ThreatTrackingStartTime | 64-bit integer (0x00000004) | Contains a FILETIME
+| ThreatTrackingParentCreationTime | 64-bit integer (0x00000004) | Contains a FILETIME
+| ThreatTrackingParentPid | 32-bit integer (0x00000003) |
+| ThreatTrackingThreatId | 32-bit integer (0x00000003) |
 | ThreatTrackingThreatName | string (0x00000006) |
 | ThreatTrackingSha1 | string (0x00000006) |
 | ThreatTrackingSigSha | string (0x00000006) |
@@ -405,6 +430,8 @@ out of a header.
 | ThreatTrackingThreatId | 32-bit integer (0x00000003) |
 | ThreatTrackingScanSource | 32-bit integer (0x00000003) |
 | ThreatTrackingScanType | 32-bit integer (0x00000003) |
+| ThreatTrackingResearchData | 5-byte field (0x00000007) |
+| ThreatTrackingSize | 64-bit integer (0x00000004) |
 |===
 
 :numbered!:
@@ -421,6 +448,12 @@ out of a header.
 |===
 | Title: | MSFT_MpThreatDetection class
 | URL: | https://docs.microsoft.com/en-us/previous-versions/windows/desktop/defender/msft-mpthreatdetection
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | Defender Configuration Service (contains Threat Category mapping)
+| URL: | https://docs.microsoft.com/en-us/windows/client-management/mdm/defender-csp
 |===
 
 [appendix]
