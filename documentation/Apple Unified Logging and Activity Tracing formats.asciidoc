@@ -61,7 +61,7 @@ Apple Unified Logging and Activity Tracing consists of:
 === Diagnostics data
 
 The diagnostics data can be stored in a logarchive (directory), as part of a
-sysdiagnose dump for iOS devices or on a Mac OSystem in the directory:
+sysdiagnose dump for iOS, or on a Mac OS in the directory:
 
 ....
 /private/var/db/diagnostics/
