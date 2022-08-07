@@ -66,9 +66,9 @@ attributes:
 members:
 - name: uuid_descriptor_index
   data_type: uint32
-- name: data_offset
-  data_type: uint32
 - name: range_offset
+  data_type: uint32
+- name: data_offset
   data_type: uint32
 - name: range_size
   data_type: uint32

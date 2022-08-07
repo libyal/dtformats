@@ -48,6 +48,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.4 | J.B. Metz | February 2019 | Additional changes based on format analysis.
 | 0.0.5 | J.B. Metz | March 2019 | Additional changes based on format analysis.
 | 0.0.6 | R. Asselin | July 2022 | Additional changes based on format analysis.
+| 0.0.7 | J.B. Metz | August 2022 | Additional changes based on format analysis.
 |===
 
 :numbered:
@@ -138,6 +139,17 @@ This filename relates to an UUID, for example:
 ....
 
 These files are store in the <<shared_cache_strings_file_format,Shared-Cache strings (dsc) file format>>
+
+=== Test versions
+
+The following version of programs were used to test the information within this
+document:
+
+* macOS 10.13 (High Sierra)
+* macOS 10.14 (Mojave)
+* macOS 10.15 (Catalina)
+* macOS 11 (Big Sur)
+* macOS 12 (Monterey)
 
 == [[tracev3_file_format]]tracev3 file format
 
@@ -894,10 +906,22 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | "hcsd" | Signature
-| 4 | 2 | 1 or 2 | Format major version
-| 6 | 2 | 0 | Format minor version
+| 4 | 2 | | Format major version
+| 6 | 2 | | Format minor version
 | 8 | 4 | | Number of ranges (range count)
 | 12 | 4 | | Number of UUIDs (uuid count)
+|===
+
+==== Format versions
+
+[cols="1,5",options="header"]
+|===
+| OS version | Format version
+| macOS 10.13 (High Sierra) | 1.0
+| macOS 10.14 (Mojave) | 1.0
+| macOS 10.15 (Catalina) | 1.0
+| macOS 11 (Big Sur) | 1.0
+| macOS 12 (Monterey) | 2.0
 |===
 
 === Shared-Cache Strings (dsc) range descriptor
@@ -911,11 +935,11 @@ and consist of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | UUID descriptor index
-| 4 | 4 | | (dsc) data offset +
+| 4 | 4 | | (dsc) range offset +
 The offset is relative to [yellow-background]*unknown*
-| 8 | 4 | | Range offset +
+| 8 | 4 | | [yellow-background]*Unknown (data offset?)* +
 The offset is relative to the start of the file
-| 12 | 4 | | (dsc) Range size
+| 12 | 4 | | (dsc) range size
 |===
 
 ==== Shared-Cache Strings (dsc) range descriptor - version 2
@@ -926,10 +950,10 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | [yellow-background]*Unknown offset*
-| 8 | 4 | | Range offset +
+| 0 | 8 | | [yellow-background]*Unknown (data offset?)*
+| 8 | 4 | | (dsc) range offset +
 The offset is relative to the start of the file
-| 12 | 4 | | (dsc) Range size
+| 12 | 4 | | (dsc) range size
 | 16 | 8 | | UUID descriptor index
 |===
 
@@ -943,9 +967,9 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | (dsc) Text offset +
+| 0 | 4 | | (dsc) text offset +
 The offset is relative to [yellow-background]*unknown*
-| 4 | 4 | | (dsc) Text size
+| 4 | 4 | | (dsc) text size
 | 8 | 16 | | Sender (process or library) identifier +
 Contains a UUID stored in big-endian +
 [yellow-background]*Does this reference to the uuidtext file?*
@@ -961,9 +985,9 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | (dsc) [yellow-background]*Unknown (Text offset?)* +
+| 0 | 8 | | (dsc) text offset
 The offset is relative to [yellow-background]*unknown*
-| 8 | 4 | | (dsc) [yellow-background]*Unknown (Text size?)*
+| 8 | 4 | | (dsc) text size
 | 12 | 16 | | Sender (process or library) identifier +
 Contains a UUID stored in big-endian +
 [yellow-background]*Does this reference to the uuidtext file?*

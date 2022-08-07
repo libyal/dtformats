@@ -69,6 +69,30 @@ def Main():
   output_writer.WriteText(
       'Apple Unified Logging and Activity Tracing information:\n')
 
+  if file_signature == b'hcsd':
+    for index, dsc_uuid in enumerate(unified_logging_file.uuids):
+      output_writer.WriteText('uuid {0:d}:\n'.format(index))
+      output_writer.WriteText('    uuid {0:d}:\t{1!s}\n'.format(
+          index, str(dsc_uuid.sender_identifier).upper()))
+      output_writer.WriteText(
+          '    dsc text:\t0x{0:08x} .. 0x{1:08x} ({2:d})\n'.format(
+              dsc_uuid.text_offset, dsc_uuid.text_offset + dsc_uuid.text_size,
+              dsc_uuid.text_size))
+      output_writer.WriteText('    path:\t{0:s}\n'.format(dsc_uuid.path))
+      output_writer.WriteText('\n')
+
+    for index, dsc_range in enumerate(unified_logging_file.ranges):
+      output_writer.WriteText('Range {0:d}:\n'.format(index))
+      output_writer.WriteText('    uuid {0:d}:\t{1!s}\n'.format(
+          dsc_range.uuid_index, str(dsc_range.uuid).upper()))
+      output_writer.WriteText(
+          '    dsc range:\t0x{0:08x} .. 0x{1:08x} ({2:d})\n'.format(
+              dsc_range.range_offset,
+              dsc_range.range_offset + dsc_range.range_size,
+              dsc_range.range_size))
+      output_writer.WriteText('    path:\t{0:s}\n'.format(dsc_range.path))
+      output_writer.WriteText('\n')
+
   unified_logging_file.Close()
 
   output_writer.Close()

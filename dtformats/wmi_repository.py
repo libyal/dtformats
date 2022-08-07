@@ -2688,7 +2688,7 @@ class ClassDefinition(CIMObject):
     self._DebugPrintText('\n')
 
   def IsAbstract(self):
-    """Determins if the class is abstract.
+    """Determines if the class is abstract.
 
     Returns:
       bool: True if abstract, False otherwise.

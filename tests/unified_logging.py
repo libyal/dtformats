@@ -31,91 +31,48 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(file_header.number_of_ranges, 263)
     self.assertEqual(file_header.number_of_uuids, 200)
 
-  def testReadRanges(self):
-    """Tests the _ReadRanges function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.DSCFile(output_writer=output_writer)
-
-    test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version1'])
-    self._SkipIfPathNotExists(test_file_path)
-
-    file_offset = 9536
-
-    with open(test_file_path, 'rb') as file_object:
-      range_descriptors, _ = test_file._ReadRangeDescriptors(
-          16, file_object, 1, 252)
-
-    with open(test_file_path, 'rb') as file_object:
-      ranges, _ = test_file._ReadRanges(
-          file_offset, file_object, range_descriptors)
-
-      self.assertEqual(len(ranges), 252)
-      self.assertEqual(ranges[1], b'%06llu.%06llu %s.%c[%lu] %s\x00')
-      self.assertEqual(
-          ranges[143], b'AppleUSBTopCaseHIDDriver\x00ATC\x00handleStart\x00')
-      self.assertEqual(ranges[217], b'BTDebugService\x00')
-
   def testReadRangeDescriptors(self):
     """Test the _ReadRangeDescriptors function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
     # Testing Version 1
-    test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version1'])
+    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
 
-    file_offset = 16
-    version = 1
-    number_of_ranges = 252
-
     with open(test_file_path, 'rb') as file_object:
-      range_descriptors, _ = test_file._ReadRangeDescriptors(
-          file_offset, file_object, version, number_of_ranges)
+      ranges = list(test_file._ReadRangeDescriptors(file_object, 16, 1, 252))
 
-    self.assertEqual(len(range_descriptors), 252)
-    self.assertEqual(range_descriptors[64].range_offset, 792393)
-    self.assertEqual(range_descriptors[64].range_size, 3834)
+    self.assertEqual(len(ranges), 252)
+    self.assertEqual(ranges[64].range_offset, 1756712)
+    self.assertEqual(ranges[64].range_size, 3834)
 
     # Testing version 2
-    test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version2'])
+    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version2'])
     self._SkipIfPathNotExists(test_file_path)
 
-    file_offset = 16
-    version = 2
-    number_of_ranges = 263
-
     with open(test_file_path, 'rb') as file_object:
-      range_descriptors, _ = test_file._ReadRangeDescriptors(
-          file_offset, file_object, version, number_of_ranges)
+      ranges = list(test_file._ReadRangeDescriptors(file_object, 16, 2, 263))
 
-    self.assertEqual(len(range_descriptors), 263)
-    self.assertEqual(range_descriptors[10].range_offset, 64272)
-    self.assertEqual(range_descriptors[10].range_size, 39755)
+    self.assertEqual(len(ranges), 263)
+    self.assertEqual(ranges[10].range_offset, 64272)
+    self.assertEqual(ranges[10].range_size, 39755)
 
-  def testReadUUIDPaths(self):
-    """Tests the _ReadUUIDPaths function."""
+  def testReadUUIDPath(self):
+    """Tests the _ReadUUIDPath function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version1'])
+    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
 
-    file_offset = 3202606
-    number_of_uuids = 196
-
     with open(test_file_path, 'rb') as file_object:
-      uuid_paths, _ = test_file._ReadUUIDPaths(
-          file_offset, file_object, number_of_uuids)
+      uuid_path = test_file._ReadUUIDPath(file_object, 3202606)
 
-    self.assertEqual(len(uuid_paths), number_of_uuids)
-    self.assertEqual(
-        uuid_paths[8], '/System/Library/Extensions/AppleAVEH8.kext/AppleAVEH8')
-    self.assertEqual(
-        uuid_paths[190], '/System/Library/Extensions/AGXG5P.kext/AGXG5P')
+    expected_uuid_path = (
+        '/System/Library/Extensions/AppleBCMWLANFirmware_Hashstore.kext/'
+        'AppleBCMWLANFirmware_Hashstore')
+    self.assertEqual(uuid_path, expected_uuid_path)
 
   def testReadUUIDDescriptors(self):
     """Test the _ReadUUIDDescriptors function."""
@@ -123,40 +80,31 @@ class DSCFileTest(test_lib.BaseTestCase):
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
     # Testing Version 1
-    test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version1'])
+    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
 
-    file_offset = 4048
-    version = 1
-    number_of_uuids = 196
-
     with open(test_file_path, 'rb') as file_object:
-      uuid_descriptors, _ = test_file._ReadUUIDDescriptors(
-          file_offset, file_object, version, number_of_uuids)
+      uuids = list(test_file._ReadUUIDDescriptors(file_object, 4048, 1, 196))
 
-    self.assertEqual(len(uuid_descriptors), 196)
-    self.assertEqual(uuid_descriptors[42].text_offset, 9191424)
-    self.assertEqual(uuid_descriptors[42].text_size, 223732)
-    self.assertEqual(uuid_descriptors[42].path_offset, 3203048)
+    self.assertEqual(len(uuids), 196)
+    self.assertEqual(uuids[42].text_offset, 9191424)
+    self.assertEqual(uuids[42].text_size, 223732)
+    expected_path = '/System/Library/Extensions/AppleH8ADBE0.kext/AppleH8ADBE0'
+    self.assertEqual(uuids[42].path, expected_path)
 
     # Testing Version 2
-    test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version2'])
+    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version2'])
     self._SkipIfPathNotExists(test_file_path)
 
-    file_offset = 6328
-    version = 2
-    number_of_uuids = 200
-
     with open(test_file_path, 'rb') as file_object:
-      uuid_descriptors, _ = test_file._ReadUUIDDescriptors(
-          file_offset, file_object, version, number_of_uuids)
+      uuids = list(test_file._ReadUUIDDescriptors(file_object, 6328, 2, 200))
 
-    self.assertEqual(len(uuid_descriptors), 200)
-    self.assertEqual(uuid_descriptors[197].text_offset, 26816512)
-    self.assertEqual(uuid_descriptors[197].text_size, 43736)
-    self.assertEqual(uuid_descriptors[197].path_offset, 4143087)
+    self.assertEqual(len(uuids), 200)
+    self.assertEqual(uuids[197].text_offset, 26816512)
+    self.assertEqual(uuids[197].text_size, 43736)
+    expected_path = (
+        '/System/Library/Extensions/AppleD2207PMU.kext/AppleD2207PMU')
+    self.assertEqual(uuids[197].path, expected_path)
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
@@ -167,9 +115,11 @@ class DSCFileTest(test_lib.BaseTestCase):
     # TODO: test of 8E21CAB1DCF936B49F85CF860E6F34EC currently failing.
     test_file_path = self._GetTestFilePath([
         'uuidtext', 'dsc', 'dsc-version1'])
+        # 'uuidtext', 'dsc', '8E21CAB1DCF936B49F85CF860E6F34EC'])
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)
+    test_file.Close()
 
 
 class TraceV3FileTest(test_lib.BaseTestCase):
@@ -205,6 +155,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)
+    test_file.Close()
 
 
 class UUIDTextFileTest(test_lib.BaseTestCase):
@@ -235,6 +186,7 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)
+    test_file.Close()
 
 
 if __name__ == '__main__':
