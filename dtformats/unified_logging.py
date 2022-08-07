@@ -27,8 +27,8 @@ class DSCFile(data_format.BinaryDataFile):
   _DEBUG_INFO_RANGE_DESCRIPTOR_V1 = [
       ('uuid_descriptor_index', 'UUID descriptor index',
        '_FormatIntegerAsDecimal'),
-      ('range_offset', 'Data offset', '_FormatIntegerAsHexadecimal8'),
-      ('data_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
+      ('data_offset', 'Data offset', '_FormatIntegerAsHexadecimal8'),
+      ('range_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
       ('range_size', 'Range size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_RANGE_DESCRIPTOR_V2 = [
