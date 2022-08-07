@@ -32,8 +32,8 @@ class DSCFile(data_format.BinaryDataFile):
       ('range_size', 'Range size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_RANGE_DESCRIPTOR_V2 = [
-      ('range_offset', 'Unknown offset', '_FormatIntegerAsHexadecimal8'),
-      ('data_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
+      ('unknown_offset', 'Unknown offset', '_FormatIntegerAsHexadecimal8'),
+      ('range_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
       ('range_size', 'Range size', '_FormatIntegerAsDecimal'),
       ('uuid_descriptor_index', 'UUID descriptor index',
        '_FormatIntegerAsDecimal')]
@@ -45,7 +45,7 @@ class DSCFile(data_format.BinaryDataFile):
       ('path_offset', 'Path offset', '_FormatIntegerAsHexadecimal8')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a timezone information file.
+    """Initializes a shared-cache strings (dsc) file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -100,7 +100,7 @@ class DSCFile(data_format.BinaryDataFile):
     return file_header
 
   def _ReadRanges(self, file_offset, file_object, range_descriptors):
-    """Reads the list of ranges.
+    """Reads the ranges.
 
     Args:
       file_offset (int): offset of the start of ranges data relative
@@ -109,8 +109,8 @@ class DSCFile(data_format.BinaryDataFile):
       range_descriptors (list): the list of range descriptors.
 
     Returns:
-      list: list of ranges.
-      int: offset of the end of ranges data relative to the start of the file.
+      tuple[list[bytes], int]: range data and the offset of the end of the
+          ranges data.
 
     Raises:
       ParseError: if the file cannot be read.
@@ -126,7 +126,7 @@ class DSCFile(data_format.BinaryDataFile):
 
   def _ReadRangeDescriptors(
       self, file_offset, file_object, version, number_of_ranges):
-    """Reads the list of range descriptor
+    """Reads the range descriptors.
 
     Args:
       file_offset (int): offset of the start of range descriptors data relative
@@ -136,9 +136,8 @@ class DSCFile(data_format.BinaryDataFile):
       number_of_ranges (int): the number of range descriptions to retrieve.
 
     Returns:
-      list: list of range_descriptors.
-      int: offset of the end of range descriptors data relative
-          to the start of the file.
+      tuple[list[dsc_range_descriptor_v1|dsc_range_descriptor_v2], int]:
+          range descriptors and the offset of the end of the ranges data.
 
     Raises:
       ParseError: if the file cannot be read.
@@ -150,7 +149,8 @@ class DSCFile(data_format.BinaryDataFile):
       data_type_map = self._GetDataTypeMap('dsc_range_descriptor_v2')
 
     else:
-      raise 'Unsupported format version: {0:d}.'.format(version)
+      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
+          version))
 
     range_descriptors = []
     for _ in range(0, number_of_ranges):
@@ -170,7 +170,7 @@ class DSCFile(data_format.BinaryDataFile):
     return range_descriptors, file_offset
 
   def _ReadUUIDPaths(self, file_offset, file_object, number_of_uuids):
-    """Reads the list of ranges.
+    """Reads the UUID paths.
 
     Args:
       file_offset (int): offset of the start of UUID paths data relative
@@ -179,8 +179,8 @@ class DSCFile(data_format.BinaryDataFile):
       number_of_uuids (int): number of uuids.
 
     Returns:
-      list: list of UUID paths.
-      int: offset of the end of UUID paths relative to the start of the file.
+      tuple[list[str], int]: UUID descriptors and the offset of the end of the
+          UUID paths data.
 
     Raises:
       ParseError: if the file cannot be read.
@@ -197,7 +197,7 @@ class DSCFile(data_format.BinaryDataFile):
 
   def _ReadUUIDDescriptors(
       self, file_offset, file_object, version, number_of_uuids):
-    """Reads the list of UUID descriptors.
+    """Reads the UUID descriptors.
 
     Args:
       file_offset (int): offset of the start of UUID descriptors data relative
@@ -207,9 +207,8 @@ class DSCFile(data_format.BinaryDataFile):
       number_of_uuids (int): the number of UUID descriptions to retrieve.
 
     Returns:
-      list: list of range_descriptors.
-      int: offset of the end of UUID descriptors data relative
-          to the start of the file.
+      tuple[list[dsc_uuid_descriptor_v1|dsc_uuid_descriptor_v2], int]:
+          UUID descriptors and the offset of the end of the UUID paths data.
 
     Raises:
       ParseError: if the file cannot be read.
@@ -221,7 +220,8 @@ class DSCFile(data_format.BinaryDataFile):
       data_type_map = self._GetDataTypeMap('dsc_uuid_descriptor_v2')
 
     else:
-      raise 'Unsupported format version: {0:d}.'.format(version)
+      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
+          version))
 
     uuid_descriptors = []
     for _ in range(0, number_of_uuids):
@@ -242,9 +242,6 @@ class DSCFile(data_format.BinaryDataFile):
     Args:
       file_object (file): file-like object.
 
-    Returns:
-      dict: dictionary containing all the data from the file-like object.
-
     Raises:
       ParseError: if the file cannot be read.
     """
@@ -258,19 +255,15 @@ class DSCFile(data_format.BinaryDataFile):
     uuid_descriptors, file_offset = self._ReadUUIDDescriptors(
         file_offset, file_object, file_header.major_format_version,
         file_header.number_of_uuids)
+    _ = uuid_descriptors
 
     ranges, file_offset = self._ReadRanges(
         file_offset, file_object, range_descriptors)
+    _ = ranges
 
     uuid_paths, file_offset = self._ReadUUIDPaths(
         file_offset, file_object, file_header.number_of_uuids)
-
-    return {'file_header': file_header,
-            'range_descriptors': range_descriptors,
-            'uuid_descriptiors': uuid_descriptors,
-            'ranges': ranges,
-            'uuid_paths': uuid_paths
-            }
+    _ = uuid_paths
 
 
 class TraceV3File(data_format.BinaryDataFile):

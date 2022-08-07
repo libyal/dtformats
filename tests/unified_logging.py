@@ -164,6 +164,7 @@ class DSCFileTest(test_lib.BaseTestCase):
     test_file = unified_logging.DSCFile(
         debug=True, output_writer=output_writer)
 
+    # TODO: test of 8E21CAB1DCF936B49F85CF860E6F34EC currently failing.
     test_file_path = self._GetTestFilePath([
         'uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
