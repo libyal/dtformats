@@ -217,6 +217,7 @@ setup(
     version=dtformats.__version__,
     description=dtformats_description,
     long_description=dtformats_long_description,
+    long_description_content_type='text/plain',
     license='Apache License, Version 2.0',
     url='https://github.com/libyal/dtformats',
     maintainer='Joachim Metz',

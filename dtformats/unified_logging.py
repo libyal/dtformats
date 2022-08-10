@@ -7,8 +7,53 @@ from dtformats import data_format
 from dtformats import errors
 
 
+class DSCRange(object):
+  """Shared-Cache Strings (dsc) range.
+
+  Attributes:
+    path (str): path.
+    range_offset (int): the offset of the range.
+    range_sizes (int): the size of the range.
+    uuid (uuid.UUID): the UUID.
+    uuid_index (int): index of the UUID.
+  """
+
+  def __init__(self):
+    """Initializes a Shared-Cache Strings (dsc) range."""
+    super(DSCRange, self).__init__()
+    self.path = None
+    self.range_offset = None
+    self.range_size = None
+    self.uuid = None
+    self.uuid_index = None
+
+
+class DSCUUID(object):
+  """Shared-Cache Strings (dsc) UUID.
+
+  Attributes:
+    path (str): path.
+    sender_identifier (uuid.UUID): the sender identifier.
+    text_offset (int): the offset of the text.
+    text_sizes (int): the size of the text.
+  """
+
+  def __init__(self):
+    """Initializes a Shared-Cache Strings (dsc) UUID."""
+    super(DSCUUID, self).__init__()
+    self.path = None
+    self.sender_identifier = None
+    self.text_offset = None
+    self.text_size = None
+
+
 class DSCFile(data_format.BinaryDataFile):
-  """Shared-Cache Strings (dsc) file."""
+  """Shared-Cache Strings (dsc) file.
+
+  Attributes:
+    ranges (list[DSCRange]): the ranges.
+    uuids (list[DSCUUID]): the UUIDs.
+  """
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
@@ -25,11 +70,12 @@ class DSCFile(data_format.BinaryDataFile):
       ('number_of_uuids', 'Number of UUIDs', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_RANGE_DESCRIPTOR = [
-      ('uuid_descriptor_index', 'UUID descriptor index',
-       '_FormatIntegerAsDecimal'),
-      ('range_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
       ('data_offset', 'Data offset', '_FormatIntegerAsHexadecimal8'),
-      ('range_size', 'Range size', '_FormatIntegerAsDecimal')]
+      ('range_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
+      ('range_size', 'Range size', '_FormatIntegerAsDecimal'),
+      ('unknown_offset', 'Unknown offset', '_FormatIntegerAsHexadecimal8'),
+      ('uuid_descriptor_index', 'UUID descriptor index',
+       '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_UUID_DESCRIPTOR = [
       ('text_offset', 'Text offset', '_FormatIntegerAsHexadecimal8'),
@@ -38,14 +84,15 @@ class DSCFile(data_format.BinaryDataFile):
       ('path_offset', 'Path offset', '_FormatIntegerAsHexadecimal8')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a timezone information file.
+    """Initializes a shared-cache strings (dsc) file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(DSCFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+    super(DSCFile, self).__init__(debug=debug, output_writer=output_writer)
+    self.ranges = []
+    self.uuids = []
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -79,26 +126,12 @@ class DSCFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           file_header, self._DEBUG_INFO_FILE_HEADER)
 
-      for range_index, range_descriptor in enumerate(
-          file_header.range_descriptors):
-        self._output_writer.WriteText(
-            'Range: {0:d} descriptor\n'.format(range_index))
-        self._DebugPrintStructureObject(
-            range_descriptor, self._DEBUG_INFO_RANGE_DESCRIPTOR)
-
-      for uuid_index, uuid_descriptor in enumerate(
-          file_header.uuid_descriptors):
-        self._output_writer.WriteText(
-            'UUID: {0:d} descriptor\n'.format(uuid_index))
-        self._DebugPrintStructureObject(
-            uuid_descriptor, self._DEBUG_INFO_UUID_DESCRIPTOR)
-
     if file_header.signature != b'hcsd':
       raise errors.ParseError('Unsupported signature.')
 
     format_version = (
         file_header.major_format_version, file_header.minor_format_version)
-    if format_version != (1, 0):
+    if format_version not in [(1, 0), (2, 0)]:
       raise errors.ParseError(
           'Unsupported format version: {0:d}.{1:d}.'.format(
               file_header.major_format_version,
@@ -106,8 +139,128 @@ class DSCFile(data_format.BinaryDataFile):
 
     return file_header
 
+  def _ReadRangeDescriptors(
+      self, file_object, file_offset, version, number_of_ranges):
+    """Reads the range descriptors.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the start of range descriptors data relative
+          to the start of the file.
+      version (int): major version of the file.
+      number_of_ranges (int): the number of range descriptions to retrieve.
+
+    Yields:
+      DSCRange: a range.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    if version not in (1, 2):
+      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
+          version))
+
+    if version == 1:
+      data_type_map_name = 'dsc_range_descriptor_v1'
+      description = 'range descriptor v1'
+    else:
+      data_type_map_name = 'dsc_range_descriptor_v2'
+      description = 'range descriptor v2'
+
+    data_type_map = self._GetDataTypeMap(data_type_map_name)
+
+    for _ in range(number_of_ranges):
+      range_descriptor, record_size = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, description)
+
+      file_offset += record_size
+
+      if self._debug:
+        self._DebugPrintStructureObject(
+            range_descriptor, self._DEBUG_INFO_RANGE_DESCRIPTOR)
+
+      dsc_range = DSCRange()
+      dsc_range.range_offset = range_descriptor.range_offset
+      dsc_range.range_size = range_descriptor.range_size
+      dsc_range.uuid_index = range_descriptor.uuid_descriptor_index
+      yield dsc_range
+
+  def _ReadUUIDDescriptors(
+      self, file_object, file_offset, version, number_of_uuids):
+    """Reads the UUID descriptors.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the start of UUID descriptors data relative
+          to the start of the file.
+      version (int): major version of the file
+      number_of_uuids (int): the number of UUID descriptions to retrieve.
+
+    Yields:
+      DSCUUId: an UUID.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    if version not in (1, 2):
+      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
+          version))
+
+    if version == 1:
+      data_type_map_name = 'dsc_uuid_descriptor_v1'
+      description = 'UUID descriptor v1'
+    else:
+      data_type_map_name = 'dsc_uuid_descriptor_v2'
+      description = 'UUID descriptor v2'
+
+    data_type_map = self._GetDataTypeMap(data_type_map_name)
+
+    for _ in range(number_of_uuids):
+      uuid_descriptor, record_size = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map, description)
+
+      file_offset += record_size
+
+      if self._debug:
+        self._DebugPrintStructureObject(
+            uuid_descriptor, self._DEBUG_INFO_UUID_DESCRIPTOR)
+
+      dsc_uuid = DSCUUID()
+      dsc_uuid.sender_identifier = uuid_descriptor.sender_identifier
+      dsc_uuid.text_offset = uuid_descriptor.text_offset
+      dsc_uuid.text_size = uuid_descriptor.text_size
+
+      dsc_uuid.path = self._ReadUUIDPath(
+          file_object, uuid_descriptor.path_offset)
+
+      yield dsc_uuid
+
+  def _ReadUUIDPath(self, file_object, file_offset):
+    """Reads an UUID path.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the UUID path data relative to the start of
+          the file.
+
+    Returns:
+      str: UUID path.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('cstring')
+
+    uuid_path, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'UUID path')
+
+    if self._debug:
+      self._DebugPrintValue('UUID path', uuid_path)
+
+    return uuid_path
+
   def ReadFileObject(self, file_object):
-    """Reads a timezone information file-like object.
+    """Reads a shared-cache strings (dsc) file-like object.
 
     Args:
       file_object (file): file-like object.
@@ -115,7 +268,25 @@ class DSCFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    self._ReadFileHeader(file_object)
+    file_header = self._ReadFileHeader(file_object)
+
+    file_offset = file_object.tell()
+
+    self.ranges = list(self._ReadRangeDescriptors(
+        file_object, file_offset, file_header.major_format_version,
+        file_header.number_of_ranges))
+
+    file_offset = file_object.tell()
+
+    self.uuids = list(self._ReadUUIDDescriptors(
+        file_object, file_offset, file_header.major_format_version,
+        file_header.number_of_uuids))
+
+    for dsc_range in self.ranges:
+      dsc_uuid = self.uuids[dsc_range.uuid_index]
+
+      dsc_range.path = dsc_uuid.path
+      dsc_range.uuid = dsc_uuid.sender_identifier
 
 
 class TraceV3File(data_format.BinaryDataFile):
