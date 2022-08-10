@@ -205,7 +205,7 @@ The Header chunk is 208 bytes of size and consists of:
 | 32 | 8 | | [yellow-background]*Unknown time (related to starttime?)* +
 Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds where the upper 4 bytes should be 0
 | 40 | 4 | | [yellow-background]*Unknown*
-| 44 | 4 | | Bias in minutes
+| 44 | 4 | | Time zone offset in minutes
 | 48 | 4 | | Daylight savings active +
 0 = daylight savings is not active (no-DST) +
 1 = daylight savings is active (DST)

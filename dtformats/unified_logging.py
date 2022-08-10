@@ -176,6 +176,12 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal')]
 
+  _DEBUG_INFO_HEADER_CHUNK = [
+      ('timebase_numerator', 'Timebase numerator', '_FormatIntegerAsDecimal'),
+      ('timebase_denominator', 'Timebase denominator',
+       '_FormatIntegerAsDecimal'),
+      ()]
+
   _DEBUG_INFO_LZ4_BLOCK_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
       ('uncompressed_data_size', 'Uncompressed data size',
@@ -414,6 +420,19 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return firehose_tracepoint
 
+  def _ReadHeaderChunk(self, file_object, file_offset, chunk_header):
+    """Reads a Header Chunk.
+
+    Args:
+       file_object (file): file-like object.
+       file_offset (int): offset of the chunk relative to the start of the file.
+
+    Raises:
+      ParseError: if the chunk cannot be read.
+    """
+
+    data_type_map = self._GetDataTypeMap('')
+
   def ReadFileObject(self, file_object):
     """Reads a timezone information file-like object.
 
@@ -429,7 +448,10 @@ class TraceV3File(data_format.BinaryDataFile):
       chunk_header = self._ReadChunkHeader(file_object, file_offset)
       file_offset += 16
 
-      if chunk_header.chunk_tag == 0x600b:
+      if chunk_header.chunk_tag == 0x1000:
+        self._ReadHeaderChunk(file_object, file_offset, chunk_header)
+
+      elif chunk_header.chunk_tag == 0x600b:
         self._ReadCatalog(file_object, file_offset, chunk_header)
 
       elif chunk_header.chunk_tag == 0x600d:
