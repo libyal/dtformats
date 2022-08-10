@@ -351,7 +351,26 @@ class TraceV3File(data_format.BinaryDataFile):
       ('timebase_numerator', 'Timebase numerator', '_FormatIntegerAsDecimal'),
       ('timebase_denominator', 'Timebase denominator',
        '_FormatIntegerAsDecimal'),
-      ()]
+      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal'),
+      ('time_zone_offset', 'Timezone_offset', '_FormatIntegerAsDecimal'),
+      ('daylight_savings_flag', 'Daylight Savings Flag',
+       '_FormatIntegerAsDecimal'),
+      ('subchunk_continuous_tag', 'Subchunk Continuous Tag',
+       '_FormatIntegerAsHexadecimal4'),
+      ('continuous_time2', 'Continuous Time2', '_FormatIntegerAsDecimal'),
+      ('subchunk_systeminfo_tag', 'Subchunk Systeminfo Tag',
+       '_FormatIntegerAsHexadecimal4'),
+      ('build_identifier', 'Build Identifier', '_FormatString'),
+      ('hardware_identifier', 'Hardware Identifier', '_FormatString'),
+      ('subchunk_generation_tag', 'Subchunk Generation Tag',
+       '_FormatIntegerAsHexadecimal4'),
+      ('boot_identifier', 'Boot Identifier', '_FormatUUIDAsString'),
+      ('logd_process_identifier', 'Logd Process Identifier',
+       '_FormatIntegerAsDecimal'),
+      ('logd_exit_code', 'Logd Exit Code', '_FormatIntegerAsDecimal'),
+      ('subchunk_timezone_tag', 'Subchunk Timezone Tag',
+       '_FormatIntegerAsHexadecimal4'),
+      ('timezone_path', 'Timezone Path', '_FormatString')]
 
   _DEBUG_INFO_LZ4_BLOCK_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
@@ -591,7 +610,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return firehose_tracepoint
 
-  def _ReadHeaderChunk(self, file_object, file_offset, chunk_header):
+  def _ReadHeaderChunk(self, file_object, file_offset):
     """Reads a Header Chunk.
 
     Args:
@@ -600,9 +619,22 @@ class TraceV3File(data_format.BinaryDataFile):
 
     Raises:
       ParseError: if the chunk cannot be read.
+
+    Returns:
+      header_chunk: a header chunk.
+
     """
 
-    data_type_map = self._GetDataTypeMap('')
+    data_type_map = self._GetDataTypeMap('tracev3_header_chunk')
+
+    header_chunk, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'header chunk')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          header_chunk, self._DEBUG_INFO_HEADER_CHUNK)
+
+    return header_chunk
 
   def ReadFileObject(self, file_object):
     """Reads a timezone information file-like object.
@@ -620,7 +652,7 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset += 16
 
       if chunk_header.chunk_tag == 0x1000:
-        self._ReadHeaderChunk(file_object, file_offset, chunk_header)
+        self._ReadHeaderChunk(file_object, file_offset)
 
       elif chunk_header.chunk_tag == 0x600b:
         self._ReadCatalog(file_object, file_offset, chunk_header)

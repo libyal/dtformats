@@ -168,9 +168,9 @@ members:
   data_type: uint64
 - name: unknown1
   data_type: uint32
-- name: time_zone_offset
+- name: timezone_offset
   data_type: uint32
-- name: daylight_saving_flag
+- name: daylight_savings_flag
   data_type: uint32
 - name: unknown_flags
   data_type: uint32
@@ -189,13 +189,15 @@ members:
 - name: unknown3
   data_type: uint32
 - name: build_identifier
-  type: stream
-  element_data_type: char
-  number_of_elements: 16
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 16
 - name: hardware_identifier
-  type: stream
-  element_data_type: char
-  number_of_elements: 16
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 32
 - name: subchunk_generation_tag
   data_type: uint32
 - name: subchunk_generation_size
@@ -210,10 +212,11 @@ members:
   data_type: uint32
 - name: subchunk_timezone_size
   data_type: uint32
-- name: time_zone_path
-  type: steam
-  element_data_type: char
-  number_of_elements: 48
+- name: timezone_path
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 48
 ---
 name: tracev3_lz4_block_header
 type: structure
