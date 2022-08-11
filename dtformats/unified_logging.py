@@ -398,6 +398,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
   _CHUNK_TAG_HEADER = 0x00001000
   _CHUNK_TAG_FIREHOSE = 0x00006001
+  _CHUNK_TAG_OVERSIZE = 0x00006002
+  _CHUNK_TAG_STATEDUMP = 0x00006003
   _CHUNK_TAG_CATALOG = 0x0000600b
   _CHUNK_TAG_CHUNK_SET = 0x0000600d
 
@@ -422,10 +424,12 @@ class TraceV3File(data_format.BinaryDataFile):
       ('chunk_tag', 'Chunk tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
+  # There was an inconsistency between the code here and the documentation,
+  # I took the documentation as correct
 
   _DEBUG_INFO_FIREHOSE_HEADER = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
+      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
+      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
       ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
       ('public_data_size', 'Public data size', '_FormatIntegerAsDecimal'),
       ('private_data_virtual_offset', 'Private data virtual offset',
@@ -495,6 +499,28 @@ class TraceV3File(data_format.BinaryDataFile):
       ('compressed_data_size', 'Compressed data size',
        '_FormatIntegerAsDecimal')]
 
+  _DEBUG_INFO_OVERSIZE_CHUNK = [
+      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
+      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal'),
+      ('data_reference_index', 'Data Reference Index',
+       '_FormatIntegerAsDecimal'),
+      ('data_size', 'Data Size', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_STATEDUMP_CHUNK = [
+      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
+      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal'),
+      ('activity_identifier', 'Activity Identifier', '_FormatIntegerAsDecimal'),
+      ('uuid', 'UUID', '_FormatUUIDAsString'),
+      ('data_type', 'Data Type', '_FormatIntegerAsDecimal'),
+      ('data_size', 'Data Size', '_FormatIntegerAsDecimal'),
+      ('object_type_string1', 'Object Type String1', '_FormatCharacterStream'),
+      ('object_type_string2', 'Object Type String2', '_FormatCharacterStream'),
+      ('name', 'Name', '_FormatString')]
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a tracev3 file.
 
@@ -504,6 +530,17 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     super(TraceV3File, self).__init__(
         debug=debug, output_writer=output_writer)
+
+  def _FormatCharacterStream(self, stream):
+    """Formats a stream of byte encoded characters.
+
+    Args:
+      stream (str): string.
+
+    Returns:
+      str: formatted string.
+    """
+    return stream.rstrip(b'\x00')
 
   def _FormatArrayOfStrings(self, array_of_strings):
     """Formats an array of strings.
@@ -645,7 +682,8 @@ class TraceV3File(data_format.BinaryDataFile):
             data_offset:data_offset + 16])
 
       chunkset_chunk_header = self._ReadStructureFromByteStream(
-          uncompressed_data, data_offset, data_type_map, 'chunk header')
+          uncompressed_data[data_offset:], data_offset, data_type_map,
+          'chunk header')
       data_offset += 16
 
       if self._debug:
@@ -661,6 +699,12 @@ class TraceV3File(data_format.BinaryDataFile):
         self._ReadFirehoseChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
             data_offset)
+
+      elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_OVERSIZE:
+        self._ReadOversizeChunkData(chunkset_chunk_data)
+
+      elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_STATEDUMP:
+        self._ReadStatedumpChunkData(chunkset_chunk_data)
 
       data_offset = data_end_offset
 
@@ -696,12 +740,18 @@ class TraceV3File(data_format.BinaryDataFile):
       firehose_tracepoint = self._ReadFirehoseTracepointData(
           chunk_data[chunk_data_offset:], data_offset + chunk_data_offset)
 
-      test_data_offset = chunk_data_offset + 22
+      test_data_offset = chunk_data_offset + 24
       test_data_end_offset = test_data_offset + firehose_tracepoint.data_size
       self._DebugPrintData(
           'Data', chunk_data[test_data_offset:test_data_end_offset])
 
-      chunk_data_offset += 22 + firehose_tracepoint.data_size
+      chunk_data_offset += 24 + firehose_tracepoint.data_size
+
+      _, alignment = divmod(chunk_data_offset, 8)
+      if alignment > 0:
+        alignment = 8 - alignment
+
+      chunk_data_offset += alignment
 
   def _ReadFirehoseTracepointData(self, tracepoint_data, data_offset):
     """Reads firehose tracepoint data.
@@ -760,6 +810,52 @@ class TraceV3File(data_format.BinaryDataFile):
           header_chunk.time_zone, self._DEBUG_HEADER_TIME_ZONE_SUB_CHUNK)
 
     return header_chunk
+
+  def _ReadOversizeChunkData(self, chunk_data):
+    """Reads Oversize chunk data.
+
+    Args:
+      chunk_data (bytes): firehose chunk data.
+
+    Returns:
+      oversize_chunk: an oversize chunk
+
+    Raises:
+      ParseError: if the firehose chunk cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('tracev3_oversize_chunk')
+
+    oversize_chunk = self._ReadStructureFromByteStream(
+        chunk_data, 0, data_type_map, 'oversize chunk')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          oversize_chunk, self._DEBUG_INFO_OVERSIZE_CHUNK)
+
+    return oversize_chunk
+
+  def _ReadStatedumpChunkData(self, chunk_data):
+    """Reads Statedump chunk data.
+
+        Args:
+          chunk_data (bytes): firehose chunk data.
+
+        Returns:
+          statedump_chunk: a statedump chunk.
+
+        Raises:
+          ParseError: if the firehose chunk cannot be read.
+        """
+    data_type_map = self._GetDataTypeMap('tracev3_statedump_chunk')
+
+    statedump_chunk = self._ReadStructureFromByteStream(
+        chunk_data, 0, data_type_map, 'statedump chunk')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          statedump_chunk, self._DEBUG_INFO_STATEDUMP_CHUNK)
+
+    return statedump_chunk
 
   def ReadFileObject(self, file_object):
     """Reads a tracev3 file-like object.

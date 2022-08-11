@@ -571,7 +571,7 @@ Contains 0x1000 if there is no private data
 | 38 | 2 | | [yellow-background]*Unknown*
 | 40 | 8 | | Base continuous time for events in the firehose chunk
 4+|
-| 48 | public data size | | public data +
+| 48 | public data size - 16 | | public data +
 Contains one or more tracev3_chunk_firehose events
 | ... | ... | Private strings
 |===
@@ -945,6 +945,7 @@ The Statedump chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 8 | | Activity Id
+| 48 | 4 | | Unknown
 | 48 | 16 | | UUID
 | 64 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 2=protobuf, 3=data))*
 | 68 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
