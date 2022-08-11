@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tests for Apple Unified Logging and Activity Tracing files."""
 
-import lz4.block
 import unittest
+
+import lz4.block
 
 from dtformats import unified_logging
 
@@ -188,39 +189,6 @@ class TraceV3FileTest(test_lib.BaseTestCase):
   # TODO: add tests for _FormatArrayOfUUIDS
   # TODO: add tests for _FormatStreamAsSignature
 
-  def getDecompressedChunksetChunk(
-      self, test_file_path, chunk_data_size, file_offet):
-    """Returns the decompressed data from a chunkset chunk.
-
-    Args:
-      test_file_path (string): path to the test file.
-      chunk_data_size (int): size of the chunkset chunk.
-      file_offet (int): offset of the chunkset chunk.
-
-    Returns:
-      uncompressed_data: the decompressed data from a chunkset chunk.
-    """
-
-    test_file = unified_logging.TraceV3File()
-
-    with open(test_file_path, 'rb') as file_object:
-      file_object.seek(file_offet)
-      chunk_data = file_object.read(chunk_data_size)
-
-    data_type_map = test_file._GetDataTypeMap('tracev3_lz4_block_header')
-
-    lz4_block_header = test_file._ReadStructureFromByteStream(
-        chunk_data, 0, data_type_map, 'LZ4 block header')
-
-    uncompressed_data_size = lz4_block_header.uncompressed_data_size
-    compressed_data_size = lz4_block_header.compressed_data_size
-
-    uncompressed_data = lz4.block.decompress(
-      chunk_data[12:compressed_data_size + 12],
-      uncompressed_size=uncompressed_data_size)
-
-    return uncompressed_data
-
   def testReadChunkHeader(self):
     """Tests the _ReadChunkHeader function."""
     output_writer = test_lib.TestOutputWriter()
@@ -235,8 +203,60 @@ class TraceV3FileTest(test_lib.BaseTestCase):
 
   # TODO: add tests for _ReadCatalog
   # TODO: add tests for _ReadChunkSet
-  # TODO: add tests for _ReadFirehoseChunkData
-  # TODO: add tests for _ReadFirehoseTracepointData
+
+  def testReadFirehoseChunkData(self):
+    """Tests the _ReadFirehoseChunkData as well as the
+      _ReadFirehoseTracepointData functions."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath(['0000000000000f85.tracev3'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    # The 8th chunkset chunk of the first set
+    with open(test_file_path, 'rb') as file_object:
+      file_object.seek(0x1CC48)
+      chunk_data = file_object.read(16519)
+      uncompressed_data_size = 64624
+      compressed_data_size = 16503
+
+    uncompressed_data = lz4.block.decompress(
+        chunk_data[12:compressed_data_size + 12],
+        uncompressed_size=uncompressed_data_size)
+
+    # data block #3
+    data_offset = 0x17F8
+    data_type_map = test_file._GetDataTypeMap('tracev3_chunk_header')
+    chunkset_chunk_header = test_file._ReadStructureFromByteStream(
+        uncompressed_data[data_offset:], data_offset, data_type_map,
+        'chunk header')
+
+    self.assertEqual(chunkset_chunk_header.chunk_tag, 0x6001)
+    self.assertEqual(chunkset_chunk_header.chunk_data_size, 3976)
+
+    data_offset += 16
+    data_end_offset = data_offset + chunkset_chunk_header.chunk_data_size
+    chunkset_chunk_data = uncompressed_data[data_offset:data_end_offset]
+
+    firehose_data = test_file._ReadFirehoseChunkData(
+        chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
+        data_offset)
+
+    self.assertEqual(firehose_data.process_identifier1, 449241)
+    self.assertEqual(firehose_data.process_identifier2, 1345727)
+    self.assertEqual(firehose_data.public_data_size, 3960)
+    self.assertEqual(firehose_data.base_continuous_time, 100589149045772)
+
+    # Testing the Tracepoints
+    self.assertEqual(
+        firehose_data.firehose_tracepoints[0].thread_identifier, 11479028)
+    self.assertEqual(
+        firehose_data.firehose_tracepoints[1].format_string_location,
+        1355888928)
+    self.assertEqual(
+        firehose_data.firehose_tracepoints[3].continuous_time_lower, 7695)
+    self.assertEqual(
+        firehose_data.firehose_tracepoints[7].data_size, 76)
 
   def testReadOversizeChunkData(self):
     """Tests the _ReadOversizeChunkData function."""
@@ -247,8 +267,15 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     # The 8th chunkset chunk of the first set
-    uncompressed_data = self.getDecompressedChunksetChunk(
-      test_file_path, 16519, 0x1CC48)
+    with open(test_file_path, 'rb') as file_object:
+      file_object.seek(0x1CC48)
+      chunk_data = file_object.read(16519)
+      uncompressed_data_size = 64624
+      compressed_data_size = 16503
+
+    uncompressed_data = lz4.block.decompress(
+        chunk_data[12:compressed_data_size + 12],
+        uncompressed_size=uncompressed_data_size)
 
     # data block #17
     data_offset = 0xFC8
@@ -279,8 +306,15 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     # The 8th chunkset chunk of the first set
-    uncompressed_data = self.getDecompressedChunksetChunk(
-        test_file_path, 16519, 0x1CC48)
+    with open(test_file_path, 'rb') as file_object:
+      file_object.seek(0x1CC48)
+      chunk_data = file_object.read(16519)
+      uncompressed_data_size = 64624
+      compressed_data_size = 16503
+
+    uncompressed_data = lz4.block.decompress(
+        chunk_data[12:compressed_data_size + 12],
+        uncompressed_size=uncompressed_data_size)
 
     # data block #17
     data_offset = 0xDF38
@@ -303,7 +337,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(
         str(statedump_chunk.uuid), 'ea02a60c-4989-3ab2-a032-c0e6f412ee5f')
     self.assertEqual(
-      statedump_chunk.object_type_string1.rstrip(b'\x00'), b'location')
+        statedump_chunk.object_type_string1.rstrip(b'\x00'), b'location')
 
   def testReadHeader(self):
     """Tests the _ReadHeader function."""

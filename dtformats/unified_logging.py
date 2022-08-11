@@ -723,6 +723,9 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset (int): offset of the firehose chunk relative to the start
           of the chunk set.
 
+    Returns:
+      Tracev3FirehoseData: Firehose data
+
     Raises:
       ParseError: if the firehose chunk cannot be read.
     """
@@ -734,6 +737,9 @@ class TraceV3File(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintStructureObject(
           firehose_header, self._DEBUG_INFO_FIREHOSE_HEADER)
+
+    firehose_object = Tracev3FirehoseData()
+    firehose_object.PopulateFromHeader(firehose_header)
 
     chunk_data_offset = 32
     while chunk_data_offset < chunk_data_size:
@@ -753,6 +759,10 @@ class TraceV3File(data_format.BinaryDataFile):
 
       chunk_data_offset += alignment
 
+      firehose_object.firehose_tracepoints.append(firehose_tracepoint)
+
+    return firehose_object
+
   def _ReadFirehoseTracepointData(self, tracepoint_data, data_offset):
     """Reads firehose tracepoint data.
 
@@ -762,7 +772,7 @@ class TraceV3File(data_format.BinaryDataFile):
           the start of the chunk set.
 
     Returns:
-      tracev3_firehose_tracepoint: a firehose tracepoint.
+      Tracev3FirehoseTracepoint: a firehose tracepoint.
 
     Raises:
       ParseError: if the firehose tracepoint cannot be read.
@@ -776,7 +786,12 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           firehose_tracepoint, self._DEBUG_INFO_FIREHOSE_TRACEPOINT)
 
-    return firehose_tracepoint
+    tracepoint_object = Tracev3FirehoseTracepoint()
+    tracepoint_object.PopulateFromData(firehose_tracepoint)
+
+    # TODO populate the data and parse it based on the type of tracepoint
+
+    return tracepoint_object
 
   def _ReadHeader(self, file_object, file_offset):
     """Reads a header.
@@ -888,6 +903,73 @@ class TraceV3File(data_format.BinaryDataFile):
         alignment = 8 - alignment
 
       file_offset += alignment
+
+class Tracev3FirehoseData(object):
+  """TraceV3Firehose data.
+
+  Attributes:
+    process_identifier1 (int): first number in proc_id.
+    process_identifier2 (int): second number in proc_id.
+    public_data_size (int): size of the Firehose data block.
+    private_data_virtual_offset (int): private data virtual offset.
+    base_continuous_time (int): base continuous time for events in the firehose
+        chunk
+    firehose_tracepoints (list): list of Tracev3FirehoseTracepoint objects.
+  """
+  def __init__(self):
+    """Initializes a Firehose data block."""
+    super(Tracev3FirehoseData, self).__init__()
+    self.process_identifier1 = None
+    self.process_identifier2 = None
+    self.public_data_size = None
+    self.private_data_virtual_offset = None
+    self.base_continuous_time = None
+    self.firehose_tracepoints = []
+
+  def PopulateFromHeader(self, header):
+    """Populates the attributes of the TraceV3Firehose from a firehose_header.
+
+      Args:
+        header (firehose_header): a firehose_header.
+    """
+    self.process_identifier1 = header.process_identifier1
+    self.process_identifier2 = header.process_identifier2
+    self.public_data_size = header.public_data_size
+    self.private_data_virtual_offset = header.private_data_virtual_offset
+    self.base_continuous_time = header.base_continuous_time
+
+class Tracev3FirehoseTracepoint(object):
+  """TraceV3 Firehose Tracepoint.
+
+  Attributes:
+    format_string_location (int): offset to the formated string location.
+    thread_identifier (int): thread identifier.
+    continuous_time_lower (int): lower part of the continuous time.
+    continuous_time_upper (int): upper part of the continuous time.
+    data_size (int): size of the data segment.
+    data (bytes): content of the tracepoint.
+  """
+  def __init__(self):
+    """Initialize a Firehose tracepoint."""
+    super(Tracev3FirehoseTracepoint, self).__init__()
+    self.format_string_location = None
+    self.thread_identifier = None
+    self.continuous_time_lower = None
+    self.continuous_time_upper = None
+    self.data_size = None
+    self.data = None
+
+  def PopulateFromData(self, data):
+    """Populates the attributes of the TraceV3Tracepoint from parsed data.
+
+      Args:
+        data (firehose_tracepoint): firehose tracepoint.
+    """
+    self.format_string_location = data.format_string_location
+    self.thread_identifier = data.thread_identifier
+    self.continuous_time_lower = data.continuous_time_lower
+    self.continuous_time_upper = data.continuous_time_upper
+    self.data_size = data.data_size
 
 
 class UUIDTextFile(data_format.BinaryDataFile):
