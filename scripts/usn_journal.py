@@ -44,7 +44,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -58,12 +58,15 @@ def Main():
   for usn_record in usn_records.ReadRecords():
     # pylint: disable=protected-access
     date_time = usn_record._FormatIntegerAsFiletime(usn_record.timestamp)
-    file_reference = '{0:d}-{1:d}'.format(
-        usn_record.file_reference & ((1 << 48) - 1),
-        usn_record.file_reference >> 48)
-    parent_file_reference = '{0:d}-{1:d}'.format(
-        usn_record.parent_file_reference & ((1 << 48) - 1),
-        usn_record.parent_file_reference >> 48)
+
+    mft_entry = usn_record.file_reference & ((1 << 48) - 1)
+    sequence_number = usn_record.file_reference >> 48
+    file_reference = f'{mft_entry:d}-{sequence_number:d}'
+
+    mft_entry = usn_record.parent_file_reference & ((1 << 48) - 1)
+    sequence_number = usn_record.parent_file_reference >> 48
+    parent_file_reference = f'{mft_entry:d}-{sequence_number:d}'
+
     output_writer.WriteText(','.join([
         date_time, usn_record.name, file_reference, parent_file_reference]))
 

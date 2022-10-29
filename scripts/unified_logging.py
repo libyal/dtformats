@@ -45,7 +45,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -71,26 +71,31 @@ def Main():
 
   if file_signature == b'hcsd':
     for index, dsc_uuid in enumerate(unified_logging_file.uuids):
-      output_writer.WriteText('uuid {0:d}:\n'.format(index))
-      output_writer.WriteText('    uuid {0:d}:\t{1!s}\n'.format(
-          index, str(dsc_uuid.sender_identifier).upper()))
+      output_writer.WriteText(f'uuid {index:d}:\n')
+
+      sender_identifier_string = str(dsc_uuid.sender_identifier).upper()
       output_writer.WriteText(
-          '    dsc text:\t0x{0:08x} .. 0x{1:08x} ({2:d})\n'.format(
-              dsc_uuid.text_offset, dsc_uuid.text_offset + dsc_uuid.text_size,
-              dsc_uuid.text_size))
-      output_writer.WriteText('    path:\t{0:s}\n'.format(dsc_uuid.path))
+          f'    uuid {index:d}:\t{sender_identifier_string:s}\n')
+
+      text_end_offset = dsc_uuid.text_offset + dsc_uuid.text_size
+      output_writer.WriteText((
+          f'    dsc text:\t0x{dsc_uuid.text_offset:08x} .. '
+          f'0x{text_end_offset:08x} ({dsc_uuid.text_size:d})\n'))
+      output_writer.WriteText(f'    path:\t{dsc_uuid.path:s}\n')
       output_writer.WriteText('\n')
 
     for index, dsc_range in enumerate(unified_logging_file.ranges):
-      output_writer.WriteText('Range {0:d}:\n'.format(index))
-      output_writer.WriteText('    uuid {0:d}:\t{1!s}\n'.format(
-          dsc_range.uuid_index, str(dsc_range.uuid).upper()))
+      output_writer.WriteText(f'Range {index:d}:\n')
+
+      uuid_string = str(dsc_range.uuid).upper()
       output_writer.WriteText(
-          '    dsc range:\t0x{0:08x} .. 0x{1:08x} ({2:d})\n'.format(
-              dsc_range.range_offset,
-              dsc_range.range_offset + dsc_range.range_size,
-              dsc_range.range_size))
-      output_writer.WriteText('    path:\t{0:s}\n'.format(dsc_range.path))
+          f'    uuid {dsc_range.uuid_index:d}:\t{uuid_string:s}\n')
+
+      range_end_offset = dsc_range.range_offset + dsc_range.range_size
+      output_writer.WriteText((
+          f'    dsc range:\t0x{dsc_range.range_offset:08x} .. '
+          f'0x{range_end_offset:08x} ({dsc_range.range_size:d})\n'))
+      output_writer.WriteText(f'    path:\t{dsc_range.path:s}\n')
       output_writer.WriteText('\n')
 
   unified_logging_file.Close()

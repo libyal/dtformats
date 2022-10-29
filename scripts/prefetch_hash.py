@@ -33,13 +33,13 @@ def Main():
   print('Windows Prefetch hashes:')
 
   hash_value = prefetch.CalculatePrefetchHashXP(options.path)
-  print('\tWindows XP\t: 0x{0:08x}'.format(hash_value))
+  print(f'\tWindows XP\t: 0x{hash_value:08x}')
 
   hash_value = prefetch.CalculatePrefetchHashVista(options.path)
-  print('\tWindows Vista\t: 0x{0:08x}'.format(hash_value))
+  print(f'\tWindows Vista\t: 0x{hash_value:08x}')
 
   hash_value = prefetch.CalculatePrefetchHash2008(options.path)
-  print('\tWindows 2008\t: 0x{0:08x}'.format(hash_value))
+  print(f'\tWindows 2008\t: 0x{hash_value:08x}')
 
   print('')
 

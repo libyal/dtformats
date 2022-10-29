@@ -45,7 +45,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -60,8 +60,7 @@ def Main():
 
   wemf_file.Open(options.source)
 
-  description = '{0:s} information:'.format(wemf_file.FILE_TYPE)
-  output_writer.WriteText(description)
+  output_writer.WriteText(f'{wemf_file.FILE_TYPE:s} information:')
 
   wemf_file.Close()
 

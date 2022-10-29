@@ -45,7 +45,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 

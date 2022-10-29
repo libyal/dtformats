@@ -60,7 +60,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -73,26 +73,26 @@ def Main():
     print('Keychain database file schema:')
 
     for table in keychain_file.tables:
-      print('Table: {0:s} (0x{1:08x})'.format(
-          table.relation_name, table.relation_identifier))
+      print((f'Table: {table.relation_name:s} '
+             f'(0x{table.relation_identifier:08x})'))
 
       number_of_columns = len(table.columns)
-      print('\tNumber of columns:\t{0:d}'.format(number_of_columns))
+      print(f'\tNumber of columns:\t{number_of_columns:d}')
       print('\tColumn\tIdentifier\tName\tType')
 
       for index, column in enumerate(table.columns):
         if column.attribute_identifier >= number_of_columns:
           attribute_identifier = ''
         else:
-          attribute_identifier = '{0:d}'.format(column.attribute_identifier)
+          attribute_identifier = f'{column.attribute_identifier:d}'
 
         attribute_data_type = ATTRIBUTE_DATA_TYPES.get(
             column.attribute_data_type,
-            '0x{0:08x}'.format(column.attribute_data_type))
+            f'0x{column.attribute_data_type:08x}')
 
-        print('\t{0:d}\t{1:s}\t{2:s}\t{3:s}'.format(
-            index, attribute_identifier, column.attribute_name or 'NULL',
-            attribute_data_type))
+        attribute_name = column.attribute_name or 'NULL'
+        print((f'\t{index:d}\t{attribute_identifier:s}\t{attribute_name:s}\t'
+               f'{attribute_data_type:s}'))
 
       print('')
 
@@ -100,8 +100,8 @@ def Main():
 
   else:
     for table in keychain_file.tables:
-      print('Table: {0:s} (0x{1:08x})'.format(
-          table.relation_name, table.relation_identifier))
+      print((f'Table: {table.relation_name:s} '
+             f'(0x{table.relation_identifier:08x})'))
 
       print('\t'.join([column.attribute_name for column in table.columns]))
 
@@ -111,7 +111,7 @@ def Main():
           if value is None:
             record_values.append('NULL')
           else:
-            record_values.append('{0!s}'.format(value))
+            record_values.append(f'{value!s}')
 
         print('\t'.join(record_values))
 

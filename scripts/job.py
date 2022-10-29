@@ -44,7 +44,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -56,17 +56,17 @@ def Main():
 
   output_writer.WriteText('Windows Task Scheduler job information:\n')
 
-  output_writer.WriteText('\tIdentifier\t\t: {0:s}\n'.format(
-      task_configuration.identifier))
-  output_writer.WriteText('\tApplication name\t: {0:s}\n'.format(
-      task_configuration.application_name))
-  output_writer.WriteText('\tParameters\t\t: {0:s}\n'.format(
-      task_configuration.parameters))
+  output_writer.WriteText(
+      f'\tIdentifier\t\t: {task_configuration.identifier:s}\n')
+  output_writer.WriteText(
+      f'\tApplication name\t: {task_configuration.application_name:s}\n')
+  output_writer.WriteText(
+      f'\tParameters\t\t: {task_configuration.parameters:s}\n')
 
-  output_writer.WriteText('\tAuthor\t\t\t: {0:s}\n'.format(
-      task_configuration.author))
-  output_writer.WriteText('\tComment\t\t\t: {0:s}\n'.format(
-      task_configuration.comment))
+  output_writer.WriteText(
+      f'\tAuthor\t\t\t: {task_configuration.author:s}\n')
+  output_writer.WriteText(
+      f'\tComment\t\t\t: {task_configuration.comment:s}\n')
 
   # TODO: print more task configuration information.
 

@@ -46,7 +46,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -57,7 +57,7 @@ def Main():
 
   print('Recycle.Bin metadata ($I) file information:')
 
-  print('\tFormat version\t\t: {0:d}'.format(metadata_file.format_version))
+  print(f'\tFormat version\t\t: {metadata_file.format_version:d}')
 
   if metadata_file.deletion_time == 0:
     date_time_string = 'Not set'
@@ -68,14 +68,13 @@ def Main():
         timestamp=metadata_file.deletion_time)
     date_time_string = date_time.CopyToDateTimeString()
     if date_time_string:
-      date_time_string = '{0:s} UTC'.format(date_time_string)
+      date_time_string = f'{date_time_string:s} UTC'
     else:
-      date_time_string = '0x{08:x}'.format(metadata_file.deletion_time)
+      date_time_string = f'0x{metadata_file.deletion_time:08x}'
 
-  print('\tDeletion time\t\t: {0:s}'.format(date_time_string))
-  print('\tOriginal filename\t: {0:s}'.format(metadata_file.original_filename))
-  print('\tOriginal file size\t: {0:d}'.format(
-      metadata_file.original_file_size))
+  print(f'\tDeletion time\t\t: {date_time_string:s}')
+  print(f'\tOriginal filename\t: {metadata_file.original_filename:s}')
+  print(f'\tOriginal file size\t: {metadata_file.original_file_size:d}')
   print('')
 
   metadata_file.Close()

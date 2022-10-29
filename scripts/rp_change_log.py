@@ -44,7 +44,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -54,7 +54,7 @@ def Main():
   change_log_file.Open(options.source)
 
   print('Windows Restore Point change.log information:')
-  print('Volume path:\t{0:s}'.format(change_log_file.volume_path))
+  print(f'Volume path:\t{change_log_file.volume_path:s}')
   print('')
 
   for change_log_entry in change_log_file.entries:
@@ -63,17 +63,19 @@ def Main():
       if change_log_entry.entry_type & flag:
         flags.append(description)
 
-    print('Entry type:\t\t{0:s}'.format(', '.join(flags)))
+    flags_string = ', '.join(flags)
+    print(f'Entry type:\t\t{flags_string:s}')
 
     flags = []
     for flag, description in change_log_file.LOG_ENTRY_FLAGS.items():
       if change_log_entry.entry_flags & flag:
         flags.append(description)
 
-    print('Entry flags:\t\t{0:s}'.format(', '.join(flags)))
+    flags_string = ', '.join(flags)
+    print(f'Entry flags:\t\t{flags_string:s}')
 
-    print('Sequence number:\t{0:d}'.format(change_log_entry.sequence_number))
-    print('Process name:\t\t{0:s}'.format(change_log_entry.process_name))
+    print(f'Sequence number:\t{change_log_entry.sequence_number:d}')
+    print(f'Process name:\t\t{change_log_entry.process_name:s}')
 
     print('')
 

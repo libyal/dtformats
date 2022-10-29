@@ -105,7 +105,7 @@ class BinaryDataFormatAnalyzer(data_format.BinaryDataFormat):
     """
     lines = ['\n']
     for element_number, element in enumerate(sequence):
-      lines.append('Entry: {0:d}\n'.format(element_number))
+      lines.append(f'Entry: {element_number:d}\n')
 
       name = element.__class__.__name__
       # pylint: disable=protected-access
@@ -208,7 +208,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 

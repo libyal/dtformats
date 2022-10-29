@@ -49,13 +49,12 @@ class TableView(object):
       output_writer (OutputWriter): output writer.
     """
     if self._header:
-      output_text = '{0:s}\n'.format(self._header)
-      output_writer.WriteText(output_text)
+      output_writer.WriteText(f'{self._header:s}\n')
 
     column_widths = [0] * self._number_of_values
     value_strings_per_row = []
     for row in self._rows:
-      value_strings = ['{0!s}'.format(value) for value in row]
+      value_strings = [f'{value!s}' for value in row]
       value_strings_per_row.append(value_strings)
 
       for column_index, value_string in enumerate(value_strings):
@@ -125,7 +124,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -147,8 +146,9 @@ def Main():
       metadata_attribute = metadata_item.attributes.get(
           '_kStoreMetadataVersion', None)
       if metadata_attribute:
-        metadata_version = '{0:d}.{1:d}'.format(
-            metadata_attribute.value >> 16, metadata_attribute.value & 0xffff)
+        major_version = metadata_attribute.value >> 16
+        minor_version = metadata_attribute.value & 0xffff
+        metadata_version = f'{major_version:d}.{minor_version:d}'
 
     table_view = TableView(
         header='Apple Spotlight database information:')
@@ -168,22 +168,21 @@ def Main():
     metadata_item = spotlight_store_database.GetMetadataItemByIdentifier(
         options.item)
     if not metadata_item:
-      output_writer.WriteText('No such metadata item: {0:d}\n'.format(
-          options.item))
+      output_writer.WriteText(f'No such metadata item: {options.item:d}\n')
     else:
       table_view = TableView()
       for name, metadata_attribute in sorted(metadata_item.attributes.items()):
         if metadata_attribute.value_type != 0x0c:
-          value_string = '{0!s}'.format(metadata_attribute.value)
+          value_string = f'{metadata_attribute.value!s}'
         else:
           date_time = dfdatetime_cocoa_time.CocoaTime(
               timestamp=metadata_attribute.value)
           value_string = date_time.CopyToDateTimeString()
 
           if value_string:
-            value_string = '{0:s} UTC'.format(value_string)
+            value_string = f'{value_string:s} UTC'
           else:
-            value_string = '{0:f}'.format(metadata_attribute.value)
+            value_string = f'{metadata_attribute.value:f}'
 
         table_view.AddRow([name, value_string])
 

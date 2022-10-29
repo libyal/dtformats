@@ -49,7 +49,7 @@ class BinaryDataFormat(object):
       data (bytes): data.
     """
     if self._output_writer:
-      self._output_writer.WriteText('{0:s}:\n'.format(description))
+      self._output_writer.WriteText(f'{description:s}:\n')
       self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
 
   def _DebugPrintDecimalValue(self, description, value):
@@ -59,8 +59,7 @@ class BinaryDataFormat(object):
       description (str): description.
       value (int): value.
     """
-    value_string = '{0:d}'.format(value)
-    self._DebugPrintValue(description, value_string)
+    self._DebugPrintValue(description, f'{value:d}')
 
   def _DebugPrintFiletimeValue(self, description, value):
     """Prints a FILETIME timestamp value for debugging.
@@ -77,9 +76,9 @@ class BinaryDataFormat(object):
       date_time = dfdatetime_filetime.Filetime(timestamp=value)
       date_time_string = date_time.CopyToDateTimeString()
       if date_time_string:
-        date_time_string = '{0:s} UTC'.format(date_time_string)
+        date_time_string = f'{date_time_string:s} UTC'
       else:
-        date_time_string = '0x{0:08x}'.format(value)
+        date_time_string = f'0x{value:08x}'
 
     self._DebugPrintValue(description, date_time_string)
 
@@ -106,9 +105,9 @@ class BinaryDataFormat(object):
       date_time = dfdatetime_posix_time.PosixTime(timestamp=value)
       date_time_string = date_time.CopyToDateTimeString()
       if date_time_string:
-        date_time_string = '{0:s} UTC'.format(date_time_string)
+        date_time_string = f'{date_time_string:s} UTC'
       else:
-        date_time_string = '0x{0:08x}'.format(value)
+        date_time_string = f'0x{value:08x}'
 
     self._DebugPrintValue(description, date_time_string)
 
@@ -155,8 +154,7 @@ class BinaryDataFormat(object):
         if isinstance(byte_value, str):
           byte_value = ord(byte_value)
 
-        hexadecimal_byte_value = '{0:02x}'.format(byte_value)
-        hexadecimal_byte_values.append(hexadecimal_byte_value)
+        hexadecimal_byte_values.append(f'{byte_value:02x}')
 
         printable_value = self._HEXDUMP_CHARACTER_MAP[byte_value]
         printable_values.append(printable_value)
@@ -171,8 +169,9 @@ class BinaryDataFormat(object):
 
       hexadecimal_string_part1 = ' '.join(hexadecimal_byte_values[0:8])
       hexadecimal_string_part2 = ' '.join(hexadecimal_byte_values[8:16])
-      hexadecimal_string = '{0:s}  {1:s}{2:s}'.format(
-          hexadecimal_string_part1, hexadecimal_string_part2, whitespace)
+      hexadecimal_string = (
+          f'{hexadecimal_string_part1:s}  {hexadecimal_string_part2:s}'
+          f'{whitespace:s}')
 
       if (previous_hexadecimal_string is not None and
           previous_hexadecimal_string == hexadecimal_string and
@@ -186,8 +185,8 @@ class BinaryDataFormat(object):
       else:
         printable_string = ''.join(printable_values)
 
-        lines.append('0x{0:08x}  {1:s}  {2:s}'.format(
-            block_index, hexadecimal_string, printable_string))
+        lines.append((f'0x{block_index:08x}  {hexadecimal_string:s}  '
+                      f'{printable_string:s}'))
 
         in_group = False
         previous_hexadecimal_string = hexadecimal_string
@@ -204,7 +203,7 @@ class BinaryDataFormat(object):
     Returns:
       str: array of integers formatted as decimals.
     """
-    return ', '.join(['{0:d}'.format(integer) for integer in array_of_integers])
+    return ', '.join([f'{integer:d}' for integer in array_of_integers])
 
   def _FormatArrayOfIntegersAsOffsets(self, array_of_integers):
     """Formats an array of integers as offset.
@@ -216,7 +215,7 @@ class BinaryDataFormat(object):
       str: array of integers formatted as offsets.
     """
     return ', '.join([
-        '{0:d} (0x{0:08x})'.format(integer) for integer in array_of_integers])
+        f'{integer:d} (0x{integer:08x})' for integer in array_of_integers])
 
   def _FormatArrayOfIntegersAsIPv4Address(self, array_of_integers):
     """Formats an array of integers as an IPv4 address.
@@ -231,7 +230,7 @@ class BinaryDataFormat(object):
     if len(array_of_integers) != 4:
       return None
 
-    return '.'.join(['{0:d}'.format(octet) for octet in array_of_integers])
+    return '.'.join([f'{octet:d}' for octet in array_of_integers])
 
   def _FormatArrayOfIntegersAsIPv6Address(self, array_of_integers):
     """Formats an array of integers as an IPv6 address.
@@ -250,7 +249,7 @@ class BinaryDataFormat(object):
     octet_pairs = zip(array_of_integers[0::2], array_of_integers[1::2])
     octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
     # TODO: omit ":0000" from the string.
-    return ':'.join(['{0:04x}'.format(pair) for pair in octet_pairs])
+    return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
 
   def _FormatFloatingPoint(self, floating_point):
     """Formats a floating-point number.
@@ -261,7 +260,7 @@ class BinaryDataFormat(object):
     Returns:
       str: formatted floating-point number.
     """
-    return '{0:f}'.format(floating_point)
+    return f'{floating_point:f}'
 
   def _FormatIntegerAsDecimal(self, integer):
     """Formats an integer as a decimal.
@@ -272,7 +271,7 @@ class BinaryDataFormat(object):
     Returns:
       str: integer formatted as a decimal.
     """
-    return '{0:d}'.format(integer)
+    return f'{integer:d}'
 
   def _FormatIntegerAsFiletime(self, integer):
     """Formats an integer as a FILETIME date and time value.
@@ -292,9 +291,9 @@ class BinaryDataFormat(object):
     date_time = dfdatetime_filetime.Filetime(timestamp=integer)
     date_time_string = date_time.CopyToDateTimeString()
     if not date_time_string:
-      return '0x{0:08x}'.format(integer)
+      return f'0x{integer:08x}'
 
-    return '{0:s} UTC'.format(date_time_string)
+    return f'{date_time_string:s} UTC'
 
   def _FormatIntegerAsHexadecimal2(self, integer):
     """Formats an integer as an 2-digit hexadecimal.
@@ -305,7 +304,7 @@ class BinaryDataFormat(object):
     Returns:
       str: integer formatted as an 2-digit hexadecimal.
     """
-    return '0x{0:02x}'.format(integer)
+    return f'0x{integer:02x}'
 
   def _FormatIntegerAsHexadecimal4(self, integer):
     """Formats an integer as an 4-digit hexadecimal.
@@ -316,7 +315,7 @@ class BinaryDataFormat(object):
     Returns:
       str: integer formatted as an 4-digit hexadecimal.
     """
-    return '0x{0:04x}'.format(integer)
+    return f'0x{integer:04x}'
 
   def _FormatIntegerAsHexadecimal8(self, integer):
     """Formats an integer as an 8-digit hexadecimal.
@@ -327,7 +326,7 @@ class BinaryDataFormat(object):
     Returns:
       str: integer formatted as an 8-digit hexadecimal.
     """
-    return '0x{0:08x}'.format(integer)
+    return f'0x{integer:08x}'
 
   def _FormatIntegerAsPosixTime(self, integer):
     """Formats an integer as a POSIX date and time value.
@@ -344,9 +343,9 @@ class BinaryDataFormat(object):
     date_time = dfdatetime_posix_time.PosixTime(timestamp=integer)
     date_time_string = date_time.CopyToDateTimeString()
     if not date_time_string:
-      return '0x{0:08x}'.format(integer)
+      return f'0x{integer:08x}'
 
-    return '{0:s} UTC'.format(date_time_string)
+    return f'{date_time_string:s} UTC'
 
   def _FormatIntegerAsPosixTimeInMicroseconds(self, integer):
     """Formats an integer as a POSIX date and time in microseconds value.
@@ -363,9 +362,9 @@ class BinaryDataFormat(object):
     date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(timestamp=integer)
     date_time_string = date_time.CopyToDateTimeString()
     if not date_time_string:
-      return '0x{0:08x}'.format(integer)
+      return f'0x{integer:08x}'
 
-    return '{0:s} UTC'.format(date_time_string)
+    return f'{date_time_string:s} UTC'
 
   def _FormatIntegerAsOffset(self, integer):
     """Formats an integer as an offset.
@@ -376,7 +375,7 @@ class BinaryDataFormat(object):
     Returns:
       str: integer formatted as an offset.
     """
-    return '{0:d} (0x{0:08x})'.format(integer)
+    return f'{integer:d} (0x{integer:08x})'
 
   # Deprecated in favor of _FormatArrayOfIntegersAsIPv4Address
   @decorators.deprecated
@@ -389,7 +388,7 @@ class BinaryDataFormat(object):
     Returns:
       str: human readable IPv4 address.
     """
-    return '.'.join(['{0:d}'.format(octet) for octet in packed_ip_address[:4]])
+    return '.'.join([f'{octet:d}' for octet in packed_ip_address[:4]])
 
   # Deprecated in favor of _FormatArrayOfIntegersAsIPv6Address
   @decorators.deprecated
@@ -406,8 +405,7 @@ class BinaryDataFormat(object):
     octet_pairs = zip(packed_ip_address[0::2], packed_ip_address[1::2])
     octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
     # TODO: omit ":0000" from the string.
-    return ':'.join([
-        '{0:04x}'.format(octet_pair) for octet_pair in octet_pairs])
+    return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
 
   def _FormatString(self, string):
     """Formats a string.
@@ -447,7 +445,7 @@ class BinaryDataFormat(object):
       if isinstance(attribute_value, str) and '\n' in attribute_value:
         text = ''
         if description is not None:
-          text = '{0:s}:\n'.format(description)
+          text = f'{description:s}:\n'
         text = ''.join([text, attribute_value])
 
       else:
@@ -469,7 +467,7 @@ class BinaryDataFormat(object):
     Returns:
       str: UUID formatted as string.
     """
-    return '{0!s}'.format(uuid)
+    return f'{uuid!s}'
 
   def _FormatValue(self, description, value):
     """Formats a value for debugging.
@@ -482,8 +480,8 @@ class BinaryDataFormat(object):
       str: formatted value.
     """
     alignment, _ = divmod(len(description), 8)
-    alignment = 8 - alignment + 1
-    return '{0:s}{1:s}: {2!s}\n'.format(description, '\t' * alignment, value)
+    alignment_string = '\t' * (8 - alignment + 1)
+    return f'{description:s}{alignment_string:s}: {value!s}\n'
 
   def _GetDataTypeMap(self, name):
     """Retrieves a data type map defined by the definition file.
@@ -539,16 +537,16 @@ class BinaryDataFormat(object):
       read_count = len(data)
 
       if read_count != data_size:
-        read_error = 'missing data (read: {0:d}, requested: {1:d})'.format(
-            read_count, data_size)
+        read_error = (
+            f'missing data (read: {read_count:d}, requested: {data_size:d})')
 
     except IOError as exception:
-      read_error = '{0!s}'.format(exception)
+      read_error = f'{exception!s}'
 
     if read_error:
       raise errors.ParseError((
-          'Unable to read {0:s} data at offset: {1:d} (0x{1:08x}) with error: '
-          '{2:s}').format(description, file_offset, read_error))
+          f'Unable to read {description:s} data at offset: {file_offset:d} '
+          f'(0x{file_offset:08x}) with error: {read_error:s}'))
 
     return data
 
@@ -574,16 +572,15 @@ class BinaryDataFormat(object):
       ValueError: if file-like object or data type map is missing.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading {0:s} at offset: {1:d} (0x{1:08x})\n'.format(
-              description, file_offset))
+      self._DebugPrintText((
+          f'Reading {description:s} at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data = self._ReadData(file_object, file_offset, data_size, description)
 
     if self._debug:
-      data_description = '{0:s}{1:s} data'.format(
-          description[0].upper(), description[1:])
-      self._DebugPrintData(data_description, data)
+      first_letter = description[0].upper()
+      self._DebugPrintData(f'{first_letter:s}{description[1:]:s} data', data)
 
     return self._ReadStructureFromByteStream(
         data, file_offset, data_type_map, description)
@@ -618,8 +615,8 @@ class BinaryDataFormat(object):
     except (dtfabric_errors.ByteStreamTooSmallError,
             dtfabric_errors.MappingError) as exception:
       raise errors.ParseError((
-          'Unable to map {0:s} data at offset: {1:d} (0x{1:08x}) with error: '
-          '{2!s}').format(description, file_offset, exception))
+          f'Unable to map {description:s} data at offset: {file_offset:d} '
+          f'(0x{file_offset:08x}) with error: {exception!s}'))
 
   def _ReadStructureFromFileObject(
       self, file_object, file_offset, data_type_map, description):
@@ -647,9 +644,9 @@ class BinaryDataFormat(object):
       ValueError: if the file-like object is missing.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading {0:s} at offset: {1:d} (0x{1:08x})\n'.format(
-              description, file_offset))
+      self._DebugPrintText((
+          f'Reading {description:s} at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     context = None
     data = b''
@@ -670,9 +667,9 @@ class BinaryDataFormat(object):
             data, context=context)
 
         if self._debug:
-          data_description = '{0:s}{1:s} data'.format(
-              description[0].upper(), description[1:])
-          self._DebugPrintData(data_description, data)
+          first_letter = description[0].upper()
+          self._DebugPrintData(
+              f'{first_letter:s}{description[1:]:s} data', data)
 
         return structure_values_object, data_size
 
@@ -681,15 +678,15 @@ class BinaryDataFormat(object):
 
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            'Unable to map {0:s} data at offset: {1:d} (0x{1:08x}) with error: '
-            '{2!s}').format(description, file_offset, exception))
+            f'Unable to map {description:s} data at offset: {file_offset:d} '
+            f'(0x{file_offset:08x}) with error: {exception!s}'))
 
       last_data_size = data_size
       data_size = data_type_map.GetSizeHint(context=context)
 
-    raise errors.ParseError(
-        'Unable to read {0:s} at offset: {1:d} (0x{1:08x})'.format(
-            description, file_offset))
+    raise errors.ParseError((
+        f'Unable to read {description:s} at offset: {file_offset:d} '
+        f'(0x{file_offset:08x})'))
 
   def _ReadStructureObjectFromFileObject(
       self, file_object, file_offset, data_type_map_name, description,

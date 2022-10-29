@@ -49,7 +49,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
@@ -63,16 +63,20 @@ def Main():
   jump_list_file.Open(options.source)
 
   print('Windows Jump List information:')
-  print('Number of entries:\t\t{0:d}'.format(len(jump_list_file.entries)))
-  print('Number of recovered entries:\t{0:d}'.format(
-      len(jump_list_file.recovered_entries)))
+
+  number_of_entries = len(jump_list_file.entries)
+  print(f'Number of entries:\t\t{number_of_entries:d}')
+
+  number_of_entries = len(jump_list_file.recovered_entries)
+  print(f'Number of recovered entries:\t{number_of_entries:d}')
+
   print('')
 
   for lnk_file_entry in jump_list_file.entries:
-    print('LNK file entry: {0:s}'.format(lnk_file_entry.identifier))
+    print(f'LNK file entry: {lnk_file_entry.identifier:s}')
 
     for shell_item in lnk_file_entry.GetShellItems():
-      print('Shell item: 0x{0:02x}'.format(shell_item.class_type))
+      print(f'Shell item: 0x{shell_item.class_type:02x}')
 
     print('')
 

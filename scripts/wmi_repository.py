@@ -24,15 +24,14 @@ def PrintInstance(instance):
   dynasty = instance.dynasty or ''
 
   if name_property:
-    relpath = '{0:s}.Name="{1:s}"'.format(instance.class_name, name_property)
+    relpath = f'{instance.class_name:s}.Name="{name_property:s}"'
   else:
-    relpath = '{0:s}=@'.format(instance.class_name)
+    relpath = f'{instance.class_name:s}=@'
 
-  property_count = '{0:d}'.format(len(instance.properties))
-  derivation = '{{{0:s}}}'.format(', '.join(instance.derivation))
+  number_of_properties = len(instance.properties)
+  derivation = ', '.join(instance.derivation)
   server = '.'
   namespace = instance.namespace or 'ROOT'
-  path = '\\\\{0:s}\\{1:s}:{2:s}'.format(server, namespace, relpath)
 
   name_value_pairs = [
       ('__GENUS', genus),
@@ -40,25 +39,25 @@ def PrintInstance(instance):
       ('__SUPERCLASS', super_class_name),
       ('__DYNASTY', dynasty),
       ('__RELPATH', relpath),
-      ('__PROPERTY_COUNT', property_count),
-      ('__DERIVATION', derivation),
+      ('__PROPERTY_COUNT', f'{number_of_properties:d}'),
+      ('__DERIVATION', f'{{{derivation:s}}}'),
       ('__SERVER', server),
       ('__NAMESPACE', namespace),
-      ('__PATH', path)]
+      ('__PATH', f'\\\\{server:s}\\{namespace:s}:{relpath:s}')]
 
   for property_name, property_value in sorted(instance.properties.items()):
     if property_value is None:
       property_value = ''
     else:
-      property_value = '{0!s}'.format(property_value)
+      property_value = f'{property_value!s}'
 
     name_value_pairs.append((property_name, property_value))
 
   largest_name = max([len(name) for name, _ in name_value_pairs])
 
   for name, value in name_value_pairs:
-    alignment_length = largest_name - len(name)
-    print('{0:s}{1:s} : {2:s}'.format(name, ' ' * alignment_length, value))
+    alignment_string = ' ' * (largest_name - len(name))
+    print(f'{name:s}{alignment_string:s} : {value:s}')
 
   print('')
 
@@ -114,7 +113,7 @@ def Main():
   try:
     output_writer.Open()
   except IOError as exception:
-    print('Unable to open output writer with error: {0!s}'.format(exception))
+    print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
 
