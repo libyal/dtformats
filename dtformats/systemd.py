@@ -142,14 +142,14 @@ class SystemdJournalFile(data_format.BinaryDataFile):
     """
     lines = []
     for index, entry_item in enumerate(entry_items):
-      description_string = '    Entry item: {0:d} object offset'.format(index)
       value_string = self._FormatIntegerAsHexadecimal8(entry_item.object_offset)
-      line = self._FormatValue(description_string, value_string)
+      line = self._FormatValue(
+          f'    Entry item: {index:d} object offset', value_string)
       lines.append(line)
 
-      description_string = '    Entry item: {0:d} hash'.format(index)
       value_string = self._FormatIntegerAsHexadecimal8(entry_item.hash)
-      line = self._FormatValue(description_string, value_string)
+      line = self._FormatValue(
+          f'    Entry item: {index:d} hash', value_string)
       lines.append(line)
 
     return ''.join(lines)
@@ -165,9 +165,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
     """
     lines = []
     for index, entry_object_offset in enumerate(array_of_integers):
-      description_string = '    Entry object offset: {0:d}'.format(index)
       value_string = self._FormatIntegerAsHexadecimal8(entry_object_offset)
-      line = self._FormatValue(description_string, value_string)
+      line = self._FormatValue(
+          f'    Entry object offset: {index:d}', value_string)
       lines.append(line)
 
     return ''.join(lines)
@@ -184,8 +184,8 @@ class SystemdJournalFile(data_format.BinaryDataFile):
     if integer == 0:
       return self._FormatIntegerAsHexadecimal2(integer)
 
-    return '0x{0:02x} ({1:s})'.format(
-        integer, self._OBJECT_FLAGS.get(integer, 'UNKNOWN'))
+    object_flags = self._OBJECT_FLAGS.get(integer, 'UNKNOWN')
+    return f'0x{integer:02x} ({object_flags:s})'
 
   def _FormatIntegerAsObjectType(self, integer):
     """Formats an integer as an object type .
@@ -196,8 +196,8 @@ class SystemdJournalFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as an object type.
     """
-    return '{0:d} ({1:s})'.format(
-        integer, self._OBJECT_TYPES.get(integer, 'UNKNOWN'))
+    object_types = self._OBJECT_TYPES.get(integer, 'UNKNOWN')
+    return f'{integer:d} ({object_types:s})'
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -234,13 +234,13 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           data_object, self._DEBUG_INFO_OBJECT_HEADER)
 
     if data_object.object_type != self._OBJECT_TYPE_DATA:
-      raise errors.ParseError('Unsupported object type: {0:d}.'.format(
-          data_object.object_type))
+      raise errors.ParseError(
+          f'Unsupported object type: {data_object.object_type:d}.')
 
     if data_object.object_flags not in (
         0, self._OBJECT_COMPRESSED_XZ, self._OBJECT_COMPRESSED_LZ4):
-      raise errors.ParseError('Unsupported object flags: 0x{0:02x}.'.format(
-          data_object.object_flags))
+      raise errors.ParseError(
+          f'Unsupported object flags: 0x{data_object.object_flags:02x}.')
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -272,12 +272,12 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           entry_array_object, self._DEBUG_INFO_OBJECT_HEADER)
 
     if entry_array_object.object_type != self._OBJECT_TYPE_ENTRY_ARRAY:
-      raise errors.ParseError('Unsupported object type: {0:d}.'.format(
-          entry_array_object.object_type))
+      raise errors.ParseError(
+          f'Unsupported object type: {entry_array_object.object_type:d}.')
 
     if entry_array_object.object_flags != 0:
-      raise errors.ParseError('Unsupported object flags: 0x{0:02x}.'.format(
-          entry_array_object.object_flags))
+      raise errors.ParseError(
+          f'Unsupported object flags: 0x{entry_array_object.object_flags:02x}.')
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -309,12 +309,12 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           entry_object, self._DEBUG_INFO_OBJECT_HEADER)
 
     if entry_object.object_type != self._OBJECT_TYPE_ENTRY:
-      raise errors.ParseError('Unsupported object type: {0:d}.'.format(
-          entry_object.object_type))
+      raise errors.ParseError(
+          f'Unsupported object type: {entry_object.object_type:d}.')
 
     if entry_object.object_flags != 0:
-      raise errors.ParseError('Unsupported object flags: 0x{0:02x}.'.format(
-          entry_object.object_flags))
+      raise errors.ParseError(
+          f'Unsupported object flags: 0x{entry_object.object_flags:02x}.')
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -343,8 +343,8 @@ class SystemdJournalFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.header_size not in self._SUPPORTED_FILE_HEADER_SIZES:
-      raise errors.ParseError('Unsupported file header size: {0:d}.'.format(
-          file_header.header_size))
+      raise errors.ParseError(
+          f'Unsupported file header size: {file_header.header_size:d}.')
 
     if file_header.header_size == 224:
       self._format_version = 187

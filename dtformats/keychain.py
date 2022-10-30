@@ -171,9 +171,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     """
     lines = []
     for index, record_offset in enumerate(array_of_integers):
-      description_string = 'Record offset: {0:d}'.format(index)
       value_string = self._FormatIntegerAsHexadecimal8(record_offset)
-      line = self._FormatValue(description_string, value_string)
+      line = self._FormatValue(f'Record offset: {index:d}', value_string)
       lines.append(line)
 
     return ''.join(lines)
@@ -202,7 +201,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       str: integer formatted as record type.
     """
     table_name = self._TABLE_NAMES.get(integer, 'UNKNOWN')
-    return '0x{0:08x} ({1:s})'.format(integer, table_name)
+    return f'0x{integer:08x} ({table_name:s})'
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -226,9 +225,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     """
     lines = []
     for index, table_offset in enumerate(array_of_integers):
-      description_string = 'Table offset: {0:d}'.format(index)
       value_string = self._FormatIntegerAsHexadecimal8(table_offset)
-      line = self._FormatValue(description_string, value_string)
+      line = self._FormatValue(f'Table offset: {index:d}', value_string)
       lines.append(line)
 
     return ''.join(lines)
@@ -418,7 +416,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     table = tables.get(record_type, None)
     if not table:
       raise errors.ParseError(
-          'Missing table for relation identifier: 0x{0:08}'.format(record_type))
+          f'Missing table for relation identifier: 0x{record_type:08x}')
 
     record_header = self._ReadRecordHeader(file_object, record_offset)
 
@@ -461,8 +459,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
               data_offsets.pop(0)
               attribute_value_end_offset = data_offsets[0]
 
-          description = 'Attribute value: {0:d} ({1:s}) data'.format(
-              index, column.attribute_name)
+          description = (
+              f'Attribute value: {index:d} ({column.attribute_name:s}) data')
 
           self._DebugPrintData(description, record_data[
               attribute_value_offset:attribute_value_end_offset])
@@ -519,9 +517,9 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     if self._debug:
       for index, attribute_value_offset in enumerate(attribute_value_offsets):
-        description_string = 'Attribute value offset: {0:d}'.format(index)
         value_string = self._FormatIntegerAsHexadecimal8(attribute_value_offset)
-        self._DebugPrintValue(description_string, value_string)
+        self._DebugPrintValue(
+            f'Attribute value offset: {index:d}', value_string)
 
       self._DebugPrintText('\n')
 
@@ -587,8 +585,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         value_string = 'NULL'
       else:
         table_name = self._TABLE_NAMES.get(relation_identifier, 'UNKNOWN')
-        value_string = '0x{0:08x} ({1:s})'.format(
-            relation_identifier, table_name)
+        value_string = f'0x{relation_identifier:08x} ({table_name:s})'
       self._DebugPrintValue('Relation identifier', value_string)
 
     attribute_identifier = self._ReadAttributeValueInteger(
@@ -609,8 +606,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       else:
         data_type_string = self._ATTRIBUTE_DATA_TYPES.get(
             attribute_name_data_type, 'UNKNOWN')
-        value_string = '{0:d} ({1:s})'.format(
-            attribute_name_data_type, data_type_string)
+        value_string = f'{attribute_name_data_type:d} ({data_type_string:s})'
       self._DebugPrintValue('Attribute name data type', value_string)
 
     attribute_name = self._ReadAttributeValueString(
@@ -636,8 +632,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       else:
         data_type_string = self._ATTRIBUTE_DATA_TYPES.get(
             attribute_data_type, 'UNKNOWN')
-        value_string = '{0:d} ({1:s})'.format(
-            attribute_data_type, data_type_string)
+        value_string = f'{attribute_data_type:d} ({data_type_string:s})'
       self._DebugPrintValue('Attribute data type', value_string)
 
     if self._debug:
@@ -646,8 +641,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     table = tables.get(relation_identifier, None)
     if not table:
       raise errors.ParseError(
-          'Missing table for relation identifier: 0x{0:08}'.format(
-              relation_identifier))
+          f'Missing table for relation identifier: 0x{relation_identifier:08x}')
 
     # TODO: map attribute identifier to module specific names?
     if attribute_name is None and attribute_value_offsets[1] != 0:
@@ -767,11 +761,11 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     relation_name = record_values.relation_name.decode('ascii')
 
     if self._debug:
-      value_string = '0x{0:08x}'.format(record_values.relation_identifier)
-      self._DebugPrintValue('Relation identifier', value_string)
+      self._DebugPrintValue(
+          'Relation identifier', f'0x{record_values.relation_identifier:08x}')
 
-      value_string = '{0:d}'.format(record_values.relation_name_size)
-      self._DebugPrintValue('Relation name size', value_string)
+      self._DebugPrintValue(
+          'Relation name size', f'{record_values.relation_name_size:d}')
 
       self._DebugPrintValue('Relation name', relation_name)
 

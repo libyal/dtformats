@@ -75,9 +75,9 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
         value_data = value.data
 
     except (IOError, OverflowError) as exception:
-      raise errors.ParseError(
-          'Unable to read data from value: {0:s} with error: {1!s}'.format(
-              value.name, exception))
+      raise errors.ParseError((
+          f'Unable to read data from value: {value.name:s} with error: '
+          f'{exception!s}'))
 
     return value_data
 
@@ -88,8 +88,7 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       application_file_key (pyregf_key): application file key.
     """
     if self._debug:
-      self._DebugPrintText('Application File: {0:s}\n'.format(
-          application_file_key.name))
+      self._DebugPrintText(f'Application File: {application_file_key.name:s}\n')
 
     for value in application_file_key.values:
       description = self._APPLICATION_FILE_KEY_DESCRIPTIONS.get(
@@ -109,7 +108,7 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       application_key (pyregf_key): application key.
     """
     if self._debug:
-      self._DebugPrintText('Application: {0:s}\n'.format(application_key.name))
+      self._DebugPrintText(f'Application: {application_key.name:s}\n')
 
     for value in application_key.values:
       description = self._APPLICATION_KEY_DESCRIPTIONS.get(
@@ -143,10 +142,11 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
         sequence_number, mft_entry = file_reference_key.name.split('0000')
         mft_entry = int(mft_entry, 16)
         sequence_number = int(sequence_number, 16)
-        self._DebugPrintText('File: {0:s} ({1:d}-{2:d})\n'.format(
-            file_reference_key.name, mft_entry, sequence_number))
+        self._DebugPrintText((
+            f'File: {file_reference_key.name:s} '
+            f'({mft_entry:d}-{sequence_number:d})\n'))
       else:
-        self._DebugPrintText('File: {0:s}\n'.format(file_reference_key.name))
+        self._DebugPrintText(f'File: {file_reference_key.name:s}\n')
 
     for value in file_reference_key.values:
       description = self._FILE_REFERENCE_KEY_DESCRIPTIONS.get(
@@ -155,8 +155,9 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
 
       if self._debug:
         if value.name == 'd':
-          value_data = '{0:d}.{1:d}'.format(
-              value_data >> 16, value_data & 0xffff)
+          major_version = value_data >> 16
+          minor_version = value_data & 0xffff
+          value_data = f'{major_version:d}.{minor_version:d}'
 
         if value.name == 'f':
           self._DebugPrintPosixTimeValue(description, value_data)
@@ -193,7 +194,7 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       program_key (pyregf_key): program key.
     """
     if self._debug:
-      self._DebugPrintText('Program: {0:s}\n'.format(program_key.name))
+      self._DebugPrintText(f'Program: {program_key.name:s}\n')
 
     for value in program_key.values:
       description = self._PROGRAM_KEY_DESCRIPTIONS.get(value.name, value.name)

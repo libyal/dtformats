@@ -125,12 +125,12 @@ class GZipFile(data_format.BinaryDataFile):
 
     if member_header.signature != self._GZIP_SIGNATURE:
       raise errors.ParseError(
-          'Unsupported signature: 0x{0:04x}.'.format(member_header.signature))
+          f'Unsupported signature: 0x{member_header.signature:04x}.')
 
     if member_header.compression_method != self._COMPRESSION_METHOD_DEFLATE:
-      raise errors.ParseError(
-          'Unsupported compression method: {0:d}.'.format(
-              member_header.compression_method))
+      raise errors.ParseError((
+          f'Unsupported compression method: '
+          f'{member_header.compression_method:d}.'))
 
     if member_header.flags & self._FLAG_FEXTRA:
       file_offset = file_object.tell()

@@ -93,45 +93,43 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     """
     self._DebugPrintRecordHeader(change_log_entry_record)
 
-    value_string = '0x{0:08x}'.format(change_log_entry_record.signature)
-    self._DebugPrintValue('Signature', value_string)
+    self._DebugPrintValue(
+        'Signature', f'0x{change_log_entry_record.signature:08x}')
 
     # TODO: implement an item based lookup.
-    value_string = '0x{0:08x}'.format(change_log_entry_record.entry_type)
-    self._DebugPrintValue('Entry type', value_string)
+    self._DebugPrintValue(
+        'Entry type', f'0x{change_log_entry_record.entry_type:08x}')
 
     for flag, description in self.LOG_ENTRY_TYPES.items():
       if change_log_entry_record.entry_type & flag:
-        text = '\t{0:s}\n'.format(description)
-        self._DebugPrintText(text)
+        self._DebugPrintText(f'\t{description:s}\n')
 
     self._DebugPrintText('\n')
 
     # TODO: implement an item based lookup.
-    value_string = '0x{0:08x}'.format(change_log_entry_record.entry_flags)
-    self._DebugPrintValue('Entry flags', value_string)
+    self._DebugPrintValue(
+        'Entry flags', f'0x{change_log_entry_record.entry_flags:08x}')
 
     for flag, description in self.LOG_ENTRY_FLAGS.items():
       if change_log_entry_record.entry_flags & flag:
-        text = '\t{0:s}\n'.format(description)
-        self._DebugPrintText(text)
+        self._DebugPrintText(f'\t{description:s}\n')
 
     self._DebugPrintText('\n')
 
-    value_string = '0x{0:08x}'.format(
-        change_log_entry_record.file_attribute_flags)
-    self._DebugPrintValue('File attribute flags', value_string)
+    self._DebugPrintValue(
+        'File attribute flags',
+        f'0x{change_log_entry_record.file_attribute_flags:08x}')
 
     # TODO: print flags.
 
-    value_string = '{0:d}'.format(change_log_entry_record.sequence_number)
-    self._DebugPrintValue('Sequence number', value_string)
+    self._DebugPrintValue(
+        'Sequence number', f'{change_log_entry_record.sequence_number:d}')
 
-    value_string = '{0:d}'.format(change_log_entry_record.process_name_size)
-    self._DebugPrintValue('Process name size', value_string)
+    self._DebugPrintValue(
+        'Process name size', f'{change_log_entry_record.process_name_size:d}')
 
-    value_string = '0x{0:08x}'.format(change_log_entry_record.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
+    self._DebugPrintValue(
+        'Unknown2', f'0x{change_log_entry_record.unknown2:08x}')
 
   def _DebugPrintFileHeader(self, file_header):
     """Prints file header debug information.
@@ -141,11 +139,9 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     """
     self._DebugPrintRecordHeader(file_header)
 
-    value_string = '0x{0:08x}'.format(file_header.signature)
-    self._DebugPrintValue('Signature', value_string)
+    self._DebugPrintValue('Signature', f'0x{file_header.signature:08x}')
 
-    value_string = '{0:d}'.format(file_header.format_version)
-    self._DebugPrintValue('Format version', value_string)
+    self._DebugPrintValue('Format version', f'{file_header.format_version:d}')
 
   def _DebugPrintRecordHeader(self, record_header):
     """Prints record header debug information.
@@ -153,16 +149,16 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     Args:
       record_header (rp_change_log_record_header): record header.
     """
-    value_string = '{0:d}'.format(record_header.record_size)
-    self._DebugPrintValue('Record size', value_string)
+    self._DebugPrintValue('Record size', f'{record_header.record_size:d}')
 
     data_type_map = self._GetDataTypeMap('rp_change_log_record_type')
 
-    record_type_string = data_type_map.GetName(record_header.record_type)
+    record_type_string = data_type_map.GetName(
+        record_header.record_type) or 'UNKNOWN'
 
-    value_string = '{0:d} ({1:s})'.format(
-        record_header.record_type, record_type_string or 'UNKNOWN')
-    self._DebugPrintValue('Record type', value_string)
+    self._DebugPrintValue(
+        'Record type',
+        f'{record_header.record_type:d} ({record_type_string:s})')
 
   def _ReadChangeLogEntries(self, file_object):
     """Reads the change log entries.
@@ -201,8 +197,8 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
       self._DebugPrintChangeLogEntryRecord(change_log_entry_record)
 
     if change_log_entry_record.record_type != 1:
-      raise errors.ParseError('Unsupported record type: {0:d}'.format(
-          change_log_entry_record.record_type))
+      raise errors.ParseError(
+          f'Unsupported record type: {change_log_entry_record.record_type:d}')
 
     signature = change_log_entry_record.signature
     if signature != self._RECORD_SIGNATURE:
@@ -228,8 +224,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           context=context)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse change log entry record with error: {0!s}'.format(
-              exception))
+          f'Unable to parse change log entry record with error: {exception!s}')
 
     if self._debug:
       self._DebugPrintValue(
@@ -248,12 +243,11 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
     sub_record_data_offset = context.byte_size
     sub_record_data_size = record_size - 4
     if self._debug:
-      value_string = '{0:d}'.format(sub_record_data_offset)
-      self._DebugPrintValue('Sub record data offset', value_string)
+      self._DebugPrintValue(
+          'Sub record data offset', f'{sub_record_data_offset:d}')
 
-      value_string = '{0:d}'.format(
-          sub_record_data_size - sub_record_data_offset)
-      self._DebugPrintValue('Sub record data size', value_string)
+      value_size = sub_record_data_size - sub_record_data_offset
+      self._DebugPrintValue('Sub record data size', f'{value_size:d}')
 
       if sub_record_data_offset < sub_record_data_size:
         self._DebugPrintText('\n')
@@ -272,16 +266,15 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           'copy of record size')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse copy of record size with error: {0!s}'.format(
-              exception))
+          f'Unable to parse copy of record size with error: {exception!s}')
 
     if change_log_entry_record.record_size != copy_of_record_size:
-      raise errors.ParseError('Record size mismatch ({0:d} != {1:d})'.format(
-          change_log_entry_record.record_size, copy_of_record_size))
+      raise errors.ParseError((
+          f'Record size mismatch ({change_log_entry_record.record_size:d} != '
+          f'{copy_of_record_size:d})'))
 
     if self._debug:
-      value_string = '{0:d}'.format(copy_of_record_size)
-      self._DebugPrintValue('Copy of record size', value_string)
+      self._DebugPrintValue('Copy of record size', f'{copy_of_record_size:d}')
 
       self._DebugPrintText('\n')
 
@@ -309,12 +302,12 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
 
     if file_header.record_type != 0:
       raise errors.ParseError(
-          'Unsupported record type: {0:d}'.format(file_header.record_type))
+          f'Unsupported record type: {file_header.record_type:d}')
 
     if file_header.format_version != 2:
-      raise errors.ParseError(
-          'Unsupported change.log format version: {0:d}'.format(
-              file_header.format_version))
+      raise errors.ParseError((
+          f'Unsupported change.log format version: '
+          f'{file_header.format_version:d}'))
 
     file_offset = file_header_data_size
     record_size = file_header.record_size - file_header_data_size
@@ -333,18 +326,17 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           'copy of record size')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse copy of record size with error: {0!s}'.format(
-              exception))
+          f'Unable to parse copy of record size with error: {exception!s}')
 
     if self._debug:
-      value_string = '{0:d}'.format(copy_of_record_size)
-      self._DebugPrintValue('Copy of record size', value_string)
+      self._DebugPrintValue('Copy of record size', f'{copy_of_record_size:d}')
 
       self._DebugPrintText('\n')
 
     if file_header.record_size != copy_of_record_size:
-      raise errors.ParseError('Record size mismatch ({0:d} != {1:d})'.format(
-          file_header.record_size, copy_of_record_size))
+      raise errors.ParseError((
+          f'Record size mismatch ({file_header.record_size:d} != '
+          f'{copy_of_record_size:d})'))
 
   def _ReadRecord(self, record_data, record_data_offset):
     """Reads a record.
@@ -369,8 +361,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           'record header', context=context)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse record header with error: {0!s}'.format(
-              exception))
+          f'Unable to parse record header with error: {exception!s}')
 
     if self._debug:
       self._DebugPrintData('Record data', record_data[
@@ -391,8 +382,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           'value string')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse UTF-16 string with error: {0!s}'.format(
-              exception))
+          f'Unable to parse UTF-16 string with error: {exception!s}')
 
     # TODO: add support for other record types.
     # TODO: store record values in runtime objects.
@@ -431,8 +421,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           record_data, volume_path_offset, data_type_map, 'volume path record')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse volume path record with error: {0!s}'.format(
-              exception))
+          f'Unable to parse volume path record with error: {exception!s}')
 
     if self._debug:
       self._DebugPrintRecordHeader(volume_path_record)
@@ -442,8 +431,8 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
       self._DebugPrintText('\n')
 
     if volume_path_record.record_type != 2:
-      raise errors.ParseError('Unsupported record type: {0:d}'.format(
-          volume_path_record.record_type))
+      raise errors.ParseError(
+          f'Unsupported record type: {volume_path_record.record_type:d}')
 
   def ReadFileObject(self, file_object):
     """Reads a Windows Restore Point change.log file-like object.

@@ -55,7 +55,7 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
       return string.decode(self._codepage)
     except UnicodeDecodeError as exception:
       raise errors.ParseError(
-          'Unable to decode ANSI string with error: {0!s}.'.format(exception))
+          f'Unable to decode ANSI string with error: {exception!s}.')
 
   def _ReadFileEntry(self, file_object):
     """Reads the file entry.
@@ -78,8 +78,8 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
           file_entry_data, file_offset, data_type_map, 'file entry')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to map file entry data at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
+          f'Unable to map file entry data at offset: 0x{file_offset:08x} with '
+          f'error: {exception!s}'))
 
     if self._debug:
       self._DebugPrintStructureObject(file_entry, self._DEBUG_INFO_FILE_ENTRY)
@@ -95,8 +95,8 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
             file_entry_data[280:], file_offset, data_type_map, 'file entry')
       except (ValueError, errors.ParseError) as exception:
         raise errors.ParseError((
-            'Unable to map file entry data at offset: 0x{0:08x} with error: '
-            '{1!s}').format(file_offset, exception))
+            f'Unable to map file entry data at offset: 0x{file_offset:08x} '
+            f'with error: {exception!s}'))
 
       if self._debug:
         self._DebugPrintValue('Original filename (Unicode)', original_filename)
@@ -122,8 +122,8 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.file_entry_size not in (280, 800):
-      raise errors.ParseError('Unsupported file entry size: {0:d}'.format(
-          file_header.file_entry_size))
+      raise errors.ParseError(
+          f'Unsupported file entry size: {file_header.file_entry_size:d}')
 
     self._file_entry_data_size = file_header.file_entry_size
 

@@ -129,8 +129,8 @@ class CupsIppFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as a tag value.
     """
-    return '0x{0:02x} ({1:s})'.format(
-        integer, self._TAG_VALUE_STRINGS.get(integer, 'UNKNOWN'))
+    tag_value_string = self._TAG_VALUE_STRINGS.get(integer, 'UNKNOWN')
+    return f'0x{integer:02x} ({tag_value_string:s})'
 
   def _ReadAttribute(self, file_object):
     """Reads an attribute.
@@ -156,15 +156,13 @@ class CupsIppFile(data_format.BinaryDataFile):
       value = self._ReadIntegerValue(attribute.value_data, file_offset)
 
       if self._debug:
-        value_string = '{0:d}'.format(value)
-        self._DebugPrintValue('Value', value_string)
+        self._DebugPrintValue('Value', f'{value:d}')
 
     elif attribute.tag_value == self._TAG_VALUE_BOOLEAN:
       value = self._ReadBooleanValue(attribute.value_data)
 
       if self._debug:
-        value_string = '{0!s}'.format(value)
-        self._DebugPrintValue('Value', value_string)
+        self._DebugPrintValue('Value', f'{value!s}')
 
     elif attribute.tag_value == self._TAG_VALUE_DATE_TIME:
       # TODO: correct file offset to point to the start of value_data.
@@ -221,8 +219,8 @@ class CupsIppFile(data_format.BinaryDataFile):
       elif (tag_value != self._DELIMITER_TAG_END_OF_ATTRIBUTES and
             tag_value not in self._DELIMITER_TAGS):
         raise errors.ParseError((
-            'Unsupported attributes groups start tag value: '
-            '0x{0:02x}.').format(tag_value))
+            f'Unsupported attributes groups start tag value: '
+            f'0x{tag_value:02x}.'))
 
   def _ReadBooleanValue(self, byte_stream):
     """Reads a boolean value.
@@ -265,7 +263,7 @@ class CupsIppFile(data_format.BinaryDataFile):
           byte_stream, file_offset, data_type_map, 'date-time value')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse datetime value with error: {0!s}'.format(exception))
+          f'Unable to parse datetime value with error: {exception!s}')
 
     rfc2579_date_time_tuple = (
         value.year, value.month, value.day,
@@ -295,7 +293,7 @@ class CupsIppFile(data_format.BinaryDataFile):
           byte_stream, file_offset, data_type_map, 'integer value')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse integer value with error: {0!s}'.format(exception))
+          f'Unable to parse integer value with error: {exception!s}')
 
   def _ReadHeader(self, file_object):
     """Reads the header.

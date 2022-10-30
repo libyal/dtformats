@@ -33,11 +33,9 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     Args:
       file_header (binarycookies_file_header): file header.
     """
-    value_string = '{0!s}'.format(file_header.signature)
-    self._DebugPrintValue('Signature', value_string)
+    self._DebugPrintValue('Signature', f'{file_header.signature!s}')
 
-    value_string = '{0:d}'.format(file_header.number_of_pages)
-    self._DebugPrintValue('Number of pages', value_string)
+    self._DebugPrintValue('Number of pages', f'{file_header.number_of_pages:d}')
 
     self._DebugPrintText('\n')
 
@@ -47,44 +45,25 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
     Args:
       record_header (binarycookies_record_header): record header.
     """
-    value_string = '{0:d}'.format(record_header.size)
-    self._DebugPrintValue('Size', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.flags)
-    self._DebugPrintValue('Flags', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown2)
-    self._DebugPrintValue('Unknown2', value_string)
-
-    value_string = '{0:d}'.format(record_header.url_offset)
-    self._DebugPrintValue('URL offset', value_string)
-
-    value_string = '{0:d}'.format(record_header.name_offset)
-    self._DebugPrintValue('Name offset', value_string)
-
-    value_string = '{0:d}'.format(record_header.path_offset)
-    self._DebugPrintValue('Path offset', value_string)
-
-    value_string = '{0:d}'.format(record_header.value_offset)
-    self._DebugPrintValue('Value offset', value_string)
-
-    value_string = '0x{0:08x}'.format(record_header.unknown3)
-    self._DebugPrintValue('Unknown3', value_string)
+    self._DebugPrintValue('Size', f'{record_header.size:d}')
+    self._DebugPrintValue('Unknown1', f'0x{record_header.unknown1:08x}')
+    self._DebugPrintValue('Flags', f'0x{record_header.flags:08x}')
+    self._DebugPrintValue('Unknown2', f'0x{record_header.unknown2:08x}')
+    self._DebugPrintValue('URL offset', f'{record_header.url_offset:d}')
+    self._DebugPrintValue('Name offset', f'{record_header.name_offset:d}')
+    self._DebugPrintValue('Path offset', f'{record_header.path_offset:d}')
+    self._DebugPrintValue('Value offset', f'{record_header.value_offset:d}')
+    self._DebugPrintValue('Unknown3', f'0x{record_header.unknown3:08x}')
 
     date_time = (datetime.datetime(2001, 1, 1) + datetime.timedelta(
         seconds=int(record_header.expiration_time)))
-    value_string = '{0!s} ({1:f})'.format(
-        date_time, record_header.expiration_time)
-    self._DebugPrintValue('Expiration time', value_string)
+    self._DebugPrintValue(
+        'Expiration time', f'{date_time!s} ({record_header.expiration_time:f})')
 
     date_time = (datetime.datetime(2001, 1, 1) + datetime.timedelta(
         seconds=int(record_header.creation_time)))
-    value_string = '{0!s} ({1:f})'.format(
-        date_time, record_header.creation_time)
-    self._DebugPrintValue('Creation time', value_string)
+    self._DebugPrintValue(
+        'Creation time', f'{date_time!s} ({record_header.creation_time:f})')
 
     self._DebugPrintText('\n')
 
@@ -109,8 +88,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
           page_data[string_offset:], string_offset, data_type_map, 'cstring')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to parse string at offset: 0x{0:08x} with error: '
-          '{1!s}').format(string_offset, exception))
+          f'Unable to parse string at offset: 0x{string_offset:08x} with '
+          f'error: {exception!s}'))
 
     return value_string.rstrip('\x00')
 
@@ -172,8 +151,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
           context=context)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to map page sizes data at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
+          f'Unable to map page sizes data at offset: 0x{file_offset:08x} with '
+          f'error: {exception!s}'))
 
     self._page_sizes = []
     if file_header.number_of_pages > 0:
@@ -181,9 +160,7 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
         self._page_sizes.append(page_size)
 
         if self._debug:
-          description = 'Page: {0:d} size'.format(index)
-          value_string = '{0:d}'.format(page_size)
-          self._DebugPrintValue(description, value_string)
+          self._DebugPrintValue(f'Page: {index:d} size', f'{page_size:d}')
 
       if self._debug:
         self._DebugPrintText('\n')
@@ -210,8 +187,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
           page_data, file_offset, data_type_map, 'page header')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to map page header data at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
+          f'Unable to map page header data at offset: 0x{file_offset:08x} '
+          f'with error: {exception!s}'))
 
     page_header_data_size = 8 + (4 * page_header.number_of_records)
 
@@ -220,11 +197,10 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
           'Page header data', page_data[:page_header_data_size])
 
     if self._debug:
-      value_string = '0x{0:08x}'.format(page_header.signature)
-      self._DebugPrintValue('Signature', value_string)
+      self._DebugPrintValue('Signature', f'0x{page_header.signature:08x}')
 
-      value_string = '{0:d}'.format(page_header.number_of_records)
-      self._DebugPrintValue('Number of records', value_string)
+      self._DebugPrintValue(
+          'Number of records', f'{page_header.number_of_records:d}')
 
     record_offsets = []
     if page_header.number_of_records > 0:
@@ -232,9 +208,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
         record_offsets.append(record_offset)
 
         if self._debug:
-          description = 'Record: {0:d} offset'.format(index)
-          value_string = '{0:d}'.format(record_offset)
-          self._DebugPrintValue(description, value_string)
+          self._DebugPrintValue(
+              f'Record: {index:d} offset', f'{record_offset:d}')
 
       if self._debug:
         self._DebugPrintText('\n')
@@ -272,8 +247,8 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
           'record header')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to map record header data at offset: 0x{0:08x} with error: '
-          '{1!s}').format(record_offset, exception))
+          f'Unable to map record header data at offset: 0x{record_offset:08x} '
+          f'with error: {exception!s}'))
 
     record_data_size = record_offset + record_header.size
 

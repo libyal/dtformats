@@ -51,12 +51,15 @@ class CacheMapFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as a cache location.
     """
+    block_number = integer & 0x00ffffff
+    extra_blocks = (integer & 0x03000000) >> 24
+    location_selector = (integer & 0x30000000) >> 28
+    reserved = (integer & 0x4c000000) >> 26
+    location_flag = (integer & 0x80000000) >> 31
     return (
-        'block number: {0:d}, extra blocks: {1:d}, location selector: '
-        '{2:d}, reserved: {3:02x}, location flag: {4:d}').format(
-            integer & 0x00ffffff, (integer & 0x03000000) >> 24,
-            (integer & 0x30000000) >> 28, (integer & 0x4c000000) >> 26,
-            (integer & 0x80000000) >> 31)
+        f'block number: {block_number:d}, extra blocks: {extra_blocks:d}, '
+        f'location selector: {location_selector:d}, reserved: {reserved:02x}, '
+        f'location flag: {location_flag:d}')
 
   def _ReadFileHeader(self, file_object):
     """Reads a file header.
@@ -76,8 +79,9 @@ class CacheMapFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.major_format_version != 1:
-      raise errors.ParseError('Unsupported major format version: {0:d}'.format(
-          file_header.major_format_version))
+      raise errors.ParseError((
+          f'Unsupported major format version: '
+          f'{file_header.major_format_version:d}'))
 
     if file_header.data_size != (self._file_size - file_header_data_size):
       raise errors.ParseError('Data size does not correspond with file size.')
@@ -161,12 +165,15 @@ class CacheBlockFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as a cache location.
     """
+    block_number = integer & 0x00ffffff
+    extra_blocks = (integer & 0x03000000) >> 24
+    location_selector = (integer & 0x30000000) >> 28
+    reserved = (integer & 0x4c000000) >> 26
+    location_flag = (integer & 0x80000000) >> 31
     return (
-        'block number: {0:d}, extra blocks: {1:d}, location selector: '
-        '{2:d}, reserved: {3:02x}, location flag: {4:d}').format(
-            integer & 0x00ffffff, (integer & 0x03000000) >> 24,
-            (integer & 0x30000000) >> 28, (integer & 0x4c000000) >> 26,
-            (integer & 0x80000000) >> 31)
+        f'block number: {block_number:d}, extra blocks: {extra_blocks:d}, '
+        f'location selector: {location_selector:d}, reserved: {reserved:02x}, '
+        f'location flag: {location_flag:d}')
 
   def _ReadCacheEntry(self, file_object, file_offset):
     """Reads a cache entry.
@@ -213,8 +220,7 @@ class CacheBlockFile(data_format.BinaryDataFile):
     elif filename == '_CACHE_003_':
       self._block_size = 4096
     else:
-      raise errors.ParseError('Unsupported cache block filename: {0:s}'.format(
-          filename))
+      raise errors.ParseError(f'Unsupported cache block filename: {filename:s}')
 
     file_offset = 0
     while file_offset < self._file_size:
