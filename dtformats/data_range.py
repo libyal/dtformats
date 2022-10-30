@@ -48,12 +48,12 @@ class DataRange(object):
       OSError: if the read failed.
     """
     if self.data_offset < 0:
-      raise IOError('Invalid data offset: {0:d} value out of bounds.'.format(
-          self.data_offset))
+      raise IOError(
+          f'Invalid data offset: {self.data_offset:d} value out of bounds.')
 
     if self.data_size < 0:
-      raise IOError('Invalid data size: {0:d} value out of bounds.'.format(
-          self.data_size))
+      raise IOError(
+          f'Invalid data size: {self.data_size:d} value out of bounds.')
 
     if self._current_offset >= self.data_size:
       return b''
@@ -85,8 +85,8 @@ class DataRange(object):
       OSError: if the seek failed.
     """
     if self.data_size < 0:
-      raise IOError('Invalid data size: {0:d} value out of bounds.'.format(
-          self.data_size))
+      raise IOError(
+          f'Invalid data size: {self.data_size:d} value out of bounds.')
 
     if whence == os.SEEK_CUR:
       offset += self._current_offset

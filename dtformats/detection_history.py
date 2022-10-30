@@ -123,8 +123,8 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          '\nReading threat tracking data at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'\nReading threat tracking data at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('uint32le')
 
@@ -269,15 +269,14 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
 
         else:
           description = self._VALUE_DESCRIPTIONS[value_index_set].get(
-              value_index, 'UNKNOWN_{0:d}_{1:d}'.format(
-                  value_index_set, value_index))
+              value_index, f'UNKNOWN_{value_index_set:d}_{value_index:d}')
 
           if (value_index_set, value_index) == (1, 4):
-            value_string = '{0!s} ({1:s})'.format(
-                value_object, self._CATEGORY_NAME.get(value_object, 'UNKNOWN'))
+            category_name = self._CATEGORY_NAME.get(value_object, 'UNKNOWN')
+            value_string = f'{value_object!s} ({category_name:s})'
 
           else:
-            value_string = '{0!s}'.format(value_object)
+            value_string = f'{value_object!s}'
 
           self._DebugPrintValue(description, value_string)
 

@@ -104,8 +104,9 @@ class ClassValueDataMap(object):
             continue
 
           raise errors.ParseError((
-              'Missing type qualifier for property: {0:s} of class: '
-              '{1:s}').format(property_definition.name, class_definition.name))
+              f'Missing type qualifier for property: '
+              f'{property_definition.name:s} of class: '
+              f'{class_definition.name:s}'))
 
         value_data_size = self._PROPERTY_TYPE_VALUE_DATA_SIZE.get(
             property_definition.value_data_type, 4)
@@ -334,22 +335,21 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
     self._DebugPrintDecimalValue('Number of keys', page_body.number_of_keys)
 
     for index, value in enumerate(page_body.unknown2):
-      description = 'Unknown2: {0:d}'.format(index)
-      self._DebugPrintDecimalValue(description, value)
+      self._DebugPrintDecimalValue(f'Unknown2: {index:d}', value)
 
     for index, page_number in enumerate(page_body.sub_pages):
-      description = 'Sub page: {0:d} mapped page number'.format(index)
       value_string = self._FormatIntegerAsPageNumber(page_number)
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(
+          f'Sub page: {index:d} mapped page number', value_string)
 
     for index, key_offset in enumerate(page_body.key_offsets):
-      description = 'Key: {0:d} offset'.format(index)
       value_string = self._FormatIntegerAsOffset(key_offset)
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'Key: {index:d} offset', value_string)
 
-    value_string = '{0:d} ({1:d} bytes)'.format(
-        page_body.key_data_size, page_body.key_data_size * 2)
-    self._DebugPrintValue('Key data size', value_string)
+    number_of_bytes = page_body.key_data_size * 2
+    self._DebugPrintValue(
+        'Key data size',
+        f'{page_body.key_data_size:d} ({number_of_bytes:d} bytes)')
 
     self._DebugPrintData('Key data', page_body.key_data)
 
@@ -357,13 +357,13 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         'Number of values', page_body.number_of_values)
 
     for index, offset in enumerate(page_body.value_offsets):
-      description = 'Value: {0:d} offset'.format(index)
       value_string = self._FormatIntegerAsOffset(offset)
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'Value: {index:d} offset', value_string)
 
-    value_string = '{0:d} ({1:d} bytes)'.format(
-        page_body.value_data_size, page_body.value_data_size * 2)
-    self._DebugPrintValue('Value data size', value_string)
+    number_of_bytes = page_body.value_data_size * 2
+    self._DebugPrintValue(
+        'Value data size',
+        f'{page_body.value_data_size:d} ({number_of_bytes:d} bytes)')
 
     self._DebugPrintData('Value data', page_body.value_data)
 
@@ -377,9 +377,9 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       str: integer formatted as a page number.
     """
     if integer in self._unavailable_page_numbers:
-      return '0x{0:08x} (unavailable)'.format(integer)
+      return f'0x{integer:08x} (unavailable)'
 
-    return '{0:d}'.format(integer)
+    return f'{integer:d}'
 
   def _FormatIntegerAsPageType(self, integer):
     """Formats an integer as a page type.
@@ -391,7 +391,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       str: integer formatted as a page type.
     """
     page_type_string = self._PAGE_TYPES.get(integer, 'Unknown')
-    return '0x{0:04x} ({1:s})'.format(integer, page_type_string)
+    return f'0x{integer:04x} ({page_type_string:s})'
 
   def _ReadPage(self, file_object, file_offset):
     """Reads a page.
@@ -407,9 +407,10 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       ParseError: if the page cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading page: {0:d} at offset: {1:d} (0x{1:08x}).\n'.format(
-              file_offset // self._PAGE_SIZE, file_offset))
+      page_number = file_offset // self._PAGE_SIZE
+      self._DebugPrintText((
+          f'Reading page: {page_number:d} at offset: {file_offset:d} '
+          f'(0x{file_offset:08x}).\n'))
 
     page_data = self._ReadData(
         file_object, file_offset, self._PAGE_SIZE, 'index binary-tree page')
@@ -468,9 +469,9 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
           page_value = index_binary_tree_page.page_values[segment_index]
           key_segments.append(page_value)
 
-        key_path = '{0:s}{1:s}'.format(
+        key_path = ''.join([
             self._KEY_SEGMENT_SEPARATOR,
-            self._KEY_SEGMENT_SEPARATOR.join(key_segments))
+            self._KEY_SEGMENT_SEPARATOR.join(key_segments)])
 
         index_binary_tree_page.keys.append(key_path)
 
@@ -521,34 +522,33 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       page_key_offset = key_offset * 2
 
       if self._debug:
-        description = 'Page key: {0:d} offset'.format(page_key_index)
         value_string = self._FormatIntegerAsOffset(page_key_offset)
-        self._DebugPrintValue(description, value_string)
+        self._DebugPrintValue(
+            f'Page key: {page_key_index:d} offset', value_string)
 
       context = dtfabric_data_maps.DataTypeMapContext()
 
       page_key = self._ReadStructureFromByteStream(
           key_data[page_key_offset:], page_key_offset, data_type_map,
-          'page key: {0:d}'.format(page_key_index), context=context)
+          f'page key: {page_key_index:d}', context=context)
 
       if self._debug:
-        description = 'Page key: {0:d} data:'.format(page_key_index)
         page_key_end_offset = page_key_offset + context.byte_size
         self._DebugPrintData(
-            description, key_data[page_key_offset:page_key_end_offset])
+            f'Page key: {page_key_index:d} data:',
+            key_data[page_key_offset:page_key_end_offset])
 
       index_binary_tree_page.page_key_segments.append(page_key.segments)
 
       if self._debug:
-        description = 'Page key: {0:d} number of segments'.format(
-            page_key_index)
-        self._DebugPrintDecimalValue(description, page_key.number_of_segments)
+        self._DebugPrintDecimalValue(
+            f'Page key: {page_key_index:d} number of segments',
+            page_key.number_of_segments)
 
-        description = 'Page key: {0:d} segments'.format(page_key_index)
         value_string = ', '.join([
-            '{0:d}'.format(segment_index)
-            for segment_index in page_key.segments])
-        self._DebugPrintValue(description, value_string)
+            f'{segment_index:d}' for segment_index in page_key.segments])
+        self._DebugPrintValue(
+            f'Page key: {page_key_index:d} segments', value_string)
 
         self._DebugPrintText('\n')
 
@@ -573,12 +573,11 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             value_data[page_value_offset:])
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            'Unable to parse page value: {0:d} string with error: '
-            '{1!s}').format(index, exception))
+            f'Unable to parse page value: {index:d} string with error: '
+            f'{exception!s}'))
 
       if self._debug:
-        description = 'Page value: {0:d} data'.format(index)
-        self._DebugPrintValue(description, value_string)
+        self._DebugPrintValue(f'Page value: {index:d} data', value_string)
 
       index_binary_tree_page.page_values.append(value_string)
 
@@ -674,7 +673,7 @@ class MappingFile(data_format.BinaryDataFile):
     self._DebugPrintText('\n')
 
     for index, mapping_table_entry in enumerate(mapping_table.entries):
-      self._DebugPrintText('  Entry: {0:d}:\n'.format(index))
+      self._DebugPrintText(f'  Entry: {index:d}:\n')
       self._DebugPrintStructureObject(
           mapping_table_entry, self._DEBUG_INFO_TABLE_ENTRY)
 
@@ -691,9 +690,8 @@ class MappingFile(data_format.BinaryDataFile):
         '  Number of entries', unknown_table.number_of_entries)
 
     for index, page_number in enumerate(unknown_table.entries):
-      description = '  Entry: {0:d} page number'.format(index)
       value_string = self._FormatIntegerAsPageNumber(page_number)
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'  Entry: {index:d} page number', value_string)
 
     self._DebugPrintText('\n')
 
@@ -707,9 +705,9 @@ class MappingFile(data_format.BinaryDataFile):
       str: integer formatted as a page number.
     """
     if integer in self._unavailable_page_numbers:
-      return '0x{0:08x} (unavailable)'.format(integer)
+      return f'0x{integer:08x} (unavailable)'
 
-    return '{0:d}'.format(integer)
+    return f'{integer:d}'
 
   def _ReadDetermineFormatVersion(self, file_object):
     """Reads the file footer to determine the format version.
@@ -925,9 +923,9 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
 
     if self._debug:
-      self._DebugPrintText(
-          'Reading object descriptor at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading object descriptor at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     object_descriptor_data = file_object.read(16)
 
@@ -986,9 +984,9 @@ class ObjectsDataFile(data_format.BinaryDataFile):
     file_object.seek(file_offset, os.SEEK_SET)
 
     if self._debug:
-      self._DebugPrintText(
-          'Reading objects data page at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading objects data page at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     objects_page = ObjectsDataPage(file_offset)
 
@@ -1046,8 +1044,8 @@ class ObjectsDataFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintText((
-          'Reading object record data segment at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading object record data segment at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     available_page_size = self._PAGE_SIZE - data_offset
 
@@ -1256,8 +1254,7 @@ class RepositoryFile(data_format.BinaryDataFile):
 
     while next_list_element_node_offset > 40:
       if self._debug:
-        self._DebugPrintText('Reading list element: {0:d}\n'.format(
-            list_element))
+        self._DebugPrintText(f'Reading list element: {list_element:d}\n')
 
       node_cell = self._ReadNodeCell(
           file_object, next_list_element_node_offset - 4)
@@ -1291,8 +1288,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading child objects list node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading child objects list node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_child_objects_list_node')
 
@@ -1321,8 +1318,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading child objects list element node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading child objects list element node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap(
         'cim_rep_child_objects_list_element_node')
@@ -1398,8 +1395,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading child objects branch node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading child objects branch node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_child_objects_branch_node')
 
@@ -1428,8 +1425,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading child objects leaf node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading child objects leaf node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_child_objects_leaf_node')
 
@@ -1459,8 +1456,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading child objects root node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading child objects root node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_child_objects_root_node')
 
@@ -1490,8 +1487,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading class definition branch node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading class definition branch node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_class_definition_branch_node')
 
@@ -1521,8 +1518,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading class definition leaf node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading class definition leaf node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_class_definition_leaf_node')
 
@@ -1552,8 +1549,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading class definition root node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading class definition root node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_class_definition_root_node')
 
@@ -1604,9 +1601,9 @@ class RepositoryFile(data_format.BinaryDataFile):
       ParseError: if the instance branch node cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading instance branch node at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading instance branch node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_instance_branch_node')
 
@@ -1634,9 +1631,9 @@ class RepositoryFile(data_format.BinaryDataFile):
       ParseError: if the instance leaf node cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading instance leaf node at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading instance leaf node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_instance_leaf_node')
 
@@ -1665,8 +1662,8 @@ class RepositoryFile(data_format.BinaryDataFile):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading instance leaf value node at offset: {0:d} '
-          '(0x{0:08x})\n').format(file_offset))
+          f'Reading instance leaf value node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_instance_leaf_value_node')
 
@@ -1694,9 +1691,9 @@ class RepositoryFile(data_format.BinaryDataFile):
       ParseError: if the instance root node cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading instance root node at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading instance root node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_instance_root_node')
 
@@ -1724,9 +1721,9 @@ class RepositoryFile(data_format.BinaryDataFile):
       ParseError: if the name node cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading name node at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading name node at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_name_node')
 
@@ -1813,9 +1810,9 @@ class RepositoryFile(data_format.BinaryDataFile):
       ParseError: if the unknown node cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading unknown node 5 at offset: {0:d} (0x{0:08x})\n'.format(
-              file_offset))
+      self._DebugPrintText((
+          f'Reading unknown node 5 at offset: {file_offset:d} '
+          f'(0x{file_offset:08x})\n'))
 
     data_type_map = self._GetDataTypeMap('cim_rep_unknown_node5')
 
@@ -2210,11 +2207,10 @@ class CIMObject(data_format.BinaryDataFormat):
     """
     description = ''.join([description[0].upper(), description[1:]])
 
-    value_string = '0x{0:02x}'.format(cim_string.string_flags)
     self._DebugPrintValue(
-        '{0:s} string flags'.format(description), value_string)
+        f'{description:s} string flags', f'0x{cim_string.string_flags:02x}')
 
-    self._DebugPrintValue('{0:s} string'.format(description), cim_string.string)
+    self._DebugPrintValue(f'{description:s} string', cim_string.string)
 
   def _FormatIntegerAsDataType(self, integer):
     """Formats an integer as a data type.
@@ -2225,9 +2221,10 @@ class CIMObject(data_format.BinaryDataFormat):
     Returns:
       str: integer formatted as a data type.
     """
-    data_type_string = self._CIM_DATA_TYPES.GetName(integer & 0x3fff)
+    data_type_string = self._CIM_DATA_TYPES.GetName(
+        integer & 0x3fff) or 'UNKNOWN'
     # TODO: format flag 0x4000
-    return '0x{0:08x} ({1:s})'.format(integer, data_type_string or 'UNKNOWN')
+    return f'0x{integer:08x} ({data_type_string:s})'
 
   def _ReadCIMString(
       self, string_offset, record_data, record_data_offset, description):
@@ -2346,17 +2343,16 @@ class ClassDefinition(CIMObject):
     """
     lines = []
     for index, property_descriptor in enumerate(array_of_property_descriptors):
-      description = '    Property descriptor: {0:d} name offset'.format(index)
       value_string = self._FormatIntegerAsOffset(
           property_descriptor.name_offset)
-      line = self._FormatValue(description, value_string)
+      line = self._FormatValue(
+          f'    Property descriptor: {index:d} name offset', value_string)
       lines.append(line)
 
-      description = '    Property descriptor: {0:d} definition offset'.format(
-          index)
       value_string = self._FormatIntegerAsOffset(
           property_descriptor.definition_offset)
-      line = self._FormatValue(description, value_string)
+      line = self._FormatValue(
+          f'    Property descriptor: {index:d} definition offset', value_string)
       lines.append(line)
 
     return ''.join(lines)
@@ -2370,7 +2366,8 @@ class ClassDefinition(CIMObject):
     Returns:
       str: integer formatted as a properties block size.
     """
-    return '{0:d} (0x{1:08x})'.format(integer & 0x7fffffff, integer)
+    size_value = integer & 0x7fffffff
+    return f'{size_value:d} (0x{integer:08x})'
 
   def _ReadClassDefinitionMethods(self, class_definition_data):
     """Reads a class definition methods.
@@ -2386,8 +2383,8 @@ class ClassDefinition(CIMObject):
 
     if self._debug:
       self._DebugPrintText((
-          'Reading class definition methods at offset: {0:d} '
-          '(0x{0:08x}).\n').format(record_data_offset))
+          f'Reading class definition methods at offset: {record_data_offset:d} '
+          f'(0x{record_data_offset:08x}).\n'))
 
     data_type_map = self._GetDataTypeMap('class_definition_methods')
 
@@ -2398,9 +2395,9 @@ class ClassDefinition(CIMObject):
     methods_block_size = class_definition_methods.methods_block_size
 
     if self._debug:
-      value_string = '{0:d} (0x{1:08x})'.format(
-          methods_block_size & 0x7fffffff, methods_block_size)
-      self._DebugPrintValue('Methods block size', value_string)
+      size_value = methods_block_size & 0x7fffffff
+      self._DebugPrintValue(
+          'Methods block size', f'{size_value:d} (0x{methods_block_size:08x})')
 
       self._DebugPrintData(
           'Methods block data', class_definition_methods.methods_block_data)
@@ -2423,16 +2420,14 @@ class ClassDefinition(CIMObject):
       ParseError: if the property name cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Property: {0:d} definition:\n'.format(property_index))
+      self._DebugPrintText(f'Property: {property_index:d} definition:\n')
 
     record_data_offset = values_data_offset + definition_offset
     data_type_map = self._GetDataTypeMap('property_definition')
 
-    description = 'property: {0:d} definition'.format(property_index)
     property_definition = self._ReadStructureFromByteStream(
         values_data[definition_offset:], record_data_offset, data_type_map,
-        description)
+        f'property: {property_index:d} definition')
 
     if self._debug:
       self._DebugPrintStructureObject(

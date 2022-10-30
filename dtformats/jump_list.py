@@ -138,7 +138,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as path size.
     """
-    return '{0:d} characters ({1:d} bytes)'.format(integer, integer * 2)
+    number_of_bytes = integer * 2
+    return f'{integer:d} characters ({number_of_bytes:d} bytes)'
 
   def _ReadDestList(self, olecf_file):
     """Reads the DestList stream.
@@ -211,8 +212,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
           dest_list_header, self._DEBUG_INFO_DEST_LIST_HEADER)
 
     if dest_list_header.format_version not in (1, 3, 4):
-      raise errors.ParseError('Unsupported format version: {0:d}'.format(
-          dest_list_header.format_version))
+      raise errors.ParseError(
+          f'Unsupported format version: {dest_list_header.format_version:d}')
 
     self._format_version = dest_list_header.format_version
 
@@ -229,8 +230,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the LNK file cannot be read.
     """
     if self._debug:
-      text = 'Reading LNK file from stream: {0:s}'.format(olecf_item.name)
-      self._DebugPrintText(text)
+      self._DebugPrintText(f'Reading LNK file from stream: {olecf_item.name:s}')
 
     lnk_file_entry = LNKFileEntry(olecf_item.name)
 
@@ -238,8 +238,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       lnk_file_entry.Open(olecf_item)
     except IOError as exception:
       raise errors.ParseError((
-          'Unable to parse LNK file from stream: {0:s} '
-          'with error: {1:s}').format(olecf_item.name, exception))
+          f'Unable to parse LNK file from stream: {olecf_item.name:s} '
+          f'with error: {exception!s}'))
 
     if self._debug:
       self._DebugPrintText('\n')
@@ -338,7 +338,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
     if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
       raise errors.ParseError(
-          'Invalid footer signature at offset: 0x{0:08x}.'.format(file_offset))
+          f'Invalid footer signature at offset: 0x{file_offset:08x}.')
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -358,12 +358,12 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.unknown1 != 2:
-      raise errors.ParseError('Unsupported unknown1: {0:d}.'.format(
-          file_header.unknown1))
+      raise errors.ParseError(
+          f'Unsupported unknown1: {file_header.unknown1:d}.')
 
     if file_header.header_values_type > 2:
-      raise errors.ParseError('Unsupported header value type: {0:d}.'.format(
-          file_header.header_values_type))
+      raise errors.ParseError(
+          f'Unsupported header value type: {file_header.header_values_type:d}.')
 
     if file_header.header_values_type == 0:
       data_type_map_name = 'custom_file_header_value_type_0'
@@ -377,13 +377,14 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
     if self._debug:
       if file_header.header_values_type == 0:
-        value_string = '{0:d}'.format(file_header_value.number_of_characters)
-        self._DebugPrintValue('Number of characters', value_string)
+        self._DebugPrintValue(
+            'Number of characters',
+            f'{file_header_value.number_of_characters:d}')
 
         # TODO: print string.
 
-      value_string = '{0:d}'.format(file_header_value.number_of_entries)
-      self._DebugPrintValue('Number of entries', value_string)
+      self._DebugPrintValue(
+          'Number of entries', f'{file_header_value.number_of_entries:d}')
 
       self._DebugPrintText('\n')
 
@@ -402,17 +403,16 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
     if self._debug:
       self._DebugPrintText(
-          'Reading LNK file at offset: 0x{0:08x}\n'.format(file_offset))
+          f'Reading LNK file at offset: 0x{file_offset:08x}\n')
 
-    identifier = '0x{0:08x}'.format(file_offset)
-    lnk_file_entry = LNKFileEntry(identifier)
+    lnk_file_entry = LNKFileEntry(f'0x{file_offset:08x}')
 
     try:
       lnk_file_entry.Open(file_object)
     except IOError as exception:
       raise errors.ParseError((
-          'Unable to parse LNK file at offset: 0x{0:08x} '
-          'with error: {1:s}').format(file_offset, exception))
+          f'Unable to parse LNK file at offset: 0x{file_offset:08x} '
+          f'with error: {exception!s}'))
 
     if self._debug:
       self._DebugPrintText('\n')
@@ -443,8 +443,8 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
       except errors.ParseError as exception:
         error_message = (
-            'Unable to parse file entry header at offset: 0x{0:08x} '
-            'with error: {1:s}').format(file_offset, exception)
+            f'Unable to parse file entry header at offset: 0x{file_offset:08x} '
+            f'with error: {exception!s}')
 
         if not first_guid_checked:
           raise errors.ParseError(error_message)
@@ -453,8 +453,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         break
 
       if entry_header.guid != self._LNK_GUID:
-        error_message = 'Invalid entry header at offset: 0x{0:08x}.'.format(
-            file_offset)
+        error_message = f'Invalid entry header at offset: 0x{file_offset:08x}.'
 
         if not first_guid_checked:
           raise errors.ParseError(error_message)

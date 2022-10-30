@@ -56,18 +56,17 @@ class RestorePointLogFile(data_format.BinaryDataFile):
     """
     event_type_string = self._EVENT_TYPES.get(
         file_header.event_type, 'UNKNOWN')
-    value_string = '0x{0:08x} ({1:s})'.format(
-        file_header.event_type, event_type_string)
-    self._DebugPrintValue('Event type', value_string)
+    self._DebugPrintValue(
+        'Event type', f'0x{file_header.event_type:08x} ({event_type_string:s})')
 
-    restore_point_type_string = self._RESTORE_POINT_TYPES.get(
+    type_string = self._RESTORE_POINT_TYPES.get(
         file_header.restore_point_type, 'UNKNOWN')
-    value_string = '0x{0:08x} ({1:s})'.format(
-        file_header.restore_point_type, restore_point_type_string)
-    self._DebugPrintValue('Restore point type', value_string)
+    self._DebugPrintValue(
+        'Restore point type',
+        f'0x{file_header.restore_point_type:08x} ({type_string:s})')
 
-    value_string = '0x{0:08x}'.format(file_header.sequence_number)
-    self._DebugPrintValue('Sequence number', value_string)
+    self._DebugPrintValue(
+        'Sequence number', f'0x{file_header.sequence_number:08x}')
 
     self._DebugPrintValue('Description', file_header.description)
 

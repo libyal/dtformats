@@ -62,8 +62,8 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
     if file_header.format_version not in self._SUPPORTED_FORMAT_VERSION:
-      raise errors.ParseError('Unsupported format version: {0:d}'.format(
-          file_header.format_version))
+      raise errors.ParseError(
+          f'Unsupported format version: {file_header.format_version:d}')
 
     return file_header
 
@@ -95,8 +95,7 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
           file_object, file_offset, data_type_map, description)
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          'Unable to parse original filename with error: {0!s}'.format(
-              exception))
+          f'Unable to parse original filename with error: {exception!s}')
 
     if format_version == 1:
       return original_filename.rstrip('\x00')

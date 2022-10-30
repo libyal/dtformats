@@ -1071,7 +1071,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       str: integer formatted as an event type .
     """
     event_type_string = self._EVENT_TYPES.get(integer, 'UNKNOWN')
-    return '0x{0:04x} ({1:s})'.format(integer, event_type_string)
+    return f'0x{integer:04x} ({event_type_string:s})'
 
   def _FormatIntegerAsNetType(self, integer):
     """Formats an integer as a net type.
@@ -1086,7 +1086,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       ParseError: if net type is not supported.
     """
     if integer not in (4, 16):
-      raise errors.ParseError('Unsupported net type: {0:d}'.format(integer))
+      raise errors.ParseError(f'Unsupported net type: {integer:d}')
 
     # TODO: print net type as descriptive string.
     return self._FormatIntegerAsDecimal(integer)
@@ -1106,11 +1106,11 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
 
     if token.token_type not in self._HEADER_TOKEN_TYPES:
       raise errors.ParseError(
-          'Unsupported header token type: 0x{0:02x}'.format(token.token_type))
+          f'Unsupported header token type: 0x{token.token_type:02x}')
 
     if token.format_version != 11:
-      raise errors.ParseError('Unsupported format version type: {0:d}'.format(
-          token.format_version))
+      raise errors.ParseError(
+          f'Unsupported format version type: {token.format_version:d}')
 
     header_record_size = token.record_size
     record_end_offset = file_offset + header_record_size
@@ -1151,8 +1151,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     token, _ = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, description)
     if not token:
-      raise errors.ParseError('Unsupported token type: {0:d}'.format(
-          token_type))
+      raise errors.ParseError(f'Unsupported token type: {token_type:d}')
 
     if self._debug:
       debug_information = self._DEBUG_INFO_TOKEN.get(token.token_type, None)
