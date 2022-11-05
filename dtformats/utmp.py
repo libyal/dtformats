@@ -33,18 +33,16 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
       entry (linux_libc6_utmp_entry): entry.
     """
     type_of_login_string = self._TYPES_OF_LOGIN.get(entry.type, 'UNKNOWN')
-    value_string = '0x{0:08x} ({1:s})'.format(entry.type, type_of_login_string)
-    self._DebugPrintValue('Type of login', value_string)
+    self._DebugPrintValue(
+        'Type of login', f'0x{entry.type:08x} ({type_of_login_string:s})')
 
-    value_string = '{0:d}'.format(entry.pid)
-    self._DebugPrintValue('PID', value_string)
+    self._DebugPrintValue('PID', f'{entry.pid:d}')
 
     value_string = entry.terminal.replace(b'\0', b'')
     value_string = value_string.decode('utf-8')
     self._DebugPrintValue('Terminal', value_string)
 
-    value_string = '{0:d}'.format(entry.terminal_identifier)
-    self._DebugPrintValue('Terminal ID', value_string)
+    self._DebugPrintValue('Terminal ID', f'{entry.terminal_identifier:d}')
 
     value_string = entry.username.replace(b'\0', b'')
     value_string = value_string.decode('utf-8')
@@ -54,19 +52,16 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
     value_string = value_string.decode('utf-8')
     self._DebugPrintValue('Hostname', value_string)
 
-    value_string = '0x{0:04x}'.format(entry.termination_status)
-    self._DebugPrintValue('Termination status', value_string)
+    self._DebugPrintValue(
+        'Termination status', f'0x{entry.termination_status:04x}')
 
-    value_string = '0x{0:04x}'.format(entry.exit_status)
-    self._DebugPrintValue('Exit status', value_string)
+    self._DebugPrintValue('Exit status', f'0x{entry.exit_status:04x}')
 
-    value_string = '{0:d}'.format(entry.session)
-    self._DebugPrintValue('Session', value_string)
+    self._DebugPrintValue('Session', f'{entry.session:d}')
 
     self._DebugPrintPosixTimeValue('Timestamp', entry.timestamp)
 
-    value_string = '{0:d}'.format(entry.microseconds)
-    self._DebugPrintValue('Microseconds', value_string)
+    self._DebugPrintValue('Microseconds', f'{entry.microseconds:d}')
 
     if entry.ip_address[4:] == self._EMPTY_IP_ADDRESS[4:]:
       value_string = self._FormatPackedIPv4Address(entry.ip_address[:4])
@@ -154,27 +149,23 @@ class MacOSXUtmpxFile(data_format.BinaryDataFile):
     value_string = value_string.decode('utf-8')
     self._DebugPrintValue('Username', value_string)
 
-    value_string = '{0:d}'.format(entry.terminal_identifier)
-    self._DebugPrintValue('Terminal ID', value_string)
+    self._DebugPrintValue('Terminal ID', f'{entry.terminal_identifier:d}')
 
     value_string = entry.terminal.replace(b'\0', b'')
     value_string = value_string.decode('utf-8')
     self._DebugPrintValue('Terminal', value_string)
 
-    value_string = '{0:d}'.format(entry.pid)
-    self._DebugPrintValue('PID', value_string)
+    self._DebugPrintValue('PID', f'{entry.pid:d}')
 
     type_of_login_string = self._TYPES_OF_LOGIN.get(entry.type, 'UNKNOWN')
-    value_string = '0x{0:04x} ({1:s})'.format(entry.type, type_of_login_string)
-    self._DebugPrintValue('Type of login', value_string)
+    self._DebugPrintValue(
+        'Type of login', f'0x{entry.type:04x} ({type_of_login_string:s})')
 
-    value_string = '0x{0:04x}'.format(entry.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
+    self._DebugPrintValue('Unknown1', f'0x{entry.unknown1:04x}')
 
     self._DebugPrintPosixTimeValue('Timestamp', entry.timestamp)
 
-    value_string = '{0:d}'.format(entry.microseconds)
-    self._DebugPrintValue('Microseconds', value_string)
+    self._DebugPrintValue('Microseconds', f'{entry.microseconds:d}')
 
     value_string = entry.hostname.replace(b'\0', b'')
     value_string = value_string.decode('utf-8')

@@ -79,7 +79,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as flags.
     """
-    return '0x{0:04x}'.format(integer)
+    return f'0x{integer:04x}'
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -222,8 +222,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           byte_stream, file_offset, data_type_map, 'record extra field')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to parse record extra field at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
+          f'Unable to parse record extra field at offset: 0x{file_offset:08x} '
+          f'with error: {exception!s}'))
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -249,11 +249,11 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       return None
 
     if string_offset & self._STRING_OFFSET_MSB:
+      flag_value = string_offset >> 60
       if self._debug:
-        value_string = '0x{0:01x}'.format(string_offset >> 60)
-        self._DebugPrintValue('Inline string flag', value_string)
+        self._DebugPrintValue('Inline string flag', f'0x{flag_value:01x}')
 
-      if (string_offset >> 60) != 8:
+      if flag_value != 8:
         raise errors.ParseError('Invalid inline record string flag.')
 
       string_size = (string_offset >> 56) & 0x0f
@@ -268,8 +268,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
         string = string_data[:string_size].decode('utf-8')
       except UnicodeDecodeError as exception:
         raise errors.ParseError(
-            'Unable to decode inline record string with error: {0!s}.'.format(
-                exception))
+            f'Unable to decode inline record string with error: {exception!s}.')
 
       if self._debug:
         self._DebugPrintDecimalValue('Inline string size', string_size)
@@ -287,8 +286,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           file_object, string_offset, data_type_map, 'record string')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError((
-          'Unable to parse record string at offset: 0x{0:08x} with error: '
-          '{1!s}').format(string_offset, exception))
+          f'Unable to parse record string at offset: 0x{string_offset:08x} '
+          f'with error: {exception!s}'))
 
     if self._debug:
       self._DebugPrintStructureObject(

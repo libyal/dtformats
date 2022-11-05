@@ -221,9 +221,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       date_time = dfdatetime_cocoa_time.CocoaTime(timestamp=value)
       date_time_string = date_time.CopyToDateTimeString()
       if date_time_string:
-        date_time_string = '{0:s} UTC'.format(date_time_string)
+        date_time_string = f'{date_time_string:s} UTC'
       else:
-        date_time_string = '0x{0:08x}'.format(value)
+        date_time_string = f'0x{value:08x}'
 
     self._DebugPrintValue(description, date_time_string)
 
@@ -238,8 +238,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     elif metadata_attribute.value_type == 0x00:
       self._DebugPrintDecimalValue('Integer', metadata_attribute.value)
-      value_string = '{0!s}'.format(bool(metadata_attribute.value))
-      self._DebugPrintValue('Boolean', value_string)
+      value_boolean = bool(metadata_attribute.value)
+      self._DebugPrintValue('Boolean', f'{value_boolean!s}')
 
     elif metadata_attribute.value_type in (0x02, 0x06):
       value_string = self._FormatIntegerAsHexadecimal8(metadata_attribute.value)
@@ -250,16 +250,14 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintDecimalValue('Integer', metadata_attribute.value)
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
-          description = 'Integer: {0:d}'.format(array_index)
-          self._DebugPrintDecimalValue(description, array_value)
+          self._DebugPrintDecimalValue(f'Integer: {array_index:d}', array_value)
 
     elif metadata_attribute.value_type == 0x08:
       if metadata_attribute.property_type & 0x02 == 0x00:
         self._DebugPrintDecimalValue('Byte', metadata_attribute.value)
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
-          description = 'Byte: {0:d}'.format(array_index)
-          self._DebugPrintDecimalValue(description, array_value)
+          self._DebugPrintDecimalValue(f'Byte: {array_index:d}', array_value)
 
     elif metadata_attribute.value_type in (0x09, 0x0a):
       if metadata_attribute.property_type & 0x02 == 0x00:
@@ -267,17 +265,16 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintValue('Floating-point', value_string)
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
-          description = 'Floating-point: {0:d}'.format(array_index)
           value_string = self._FormatFloatingPoint(array_value)
-          self._DebugPrintValue(description, value_string)
+          self._DebugPrintValue(
+              f'Floating-point: {array_index:d}', value_string)
 
     elif metadata_attribute.value_type == 0x0b:
       if metadata_attribute.property_type & 0x03 != 0x02:
         self._DebugPrintValue('String', metadata_attribute.value)
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
-          description = 'String: {0:d}'.format(array_index)
-          self._DebugPrintValue(description, array_value)
+          self._DebugPrintValue(f'String: {array_index:d}', array_value)
 
     elif metadata_attribute.value_type == 0x0c:
       if metadata_attribute.property_type & 0x02 == 0x00:
@@ -291,12 +288,12 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
           if array_value < 7500000000.0:
-            description = 'Date and time: {0:d}'.format(array_index)
-            self._DebugPrintCocoaTimeValue(description, array_value)
+            self._DebugPrintCocoaTimeValue(
+                f'Date and time: {array_index:d}', array_value)
           else:
-            description = 'Floating-point: {0:d}'.format(array_index)
             value_string = self._FormatFloatingPoint(array_value)
-            self._DebugPrintValue(description, value_string)
+            self._DebugPrintValue(
+                f'Floating-point: {array_index:d}', value_string)
 
     elif metadata_attribute.value_type == 0x0e:
       self._DebugPrintData('Binary data', metadata_attribute.value)
@@ -326,9 +323,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       date_time = dfdatetime_posix_time.PosixTimeInMicroseconds(timestamp=value)
       date_time_string = date_time.CopyToDateTimeString()
       if date_time_string:
-        date_time_string = '{0:s} UTC'.format(date_time_string)
+        date_time_string = f'{date_time_string:s} UTC'
       else:
-        date_time_string = '0x{0:08x}'.format(value)
+        date_time_string = f'0x{value:08x}'
 
     self._DebugPrintValue(description, date_time_string)
 
@@ -351,8 +348,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       lz4_block_header = data_type_map.MapByteStream(compressed_page_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          'Unable to map LZ4 block header at offset: 0x{0:08x} with error: '
-          '{1!s}').format(file_offset, exception))
+          f'Unable to map LZ4 block header at offset: 0x{file_offset:08x} '
+          f'with error: {exception!s}'))
 
     if self._debug:
       self._DebugPrintStructureObject(
@@ -369,9 +366,10 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         end_of_compressed_data_offset:end_of_compressed_data_offset + 4]
 
     if end_of_compressed_data_identifier != b'bv4$':
+      file_offset += end_of_compressed_data_offset
       raise errors.ParseError((
-          'Unsupported LZ4 end of compressed data marker at offset: '
-          '0x{0:08x}').format(file_offset + end_of_compressed_data_offset))
+          f'Unsupported LZ4 end of compressed data marker at offset: '
+          f'0x{file_offset:08x}'))
 
     return page_data
 
@@ -403,10 +401,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     if self._debug:
       self._DebugPrintText((
-          'Retrieving record: {0:d} in page: 0x{1:08x} at offset: '
-          '0x{2:04x}\n').format(
-              identifier, record_descriptor.page_offset,
-              record_descriptor.page_value_offset))
+          f'Retrieving record: {identifier:d} in page: '
+          f'0x{record_descriptor.page_offset:08x} at offset: '
+          f'0x{record_descriptor.page_value_offset:04x}\n'))
       self._DebugPrintText('\n')
 
     page_data = self._record_pages_cache.get(
@@ -473,8 +470,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             page_data[page_data_offset:])
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            'Unable to map property value data at offset: 0x{0:08x} with '
-            'error: {1!s}').format(page_data_offset, exception))
+            f'Unable to map property value data at offset: '
+            f'0x{page_data_offset:08x} with error: {exception!s}'))
 
       page_value_size = 4
 
@@ -494,15 +491,16 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             page_data[page_data_offset + page_value_size:], context=context)
 
       except dtfabric_errors.MappingError as exception:
+        page_data_offset += page_value_size
         raise errors.ParseError((
-            'Unable to parse index data at offset: 0x{0:08x} with error: '
-            '{1:s}').format(page_data_offset + page_value_size, exception))
+            f'Unable to parse index data at offset: 0x{page_data_offset:08x} '
+            f'with error: {exception!s}'))
 
       page_value_size += index_size
 
       if self._debug:
         self._DebugPrintData(
-            'Page value: {0:d} data'.format(page_value_index),
+            f'Page value: {page_value_index:d} data',
             page_data[page_data_offset:page_data_offset + page_value_size])
 
       values_list = []
@@ -525,7 +523,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           metadata_value = self._metadata_values.get(metadata_value_index, None)
           value_string = getattr(metadata_value, 'value_name', '')
           self._DebugPrintValue(
-              'Value: {0:d}'.format(metadata_value_index), value_string)
+              f'Value: {metadata_value_index:d}', value_string)
 
         self._DebugPrintText('\n')
 
@@ -725,8 +723,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError(
-          'Unable to parse array of byte values with error: {0!s}'.format(
-              exception))
+          f'Unable to parse array of byte values with error: {exception!s}')
 
     if bytes_read == 0:
       value = array_of_values[0]
@@ -770,8 +767,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          'Unable to parse array of 32-bit floating-point values with error: '
-          '{0!s}').format(exception))
+          f'Unable to parse array of 32-bit floating-point values with error: '
+          f'{exception!s}'))
 
     if bytes_read == 0:
       value = array_of_values[0]
@@ -815,8 +812,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          'Unable to parse array of 64-bit floating-point values with error: '
-          '{0!s}').format(exception))
+          f'Unable to parse array of 64-bit floating-point values with error: '
+          f'{exception!s}'))
 
     if bytes_read == 0:
       value = array_of_values[0]
@@ -903,8 +900,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError(
-          'Unable to parse array of string values with error: {0!s}'.format(
-              exception))
+          f'Unable to parse array of string values with error: {exception!s}')
 
     if property_type & 0x03 == 0x03:
       value = array_of_values[0]
@@ -972,9 +968,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     if page_header.property_table_type not in (
         0x00000011, 0x00000021, 0x00000041, 0x00000081):
-      raise errors.ParseError(
-          'Unsupported property table type: 0x{0:08x}'.format(
-              page_header.property_table_type))
+      raise errors.ParseError((
+          f'Unsupported property table type: '
+          f'0x{page_header.property_table_type:08x}'))
 
     page_data = file_object.read(page_header.page_size - bytes_read)
 
@@ -1086,12 +1082,12 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             page_data[page_data_offset:], context=context)
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
-            'Unable to map property value data at offset: 0x{0:08x} with '
-            'error: {1!s}').format(page_data_offset, exception))
+            f'Unable to map property value data at offset: '
+            f'0x{page_data_offset:08x} with error: {exception!s}'))
 
       if self._debug:
         self._DebugPrintData(
-            'Page value: {0:d} data'.format(page_value_index),
+            f'Page value: {page_value_index:d} data',
             page_data[page_data_offset:page_data_offset + context.byte_size])
 
         if page_header.property_table_type == 0x00000011:
@@ -1151,13 +1147,14 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       metadata_type_index += relative_metadata_type_index
 
       if self._debug:
-        description = 'Relative metadata attribute: {0:d} type index'.format(
-            metadata_attribute_index)
+        description = (
+            f'Relative metadata attribute: {metadata_attribute_index:d} '
+            f'type index')
         self._DebugPrintDecimalValue(
             description, relative_metadata_type_index)
 
-        description = 'Metadata attribute: {0:d} type index'.format(
-            metadata_attribute_index)
+        description = (
+            f'Metadata attribute: {metadata_attribute_index:d} type index')
         self._DebugPrintDecimalValue(description, metadata_type_index)
 
       metadata_type = self._metadata_types.get(metadata_type_index, None)
@@ -1195,8 +1192,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       record = data_type_map.MapByteStream(data, context=context)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
-          'Unable to map record at offset: 0x{0:08x} with error: '
-          '{1!s}').format(page_data_offset, exception))
+          f'Unable to map record at offset: 0x{page_data_offset:08x} with '
+          f'error: {exception!s}'))
 
     data_offset = context.byte_size
 
@@ -1245,9 +1242,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         file_object, file_offset)
 
     if page_header.property_table_type not in (0x00000009, 0x00001009):
-      raise errors.ParseError(
-          'Unsupported property table type: 0x{0:08x}'.format(
-              page_header.property_table_type))
+      raise errors.ParseError((
+          f'Unsupported property table type: '
+          f'0x{page_header.property_table_type:08x}'))
 
     page_data = file_object.read(page_header.page_size - bytes_read)
 

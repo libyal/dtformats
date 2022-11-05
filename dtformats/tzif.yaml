@@ -56,7 +56,7 @@ members:
   data_type: uint32
 - name: number_of_local_time_types
   data_type: uint32
-- name: timezone_abbreviation_strings_size
+- name: time_zone_abbreviation_strings_size
   data_type: uint32
 ---
 name: tzif_transition_times_32bit

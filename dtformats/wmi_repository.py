@@ -2455,20 +2455,19 @@ class ClassDefinition(CIMObject):
     if name_offset & 0x80000000:
       name_index = name_offset & 0x7fffffff
       property_name = self._PREDEFINED_NAMES.get(
-          name_index, 'UNKNOWN_{0:d}'.format(name_index))
+          name_index, f'UNKNOWN_{name_index:d}')
 
       if self._debug:
-        description = 'Property: {0:d} name index'.format(property_index)
-        value_string = '{0:d}'.format(name_index)
-        self._DebugPrintValue(description, value_string)
+        self._DebugPrintValue(
+            f'Property: {property_index:d} name index', f'{name_index:d}')
 
-        description = 'Property: {0:d} name'.format(property_index)
-        self._DebugPrintValue(description, property_name)
+        self._DebugPrintValue(
+            f'Property: {property_index:d} name', property_name)
 
     else:
       property_name = self._ReadCIMString(
           name_offset, values_data, values_data_offset,
-          'property: {0:d} name'.format(property_index))
+          f'property: {property_index:d} name')
 
     return property_name
 
@@ -2540,20 +2539,19 @@ class ClassDefinition(CIMObject):
     if name_offset & 0x80000000:
       name_index = name_offset & 0x7fffffff
       qualifier_name = self._PREDEFINED_NAMES.get(
-          name_index, 'UNKNOWN_{0:d}'.format(name_index))
+          name_index, f'UNKNOWN_{name_index:d}')
 
       if self._debug:
-        description = 'Qualifier: {0:d} name index'.format(qualifier_index)
-        value_string = '{0:d}'.format(name_index)
-        self._DebugPrintValue(description, value_string)
+        self._DebugPrintValue(
+            f'Qualifier: {qualifier_index:d} name index', f'{name_index:d}')
 
-        description = 'Qualifier: {0:d} name'.format(qualifier_index)
-        self._DebugPrintValue(description, qualifier_name)
+        self._DebugPrintValue(
+            f'Qualifier: {qualifier_index:d} name', qualifier_name)
 
     else:
       qualifier_name = self._ReadCIMString(
           name_offset, values_data, values_data_offset,
-          'qualifier: {0:d} name'.format(qualifier_index))
+          f'qualifier: {qualifier_index:d} name')
 
     return qualifier_name
 
@@ -2577,9 +2575,9 @@ class ClassDefinition(CIMObject):
       ParseError: if the qualifiers cannot be read.
     """
     if self._debug:
-      self._DebugPrintText(
-          'Reading qualifiers at offset: {0:d} (0x{0:08x}).\n'.format(
-              qualifiers_data_offset))
+      self._DebugPrintText((
+          f'Reading qualifiers at offset: {qualifiers_data_offset:d} '
+          f'(0x{qualifiers_data_offset:08x}).\n'))
 
     qualifiers = {}
     qualifiers_data_offset = 0
@@ -2618,10 +2616,9 @@ class ClassDefinition(CIMObject):
         qualifier_value = qualifier_descriptor.value_floating_point
 
       elif cim_data_type == 'CIM-TYPE-STRING':
-        description = 'qualifier: {0:d} value'.format(qualifier_index)
         qualifier_value = self._ReadCIMString(
             qualifier_descriptor.value_offset, values_data, values_data_offset,
-            description)
+            f'qualifier: {qualifier_index:d} value')
 
       elif cim_data_type == 'CIM-TYPE-DATETIME':
         # TODO: implement
@@ -2659,12 +2656,11 @@ class ClassDefinition(CIMObject):
       self._DebugPrintValue('    Super class name', self.super_class_name)
 
     for qualifier_name, qualifier_value in self.qualifiers.items():
-      description = '    Qualifier: {0:s}'.format(qualifier_name)
-      value_string = '{0!s}'.format(qualifier_value)
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(
+          f'    Qualifier: {qualifier_name:s}', f'{qualifier_value!s}')
 
     for property_name, class_definition_property in self.properties.items():
-      self._DebugPrintText('    Property: {0:s}\n'.format(property_name))
+      self._DebugPrintText(f'    Property: {property_name:s}\n')
 
       value_string = self._FormatIntegerAsDecimal(
           class_definition_property.index)
@@ -2676,9 +2672,8 @@ class ClassDefinition(CIMObject):
 
       for qualifier_name, qualifier_value in (
           class_definition_property.qualifiers.items()):
-        description = '        Qualifier: {0:s}'.format(qualifier_name)
-        value_string = '{0!s}'.format(qualifier_value)
-        self._DebugPrintValue(description, value_string)
+        self._DebugPrintValue(
+            f'        Qualifier: {qualifier_name:s}', f'{qualifier_value!s}')
 
     self._DebugPrintText('\n')
 
@@ -2704,8 +2699,8 @@ class ClassDefinition(CIMObject):
     """
     if self._debug:
       self._DebugPrintText((
-          'Reading class definition block at offset: {0:d} '
-          '(0x{0:08x}).\n').format(record_data_offset))
+          f'Reading class definition block at offset: {record_data_offset:d} '
+          f'(0x{record_data_offset:08x}).\n'))
 
     data_type_map = self._GetDataTypeMap('class_definition_block')
 
@@ -2959,8 +2954,8 @@ class Instance(CIMObject):
       self._DebugPrintValue('    Class name hash', self.class_name_hash)
 
     for property_name, property_value in self.properties.items():
-      description = '    Property: {0:s}'.format(property_name)
-      self._DebugPrintValue(description, '{0!s}'.format(property_value))
+      self._DebugPrintValue(
+          f'    Property: {property_name:s}', f'{property_value!s}')
 
     self._DebugPrintText('\n')
 
@@ -3034,7 +3029,7 @@ class Instance(CIMObject):
              data_type_map, 'dynamic block type 2 entry', context=context)
 
         if self._debug:
-          self._DebugPrintText('Dynamic type 2 entry: {0:d}\n'.format(index))
+          self._DebugPrintText(f'Dynamic type 2 entry: {index:d}\n')
           self._DebugPrintStructureObject(
               dynamic_type2_entry, self._DEBUG_INFO_DYNAMIC_TYPE2_ENTRY)
 
@@ -3067,13 +3062,14 @@ class Instance(CIMObject):
     for property_value_data_map in class_value_data_map.properties.values():
       property_map_offset = property_value_data_map.offset
 
-      description = 'property: {0:s} value: {1:s}'.format(
-          property_value_data_map.name, property_value_data_map.type_qualifier)
+      description = (
+          f'property: {property_value_data_map.name:s} '
+          f'value: {property_value_data_map.type_qualifier:s}')
 
       property_value = None
       if property_value_data_map.data_type in self._FIXED_SIZE_VALUE_DATA_TYPES:
-        data_type_map_name = 'property_value_{0:s}'.format(
-            property_value_data_map.type_qualifier)
+        data_type_map_name = (
+            f'property_value_{property_value_data_map.type_qualifier:s}')
         data_type_map = self._GetDataTypeMap(data_type_map_name)
 
         property_value = self._ReadStructureFromByteStream(
@@ -3082,14 +3078,14 @@ class Instance(CIMObject):
              description)
 
         if self._debug:
-          description = 'Property: {0:s} value: {1:s}'.format(
-               property_value_data_map.name,
-               property_value_data_map.type_qualifier)
+          description = (
+               f'Property: {property_value_data_map.name:s} value: '
+               f'{property_value_data_map.type_qualifier:s}')
           self._DebugPrintValue(description, property_value)
 
       elif property_value_data_map.data_type in self._STRING_VALUE_DATA_TYPES:
-        description = 'Property: {0:s} value: string offset'.format(
-            property_value_data_map.name)
+        description = (
+            f'Property: {property_value_data_map.name:s} value: string offset')
 
         data_type_map = self._GetDataTypeMap('property_value_offset')
 
@@ -3103,14 +3099,14 @@ class Instance(CIMObject):
 
         # A string offset of 0 appears to indicate not set.
         if string_offset > 0:
-          description = 'property: {0:s} value'.format(
-              property_value_data_map.name)
+          description = f'property: {property_value_data_map.name:s} value'
           property_value = self._ReadCIMString(
               string_offset, values_data, data_offset, description)
 
       elif property_value_data_map.data_type == 0x00002008:
-        description = 'Property: {0:s} value: string array offset'.format(
-             property_value_data_map.name)
+        description = (
+             f'Property: {property_value_data_map.name:s} value: string '
+             f'array offset')
 
         data_type_map = self._GetDataTypeMap('property_value_offset')
 
@@ -3124,8 +3120,9 @@ class Instance(CIMObject):
 
         # A string array offset of 0 appears to indicate not set.
         if string_array_offset > 0:
-          description = 'Property: {0:s} value: string array'.format(
-               property_value_data_map.name)
+          description = (
+               f'Property: {property_value_data_map.name:s} value: string '
+               f'array')
 
           data_type_map = self._GetDataTypeMap('cim_string_array')
 
@@ -3136,16 +3133,17 @@ class Instance(CIMObject):
           property_value = []
           for string_index, string_offset in enumerate(
               string_array.string_offsets):
-            description = 'property: {0:s} value entry: {1:d}'.format(
-                property_value_data_map.name, string_index)
+            description = (
+                f'property: {property_value_data_map.name:s} value entry: '
+                f'{string_index:d}')
             string_value = self._ReadCIMString(
                 string_offset, values_data, data_offset, description)
 
             property_value.append(string_value)
 
       else:
-        description = 'Property: {0:s} value: array offset'.format(
-             property_value_data_map.name)
+        description = (
+             f'Property: {property_value_data_map.name:s} value: array offset')
 
         data_type_map = self._GetDataTypeMap('property_value_offset')
 
@@ -3357,7 +3355,9 @@ class CIMRepository(data_format.BinaryDataFormat):
     glob_parts = []
     for character in filename:
       if character.isalpha():
-        glob_part = '[{0:s}{1:s}]'.format(character.upper(), character.lower())
+        character_upper = character.upper()
+        character_lower = character.lower()
+        glob_part = f'[{character_upper:s}{character_lower:s}]'
       else:
         glob_part = character
       glob_parts.append(glob_part)
@@ -3389,8 +3389,8 @@ class CIMRepository(data_format.BinaryDataFormat):
         file_object.close()
 
       if self._debug:
-        self._DebugPrintText('Mapping.ver file number: {0:d}\n'.format(
-            mapping_ver_file_number))
+        self._DebugPrintText(
+            f'Mapping.ver file number: {mapping_ver_file_number:d}\n')
 
     active_mapping_file = None
     active_mapping_file_number = None
@@ -3399,13 +3399,13 @@ class CIMRepository(data_format.BinaryDataFormat):
     # can have the same sequence number but contain different mappings.
     for mapping_file_number in range(1, 4):
       filename_as_glob = self._FormatFilenameAsGlob(
-          'mapping{0:d}.map'.format(mapping_file_number))
+          f'mapping{mapping_file_number:d}.map')
       mapping_file_glob = glob.glob(os.path.join(path, filename_as_glob))
       if not mapping_file_glob:
         continue
 
       if self._debug:
-        self._DebugPrintText('Reading: {0:s}\n'.format(mapping_file_glob[0]))
+        self._DebugPrintText(f'Reading: {mapping_file_glob[0]:s}\n')
 
       mapping_file = MappingFile(
           debug=self._debug, output_writer=self._output_writer)
@@ -3425,8 +3425,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       logging.warning('Mismatch in active mapping file number.')
 
     if self._debug:
-      self._DebugPrintText('Active mapping file: mapping{0:d}.map\n'.format(
-          active_mapping_file_number))
+      self._DebugPrintText(
+          f'Active mapping file: mapping{active_mapping_file_number:d}.map\n')
 
     return active_mapping_file
 
@@ -3476,18 +3476,18 @@ class CIMRepository(data_format.BinaryDataFormat):
     if not class_value_data_map:
       class_definition = self._GetClassDefinitionByHash(class_name_hash)
       if not class_definition:
-        raise RuntimeError(
-            'Unable to retrieve definition of class with hash: {0:s}'.format(
-                class_name_hash))
+        raise RuntimeError((
+            f'Unable to retrieve definition of class with hash: '
+            f'{class_name_hash:s}'))
 
       class_definitions = [class_definition]
       while class_definition.super_class_name:
         class_definition = self._GetClassDefinitionByName(
             class_definition.super_class_name)
         if not class_definition:
-          raise RuntimeError(
-              'Unable to retrieve definition of class with name: {0:s}'.format(
-                  class_definition.super_class_name))
+          raise RuntimeError((
+              f'Unable to retrieve definition of class with name: '
+              f'{class_definition.super_class_name:s}'))
 
         class_definitions.append(class_definition)
 
@@ -3537,8 +3537,8 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     index_page = self._index_binary_tree_file.GetPage(page_number)
     if not index_page:
-      logging.warning('Unable to read index binary-tree page: {0:d}.'.format(
-          page_number))
+      logging.warning(
+          f'Unable to read index binary-tree page: {page_number:d}.')
       return None
 
     return index_page
@@ -3557,13 +3557,13 @@ class CIMRepository(data_format.BinaryDataFormat):
     index_page = self._index_binary_tree_file.GetPage(page_number)
     if not index_page:
       raise RuntimeError((
-          'Unable to determine first mapped index binary-tree page: '
-          '{0:d}.').format(page_number))
+          f'Unable to determine first mapped index binary-tree page: '
+          f'{page_number:d}.'))
 
     if index_page.page_type != 0xaddd:
       raise RuntimeError((
-          'Unsupported first mapped index binary-tree page type: '
-          '0x{0:04x}').format(index_page.page_type))
+          f'Unsupported first mapped index binary-tree page type: '
+          f'0x{index_page.page_type:04x}'))
 
     return index_page
 
@@ -3586,8 +3586,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       index_page = self._index_binary_tree_file.GetPage(page_number)
       if not index_page:
         logging.warning(
-            'Unable to read index binary-tree root page: {0:d}.'.format(
-                page_number))
+            f'Unable to read index binary-tree root page: {page_number:d}.')
         return None
 
       self._index_root_page = index_page
@@ -3625,8 +3624,7 @@ class CIMRepository(data_format.BinaryDataFormat):
 
     objects_page = self._objects_data_file.GetPage(page_number, is_data_page)
     if not objects_page:
-      logging.warning('Unable to read objects data page: {0:d}.'.format(
-          page_number))
+      logging.warning(f'Unable to read objects data page: {page_number:d}.')
       return None
 
     return objects_page
@@ -3658,9 +3656,9 @@ class CIMRepository(data_format.BinaryDataFormat):
       object_page = self._GetObjectsPageByMappedPageNumber(
           mapped_page_number, is_data_page)
       if not object_page:
-        errors.ParseError(
-            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
-                record_identifier, data_segment_index))
+        errors.ParseError((
+            f'Unable to read objects record: {record_identifier:d} data '
+            f'segment: {data_segment_index:d}.'))
 
       if not is_data_page:
         object_descriptor = object_page.GetObjectDescriptor(
@@ -3674,9 +3672,9 @@ class CIMRepository(data_format.BinaryDataFormat):
       data_segment = self._objects_data_file.ReadObjectRecordDataSegment(
           object_page, data_offset, data_size)
       if not data_segment:
-        errors.ParseError(
-            'Unable to read objects record: {0:d} data segment: {1:d}.'.format(
-                record_identifier, data_segment_index))
+        errors.ParseError((
+            f'Unable to read objects record: {record_identifier:d} data '
+            f'segment: {data_segment_index:d}.'))
 
       data_segments.append(data_segment)
       data_size -= len(data_segment)
@@ -3746,8 +3744,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       return None
 
     if self._debug:
-      self._DebugPrintText('Reading: {0:s}\n'.format(
-          index_binary_tree_file_path[0]))
+      self._DebugPrintText(f'Reading: {index_binary_tree_file_path[0]:s}\n')
 
     index_binary_tree_file = IndexBinaryTreeFile(
         debug=self._debug, output_writer=self._output_writer)
@@ -3773,8 +3770,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       return None
 
     if self._debug:
-      self._DebugPrintText('Reading: {0:s}\n'.format(
-          mapping_file_path[0]))
+      self._DebugPrintText(f'Reading: {mapping_file_path[0]:s}\n')
 
     mapping_file = MappingFile(
         debug=self._debug, output_writer=self._output_writer)
@@ -3817,7 +3813,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       return None
 
     if self._debug:
-      self._DebugPrintText('Reading: {0:s}\n'.format(objects_data_file_path[0]))
+      self._DebugPrintText(f'Reading: {objects_data_file_path[0]:s}\n')
 
     objects_data_file = ObjectsDataFile(
         debug=self._debug, output_writer=self._output_writer)
@@ -3842,7 +3838,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       return None
 
     if self._debug:
-      self._DebugPrintText('Reading: {0:s}\n'.format(repository_file_path[0]))
+      self._DebugPrintText(f'Reading: {repository_file_path[0]:s}\n')
 
     repository_file = RepositoryFile(
         debug=self._debug, output_writer=self._output_writer)

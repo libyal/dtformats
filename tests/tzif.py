@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for Timezone information files (TZif)."""
+"""Tests for Time zone information files (TZif)."""
 
 import unittest
 
@@ -9,7 +9,7 @@ from tests import test_lib
 
 
 class TimeZoneInformationFileTest(test_lib.BaseTestCase):
-  """Timezone information file (TZif) tests."""
+  """Time zone information file (TZif) tests."""
 
   # pylint: disable=protected-access
 
@@ -28,7 +28,7 @@ class TimeZoneInformationFileTest(test_lib.BaseTestCase):
         number_of_transition_times=4,
         number_of_utc_time_indicators=5,
         signature=b'TZif',
-        timezone_abbreviation_strings_size=6,
+        time_zone_abbreviation_strings_size=6,
         unknown1=(
             b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e'))
 
@@ -52,9 +52,9 @@ class TimeZoneInformationFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadLocalTimeTypesTable
   # TODO: add tests for _ReadStandardTimeIndicators
   # TODO: add tests for _ReadTransitionTimeIndex
-  # TODO: add tests for _ReadTimezoneAbbreviationStrings
-  # TODO: add tests for _ReadTimezoneInformation32bit
-  # TODO: add tests for _ReadTimezoneInformation64bit
+  # TODO: add tests for _ReadTimeZoneAbbreviationStrings
+  # TODO: add tests for _ReadTimeZoneInformation32bit
+  # TODO: add tests for _ReadTimeZoneInformation64bit
   # TODO: add tests for _ReadTransitionTimes32bit
   # TODO: add tests for _ReadTransitionTimes64bit
   # TODO: add tests for _ReadUTCTimeIndicators

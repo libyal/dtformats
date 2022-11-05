@@ -126,8 +126,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     Returns:
       str: formatted date structure.
     """
-    return '{0:04d}-{1:02d}-{2:02d}'.format(
-        date.year, date.month, date.day_of_month)
+    return f'{date.year:04d}-{date.month:02d}-{date.day_of_month:02d}'
 
   def _FormatIntegerAsIntervalInMilliseconds(self, integer):
     """Formats an integer as an interval in milliseconds.
@@ -138,7 +137,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as an interval in milliseconds.
     """
-    return '{0:d} milliseconds'.format(integer)
+    return f'{integer:d} milliseconds'
 
   def _FormatIntegerAsIntervalInMinutes(self, integer):
     """Formats an integer as an interval in minutes.
@@ -149,7 +148,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as an interval in minutes.
     """
-    return '{0:d} minutes'.format(integer)
+    return f'{integer:d} minutes'
 
   def _FormatIntegerAsProductVersion(self, integer):
     """Formats an integer as a product version.
@@ -160,8 +159,9 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as a product version.
     """
-    return '0x{0:04x} ({1:d}.{2:d})'.format(
-        integer, (integer >> 8) & 0xff, integer & 0xff)
+    major_version = (integer >> 8) & 0xff
+    minor_version = (integer >> 8) & 0xff
+    return f'0x{integer:04x} ({major_version:d}.{minor_version:d})'
 
   def _FormatString(self, string):
     """Formats a string structure
@@ -173,8 +173,8 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
       str: formatted string structure
     """
     # TODO: print string.number_of_characters on a separate line
-    return '({0:d} bytes) {1:s}'.format(
-        string.number_of_characters * 2, string.string)
+    number_of_bytes = string.number_of_characters * 2
+    return f'({number_of_bytes:d} bytes) {string.string:s}'
 
   def _FormatSystemTime(self, systemtime):
     """Formats a SYSTEMTIME structure.
@@ -185,10 +185,10 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     Returns:
       str: formatted SYSTEMTIME structure.
     """
-    return '{0:04d}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}.{6:03d}'.format(
-        systemtime.year, systemtime.month, systemtime.day_of_month,
-        systemtime.hours, systemtime.minutes, systemtime.seconds,
-        systemtime.milliseconds)
+    return (f'{systemtime.year:04d}-{systemtime.month:02d}-'
+            f'{systemtime.day_of_month:02d} {systemtime.hours:02d}:'
+            f'{systemtime.minutes:02d}:{systemtime.seconds:02d}.'
+            f'{systemtime.milliseconds:03d}')
 
   def _FormatTime(self, time):
     """Formats a time structure.
@@ -199,7 +199,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     Returns:
       str: formatted time structure.
     """
-    return '{0:02d}:{1:02d}'.format(time.hours, time.minutes)
+    return f'{time.hours:02d}:{time.minutes:02d}'
 
   def GetWindowsTaskConfiguration(self):
     """Retrieves the Windows task configuration represented by the job file.
