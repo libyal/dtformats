@@ -69,37 +69,34 @@ class EMFFile(data_format.BinaryDataFile):
     Args:
       file_header (emf_file_header): file header.
     """
-    record_type_string = self._RECORD_TYPE.GetName(file_header.record_type)
-    value_string = '0x{0:04x} ({1:s})'.format(
-        file_header.record_type, record_type_string or 'UNKNOWN')
-    self._DebugPrintValue('Record type', value_string)
+    record_type_string = self._RECORD_TYPE.GetName(
+        file_header.record_type) or 'UNKNOWN'
+    self._DebugPrintValue('Record type', (
+        f'0x{file_header.record_type:04x} ({record_type_string:s})'))
 
-    value_string = '{0:d}'.format(file_header.record_size)
-    self._DebugPrintValue('Record size', value_string)
+    self._DebugPrintValue('Record size', f'{file_header.record_size:d}')
 
-    value_string = '0x{0:04x}'.format(file_header.signature)
-    self._DebugPrintValue('Signature', value_string)
+    self._DebugPrintValue('Signature', f'0x{file_header.signature:04x}')
 
-    value_string = '0x{0:04x}'.format(file_header.format_version)
-    self._DebugPrintValue('Format version', value_string)
+    self._DebugPrintValue(
+        'Format version', f'0x{file_header.format_version:04x}')
 
-    value_string = '{0:d}'.format(file_header.file_size)
-    self._DebugPrintValue('File size', value_string)
+    self._DebugPrintValue('File size', f'{file_header.file_size:d}')
 
-    value_string = '{0:d}'.format(file_header.number_of_records)
-    self._DebugPrintValue('Number of records', value_string)
+    self._DebugPrintValue(
+        'Number of records', f'{file_header.number_of_records:d}')
 
-    value_string = '{0:d}'.format(file_header.number_of_handles)
-    self._DebugPrintValue('Number of handles', value_string)
+    self._DebugPrintValue(
+        'Number of handles', f'{file_header.number_of_handles:d}')
 
-    value_string = '0x{0:04x}'.format(file_header.unknown1)
-    self._DebugPrintValue('Unknown (reserved)', value_string)
+    self._DebugPrintValue('Unknown (reserved)', f'0x{file_header.unknown1:04x}')
 
-    value_string = '{0:d}'.format(file_header.description_string_size)
-    self._DebugPrintValue('Description string size', value_string)
+    self._DebugPrintValue(
+        'Description string size', f'{file_header.description_string_size:d}')
 
-    value_string = '0x{0:04x}'.format(file_header.description_string_offset)
-    self._DebugPrintValue('Description string offset', value_string)
+    self._DebugPrintValue(
+        'Description string offset',
+        f'0x{file_header.description_string_offset:04x}')
 
     self._DebugPrintText('\n')
 
@@ -109,13 +106,12 @@ class EMFFile(data_format.BinaryDataFile):
     Args:
       record_header (emf_record_header): record header.
     """
-    record_type_string = self._RECORD_TYPE.GetName(record_header.record_type)
-    value_string = '0x{0:04x} ({1:s})'.format(
-        record_header.record_type, record_type_string or 'UNKNOWN')
-    self._DebugPrintValue('Record type', value_string)
+    record_type_string = self._RECORD_TYPE.GetName(
+        record_header.record_type) or 'UNKNOWN'
+    self._DebugPrintValue('Record type', (
+        f'0x{record_header.record_type:04x} ({record_type_string:s})'))
 
-    value_string = '{0:d}'.format(record_header.record_size)
-    self._DebugPrintValue('Record size', value_string)
+    self._DebugPrintValue('Record size', f'{record_header.record_size:d}')
 
     self._DebugPrintText('\n')
 
@@ -196,24 +192,22 @@ class EMFFile(data_format.BinaryDataFile):
     try:
       record = data_type_map.MapByteStream(record_data)
     except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          'Unable to parse record data with error: {0:s}').format(exception))
+      raise errors.ParseError(
+          f'Unable to parse record data with error: {exception!s}')
 
     if self._debug:
       if record_type == 0x0018:
-        value_string = '0x{0:04x}'.format(record.color)
-        self._DebugPrintValue('Color', value_string)
+        self._DebugPrintValue('Color', f'0x{record.color:04x}')
 
       elif record_type == 0x0025:
         stock_object_string = self._EMF_STOCK_OBJECT.GetName(
             record.object_identifier)
 
         if stock_object_string:
-          value_string = '0x{0:08x} ({1:s})'.format(
-              record.object_identifier, stock_object_string)
+          value_string = (
+              f'0x{record.object_identifier:08x} ({stock_object_string:s})')
         else:
-          value_string = '0x{0:08x}'.format(
-              record.object_identifier)
+          value_string = f'0x{record.object_identifier:08x}'
 
         self._DebugPrintValue('Object identifier', value_string)
 
@@ -602,30 +596,18 @@ class WMFFile(data_format.BinaryDataFile):
     Args:
       file_header (wmf_header): file header.
     """
-    value_string = '0x{0:04x}'.format(file_header.file_type)
-    self._DebugPrintValue('File type', value_string)
-
-    value_string = '{0:d}'.format(file_header.record_size)
-    self._DebugPrintValue('Record size', value_string)
-
-    value_string = '{0:d}'.format(file_header.format_version)
-    self._DebugPrintValue('Format version', value_string)
-
-    value_string = '{0:d}'.format(file_header.file_size_lower)
-    self._DebugPrintValue('File size lower', value_string)
-
-    value_string = '{0:d}'.format(file_header.file_size_upper)
-    self._DebugPrintValue('File size upper', value_string)
-
-    value_string = '{0:d}'.format(file_header.maximum_number_of_objects)
-    self._DebugPrintValue('Maximum number of object', value_string)
-
-    value_string = '{0:d}'.format(file_header.largest_record_size)
-    self._DebugPrintValue('Largest record size', value_string)
-
-    value_string = '{0:d}'.format(file_header.number_of_records)
-    self._DebugPrintValue('Number of records', value_string)
-
+    self._DebugPrintValue('File type', f'0x{file_header.file_type:04x}')
+    self._DebugPrintValue('Record size', f'{file_header.record_size:d}')
+    self._DebugPrintValue('Format version', f'{file_header.format_version:d}')
+    self._DebugPrintValue('File size lower', f'{file_header.file_size_lower:d}')
+    self._DebugPrintValue('File size upper', f'{file_header.file_size_upper:d}')
+    self._DebugPrintValue(
+        'Maximum number of object',
+        f'{file_header.maximum_number_of_objects:d}')
+    self._DebugPrintValue(
+        'Largest record size', f'{file_header.largest_record_size:d}')
+    self._DebugPrintValue(
+        'Number of records', f'{file_header.number_of_records:d}')
     self._DebugPrintText('\n')
 
   def _DebugPrintPlaceable(self, placeable):
@@ -634,23 +616,14 @@ class WMFFile(data_format.BinaryDataFile):
     Args:
       placeable (wmf_placeable): placeable.
     """
-    value_string = '0x{0:08x}'.format(placeable.signature)
-    self._DebugPrintValue('Signature', value_string)
-
-    value_string = '0x{0:04x}'.format(placeable.resource_handle)
-    self._DebugPrintValue('Resource handle', value_string)
-
+    self._DebugPrintValue('Signature', f'0x{placeable.signature:08x}')
+    self._DebugPrintValue(
+        'Resource handle', f'0x{placeable.resource_handle:04x}')
     self._DebugPrintData('Bounding box', placeable.bounding_box)
-
-    value_string = '{0:d}'.format(placeable.number_of_units_per_inch)
-    self._DebugPrintValue('Number of units per inch', value_string)
-
-    value_string = '0x{0:08x}'.format(placeable.unknown1)
-    self._DebugPrintValue('Unknown1', value_string)
-
-    value_string = '0x{0:04x}'.format(placeable.checksum)
-    self._DebugPrintValue('Checksum', value_string)
-
+    self._DebugPrintValue(
+        'Number of units per inch', f'{placeable.number_of_units_per_inch:d}')
+    self._DebugPrintValue('Unknown1', f'0x{placeable.unknown1:08x}')
+    self._DebugPrintValue('Checksum', f'0x{placeable.checksum:04x}')
     self._DebugPrintText('\n')
 
   def _DebugPrintRecordHeader(self, record_header):
@@ -659,14 +632,14 @@ class WMFFile(data_format.BinaryDataFile):
     Args:
       record_header (wmf_record_header): record header.
     """
-    value_string = '{0:d} ({1:d} bytes)'.format(
-        record_header.record_size, record_header.record_size * 2)
-    self._DebugPrintValue('Record size', value_string)
+    number_of_bytes = record_header.record_size * 2
+    self._DebugPrintValue('Record size', (
+        f'{record_header.record_size:d} ({number_of_bytes:d} bytes)'))
 
-    record_type_string = self._RECORD_TYPE.GetName(record_header.record_type)
-    value_string = '0x{0:04x} ({1:s})'.format(
-        record_header.record_type, record_type_string or 'UNKNOWN')
-    self._DebugPrintValue('Record type', value_string)
+    record_type_string = self._RECORD_TYPE.GetName(
+        record_header.record_type) or 'UNKNOWN'
+    self._DebugPrintValue('Record type', (
+        f'0x{record_header.record_type:04x} ({record_type_string:s})'))
 
     self._DebugPrintText('\n')
 
@@ -687,12 +660,12 @@ class WMFFile(data_format.BinaryDataFile):
       self._DebugPrintHeader(file_header)
 
     if file_header.file_type not in (1, 2):
-      raise errors.ParseError('Unsupported file type: {0:d}'.format(
-          file_header.file_type))
+      raise errors.ParseError(
+          f'Unsupported file type: {file_header.file_type:d}')
 
     if file_header.record_size != 9:
-      raise errors.ParseError('Unsupported record size: {0:d}'.format(
-          file_header.record_size))
+      raise errors.ParseError(
+          f'Unsupported record size: {file_header.record_size:d}')
 
   def _ReadPlaceable(self, file_object):
     """Reads a placeable.
@@ -768,65 +741,58 @@ class WMFFile(data_format.BinaryDataFile):
     try:
       record = data_type_map.MapByteStream(record_data)
     except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          'Unable to parse record data with error: {0:s}').format(exception))
+      raise errors.ParseError(
+          f'Unable to parse record data with error: {exception!s}')
 
     if self._debug:
       if record_type == 0x0103:
-        map_mode_string = self._MAP_MODE.GetName(record.map_mode)
-        value_string = '0x{0:04x} ({1:s})'.format(
-            record.map_mode, map_mode_string or 'UNKNOWN')
-        self._DebugPrintValue('Map mode', value_string)
+        map_mode_string = self._MAP_MODE.GetName(record.map_mode) or 'UNKNOWN'
+        self._DebugPrintValue(
+            'Map mode', f'0x{record.map_mode:04x} ({map_mode_string:s})')
 
       elif record_type == 0x0107:
         stretch_mode_string = self._MAP_MODE.GetName(
-            record.stretch_mode)
-        value_string = '0x{0:04x} ({1:s})'.format(
-            record.stretch_mode, stretch_mode_string or 'UNKNOWN')
-        self._DebugPrintValue('Stretch mode', value_string)
+            record.stretch_mode) or 'UNKNOWN'
+        self._DebugPrintValue('Stretch mode', (
+            f'0x{record.stretch_mode:04x} ({stretch_mode_string:s})'))
 
       elif record_type == 0x0127:
-        value_string = '{0:d}'.format(
-            record.number_of_saved_device_context)
-        self._DebugPrintValue('Number of saved device context', value_string)
+        self._DebugPrintValue(
+            'Number of saved device context',
+            f'{record.number_of_saved_device_context:d}')
 
       elif record_type in (0x020b, 0x020c):
-        value_string = '{0:d}'.format(record.x_coordinate)
-        self._DebugPrintValue('X coordinate', value_string)
+        self._DebugPrintValue('X coordinate', f'{record.x_coordinate:d}')
 
-        value_string = '{0:d}'.format(record.y_coordinate)
-        self._DebugPrintValue('Y coordinate', value_string)
+        self._DebugPrintValue('Y coordinate', f'{record.y_coordinate:d}')
 
       elif record_type == 0x0b41:
         raster_operation_string = self._WMF_RASTER_OPERATIONS.get(
             record.raster_operation, 'UNKNOWN')
-        value_string = '0x{0:08x} ({1:s})'.format(
-            record.raster_operation, raster_operation_string)
-        self._DebugPrintValue('Raster operation', value_string)
+        self._DebugPrintValue('Raster operation', (
+            f'0x{record.raster_operation:08x} ({raster_operation_string:s})'))
 
-        value_string = '{0:d}'.format(record.source_height)
-        self._DebugPrintValue('Source height', value_string)
+        self._DebugPrintValue('Source height', f'{record.source_height:d}')
 
-        value_string = '{0:d}'.format(record.source_width)
-        self._DebugPrintValue('Source width', value_string)
+        self._DebugPrintValue('Source width', f'{record.source_width:d}')
 
-        value_string = '{0:d}'.format(record.source_x_coordinate)
-        self._DebugPrintValue('Source X coordinate', value_string)
+        self._DebugPrintValue(
+            'Source X coordinate', f'{record.source_x_coordinate:d}')
 
-        value_string = '{0:d}'.format(record.source_y_coordinate)
-        self._DebugPrintValue('Source Y coordinate', value_string)
+        self._DebugPrintValue(
+            'Source Y coordinate', f'{record.source_y_coordinate:d}')
 
-        value_string = '{0:d}'.format(record.destination_height)
-        self._DebugPrintValue('Destination height', value_string)
+        self._DebugPrintValue(
+            'Destination height', f'{record.destination_height:d}')
 
-        value_string = '{0:d}'.format(record.destination_width)
-        self._DebugPrintValue('Destination width', value_string)
+        self._DebugPrintValue(
+            'Destination width', f'{record.destination_width:d}')
 
-        value_string = '{0:d}'.format(record.destination_x_coordinate)
-        self._DebugPrintValue('Destination X coordinate', value_string)
+        self._DebugPrintValue(
+            'Destination X coordinate', f'{record.destination_x_coordinate:d}')
 
-        value_string = '{0:d}'.format(record.destination_y_coordinate)
-        self._DebugPrintValue('Destination Y coordinate', value_string)
+        self._DebugPrintValue(
+            'Destination Y coordinate', f'{record.destination_y_coordinate:d}')
 
       self._DebugPrintText('\n')
 
@@ -844,8 +810,7 @@ class WMFFile(data_format.BinaryDataFile):
       file_object.seek(-4, os.SEEK_CUR)
     except IOError as exception:
       raise errors.ParseError(
-          'Unable to read file signature with error: {0!s}'.format(
-              exception))
+          f'Unable to read file signature with error: {exception!s}')
 
     if signature == self._WMF_PLACEABLE_SIGNATURE:
       self._ReadPlaceable(file_object)

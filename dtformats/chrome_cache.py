@@ -124,11 +124,11 @@ class CacheAddress(object):
     if not cache_address == 0x00000000:
       if self.file_type == self.FILE_TYPE_SEPARATE:
         file_selector = cache_address & 0x0fffffff
-        self.filename = 'f_{0:06x}'.format(file_selector)
+        self.filename = f'f_{file_selector:06x}'
 
       elif self.file_type in self._BLOCK_DATA_FILE_TYPES:
         file_selector = (cache_address & 0x00ff0000) >> 16
-        self.filename = 'data_{0:d}'.format(file_selector)
+        self.filename = f'data_{file_selector:d}'
 
         file_block_size = self._FILE_TYPE_BLOCK_SIZES[self.file_type]
         self.block_number = cache_address & 0x0000ffff
@@ -143,26 +143,22 @@ class CacheAddress(object):
       str: debug string of the cache address object.
     """
     if self.value == 0x00000000:
-      return '0x{0:08x} (uninitialized)'.format(self.value)
+      return f'0x{self.value:08x} (uninitialized)'
 
     file_type_description = self._FILE_TYPE_DESCRIPTIONS.get(
         self.file_type, 'Unknown')
 
     if self.file_type == 0:
       return (
-          '0x{0:08x} (initialized: {1!s}, file type: {2:s}, '
-          'filename: {3:s})').format(
-              self.value, self.is_initialized, file_type_description,
-              self.filename)
+          f'0x{self.value:08x} (initialized: {self.is_initialized!s}, '
+          f'file type: {file_type_description:s}, filename: {self.filename:s})')
 
     # TODO: print reserved bits.
     return (
-        '0x{0:08x} (initialized: {1!s}, file type: {2:s}, '
-        'filename: {3:s}, block number: {4:d}, block offset: 0x{5:08x}, '
-        'block size: {6:d})').format(
-            self.value, self.is_initialized, file_type_description,
-            self.filename, self.block_number, self.block_offset,
-            self.block_size)
+        f'0x{self.value:08x} (initialized: {self.is_initialized!s}, '
+        f'file type: {file_type_description:s}, filename: {self.filename:s}, '
+        f'block number: {self.block_number:d}, block offset: '
+        f'0x{self.block_offset:08x}, block size: {self.block_size:d})')
 
 
 class CacheEntry(object):
@@ -268,10 +264,10 @@ class DataBlockFile(data_format.BinaryDataFile):
           in_block_range = False
 
           if self._debug:
-            value_string = '{0:d} - {1:d} ({2:d})'.format(
-                block_range_start, block_range_end,
-                block_range_end - block_range_start)
-            self._DebugPrintValue('Block range', value_string)
+            block_range_size = block_range_end - block_range_start
+            self._DebugPrintValue('Block range', (
+                f'{block_range_start:d} - {block_range_end:d} '
+                f'({block_range_size:d})'))
 
         value_32bit >>= 1
         block_number += 1
@@ -283,9 +279,7 @@ class DataBlockFile(data_format.BinaryDataFile):
       array_of_integers (list[int]): array of integers.
     """
     for index, value in enumerate(array_of_integers):
-      description = 'Data stream size: {0:d}'.format(index)
-      value_string = '{0:d}'.format(value)
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'Data stream size: {index:d}', f'{value:d}')
 
   def _DebugPrintCacheEntryDataStreamAddresses(self, array_of_integers):
     """Prints cache entry data stream addresses debug information.
@@ -294,10 +288,9 @@ class DataBlockFile(data_format.BinaryDataFile):
       array_of_integers (list[int]): array of integers.
     """
     for index, value in enumerate(array_of_integers):
-      description = 'Data stream address: {0:d}'.format(index)
       cache_address = CacheAddress(value)
       value_string = cache_address.GetDebugString()
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'Data stream address: {index:d}', value_string)
 
   def _DebugPrintCacheEntry(self, cache_entry):
     """Prints cache entry debug information.
@@ -312,11 +305,9 @@ class DataBlockFile(data_format.BinaryDataFile):
     self._DebugPrintCacheEntryDataStreamAddresses(
         cache_entry.data_stream_addresses)
 
-    value_string = '0x{0:08x}'.format(cache_entry.flags)
-    self._DebugPrintValue('Flags', value_string)
+    self._DebugPrintValue('Flags', f'0x{cache_entry.flags:08x}')
 
-    value_string = '0x{0:08x}'.format(cache_entry.self_hash)
-    self._DebugPrintValue('Self hash', value_string)
+    self._DebugPrintValue('Self hash', f'0x{cache_entry.self_hash:08x}')
 
     self._DebugPrintValue('Key', cache_entry.key)
 
@@ -357,7 +348,7 @@ class DataBlockFile(data_format.BinaryDataFile):
     """
     date_string = (datetime.datetime(1601, 1, 1) +
                    datetime.timedelta(microseconds=integer))
-    return '{0!s} (0x{1:08x})'.format(date_string, integer)
+    return f'{date_string!s} (0x{integer:08x})'
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -376,13 +367,12 @@ class DataBlockFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintFileHeader(file_header)
 
-    self.format_version = '{0:d}.{1:d}'.format(
-        file_header.major_version, file_header.minor_version)
+    self.format_version = (
+        f'{file_header.major_version:d}.{file_header.minor_version:d}')
 
     if self.format_version not in ('2.0', '2.1'):
       raise errors.ParseError(
-          'Unsupported data block file version: {0:s}'.format(
-              self.format_version))
+          f'Unsupported data block file version: {self.format_version:s}')
 
     self.block_size = file_header.block_size
     self.number_of_entries = file_header.number_of_entries
@@ -412,9 +402,9 @@ class DataBlockFile(data_format.BinaryDataFile):
       cache_entry_key = cache_entry_key.decode('ascii')
     except UnicodeDecodeError:
       logging.warning((
-          'Unable to decode cache entry key at block offset: '
-          '0x{0:08x}. Characters that cannot be decoded will be '
-          'replaced with "?" or "\\ufffd".').format(block_offset))
+          f'Unable to decode cache entry key at block offset: '
+          f'0x{block_offset:08x}. Characters that cannot be decoded will be '
+          f'replaced with "?" or "\\ufffd".'))
       cache_entry_key = cache_entry_key.decode('ascii', errors='replace')
 
     cache_entry.key = cache_entry_key
@@ -494,34 +484,28 @@ class IndexFile(data_format.BinaryDataFile):
     Args:
       lru_data (chrome_cache_index_file_lru_data): LRU data.
     """
-    value_string = '0x{0:08x}'.format(lru_data.filled_flag)
-    self._DebugPrintValue('Filled flag', value_string)
+    self._DebugPrintValue('Filled flag', f'0x{lru_data.filled_flag:08x}')
 
     for value in lru_data.sizes:
-      value_string = '{0:d}'.format(value)
-      self._DebugPrintValue('Size', value_string)
+      self._DebugPrintValue('Size', f'{value:d}')
 
     for index, value in enumerate(lru_data.head_addresses):
-      description = 'Head address: {0:d}'.format(index)
       cache_address = CacheAddress(value)
       value_string = cache_address.GetDebugString()
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'Head address: {index:d}', value_string)
 
     for index, value in enumerate(lru_data.tail_addresses):
-      description = 'Tail address: {0:d}'.format(index)
       cache_address = CacheAddress(value)
       value_string = cache_address.GetDebugString()
-      self._DebugPrintValue(description, value_string)
+      self._DebugPrintValue(f'Tail address: {index:d}', value_string)
 
     cache_address = CacheAddress(lru_data.transaction_address)
     value_string = cache_address.GetDebugString()
     self._DebugPrintValue('Transaction address', value_string)
 
-    value_string = '0x{0:08x}'.format(lru_data.operation)
-    self._DebugPrintValue('Operation', value_string)
+    self._DebugPrintValue('Operation', f'0x{lru_data.operation:08x}')
 
-    value_string = '0x{0:08x}'.format(lru_data.operation_list)
-    self._DebugPrintValue('Operation list', value_string)
+    self._DebugPrintValue('Operation list', f'0x{lru_data.operation_list:08x}')
 
     self._DebugPrintText('\n')
 
@@ -534,7 +518,7 @@ class IndexFile(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as a data stream filename.
     """
-    return '{0:d} (f_{0:06x})'.format(integer)
+    return f'{integer:d} (f_{integer:06x})'
 
   def _FormatIntegerAsTimestamp(self, integer):
     """Formats an integer as a Chrome timestamp.
@@ -547,7 +531,7 @@ class IndexFile(data_format.BinaryDataFile):
     """
     date_string = (datetime.datetime(1601, 1, 1) +
                    datetime.timedelta(microseconds=integer))
-    return '{0!s} (0x{1:08x})'.format(date_string, integer)
+    return f'{date_string!s} (0x{integer:08x})'
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -566,12 +550,12 @@ class IndexFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
 
-    self.format_version = '{0:d}.{1:d}'.format(
-        file_header.major_version, file_header.minor_version)
+    self.format_version = (
+        f'{file_header.major_version:d}.{file_header.minor_version:d}')
 
     if self.format_version not in ('2.0', '2.1'):
       raise errors.ParseError(
-          'Unsupported index file version: {0:s}'.format(self.format_version))
+          f'Unsupported index file version: {self.format_version:s}')
 
     self.creation_time = file_header.creation_time
 
@@ -611,16 +595,16 @@ class IndexFile(data_format.BinaryDataFile):
             cache_address_data, file_offset, data_type_map, 'cache address')
       except (ValueError, errors.ParseError) as exception:
         raise errors.ParseError((
-            'Unable to parse index table entry: {0:d} with error: '
-            '{1:s}').format(cache_address_index, exception))
+            f'Unable to parse index table entry: {cache_address_index:d} with '
+            f'error: {exception!s}'))
 
       if value:
         cache_address = CacheAddress(value)
 
         if self._debug:
-          description = 'Cache address: {0:d}'.format(cache_address_index)
           value_string = cache_address.GetDebugString()
-          self._DebugPrintValue(description, value_string)
+          self._DebugPrintValue(
+              f'Cache address: {cache_address_index:d}', value_string)
 
         self.index_table[cache_address_index] = cache_address
 
@@ -678,7 +662,7 @@ class ChromeCacheParser(object):
     index_file_path = os.path.join(path, 'index')
     if not os.path.exists(index_file_path):
       raise errors.ParseError(
-          'Missing index file: {0:s}'.format(index_file_path))
+          f'Missing index file: {index_file_path:s}')
 
     index_file = IndexFile(debug=self._debug, output_writer=self._output_writer)
     index_file.Open(index_file_path)
@@ -690,8 +674,7 @@ class ChromeCacheParser(object):
         data_block_file_path = os.path.join(path, cache_address.filename)
 
         if not os.path.exists(data_block_file_path):
-          logging.error('Missing data block file: {0:s}'.format(
-              data_block_file_path))
+          logging.error(f'Missing data block file: {data_block_file_path:s}')
           have_all_data_block_files = False
 
         else:
@@ -714,35 +697,34 @@ class ChromeCacheParser(object):
           data_file = data_block_files.get(cache_address.filename, None)
           if not data_file:
             logging.warning(
-                'Cache address: 0x{0:08x} missing filename.'.format(
-                    cache_address.value))
+                f'Cache address: 0x{cache_address.value:08x} missing filename.')
             break
 
-          # print('Cache address\t: {0:s}'.format(
-          #     cache_address.GetDebugString()))
+          # cache_address_string = cache_address.GetDebugString()
+          # print(f'Cache address\t: {cache_address_string:s}')
           cache_entry = data_file.ReadCacheEntry(cache_address.block_offset)
 
           try:
             cache_entry_key = cache_entry.key.decode('ascii')
           except UnicodeDecodeError:
             logging.warning((
-                'Unable to decode cache entry key at cache address: '
-                '0x{0:08x}. Characters that cannot be decoded will be '
-                'replaced with "?" or "\\ufffd".').format(cache_address.value))
+                f'Unable to decode cache entry key at cache address: '
+                f'0x{cache_address.value:08x}. Characters that cannot be '
+                f'decoded will be replaced with "?" or "\\ufffd".'))
             cache_entry_key = cache_entry.key.decode(
                 'ascii', errors='replace')
 
-          # TODO: print('Url\t\t: {0:s}'.format(cache_entry_key))
+          # TODO: print(f'Url\t\t: {cache_entry_key:s}')
           _ = cache_entry_key
 
           date_string = (datetime.datetime(1601, 1, 1) + datetime.timedelta(
               microseconds=cache_entry.creation_time))
 
-          # print('Creation time\t: {0!s}'.format(date_string))
+          # print(f'Creation time\t: {date_string!s}')
 
           # print('')
 
-          print('{0!s}\t{1:s}'.format(date_string, cache_entry.key))
+          print(f'{date_string!s}\t{cache_entry.key:s}')
 
           cache_address = cache_entry.next
           cache_address_chain_length += 1
@@ -771,11 +753,11 @@ class ChromeCacheParser(object):
         signature = self._UINT32LE.MapByteStream(signature_data)
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError(
-            'Unable to signature with error: {0!s}'.format(exception))
+            f'Unable to signature with error: {exception!s}')
 
       if signature not in (DataBlockFile.SIGNATURE, IndexFile.SIGNATURE):
         raise errors.ParseError(
-            'Unsupported signature: 0x{0:08x}'.format(signature))
+            f'Unsupported signature: 0x{signature:08x}')
 
       if signature == DataBlockFile.SIGNATURE:
         chrome_cache_file = DataBlockFile(

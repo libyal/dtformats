@@ -132,10 +132,11 @@ class DSCFile(data_format.BinaryDataFile):
     format_version = (
         file_header.major_format_version, file_header.minor_format_version)
     if format_version not in [(1, 0), (2, 0)]:
+      format_version_string = '.'.join([
+          f'{file_header.major_format_version:d}',
+          f'{file_header.minor_format_version:d}'])
       raise errors.ParseError(
-          'Unsupported format version: {0:d}.{1:d}.'.format(
-              file_header.major_format_version,
-              file_header.minor_format_version))
+          f'Unsupported format version: {format_version_string:s}')
 
     return file_header
 
@@ -157,8 +158,7 @@ class DSCFile(data_format.BinaryDataFile):
       ParseError: if the file cannot be read.
     """
     if version not in (1, 2):
-      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
-          version))
+      raise errors.ParseError(f'Unsupported format version: {version:d}.')
 
     if version == 1:
       data_type_map_name = 'dsc_range_descriptor_v1'
@@ -203,8 +203,7 @@ class DSCFile(data_format.BinaryDataFile):
       ParseError: if the file cannot be read.
     """
     if version not in (1, 2):
-      raise errors.ParseError('Unsupported format version: {0:d}.'.format(
-          version))
+      raise errors.ParseError(f'Unsupported format version: {version:d}.')
 
     if version == 1:
       data_type_map_name = 'dsc_uuid_descriptor_v1'
@@ -373,9 +372,10 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: formatted array of strings.
     """
-    return '{0:s}\n'.format('\n'.join([
-        '\t[{0:03d}] {1:s}'.format(string_index, string)
-        for string_index, string in enumerate(array_of_strings)]))
+    value = '\n'.join([
+        f'\t[{string_index:03d}] {string:s}'
+        for string_index, string in enumerate(array_of_strings)])
+    return f'{value:s}\n'
 
   def _FormatArrayOfUUIDS(self, array_of_uuids):
     """Formats an array of UUIDs.
@@ -386,9 +386,10 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: formatted array of UUIDs.
     """
-    return '{0:s}\n'.format('\n'.join([
-        '\t[{0:03d}] {1!s}'.format(uuid_index, uuid)
-        for uuid_index, uuid in enumerate(array_of_uuids)]))
+    value = '\n'.join([
+        f'\t[{uuid_index:03d}] {uuid!s}'
+        for uuid_index, uuid in enumerate(array_of_uuids)])
+    return f'{value:s}\n'
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -656,11 +657,12 @@ class UUIDTextFile(data_format.BinaryDataFile):
     Returns:
       str: formatted array of entry descriptors.
     """
-    return '{0:s}\n'.format('\n'.join([
-        '\t[{0:03d}] offset: 0x{1:08x}, data size: {2:d}'.format(
-            entry_index, entry_descriptor.offset, entry_descriptor.data_size)
+    value = '\n'.join([
+        (f'\t[{entry_index:03d}] offset: 0x{entry_descriptor.offset:08x}, '
+         f'data size: {entry_descriptor.data_size:d}')
         for entry_index, entry_descriptor in enumerate(
-            array_of_entry_descriptors)]))
+            array_of_entry_descriptors)])
+    return f'{value:s}\n'
 
   def _ReadFileFooter(self, file_object, file_offset):
     """Reads a file footer.
@@ -705,15 +707,16 @@ class UUIDTextFile(data_format.BinaryDataFile):
 
     if file_header.signature != 0x66778899:
       raise errors.ParseError(
-          'Unsupported signature: 0x{0:04x}.'.format(file_header.signature))
+          f'Unsupported signature: 0x{file_header.signature:04x}.')
 
     format_version = (
         file_header.major_format_version, file_header.minor_format_version)
     if format_version != (2, 1):
+      format_version_string = '.'.join([
+          f'{file_header.major_format_version:d}',
+          f'{file_header.minor_format_version:d}'])
       raise errors.ParseError(
-          'Unsupported format version: {0:d}.{1:d}.'.format(
-              file_header.major_format_version,
-              file_header.minor_format_version))
+          f'Unsupported format version: {format_version_string:s}')
 
     return file_header
 

@@ -96,63 +96,55 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       file_entry (cpio_new_file_entry): file entry.
     """
     if self.file_format in ('bin-big-endian', 'bin-little-endian'):
-      value_string = '0x{0:04x}'.format(file_entry.signature)
+      value_string = f'0x{file_entry.signature:04x}'
     else:
-      value_string = '{0!s}'.format(file_entry.signature)
+      value_string = f'{file_entry.signature!s}'
 
     self._DebugPrintValue('Signature', value_string)
 
     if self.file_format not in ('crc', 'newc'):
-      value_string = '{0:d}'.format(file_entry.device_number)
-      self._DebugPrintValue('Device number', value_string)
+      self._DebugPrintValue('Device number', f'{file_entry.device_number:d}')
 
-    value_string = '{0:d}'.format(file_entry.inode_number)
-    self._DebugPrintValue('Inode number', value_string)
+    self._DebugPrintValue('Inode number', f'{file_entry.inode_number:d}')
 
-    value_string = '{0:o}'.format(file_entry.mode)
-    self._DebugPrintValue('Mode', value_string)
+    self._DebugPrintValue('Mode', f'{file_entry.mode:o}')
 
-    value_string = '{0:d}'.format(file_entry.user_identifier)
-    self._DebugPrintValue('User identifier (UID)', value_string)
+    self._DebugPrintValue(
+        'User identifier (UID)', f'{file_entry.user_identifier:d}')
 
-    value_string = '{0:d}'.format(file_entry.group_identifier)
-    self._DebugPrintValue('Group identifier (GID)', value_string)
+    self._DebugPrintValue(
+        'Group identifier (GID)', f'{file_entry.group_identifier:d}')
 
-    value_string = '{0:d}'.format(file_entry.number_of_links)
-    self._DebugPrintValue('Number of links', value_string)
+    self._DebugPrintValue('Number of links', f'{file_entry.number_of_links:d}')
 
     if self.file_format not in ('crc', 'newc'):
-      value_string = '{0:d}'.format(file_entry.special_device_number)
-      self._DebugPrintValue('Special device number', value_string)
+      self._DebugPrintValue(
+          'Special device number', f'{file_entry.special_device_number:d}')
 
-    value_string = '{0:d}'.format(file_entry.modification_time)
-    self._DebugPrintValue('Modification time', value_string)
+    self._DebugPrintValue(
+        'Modification time', f'{file_entry.modification_time:d}')
 
     if self.file_format not in ('crc', 'newc'):
-      value_string = '{0:d}'.format(file_entry.path_size)
-      self._DebugPrintValue('Path size', value_string)
+      self._DebugPrintValue('Path size', f'{file_entry.path_size:d}')
 
-    value_string = '{0:d}'.format(file_entry.file_size)
-    self._DebugPrintValue('File size', value_string)
+    self._DebugPrintValue('File size', f'{file_entry.file_size:d}')
 
     if self.file_format in ('crc', 'newc'):
-      value_string = '{0:d}'.format(file_entry.device_major_number)
-      self._DebugPrintValue('Device major number', value_string)
+      self._DebugPrintValue(
+          'Device major number', f'{file_entry.device_major_number:d}')
+      self._DebugPrintValue(
+          'Device minor number', f'{file_entry.device_minor_number:d}')
 
-      value_string = '{0:d}'.format(file_entry.device_minor_number)
-      self._DebugPrintValue('Device minor number', value_string)
+      self._DebugPrintValue(
+          'Special device major number',
+          f'{file_entry.special_device_major_number:d}')
+      self._DebugPrintValue(
+          'Special device minor number',
+          f'{file_entry.special_device_minor_number:d}')
 
-      value_string = '{0:d}'.format(file_entry.special_device_major_number)
-      self._DebugPrintValue('Special device major number', value_string)
+      self._DebugPrintValue('Path size', f'{file_entry.path_size:d}')
 
-      value_string = '{0:d}'.format(file_entry.special_device_minor_number)
-      self._DebugPrintValue('Special device minor number', value_string)
-
-      value_string = '{0:d}'.format(file_entry.path_size)
-      self._DebugPrintValue('Path size', value_string)
-
-      value_string = '0x{0:08x}'.format(file_entry.checksum)
-      self._DebugPrintValue('Checksum', value_string)
+      self._DebugPrintValue('Checksum', f'0x{file_entry.checksum:08x}')
 
   def _ReadFileEntry(self, file_object, file_offset):
     """Reads a file entry.
@@ -197,9 +189,9 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
         try:
           value = int(value, 8)
         except ValueError:
-          raise errors.ParseError(
-              'Unable to convert attribute: {0:s} into an integer'.format(
-                  attribute_name))
+          raise errors.ParseError((
+              f'Unable to convert attribute: {attribute_name:s} into an '
+              f'integer'))
 
         value = setattr(file_entry, attribute_name, value)
 
@@ -209,9 +201,9 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
         try:
           value = int(value, 16)
         except ValueError:
-          raise errors.ParseError(
-              'Unable to convert attribute: {0:s} into an integer'.format(
-                  attribute_name))
+          raise errors.ParseError((
+              f'Unable to convert attribute: {attribute_name:s} into an '
+              f'integer'))
 
         value = setattr(file_entry, attribute_name, value)
 
