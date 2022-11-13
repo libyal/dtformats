@@ -46,14 +46,6 @@ class EMFFile(data_format.BinaryDataFile):
 
   _RECORD_TYPE = _FABRIC.CreateDataTypeMap('emf_record_type')
 
-  _FILE_HEADER = _FABRIC.CreateDataTypeMap('emf_file_header')
-
-  _FILE_HEADER_SIZE = _FILE_HEADER.GetByteSize()
-
-  _RECORD_HEADER = _FABRIC.CreateDataTypeMap('emf_record_header')
-
-  _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
-
   _EMF_SIGNATURE = b'FME\x20'
 
   # Here None represents that the record has no additional data.
@@ -125,9 +117,11 @@ class EMFFile(data_format.BinaryDataFile):
       ParseError: if the file header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._FILE_HEADER_SIZE, self._FILE_HEADER,
-        'file header')
+
+    data_type_map = self._GetDataTypeMap('emf_file_header')
+
+    file_header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
       self._DebugPrintFileHeader(file_header)
@@ -150,15 +144,15 @@ class EMFFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the record cannot be read.
     """
-    record_header = self._ReadStructure(
-        file_object, file_offset, self._RECORD_HEADER_SIZE, self._RECORD_HEADER,
-        'record header')
+    data_type_map = self._GetDataTypeMap('emf_record_header')
+
+    record_header, data_offset = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'record header')
 
     if self._debug:
       self._DebugPrintRecordHeader(record_header)
 
-    data_offset = file_offset + self._RECORD_HEADER_SIZE
-    data_size = record_header.record_size - self._RECORD_HEADER_SIZE
+    data_size = record_header.record_size - (data_offset - file_offset)
 
     if self._debug:
       self._ReadRecordData(
@@ -297,19 +291,7 @@ class WMFFile(data_format.BinaryDataFile):
       # TODO: map to wmf_map_mode
   ])
 
-  _HEADER = _FABRIC.CreateDataTypeMap('wmf_header')
-
-  _HEADER_SIZE = _HEADER.GetByteSize()
-
-  _PLACEABLE = _FABRIC.CreateDataTypeMap('wmf_placeable')
-
-  _PLACEABLE_SIZE = _PLACEABLE.GetByteSize()
-
   _RECORD_TYPE = _FABRIC.CreateDataTypeMap('wmf_record_type')
-
-  _RECORD_HEADER = _FABRIC.CreateDataTypeMap('wmf_record_header')
-
-  _RECORD_HEADER_SIZE = _RECORD_HEADER.GetByteSize()
 
   _WMF_PLACEABLE_SIGNATURE = b'\xd7\xcd\xc6\x9a'
 
@@ -653,19 +635,21 @@ class WMFFile(data_format.BinaryDataFile):
       ParseError: if the header cannot be read.
     """
     file_offset = file_object.tell()
-    file_header = self._ReadStructure(
-        file_object, file_offset, self._HEADER_SIZE, self._HEADER, 'header')
+
+    data_type_map = self._GetDataTypeMap('wmf_header')
+
+    header, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
-      self._DebugPrintHeader(file_header)
+      self._DebugPrintHeader(header)
 
-    if file_header.file_type not in (1, 2):
-      raise errors.ParseError(
-          f'Unsupported file type: {file_header.file_type:d}')
+    if header.file_type not in (1, 2):
+      raise errors.ParseError(f'Unsupported file type: {header.file_type:d}')
 
-    if file_header.record_size != 9:
+    if header.record_size != 9:
       raise errors.ParseError(
-          f'Unsupported record size: {file_header.record_size:d}')
+          f'Unsupported record size: {header.record_size:d}')
 
   def _ReadPlaceable(self, file_object):
     """Reads a placeable.
@@ -677,9 +661,11 @@ class WMFFile(data_format.BinaryDataFile):
       ParseError: if the placeable cannot be read.
     """
     file_offset = file_object.tell()
-    placeable = self._ReadStructure(
-        file_object, file_offset, self._PLACEABLE_SIZE, self._PLACEABLE,
-        'placeable')
+
+    data_type_map = self._GetDataTypeMap('wmf_placeable')
+
+    placeable, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'placeable')
 
     if self._debug:
       self._DebugPrintPlaceable(placeable)
@@ -698,17 +684,17 @@ class WMFFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the record cannot be read.
     """
-    record_header = self._ReadStructure(
-        file_object, file_offset, self._RECORD_HEADER_SIZE, self._RECORD_HEADER,
-        'record header')
+    data_type_map = self._GetDataTypeMap('wmf_record_header')
+
+    record_header, data_offset = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'record header')
 
     if self._debug:
       self._DebugPrintRecordHeader(record_header)
 
     record_size = record_header.record_size * 2
 
-    data_offset = file_offset + self._RECORD_HEADER_SIZE
-    data_size = record_size - self._RECORD_HEADER_SIZE
+    data_size = record_size - (data_offset - file_offset)
 
     if self._debug:
       self._ReadRecordData(

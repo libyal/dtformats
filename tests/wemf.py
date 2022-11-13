@@ -18,7 +18,7 @@ class EMFFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = wemf.EMFFile(output_writer=output_writer)
 
-    data_type_map = test_file._FILE_HEADER
+    data_type_map = test_file._GetDataTypeMap('emf_file_header')
     file_header = data_type_map.CreateStructureValues(
         description_string_offset=0,
         description_string_size=1,
@@ -38,7 +38,7 @@ class EMFFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = wemf.EMFFile(output_writer=output_writer)
 
-    data_type_map = test_file._RECORD_HEADER
+    data_type_map = test_file._GetDataTypeMap('emf_record_header')
     record_header = data_type_map.CreateStructureValues(
         record_size=0,
         record_type=1)
@@ -52,7 +52,7 @@ class EMFFileTest(test_lib.BaseTestCase):
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = wemf.EMFFile(debug=True, output_writer=output_writer)
+    test_file = wemf.EMFFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['Memo.emf'])
     self._SkipIfPathNotExists(test_file_path)
@@ -70,7 +70,7 @@ class WMFFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = wemf.WMFFile(output_writer=output_writer)
 
-    data_type_map = test_file._HEADER
+    data_type_map = test_file._GetDataTypeMap('wmf_header')
     file_header = data_type_map.CreateStructureValues(
         file_size_lower=0,
         file_size_upper=1,
@@ -90,7 +90,7 @@ class WMFFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = wemf.WMFFile(output_writer=output_writer)
 
-    data_type_map = test_file._RECORD_HEADER
+    data_type_map = test_file._GetDataTypeMap('wmf_record_header')
     record_header = data_type_map.CreateStructureValues(
         record_size=0,
         record_type=1)
@@ -105,7 +105,7 @@ class WMFFileTest(test_lib.BaseTestCase):
   def testReadFileObject(self):
     """Tests the ReadFileObject."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = wemf.WMFFile(debug=True, output_writer=output_writer)
+    test_file = wemf.WMFFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath(['grid.wmf'])
     self._SkipIfPathNotExists(test_file_path)
