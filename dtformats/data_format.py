@@ -11,7 +11,6 @@ from dtfabric import errors as dtfabric_errors
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 from dtfabric.runtime import fabric as dtfabric_fabric
 
-from dtformats import decorators
 from dtformats import errors
 
 
@@ -519,41 +518,6 @@ class BinaryDataFormat(object):
           f'(0x{file_offset:08x}) with error: {read_error:s}'))
 
     return data
-
-  # Deprecated in favor of _ReadStructureFromFileObject
-  @decorators.deprecated
-  def _ReadStructure(
-      self, file_object, file_offset, data_size, data_type_map, description):
-    """Reads a structure.
-
-    Args:
-      file_object (file): a file-like object.
-      file_offset (int): offset of the structure data relative to the start
-          of the file-like object.
-      data_size (int): data size of the structure.
-      data_type_map (dtfabric.DataTypeMap): data type map of the structure.
-      description (str): description of the structure.
-
-    Returns:
-      object: structure values object.
-
-    Raises:
-      ParseError: if the structure cannot be read.
-      ValueError: if file-like object or data type map is missing.
-    """
-    if self._debug:
-      self._DebugPrintText((
-          f'Reading {description:s} at offset: {file_offset:d} '
-          f'(0x{file_offset:08x})\n'))
-
-    data = self._ReadData(file_object, file_offset, data_size, description)
-
-    if self._debug:
-      first_letter = description[0].upper()
-      self._DebugPrintData(f'{first_letter:s}{description[1:]:s} data', data)
-
-    return self._ReadStructureFromByteStream(
-        data, file_offset, data_type_map, description)
 
   def _ReadStructureFromByteStream(
       self, byte_stream, file_offset, data_type_map, description, context=None):

@@ -259,21 +259,6 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
   # TODO: add tests for _ReadDefinitionFile
 
-  def testReadStructure(self):
-    """Tests the _ReadStructure function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_format = TestBinaryDataFormat(
-        debug=True, output_writer=output_writer)
-
-    data_type_map = test_format._GetDataTypeMap('point3d')
-    data_size = data_type_map.GetSizeHint()
-
-    file_object = io.BytesIO(
-        b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
-
-    test_format._ReadStructure(
-        file_object, 0, data_size, data_type_map, 'point3d')
-
   def testReadStructureFromByteStream(self):
     """Tests the _ReadStructureFromByteStream function."""
     output_writer = test_lib.TestOutputWriter()
