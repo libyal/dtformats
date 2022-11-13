@@ -206,18 +206,19 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     formatted_data = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
-  def testFormatPackedIPv4Address(self):
-    """Tests the _FormatPackedIPv4Address function."""
+  def testFormatArrayOfIntegersAsIPv4Address(self):
+    """Tests the _FormatArrayOfIntegersAsIPv4Address function."""
     test_format = TestBinaryDataFormat()
 
-    ip_address = test_format._FormatPackedIPv4Address([0xc0, 0xa8, 0xcc, 0x62])
+    ip_address = test_format._FormatArrayOfIntegersAsIPv4Address([
+        0xc0, 0xa8, 0xcc, 0x62])
     self.assertEqual(ip_address, '192.168.204.98')
 
-  def testFormatPackedIPv6Address(self):
-    """Tests the _FormatPackedIPv6Address function."""
+  def testFormatArrayOfIntegersAsIPv6Address(self):
+    """Tests the _FormatArrayOfIntegersAsIPv6Address function."""
     test_format = TestBinaryDataFormat()
 
-    ip_address = test_format._FormatPackedIPv6Address([
+    ip_address = test_format._FormatArrayOfIntegersAsIPv6Address([
         0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00,
         0x00, 0x42, 0x83, 0x29])
     self.assertEqual(ip_address, '2001:0db8:0000:0000:0000:ff00:0042:8329')

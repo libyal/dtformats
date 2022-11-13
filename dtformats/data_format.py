@@ -377,36 +377,6 @@ class BinaryDataFormat(object):
     """
     return f'{integer:d} (0x{integer:08x})'
 
-  # Deprecated in favor of _FormatArrayOfIntegersAsIPv4Address
-  @decorators.deprecated
-  def _FormatPackedIPv4Address(self, packed_ip_address):
-    """Formats a packed IPv4 address as a human readable string.
-
-    Args:
-      packed_ip_address (list[int]): packed IPv4 address.
-
-    Returns:
-      str: human readable IPv4 address.
-    """
-    return '.'.join([f'{octet:d}' for octet in packed_ip_address[:4]])
-
-  # Deprecated in favor of _FormatArrayOfIntegersAsIPv6Address
-  @decorators.deprecated
-  def _FormatPackedIPv6Address(self, packed_ip_address):
-    """Formats a packed IPv6 address as a human readable string.
-
-    Args:
-      packed_ip_address (list[int]): packed IPv6 address.
-
-    Returns:
-      str: human readable IPv6 address.
-    """
-    # Note that socket.inet_ntop() is not supported on Windows.
-    octet_pairs = zip(packed_ip_address[0::2], packed_ip_address[1::2])
-    octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
-    # TODO: omit ":0000" from the string.
-    return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
-
   def _FormatString(self, string):
     """Formats a string.
 

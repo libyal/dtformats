@@ -64,9 +64,10 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
     self._DebugPrintValue('Microseconds', f'{entry.microseconds:d}')
 
     if entry.ip_address[4:] == self._EMPTY_IP_ADDRESS[4:]:
-      value_string = self._FormatPackedIPv4Address(entry.ip_address[:4])
+      value_string = self._FormatArrayOfIntegersAsIPv4Address(
+          entry.ip_address[:4])
     else:
-      value_string = self._FormatPackedIPv6Address(entry.ip_address)
+      value_string = self._FormatArrayOfIntegersAsIPv6Address(entry.ip_address)
 
     self._DebugPrintValue('IP address', value_string)
 
