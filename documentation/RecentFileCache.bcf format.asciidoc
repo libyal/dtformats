@@ -110,7 +110,7 @@ UTF-16 little-endian formatted string with end-of-string character
 [cols="1,5",options="header"]
 |===
 | Title: | Windows Application Compatibility - RecentFileCache.bcf
-| URL: | https://forensicswiki.xyz/wiki/index.php?title=Windows_Application_Compatibility#RecentFileCache.bcf
+| URL: | https://forensics.wiki/windows_application_compatibility#recentfilecache.bcf
 |===
 
 [appendix]
