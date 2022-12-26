@@ -53,7 +53,7 @@ def PrintInstance(instance):
 
     name_value_pairs.append((property_name, property_value))
 
-  largest_name = max([len(name) for name, _ in name_value_pairs])
+  largest_name = max(len(name) for name, _ in name_value_pairs)
 
   for name, value in name_value_pairs:
     alignment_string = ' ' * (largest_name - len(name))
