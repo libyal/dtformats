@@ -3,6 +3,7 @@ PyYAML >= 3.10
 dfdatetime >= 20180510
 dtfabric >= 20220127
 libfwsi-python >= 20150606
+libgzipf-python >= 20221229
 liblnk-python >= 20150830
 libolecf-python >= 20151223
 libregf-python >= 20150315
