@@ -13,16 +13,16 @@ class FseventsFile(data_format.BinaryDataFile):
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('fseventsd.yaml')
 
-  _DEBUG_INFO_DLS_PAGE_ENTRY = [
-      ('path', 'Path', '_FormatString'),
-      ('event_identifier', 'Event identifier', '_FormatIntegerAsDecimal'),
-      ('event_flags', 'Event flags', '_FormatIntegerAsHexadecimal'),
-      ('node_identifier', 'Node identifier', '_FormatIntegerAsDecimal')]
-
   _DEBUG_INFO_DLS_PAGE_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('padding', 'Padding', '_FormatDataInHexadecimal'),
+      ('unknown1', 'Unknown1', '_FormatDataInHexadecimal'),
       ('page_size', 'Page size', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_DLS_RECORD = [
+      ('path', 'Path', '_FormatString'),
+      ('event_identifier', 'Event identifier', '_FormatIntegerAsDecimal'),
+      ('flags', 'Flags', '_FormatIntegerAsHexadecimal4'),
+      ('node_identifier', 'Node identifier', '_FormatIntegerAsDecimal')]
 
   # The version 1 format was used in Mac OS X 10.5 (Leopard) through macOS 10.12
   # (Sierra).
@@ -32,7 +32,7 @@ class FseventsFile(data_format.BinaryDataFile):
   _DLS_V2_SIGNATURE = b'2SLD'
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a Windows Restore Point rp.log file.
+    """Initializes a MacOS fseventsd file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -89,24 +89,23 @@ class FseventsFile(data_format.BinaryDataFile):
       format_version (int): format version.
 
     Returns:
-      int: number of bytes read.
+      tuple[dls_record_v1|dls_record_v2, int]: record and number of bytes read.
 
     Raises:
-      ParseError: if the page entry cannot be read.
+      ParseError: if the record cannot be read.
     """
     if format_version == 1:
       data_type_map = self._GetDataTypeMap('dls_record_v1')
     elif format_version == 2:
       data_type_map = self._GetDataTypeMap('dls_record_v2')
 
-    dls_page_entry, bytes_read = self._ReadStructureFromFileObject(
+    dls_record, bytes_read = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'DLS record')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          dls_page_entry, self._DEBUG_INFO_DLS_PAGE_ENTRY)
+      self._DebugPrintStructureObject(dls_record, self._DEBUG_INFO_DLS_RECORD)
 
-    return bytes_read
+    return dls_record, bytes_read
 
   def ReadFileObject(self, file_object):
     """Reads a MacOS fseventsd file-like object.
@@ -139,7 +138,7 @@ class FseventsFile(data_format.BinaryDataFile):
           else:
             format_version = 0
 
-          bytes_read = self._ReadDLSRecord(
+          _, bytes_read = self._ReadDLSRecord(
               gzipf_file, file_offset, format_version)
 
           file_offset += bytes_read
