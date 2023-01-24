@@ -49,6 +49,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.5 | J.B. Metz | March 2019 | Additional changes based on format analysis.
 | 0.0.6 | R. Asselin | July 2022 | Additional changes based on format analysis.
 | 0.0.7 | J.B. Metz | August 2022 | Additional changes based on format analysis.
+| 0.0.8 | Fry | November 2022 | Additional changes based on format analysis.
 |===
 
 :numbered:
@@ -79,7 +80,8 @@ The diagnostics directory contains the following sub directories:
 
 And files:
 
-* logdata.statistics.0.txt
+* logdata.statistics.(0, 1, etc).txt
+* logd.(0, 1, etc).log
 * shutdown.log
 * version.plist
 
@@ -93,9 +95,43 @@ The timesync sub directory can contain one or more files with the extension
 .timesync. These files are stored in the
 <<timesync_database_file_format,timesync database file format>>
 
-[yellow-background]*TODO describe what logdata.statistics.0.txt file contains*
+==== logd.*.log
+The logd.log files contain logging messages from the file logging daemon itself. They are in the single text line format:
+`timestamp logd[pid]: message`
+e.g
+`2022-10-23 19:15:32-0700 logd[25]: Unable to parse os_log_simple buffer. Error: 94 Received: 89`
 
-[yellow-background]*TODO describe what shutdown.log file contains*
+==== logdata.statistics.*.txt
+The logdata.statistics files contain various statistics and metrics kept by the logging daemon, about both individual tracev3 files and the operations of the daemon itself.
+
+These are delimited by headers of the form `--- !logd <type> record` where type is one of:
+
+* purge
+** Records of type "Persist Periodic Purge" detail tracev3 files in the `Persist/` subdirectory that have been purged, including the size of the file and how many files in the `Persist/` subdirectory remain.
+** Records of type "Signpost Periodic Compaction" lists the files that have undergone compaction, all observed have been in the `Signpost/` subdirectory.
+** Records of type "Special Periodic Compaction" lists the files that have undergone compaction, all observed have been in the `Special/` subdirectory.
+* snapshot
+** Unknown. Example
+```
+--- !logd snapshot record
+client : /usr/libexec/signpost_reporter
+time   : 2022-11-20 03:04:48+0000
+flags  : 0x3
+```
+* statistics
+** Records of type "File Rotate" list, per file, how many records it contains and a list of each process that produced records in the file, sorted descendingly by total record count. Example:
+** Records of type "Memory Rollover" appear to be total number of records, and a list of each process that produced records, but globally and not for any particular file.
+* uuid purge
+** List of UUIDs that have been purged
+
+==== shutdown.log
+shutdown.log contains a period list of the clients that still exist while the system is attempting to shut down.
+The logs are of the form:
+```
+After <x>s, these clients are still here:
+		remaining client pid: <pid> (/<process>/<uuid>) (repeats)
+SIGTERM: [<timestamp>] All buffers flushed
+```
 
 [yellow-background]*TODO describe what version.plist file contains*
 
@@ -176,7 +212,7 @@ See section: <<chunk_tag_types,Chunk tag types>>
 | 4 | 4 | | Chunk sub tag (subtag)
 | 8 | 8 | | Chunk data size (length)
 4+| _Chunk data_
-| 16 | 4 | | Chunk data
+| 16 | chunk_data_size | | Chunk data
 |===
 
 [NOTE]
@@ -333,7 +369,8 @@ and consists of:
 | 0 | 4 | | Size
 | 4 | 4 | | [yellow-background]*Unknown*
 | 8 | 2 | | Catalog UUID index
-| 10 | 6 | | Load address
+| 10 | 4 | | Load address offset
+| 14 | 2 | | Load address reference
 |===
 
 ===== Catalog process information sub system
@@ -530,6 +567,30 @@ Contains the delta relative to the base continuous time in the <<tracev3_filehos
 | ... | ... | | 64-bit alignment padding
 |===
 
+==== Firehose tracepoint data
+Data items inside the firehose tracepoint consist of the following structure:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | [yellow-background]*Unknown*
+| 1 | 1 | | Number of items
+| 2 | ... | | Items
+|===
+
+Each item is consists of the following structure:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Item type
+| 1 | 1 | | Item size
+| 3 | Item size | | Item
+4+| _If item type in (0x1, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31, 0x32, 0x35, 0x40, 0x41, 0x42, 0xF2)_
+| ... | 2 | | Offset
+| ... | 2 | | Data size
+|===
+
 ==== Activity firehose tracepoint
 
 An activity firehose tracepoint consists of:
@@ -537,7 +598,7 @@ An activity firehose tracepoint consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown*
+| 0 | 1 | | Log activity type
 | 1 | 1 | | Log type +
 See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
 | 2 | 2 | | Flags +
@@ -548,6 +609,7 @@ See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
 Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
+4+| _Log type != 0x3 is set_
 | 24 | 4 | | [yellow-background]*Unknown (activity identifier)*
 | 28 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
 4+| _Flags 0x0010 is set_
@@ -560,10 +622,17 @@ Contains the delta relative to the base continuous time in the <<tracev3_filehos
 | ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
 4+|
 | ... | 4 | | [yellow-background]*Unknown (Message string reference)*
+4+| _Formatter Flags_
+4+| _Flag 0x0020 is set_
+| ... | 2 | | Large offset data
+4+| _Flag 0x000C is set_
+| ... | 2 | | Large shared cache
 4+| _Flags 0x0002 and 0x0008 are set_
 | ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
-4+| _Flags 0x0008 is set_
-| ... | 16 | | [yellow-background]*Unknown (uuid)*
+4+| _Flags 0x0004 and 0x0020 are set_
+| ... | 2 | | Large offset data
+4+| _Flag 0x000A is set_
+| ... | 16 | | UUID
 4+|
 | ... | ... | | [yellow-background]*Unknown (data?)*
 4+| _End of data_
@@ -592,15 +661,22 @@ Contains the delta relative to the base continuous time in the <<tracev3_filehos
 | ... | 4 | | [yellow-background]*Unknown (activity identifier)*
 | ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
 4+| _Flags 0x0100 is set_
-| ... | 2 | | Private strings offset
+| ... | 2 | | Private strings offset +
 Contains the offset relative to start of the private strings in the <<tracev3_filehose_chunk,Firehose chunk>>
 | ... | 2 | | Private strings size
 4+|
 | ... | 4 | | [yellow-background]*Unknown (Message string reference)*
+4+| _Formatter Flags_
+4+| _Flag 0x0020 is set_
+| ... | 2 | | Large offset data
+4+| _Flag 0x000C is set_
+| ... | 2 | | Large shared cache
 4+| _Flags 0x0002 and 0x0008 are set_
 | ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
-4+| _Flags 0x0008 is set_
-| ... | 16 | | [yellow-background]*Unknown (uuid)*
+4+| _Flags 0x0004 and 0x0020 are set_
+| ... | 2 | | Large offset data
+4+| _Flag 0x000A is set_
+| ... | 16 | | UUID
 4+| _Flags 0x0200 is set_
 | ... | 2 | | Sub system value
 4+| _Flags 0x0400 is set_
@@ -777,8 +853,9 @@ The Oversize chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 4 | | Data reference index
-| 44 | 4 | | Size of data (to follow)
-| 48 | ... | | Data
+| 44 | 4 | | Size of public data (to follow)
+| 48 | 4 | | Size of private data (to follow)
+| 52 | ... | | Data
 |===
 
 Oversize chunks consist of data that is too large to fit into a single log record, hence it is stored in a seperate record here and referenced (by log entires in firehose).
@@ -950,9 +1027,9 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | [yellow-background]*Unknown (data offset?)*
-| 8 | 4 | | (dsc) range offset +
+| 0 | 8 | | (dsc) range offset +
 The offset is relative to the start of the file
+| 8 | 4 | | [yellow-background]*Unknown (data offset?)*
 | 12 | 4 | | (dsc) range size
 | 16 | 8 | | UUID descriptor index
 |===
