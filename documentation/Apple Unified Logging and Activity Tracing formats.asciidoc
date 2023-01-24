@@ -855,9 +855,9 @@ The Oversize chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 4 | | Data reference index
-| 44 | 4 | | Size of public data (to follow)
-| 48 | 4 | | Size of private data (to follow)
-| 52 | ... | | Data
+| 44 | 2 | | Size of public data (to follow)
+| 46 | 2 | | Size of private data (to follow)
+| 48 | Public data size + Private data size | | Data
 |===
 
 Oversize chunks consist of data that is too large to fit into a single log record, hence it is stored in a seperate record here and referenced (by log entires in firehose).
@@ -881,7 +881,7 @@ The Statedump chunk is variable of size and consists of:
 | 32 | 8 | | Continuous time
 | 40 | 8 | | Activity Id
 | 48 | 16 | | UUID
-| 64 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 3=data))*
+| 64 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 2=protobuf, 3=data))*
 | 68 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
 | 72 | 64 | | [yellow-background]*Unknown (Object type string 1)*
 | 136 | 64 | | [yellow-background]*Unknown (Object type string 2)*
