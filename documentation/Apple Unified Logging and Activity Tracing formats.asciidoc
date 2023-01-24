@@ -231,6 +231,8 @@ The chunk header is stored 64-bit aligned.
 | | |
 | 0x6003 | StateDump |
 | | |
+| 0x6004 | SimpleDump |
+| | |
 | 0x600b | Catalog |
 | | |
 | 0x600d | ChunkSet |
@@ -886,6 +888,35 @@ The Statedump chunk is variable of size and consists of:
 | 200 | 64 | | [yellow-background]*Unknown (Name)*
 | 264 | ... | | [yellow-background]*Unknown (Data)*
 |===
+
+=== Simpledump chunk
+
+The Simpledump chunk is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Chunk header (tracev3_chunk_preamble)_
+| 0 | 4 | 0x6003 | Chunk tag (tag)
+| 4 | 4 | | Chunk sub tag (subtag)
+| 8 | 8 | | Chunk data size (length)
+4+| _Chunk data (tracev3_chunk_statedump)_
+| 16 | 8 | | First number in proc_id #@#
+| 24 | 8 | | Second number in proc_id #@#
+| 32 | 8 | | Continuous time
+| 40 | 8 | | Thread Id
+| 48 | 4 | | Unknown (offset?)
+| 52 | 2 | | Unknown (TTL?)
+| 54 | 2 | | Unknown (type?)
+| 56 | 16 | | Sender UUID
+| 72 | 16 | | DSC UUID
+| 88 | 4 | | Unknown (number of message strings?)
+| 92 | 4 | | Size of subsystem strings
+| 96 | 4 | | Size of message strings
+| 100 | Subsystem string size | | Subsystem String
+| ... | Message string size | | Message String
+|===
+
 
 === Notes
 
