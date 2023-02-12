@@ -1,6 +1,6 @@
 # Script to set up tests on AppVeyor Windows.
 
-$Dependencies = "PyYAML dfdatetime dtfabric libfwsi libgzipf liblnk libolecf libregf lz4"
+$Dependencies = "PyYAML dfdatetime dtfabric libfwps libfwsi libgzipf liblnk libolecf libregf lz4"
 $Dependencies = ${Dependencies} -split " "
 
 $Output = Invoke-Expression -Command "git clone https://github.com/log2timeline/l2tdevtools.git ..\l2tdevtools 2>&1"

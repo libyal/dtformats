@@ -62,21 +62,33 @@ def Main():
 
   jump_list_file.Open(options.source)
 
+  jump_list_entries = list(jump_list_file.GetJumpListEntries())
+
   print('Windows Jump List information:')
 
-  number_of_entries = len(jump_list_file.entries)
+  number_of_entries = len(jump_list_entries)
   print(f'Number of entries:\t\t{number_of_entries:d}')
-
-  number_of_entries = len(jump_list_file.recovered_entries)
-  print(f'Number of recovered entries:\t{number_of_entries:d}')
 
   print('')
 
-  for lnk_file_entry in jump_list_file.entries:
-    print(f'LNK file entry: {lnk_file_entry.identifier:s}')
+  for jump_list_entry in jump_list_entries:
+    print(f'Entry: {jump_list_entry.identifier:s}')
 
-    for shell_item in lnk_file_entry.GetShellItems():
-      print(f'Shell item: 0x{shell_item.class_type:02x}')
+    print_header = True
+    for shell_item in jump_list_entry.GetShellItems():
+      if print_header:
+        print('\tShell items:')
+        print_header = False
+
+      print(f'\t\t0x{shell_item.class_type:02x}')
+
+    print_header = True
+    for format_identifier, property_record in jump_list_entry.GetProperties():
+      if print_header:
+        print('\tProperties:')
+        print_header = False
+
+      print(f'\t\t{{{format_identifier:s}}}/{property_record.entry_type:d}')
 
     print('')
 
