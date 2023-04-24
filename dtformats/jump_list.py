@@ -7,6 +7,7 @@
 import logging
 import os
 
+import pyfwps
 import pyfwsi
 import pylnk
 import pyolecf
@@ -16,28 +17,44 @@ from dtformats import data_range
 from dtformats import errors
 
 
-class LNKFileEntry(object):
-  """Windows Shortcut (LNK) file entry.
+class JumpListEntry(object):
+  """Jump list entry.
 
   Attributes:
-    data_size (int): size of the LNK file entry data.
-    identifier (str): LNK file entry identifier.
+    identifier (str): identifier.
+    lnk_file (pylnk.file): LNK file.
   """
 
   def __init__(self, identifier):
-    """Initializes the LNK file entry object.
+    """Initializes the jump list entry.
 
     Args:
-      identifier (str): LNK file entry identifier.
+      identifier (str): identifier.
     """
-    super(LNKFileEntry, self).__init__()
-    self._lnk_file = pylnk.file()
+    super(JumpListEntry, self).__init__()
     self.identifier = identifier
-    self.data_size = 0
+    self.lnk_file = None
 
-  def Close(self):
-    """Closes the LNK file entry."""
-    self._lnk_file.close()
+  def __del__(self):
+    """Destroys the jump list entry."""
+    if self.lnk_file:
+      self.lnk_file.close()
+      self.lnk_file = None
+
+  def GetProperties(self):
+    """Retrieves the propertirs.
+
+    Yields:
+      tuple[str, pyfwps.record]: property set identifier and property record.
+    """
+    for lnk_data_block in iter(self.lnk_file.data_blocks):
+      if lnk_data_block.signature == 0xa0000009:
+        fwps_store = pyfwps.store()
+        fwps_store.copy_from_byte_stream(lnk_data_block.data)
+
+        for fwps_set in iter(fwps_store.sets):
+          for fwps_record in iter(fwps_set.records):
+            yield fwps_set.identifier, fwps_record
 
   def GetShellItems(self):
     """Retrieves the shell items.
@@ -45,36 +62,26 @@ class LNKFileEntry(object):
     Yields:
       pyfswi.item: shell item.
     """
-    if self._lnk_file.link_target_identifier_data:  # pylint: disable=using-constant-test
-      shell_item_list = pyfwsi.item_list()
-      shell_item_list.copy_from_byte_stream(
-          self._lnk_file.link_target_identifier_data)
+    if self.lnk_file.link_target_identifier_data:  # pylint: disable=using-constant-test
+      fwsi_item_list = pyfwsi.item_list()
+      fwsi_item_list.copy_from_byte_stream(
+          self.lnk_file.link_target_identifier_data)
 
-      for shell_item in iter(shell_item_list.items):
-        yield shell_item
+      yield from iter(fwsi_item_list.items)
 
-  def Open(self, file_object):
-    """Opens the LNK file entry.
+  def ReadFileObject(self, file_object):
+    """Reads the LNK file from a file-like object.
 
     Args:
       file_object (file): file-like object that contains the LNK file
           entry data.
     """
-    self._lnk_file.open_file_object(file_object)
-
-    # We cannot trust the file size in the LNK data so we get the last offset
-    # that was read instead. Because of DataRange the offset will be relative
-    # to the start of the LNK data.
-    self.data_size = file_object.get_offset()
+    self.lnk_file = pylnk.file()
+    self.lnk_file.open_file_object(file_object)
 
 
 class AutomaticDestinationsFile(data_format.BinaryDataFile):
-  """Automatic Destinations Jump List (.automaticDestinations-ms) file.
-
-  Attributes:
-    entries (list[LNKFileEntry]): LNK file entries.
-    recovered_entries (list[LNKFileEntry]): recovered LNK file entries.
-  """
+  """Automatic Destinations Jump List (.automaticDestinations-ms) file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
@@ -126,8 +133,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     super(AutomaticDestinationsFile, self).__init__(
         debug=debug, output_writer=output_writer)
     self._format_version = None
-    self.entries = []
-    self.recovered_entries = []
+    self._olecf_file = None
 
   def _FormatIntegerAsPathSize(self, integer):
     """Formats an integer as a path size.
@@ -141,26 +147,31 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     number_of_bytes = integer * 2
     return f'{integer:d} characters ({number_of_bytes:d} bytes)'
 
-  def _ReadDestList(self, olecf_file):
+  def _ReadDestList(self, root_item):
     """Reads the DestList stream.
 
     Args:
-      olecf_file (pyolecf.file): OLECF file.
+      root_item (pyolecf.item): OLECF root item.
 
     Raises:
-      ParseError: if the DestList stream is missing.
+      ParseError: if the root item or DestList stream is missing.
     """
-    olecf_item = olecf_file.root_item.get_sub_item_by_name('DestList')
+    if not root_item:
+      raise errors.ParseError('Missing OLECF root item')
+
+    olecf_item = root_item.get_sub_item_by_name('DestList')
     if not olecf_item:
       raise errors.ParseError('Missing DestList stream.')
 
-    self._ReadDestListHeader(olecf_item)
+    # The DestList stream can be of size 0 if the Jump List is empty.
+    if olecf_item.size > 0:
+      self._ReadDestListHeader(olecf_item)
 
-    stream_offset = olecf_item.get_offset()
-    stream_size = olecf_item.get_size()
-    while stream_offset < stream_size:
-      entry_size = self._ReadDestListEntry(olecf_item, stream_offset)
-      stream_offset += entry_size
+      stream_offset = olecf_item.get_offset()
+      stream_size = olecf_item.get_size()
+      while stream_offset < stream_size:
+        entry_size = self._ReadDestListEntry(olecf_item, stream_offset)
+        stream_offset += entry_size
 
   def _ReadDestListEntry(self, olecf_item, stream_offset):
     """Reads a DestList stream entry.
@@ -179,9 +190,9 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       data_type_map = self._GetDataTypeMap('dest_list_entry_v1')
       description = 'dest list entry v1'
 
-    elif self._format_version >= 3:
-      data_type_map = self._GetDataTypeMap('dest_list_entry_v3')
-      description = 'dest list entry v3'
+    elif self._format_version >= 2:
+      data_type_map = self._GetDataTypeMap('dest_list_entry_v2')
+      description = 'dest list entry v2'
 
     dest_list_entry, entry_data_size = self._ReadStructureFromFileObject(
         olecf_item, stream_offset, data_type_map, description)
@@ -211,31 +222,31 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           dest_list_header, self._DEBUG_INFO_DEST_LIST_HEADER)
 
-    if dest_list_header.format_version not in (1, 3, 4):
+    if dest_list_header.format_version not in (1, 2, 3, 4):
       raise errors.ParseError(
           f'Unsupported format version: {dest_list_header.format_version:d}')
 
     self._format_version = dest_list_header.format_version
 
-  def _ReadLNKFile(self, olecf_item):
-    """Reads a LNK file.
+  def _ReadJumpListEntry(self, olecf_item):
+    """Reads a jump list entry.
 
     Args:
       olecf_item (pyolecf.item): OLECF item.
 
     Returns:
-      LNKFileEntry: a LNK file entry.
+      JumpListEntry: a jump list entry.
 
     Raises:
-      ParseError: if the LNK file cannot be read.
+      ParseError: if the jump list entry cannot be read.
     """
     if self._debug:
       self._DebugPrintText(f'Reading LNK file from stream: {olecf_item.name:s}')
 
-    lnk_file_entry = LNKFileEntry(olecf_item.name)
+    jump_list_entry = JumpListEntry(olecf_item.name)
 
     try:
-      lnk_file_entry.Open(olecf_item)
+      jump_list_entry.ReadFileObject(olecf_item)
     except IOError as exception:
       raise errors.ParseError((
           f'Unable to parse LNK file from stream: {olecf_item.name:s} '
@@ -244,21 +255,30 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintText('\n')
 
-    return lnk_file_entry
+    return jump_list_entry
 
-  def _ReadLNKFiles(self, olecf_file):
-    """Reads the LNK files.
+  def Close(self):
+    """Closes an Automatic Destinations Jump List file.
 
-    Args:
-      olecf_file (pyolecf.file): OLECF file.
+    Raises:
+      IOError: if the file is not opened.
+      OSError: if the file is not opened.
     """
-    for olecf_item in olecf_file.root_item.sub_items:
-      if olecf_item.name == 'DestList':
-        continue
+    if self._olecf_file:
+      self._olecf_file.close()
+      self._olecf_file = None
 
-      lnk_file_entry = self._ReadLNKFile(olecf_item)
-      if lnk_file_entry:
-        self.entries.append(lnk_file_entry)
+    super(AutomaticDestinationsFile, self).Close()
+
+  def GetJumpListEntries(self):
+    """Retrieves jump list entries.
+
+    Yields:
+      JumpListEntry: a jump list entry.
+    """
+    for olecf_item in iter(self._olecf_file.root_item.sub_items):  # pylint: disable=no-member
+      if olecf_item.name != 'DestList':
+        yield self._ReadJumpListEntry(olecf_item)
 
   def ReadFileObject(self, file_object):
     """Reads an Automatic Destinations Jump List file-like object.
@@ -272,21 +292,13 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     olecf_file = pyolecf.file()
     olecf_file.open_file_object(file_object)
 
-    try:
-      self._ReadDestList(olecf_file)
-      self._ReadLNKFiles(olecf_file)
+    self._ReadDestList(olecf_file.root_item)
 
-    finally:
-      olecf_file.close()
+    self._olecf_file = olecf_file
 
 
 class CustomDestinationsFile(data_format.BinaryDataFile):
-  """Custom Destinations Jump List (.customDestinations-ms) file.
-
-  Attributes:
-    entries (list[LNKFileEntry]): LNK file entries.
-    recovered_entries (list[LNKFileEntry]): recovered LNK file entries.
-  """
+  """Custom Destinations Jump List (.customDestinations-ms) file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
@@ -315,8 +327,6 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     """
     super(CustomDestinationsFile, self).__init__(
         debug=debug, output_writer=output_writer)
-    self.entries = []
-    self.recovered_entries = []
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
@@ -388,27 +398,27 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
       self._DebugPrintText('\n')
 
-  def _ReadLNKFile(self, file_object):
-    """Reads a LNK file.
+  def _ReadJumpListEntry(self, file_object):
+    """Reads a jump list entry.
 
     Args:
       file_object (file): file-like object.
 
     Returns:
-      LNKFileEntry: a LNK file entry.
+      JumpListEntry: a jump list entry.
 
     Raises:
-      ParseError: if the LNK file cannot be read.
+      ParseError: if the jump list entry cannot be read.
     """
     file_offset = file_object.tell()
     if self._debug:
       self._DebugPrintText(
           f'Reading LNK file at offset: 0x{file_offset:08x}\n')
 
-    lnk_file_entry = LNKFileEntry(f'0x{file_offset:08x}')
+    jump_list_entry = JumpListEntry(f'0x{file_offset:08x}')
 
     try:
-      lnk_file_entry.Open(file_object)
+      jump_list_entry.ReadFileObject(file_object)
     except IOError as exception:
       raise errors.ParseError((
           f'Unable to parse LNK file at offset: 0x{file_offset:08x} '
@@ -417,29 +427,29 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintText('\n')
 
-    return lnk_file_entry
+    return jump_list_entry
 
-  def _ReadLNKFiles(self, file_object):
-    """Reads the LNK files.
+  def GetJumpListEntries(self):
+    """Retrieves jump list entries.
 
-    Args:
-      file_object (file): file-like object.
+    Yields:
+      JumpListEntry: a jump list entry.
 
     Raises:
-      ParseError: if the LNK files cannot be read.
+      ParseError: if the jump list entries cannot be read.
     """
-    file_offset = file_object.tell()
+    file_offset = self._file_object.tell()
     remaining_file_size = self._file_size - file_offset
     data_type_map = self._GetDataTypeMap('custom_entry_header')
 
-    # The Custom Destination file does not have a unique signature in
-    # the file header that is why we use the first LNK class identifier (GUID)
-    # as a signature.
+    # The Custom Destination file does not have a unique signature in the file
+    # header that is why we use the first LNK class identifier (GUID) as
+    # a signature.
     first_guid_checked = False
     while remaining_file_size > 4:
       try:
         entry_header, _ = self._ReadStructureFromFileObject(
-            file_object, file_offset, data_type_map, 'entry header')
+            self._file_object, file_offset, data_type_map, 'entry header')
 
       except errors.ParseError as exception:
         error_message = (
@@ -458,27 +468,31 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         if not first_guid_checked:
           raise errors.ParseError(error_message)
 
-        file_object.seek(-16, os.SEEK_CUR)
-        self._ReadFileFooter(file_object)
+        self._file_object.seek(-16, os.SEEK_CUR)
+        self._ReadFileFooter(self._file_object)
 
-        file_object.seek(-4, os.SEEK_CUR)
+        self._file_object.seek(-4, os.SEEK_CUR)
         break
 
       first_guid_checked = True
       file_offset += 16
       remaining_file_size -= 16
 
-      lnk_file_object = data_range.DataRange(
-          file_object, data_offset=file_offset, data_size=remaining_file_size)
+      data_range_file_object = data_range.DataRange(
+          self._file_object, data_offset=file_offset,
+          data_size=remaining_file_size)
 
-      lnk_file_entry = self._ReadLNKFile(lnk_file_object)
-      if lnk_file_entry:
-        self.entries.append(lnk_file_entry)
+      yield self._ReadJumpListEntry(data_range_file_object)
 
-      file_offset += lnk_file_entry.data_size
-      remaining_file_size -= lnk_file_entry.data_size
+      # We cannot trust the file size in the LNK data so we get the last offset
+      # that was read instead. Because of DataRange the offset will be relative
+      # to the start of the LNK data.
+      data_size = data_range_file_object.get_offset()
 
-      file_object.seek(file_offset, os.SEEK_SET)
+      file_offset += data_size
+      remaining_file_size -= data_size
+
+      self._file_object.seek(file_offset, os.SEEK_SET)
 
   def ReadFileObject(self, file_object):
     """Reads a Custom Destinations Jump List file-like object.
@@ -490,14 +504,3 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       ParseError: if the file cannot be read.
     """
     self._ReadFileHeader(file_object)
-    self._ReadLNKFiles(file_object)
-
-    file_offset = file_object.tell()
-    if file_offset < self._file_size - 4:
-      # TODO: recover LNK files
-      # * scan for LNK GUID and run _ReadLNKFiles on remaining data.
-      if self._debug:
-        self._DebugPrintText('Detected trailing data\n')
-        self._DebugPrintText('\n')
-
-    self._ReadFileFooter(file_object)

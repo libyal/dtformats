@@ -13,12 +13,12 @@ from dtformats import jump_list
 from tests import test_lib
 
 
-class LNKFileEntryTest(test_lib.BaseTestCase):
-  """Windows Shortcut (LNK) file entry tests."""
+class JumpListEntryTest(test_lib.BaseTestCase):
+  """Jump list entry tests."""
 
   def testOpenClose(self):
     """Tests the Open and Close functions."""
-    lnk_file_entry = jump_list.LNKFileEntry('test')
+    lnk_file_entry = jump_list.JumpListEntry('test')
 
     # TODO: implement.
     _ = lnk_file_entry
@@ -36,49 +36,59 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
 
   def testReadDestList(self):
     """Tests the _ReadDestList function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
-
     test_file_path = self._GetTestFilePath([
         '1b4dd67f29cb1962.automaticDestinations-ms'])
     self._SkipIfPathNotExists(test_file_path)
+
+    output_writer = test_lib.TestOutputWriter()
+    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
 
     with open(test_file_path, 'rb') as file_object:
       olecf_file = pyolecf.file()
       olecf_file.open_file_object(file_object)
 
       try:
-        test_file._ReadDestList(olecf_file)
+        test_file._ReadDestList(olecf_file.root_item)
 
       finally:
         olecf_file.close()
 
   # TODO: add tests for _ReadDestListEntry.
   # TODO: add tests for _ReadDestListHeader.
-  # TODO: add tests for _ReadLNKFile.
-  # TODO: add tests for _ReadLNKFiles.
 
-  def testReadFileObjectOnV1File(self):
-    """Tests the ReadFileObject function on a format version 1 file."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
-
+  def testGetJumpListEntriesOnV1File(self):
+    """Tests the GetJumpListEntries function on a format version 1 file."""
     test_file_path = self._GetTestFilePath([
         '1b4dd67f29cb1962.automaticDestinations-ms'])
     self._SkipIfPathNotExists(test_file_path)
 
-    test_file.Open(test_file_path)
-
-  def testReadFileObjectOnV3File(self):
-    """Tests the ReadFileObject function on a format version 3 file."""
     output_writer = test_lib.TestOutputWriter()
     test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
+    test_file.Open(test_file_path)
 
+    try:
+      jump_list_entries = list(test_file.GetJumpListEntries())
+    finally:
+      test_file.Close()
+
+    self.assertEqual(len(jump_list_entries), 11)
+
+  def testGetJumpListEntriesOnV3File(self):
+    """Tests the GetJumpListEntries function on a format version 3 file."""
     test_file_path = self._GetTestFilePath([
         '9d1f905ce5044aee.automaticDestinations-ms'])
     self._SkipIfPathNotExists(test_file_path)
 
+    output_writer = test_lib.TestOutputWriter()
+    test_file = jump_list.AutomaticDestinationsFile(output_writer=output_writer)
     test_file.Open(test_file_path)
+
+    try:
+      jump_list_entries = list(test_file.GetJumpListEntries())
+    finally:
+      test_file.Close()
+
+    self.assertEqual(len(jump_list_entries), 2)
 
 
 class CustomDestinationsFileTest(test_lib.BaseTestCase):
@@ -90,19 +100,23 @@ class CustomDestinationsFileTest(test_lib.BaseTestCase):
   # TODO: add tests for _DebugPrintFileHeader.
   # TODO: add tests for _ReadFileFooter.
   # TODO: add tests for _ReadFileHeader.
-  # TODO: add tests for _ReadLNKFile.
-  # TODO: add tests for _ReadLNKFiles.
 
-  def testReadFileObject(self):
-    """Tests the ReadFileObject function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = jump_list.CustomDestinationsFile(output_writer=output_writer)
-
+  def testGetJumpListEntries(self):
+    """Tests the GetJumpListEntries function."""
     test_file_path = self._GetTestFilePath([
         '5afe4de1b92fc382.customDestinations-ms'])
     self._SkipIfPathNotExists(test_file_path)
 
+    output_writer = test_lib.TestOutputWriter()
+    test_file = jump_list.CustomDestinationsFile(output_writer=output_writer)
     test_file.Open(test_file_path)
+
+    try:
+      jump_list_entries = list(test_file.GetJumpListEntries())
+    finally:
+      test_file.Close()
+
+    self.assertEqual(len(jump_list_entries), 9)
 
 
 if __name__ == '__main__':
