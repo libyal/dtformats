@@ -96,12 +96,14 @@ The timesync sub directory can contain one or more files with the extension
 <<timesync_database_file_format,timesync database file format>>
 
 ==== logd.*.log
+
 The logd.log files contain logging messages from the file logging daemon itself. They are in the single text line format:
 `timestamp logd[pid]: message`
 e.g
 `2022-10-23 19:15:32-0700 logd[25]: Unable to parse os_log_simple buffer. Error: 94 Received: 89`
 
 ==== logdata.statistics.*.txt
+
 The logdata.statistics files contain various statistics and metrics kept by the logging daemon, about both individual tracev3 files and the operations of the daemon itself.
 
 These are delimited by headers of the form `--- !logd <type> record` where type is one of:
@@ -125,6 +127,7 @@ flags  : 0x3
 ** List of UUIDs that have been purged
 
 ==== shutdown.log
+
 shutdown.log contains a period list of the clients that still exist while the system is attempting to shut down.
 The logs are of the form:
 ```
@@ -570,6 +573,7 @@ Contains the delta relative to the base continuous time in the <<tracev3_filehos
 |===
 
 ==== Firehose tracepoint data
+
 Data items inside the firehose tracepoint consist of the following structure:
 
 [cols="1,1,1,5",options="header"]
