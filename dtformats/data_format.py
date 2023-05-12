@@ -365,6 +365,25 @@ class BinaryDataFormat(object):
 
     return f'{date_time_string:s} UTC'
 
+  def _FormatIntegerAsPosixTimeInNanoseconds(self, integer):
+    """Formats an integer as a POSIX date and time in nanoseconds value.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a POSIX date and time in nanoseconds value.
+    """
+    if integer == 0:
+      return 'Not set (0)'
+
+    date_time = dfdatetime_posix_time.PosixTimeInNanoseconds(timestamp=integer)
+    date_time_string = date_time.CopyToDateTimeString()
+    if not date_time_string:
+      return f'0x{integer:08x}'
+
+    return f'{date_time_string:s} UTC'
+
   def _FormatIntegerAsOffset(self, integer):
     """Formats an integer as an offset.
 

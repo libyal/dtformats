@@ -60,6 +60,10 @@ def Main():
     unified_logging_file = unified_logging.UUIDTextFile(
         debug=options.debug, output_writer=output_writer)
 
+  elif file_signature == b'\xb0\xbb\x30\x00':
+    unified_logging_file = unified_logging.TimesyncFile(
+        debug=options.debug, output_writer=output_writer)
+
   else:
     unified_logging_file = unified_logging.TraceV3File(
         debug=options.debug, output_writer=output_writer)

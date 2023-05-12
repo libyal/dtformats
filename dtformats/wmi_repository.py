@@ -3656,7 +3656,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       object_page = self._GetObjectsPageByMappedPageNumber(
           mapped_page_number, is_data_page)
       if not object_page:
-        errors.ParseError((
+        raise errors.ParseError((
             f'Unable to read objects record: {record_identifier:d} data '
             f'segment: {data_segment_index:d}.'))
 
@@ -3672,7 +3672,7 @@ class CIMRepository(data_format.BinaryDataFormat):
       data_segment = self._objects_data_file.ReadObjectRecordDataSegment(
           object_page, data_offset, data_size)
       if not data_segment:
-        errors.ParseError((
+        raise errors.ParseError((
             f'Unable to read objects record: {record_identifier:d} data '
             f'segment: {data_segment_index:d}.'))
 

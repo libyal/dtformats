@@ -291,40 +291,34 @@ class DSCFile(data_format.BinaryDataFile):
 class TimesyncFile(data_format.BinaryDataFile):
   """Timesync file."""
 
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
       'unified_logging.yaml')
 
   _DEBUG_INFO_BOOT_RECORD = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
+      ('size', 'Size', '_FormatIntegerAsDecimal'),
       ('unknown', 'Unknown', '_FormatIntegerAsHexadecimal'),
       ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
       ('timebase_numerator', 'Timebase numerator',
        '_FormatIntegerAsHexadecimal'),
       ('timebase_denominator', 'Timebase denominator',
        '_FormatIntegerAsHexadecimal'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
       ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
       ('daylight_saving_flag', 'Daylight saving flag',
        '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_SYNC_RECORD = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
+      ('size', 'Size', '_FormatIntegerAsDecimal'),
       ('unknown', 'Unknown', '_FormatIntegerAsHexadecimal'),
       ('kernel_time', 'Kernel Time', '_FormatIntegerAsDecimal'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
       ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
       ('daylight_saving_flag', 'Daylight saving flag',
        '_FormatIntegerAsDecimal')]
-
-  def __init__(self, debug=False, output_writer=None):
-    """Initializes a timesync file.
-
-    Args:
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(TimesyncFile, self).__init__(
-        debug=debug, output_writer=output_writer)
 
   def _ReadRecord(self, file_object, file_offset):
     """Reads a boot or sync record.
@@ -341,30 +335,27 @@ class TimesyncFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    signature_bytes = self._ReadData(file_object, file_offset, 4, 'signature')
-    signature = int.from_bytes(signature_bytes, 'big')
+    signature = self._ReadData(file_object, file_offset, 2, 'signature')
 
-    # Boot record
-    if signature == 0xb0bb3000:
+    if signature == b'\xb0\xbb':
       data_type_map = self._GetDataTypeMap('timesync_boot_record')
-      record_type = 'boot record'
-      record_debug_info = self._DEBUG_INFO_BOOT_RECORD
+      description = 'boot record'
+      debug_info = self._DEBUG_INFO_BOOT_RECORD
 
-    # Sync record
-    elif signature == 0x54732000:
+    elif signature == b'Ts':
       data_type_map = self._GetDataTypeMap('timesync_sync_record')
-      record_type = 'sync record'
-      record_debug_info = self._DEBUG_INFO_BOOT_RECORD
+      description = 'sync record'
+      debug_info = self._DEBUG_INFO_BOOT_RECORD
 
     else:
-      raise errors.ParseError(
-          'Unsupported signature: {0:x}.'.format(signature))
+      signature = repr(signature)
+      raise errors.ParseError(f'Unsupported signature: {signature:s}.')
 
     record, record_size = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, record_type)
+        file_object, file_offset, data_type_map, description)
 
     if self._debug:
-      self._DebugPrintStructureObject(record, record_debug_info)
+      self._DebugPrintStructureObject(record, debug_info)
 
     file_offset += record_size
 
