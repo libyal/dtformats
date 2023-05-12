@@ -204,6 +204,72 @@ members:
 - name: unknown1
   data_type: uint32
 ---
+name: tracev3_header_chunk
+type: structure
+description: TraceV3 header chunk.
+attributes:
+  byte_order: little-endian
+members:
+- name: timebase_numerator
+  data_type: uint32
+- name: timebase_denominator
+  data_type: uint32
+- name: continuous_time
+  data_type: uint64
+- name: unknown_time
+  data_type: uint64
+- name: unknown1
+  data_type: uint32
+- name: timezone_offset
+  data_type: uint32
+- name: daylight_savings_flag
+  data_type: uint32
+- name: unknown_flags
+  data_type: uint32
+- name: subchunk_continuous_tag
+  data_type: uint32
+- name: subchunk_continuous_tag_size
+  data_type: uint32
+- name: continuous_time2
+  data_type: uint64
+- name: subchunk_systeminfo_tag
+  data_type: uint32
+- name: subchunk_systeminfo_size
+  data_type: uint32
+- name: unknown2
+  data_type: uint32
+- name: unknown3
+  data_type: uint32
+- name: build_identifier
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 16
+- name: hardware_identifier
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 32
+- name: subchunk_generation_tag
+  data_type: uint32
+- name: subchunk_generation_size
+  data_type: uint32
+- name: boot_identifier
+  data_type: uuid_be
+- name: logd_process_identifier
+  data_type: uint32
+- name: logd_exit_code
+  data_type: uint32
+- name: subchunk_timezone_tag
+  data_type: uint32
+- name: subchunk_timezone_size
+  data_type: uint32
+- name: timezone_path
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 48
+---
 name: tracev3_lz4_block_header
 type: structure
 description: TraceV3 LZ4 block header.
