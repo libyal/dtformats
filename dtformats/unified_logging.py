@@ -288,6 +288,103 @@ class DSCFile(data_format.BinaryDataFile):
       dsc_range.uuid = dsc_uuid.sender_identifier
 
 
+class TimesyncFile(data_format.BinaryDataFile):
+  """Timesync file."""
+
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'unified_logging.yaml')
+
+  _DEBUG_INFO_BOOT_RECORD = [
+      ('signature', 'Signature', '_FormatStreamAsSignature'),
+      ('unknown', 'Unknown', '_FormatIntegerAsHexadecimal'),
+      ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
+      ('timebase_numerator', 'Timebase numerator',
+       '_FormatIntegerAsHexadecimal'),
+      ('timebase_denominator', 'Timebase denominator',
+       '_FormatIntegerAsHexadecimal'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
+      ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
+      ('daylight_saving_flag', 'Daylight saving flag',
+       '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_SYNC_RECORD = [
+      ('signature', 'Signature', '_FormatStreamAsSignature'),
+      ('unknown', 'Unknown', '_FormatIntegerAsHexadecimal'),
+      ('kernel_time', 'Kernel Time', '_FormatIntegerAsDecimal'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
+      ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
+      ('daylight_saving_flag', 'Daylight saving flag',
+       '_FormatIntegerAsDecimal')]
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes a timesync file.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(TimesyncFile, self).__init__(
+        debug=debug, output_writer=output_writer)
+
+  def _ReadRecord(self, file_object, file_offset):
+    """Reads a boot or sync record.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the start of the record relative to the start
+          of the file.
+
+    Returns:
+      record: record object
+      int: offset of the end of the record relative to the start of the file.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    signature_bytes = self._ReadData(file_object, file_offset, 4, 'signature')
+    signature = int.from_bytes(signature_bytes, 'big')
+
+    # Boot record
+    if signature == 0xb0bb3000:
+      data_type_map = self._GetDataTypeMap('timesync_boot_record')
+      record_type = 'boot record'
+      record_debug_info = self._DEBUG_INFO_BOOT_RECORD
+
+    # Sync record
+    elif signature == 0x54732000:
+      data_type_map = self._GetDataTypeMap('timesync_sync_record')
+      record_type = 'sync record'
+      record_debug_info = self._DEBUG_INFO_BOOT_RECORD
+
+    else:
+      raise errors.ParseError(
+          'Unsupported signature: {0:x}.'.format(signature))
+
+    record, record_size = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, record_type)
+
+    if self._debug:
+      self._DebugPrintStructureObject(record, record_debug_info)
+
+    file_offset += record_size
+
+    return record, file_offset
+
+  def ReadFileObject(self, file_object):
+    """Reads a timesync file-like object.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    file_offset = 0
+
+    while file_offset < self._file_size:
+      _, file_offset = self._ReadRecord(file_object, file_offset)
+
+
 class TraceV3File(data_format.BinaryDataFile):
   """Apple Unified Logging and Activity Tracing (tracev3) file."""
 

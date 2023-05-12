@@ -137,6 +137,54 @@ members:
 - name: number_of_uuids
   data_type: uint32
 ---
+name: timesync_boot_record
+type: structure
+description: Timesync boot record.
+attributes:
+  byte_order: little-endian
+members:
+- name: signature
+  type: stream
+  element_data_type: byte
+  number_of_elements: 2
+- name: size
+  data_type: uint16
+- name: unknown
+  data_type: uint32
+- name: boot_identifier
+  data_type: uuid_be
+- name: timebase_numerator
+  data_type: uint32
+- name: timebase_denominator
+  data_type: uint32
+- name: timestamp
+  data_type: uint64
+- name: time_zone_offset
+  data_type: uint32
+- name: daylight_saving_flag
+  data_type: uint32
+---
+name: timesync_sync_record
+type: structure
+description: Timesync sync record.
+attributes:
+  byte_order: little-endian
+members:
+- name: signature
+  type: stream
+  element_data_type: byte
+  number_of_elements: 4
+- name: unknown
+  data_type: uint32
+- name: kernel_time
+  data_type: uint64
+- name: timestamp
+  data_type: uint64
+- name: time_zone_offset
+  data_type: uint32
+- name: daylight_saving_flag
+  data_type: uint32
+---
 name: tracev3_chunk_header
 type: structure
 description: TraceV3 chunk header.
