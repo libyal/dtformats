@@ -982,7 +982,7 @@ Signed integer that contains the number of nanoseconds since January 1, 1970 00:
 |===
 
 [NOTE]
-Timestamp appears to be stored in UTC but the log tool shows a time zone
+Timestamp appears to be stored in UTC but the log tool shows the local time zone.
 
 ==== timesync sync record
 
@@ -1004,7 +1004,7 @@ Signed integer that contains the number of nanoseconds since January 1, 1970 00:
 |===
 
 [NOTE]
-Timestamp appears to be stored in UTC but log tool shows time zone
+Timestamp appears to be stored in UTC but the log tool shows the local time zone.
 
 === Notes
 

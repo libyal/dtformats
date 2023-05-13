@@ -288,18 +288,21 @@ class DSCFile(data_format.BinaryDataFile):
       dsc_range.uuid = dsc_uuid.sender_identifier
 
 
-class TimesyncFile(data_format.BinaryDataFile):
-  """Timesync file."""
+class TimesyncDatabaseFile(data_format.BinaryDataFile):
+  """Timesync database file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
       'unified_logging.yaml')
 
+  _BOOT_RECORD_SIGNATURE = b'\xb0\xbb'
+  _SYNC_RECORD_SIGNATURE = b'Ts'
+
   _DEBUG_INFO_BOOT_RECORD = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('size', 'Size', '_FormatIntegerAsDecimal'),
-      ('unknown', 'Unknown', '_FormatIntegerAsHexadecimal'),
+      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
       ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
       ('timebase_numerator', 'Timebase numerator',
        '_FormatIntegerAsHexadecimal'),
@@ -312,13 +315,27 @@ class TimesyncFile(data_format.BinaryDataFile):
 
   _DEBUG_INFO_SYNC_RECORD = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('size', 'Size', '_FormatIntegerAsDecimal'),
-      ('unknown', 'Unknown', '_FormatIntegerAsHexadecimal'),
+      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
       ('kernel_time', 'Kernel Time', '_FormatIntegerAsDecimal'),
       ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
       ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
       ('daylight_saving_flag', 'Daylight saving flag',
        '_FormatIntegerAsDecimal')]
+
+  def __init__(self, debug=False, output_writer=None):
+    """Initializes a timezone information file.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(TimesyncDatabaseFile, self).__init__(
+        debug=debug, output_writer=output_writer)
+    self._boot_record_data_type_map = self._GetDataTypeMap(
+        'timesync_boot_record')
+    self._sync_record_data_type_map = self._GetDataTypeMap(
+        'timesync_sync_record')
 
   def _ReadRecord(self, file_object, file_offset):
     """Reads a boot or sync record.
@@ -329,37 +346,34 @@ class TimesyncFile(data_format.BinaryDataFile):
           of the file.
 
     Returns:
-      record: record object
-      int: offset of the end of the record relative to the start of the file.
+      tuple[object, int]: boot or sync record and number of bytes read.
 
     Raises:
       ParseError: if the file cannot be read.
     """
     signature = self._ReadData(file_object, file_offset, 2, 'signature')
 
-    if signature == b'\xb0\xbb':
-      data_type_map = self._GetDataTypeMap('timesync_boot_record')
+    if signature == self._BOOT_RECORD_SIGNATURE:
+      data_type_map = self._boot_record_data_type_map
       description = 'boot record'
       debug_info = self._DEBUG_INFO_BOOT_RECORD
 
-    elif signature == b'Ts':
-      data_type_map = self._GetDataTypeMap('timesync_sync_record')
+    elif signature == self._SYNC_RECORD_SIGNATURE:
+      data_type_map = self._sync_record_data_type_map
       description = 'sync record'
-      debug_info = self._DEBUG_INFO_BOOT_RECORD
+      debug_info = self._DEBUG_INFO_SYNC_RECORD
 
     else:
       signature = repr(signature)
       raise errors.ParseError(f'Unsupported signature: {signature:s}.')
 
-    record, record_size = self._ReadStructureFromFileObject(
+    record, bytes_read = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, description)
 
     if self._debug:
       self._DebugPrintStructureObject(record, debug_info)
 
-    file_offset += record_size
-
-    return record, file_offset
+    return record, bytes_read
 
   def ReadFileObject(self, file_object):
     """Reads a timesync file-like object.
@@ -373,7 +387,8 @@ class TimesyncFile(data_format.BinaryDataFile):
     file_offset = 0
 
     while file_offset < self._file_size:
-      _, file_offset = self._ReadRecord(file_object, file_offset)
+      record, _ = self._ReadRecord(file_object, file_offset)
+      file_offset += record.record_size
 
 
 class TraceV3File(data_format.BinaryDataFile):

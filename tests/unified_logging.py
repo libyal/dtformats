@@ -19,7 +19,7 @@ class DSCFileTest(test_lib.BaseTestCase):
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version2'])
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version2'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -37,7 +37,8 @@ class DSCFileTest(test_lib.BaseTestCase):
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
     # Testing Version 1
-    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version1'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -48,7 +49,8 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(ranges[64].range_size, 3834)
 
     # Testing version 2
-    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version2'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version2'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -63,7 +65,8 @@ class DSCFileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version1'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -80,7 +83,8 @@ class DSCFileTest(test_lib.BaseTestCase):
     test_file = unified_logging.DSCFile(output_writer=output_writer)
 
     # Testing Version 1
-    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version1'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version1'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -93,7 +97,8 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(uuids[42].path, expected_path)
 
     # Testing Version 2
-    test_file_path = self._GetTestFilePath(['uuidtext', 'dsc', 'dsc-version2'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version2'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -114,26 +119,28 @@ class DSCFileTest(test_lib.BaseTestCase):
 
     # TODO: test of 8E21CAB1DCF936B49F85CF860E6F34EC currently failing.
     test_file_path = self._GetTestFilePath([
-        'uuidtext', 'dsc', 'dsc-version1'])
-        # 'uuidtext', 'dsc', '8E21CAB1DCF936B49F85CF860E6F34EC'])
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version1'])
+        # 'unified_logging', 'uuidtext', 'dsc',
+        # '8E21CAB1DCF936B49F85CF860E6F34EC'])
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)
     test_file.Close()
 
 
-class TimesyncFileTest(test_lib.BaseTestCase):
-  """Tests for the timesync files."""
+class TimesyncDatabaseFileTest(test_lib.BaseTestCase):
+  """Tests for the timesync database file."""
 
   # pylint: disable=protected-access
 
   def testReadFileRecord(self):
     """Tests the _ReadRecord method."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.TimesyncFile(output_writer=output_writer)
+    test_file = unified_logging.TimesyncDatabaseFile(
+        output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        'timesync', '0000000000000002.timesync'])
+        'unified_logging', 'timesync', '0000000000000002.timesync'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -141,7 +148,7 @@ class TimesyncFileTest(test_lib.BaseTestCase):
       record, _ = test_file._ReadRecord(file_object, 0)
 
       self.assertEqual(record.signature, b'\xb0\xbb')
-      self.assertEqual(record.size, 48)
+      self.assertEqual(record.record_size, 48)
       self.assertEqual(record.timebase_numerator, 125)
       self.assertEqual(record.timebase_denominator, 3)
       self.assertEqual(record.timestamp, 1541730321839294000)
@@ -151,7 +158,8 @@ class TimesyncFileTest(test_lib.BaseTestCase):
       # sync record
       record, _ = test_file._ReadRecord(file_object, 48)
 
-      self.assertEqual(record.signature, b'\x54\x73\x20\x00')
+      self.assertEqual(record.signature, b'Ts')
+      self.assertEqual(record.record_size, 32)
       self.assertEqual(record.kernel_time, 494027973)
       self.assertEqual(record.timestamp, 1541730337313716000)
       self.assertEqual(record.time_zone_offset, 480)
@@ -160,11 +168,11 @@ class TimesyncFileTest(test_lib.BaseTestCase):
   def testReadFileObject(self):
     """Tests the ReadFileObject method."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.TimesyncFile(
+    test_file = unified_logging.TimesyncDatabaseFile(
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        'timesync', '0000000000000002.timesync'])
+        'unified_logging', 'timesync', '0000000000000002.timesync'])
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)
@@ -184,7 +192,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath(['0000000000000030.tracev3'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', '0000000000000030.tracev3'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -198,7 +207,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath(['0000000000000f85.tracev3'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', '0000000000000f85.tracev3'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -226,7 +236,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     test_file = unified_logging.TraceV3File(
         debug=True, output_writer=output_writer)
 
-    test_file_path = self._GetTestFilePath(['0000000000000030.tracev3'])
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', '0000000000000030.tracev3'])
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)
@@ -244,7 +255,7 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
     test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])
+        'unified_logging', 'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
@@ -257,7 +268,7 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
         debug=True, output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
-        'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])
+        'unified_logging', 'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])
     self._SkipIfPathNotExists(test_file_path)
 
     test_file.Open(test_file_path)

@@ -60,8 +60,8 @@ def Main():
     unified_logging_file = unified_logging.UUIDTextFile(
         debug=options.debug, output_writer=output_writer)
 
-  elif file_signature == b'\xb0\xbb\x30\x00':
-    unified_logging_file = unified_logging.TimesyncFile(
+  elif file_signature in (b'\xb0\xbb\x30\x00', b'Ts\x20\x00'):
+    unified_logging_file = unified_logging.TimesyncDatabaseFile(
         debug=options.debug, output_writer=output_writer)
 
   else:

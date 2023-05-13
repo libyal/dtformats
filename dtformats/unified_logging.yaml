@@ -148,9 +148,9 @@ members:
   element_data_type: byte
   number_of_elements: 2
   value: "\xb0\xbb"
-- name: size
+- name: record_size
   data_type: uint16
-- name: unknown
+- name: unknown1
   data_type: uint32
 - name: boot_identifier
   data_type: uuid_be
@@ -176,9 +176,9 @@ members:
   element_data_type: byte
   number_of_elements: 2
   value: 'Ts'
-- name: size
+- name: record_size
   data_type: uint16
-- name: unknown
+- name: unknown1
   data_type: uint32
 - name: kernel_time
   data_type: uint64
