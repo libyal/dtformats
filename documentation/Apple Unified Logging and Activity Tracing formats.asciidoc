@@ -96,7 +96,7 @@ The timesync sub directory can contain one or more files with the extension
 .timesync. These files are stored in the
 <<timesync_database_file_format,timesync database file format>>
 
-==== logd.*.log
+==== logd.[0-9].log
 
 The logd.log files contain logging messages from the file logging daemon
 itself. They are in the single text line format:
@@ -111,7 +111,7 @@ For example:
 2022-10-23 19:15:32-0700 logd[25]: Unable to parse os_log_simple buffer. Error: 94 Received: 89
 ....
 
-==== logdata.statistics.*.txt
+==== logdata.statistics.[0-9].txt
 
 The logdata.statistics files contain various statistics and metrics kept by the
 logging daemon, about both individual tracev3 files and the operations of the
@@ -166,12 +166,12 @@ on a Mac OS system in the directory:
 
 The uuidtext directory contains the following sub directories:
 
-* `[0-9A-F][0-9A-Z]`
+* `[0-9A-F][0-9A-F]`
 * dsc
 
-=== `[0-9A-F][0-9A-Z]` sub directory
+=== `[0-9A-F][0-9A-F]` sub directory
 
-The `[0-9A-F][0-9A-Z]` sub directory contains zero or more files:
+The `[0-9A-F][0-9A-F]` sub directory contains zero or more files:
 
 * `[0-9A-F]{30}`
 
@@ -903,7 +903,7 @@ A non-activity firehose tracepoint has a signpost name reference value
 
 === Oversize chunk
 
-The Oversize chunk is variable of size and consists of:
+The oversize chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -919,16 +919,18 @@ The Oversize chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 4 | | Data reference index
-| 44 | 2 | | Size of public data (to follow)
-| 46 | 2 | | Size of private data (to follow)
+| 44 | 2 | | Size of public data
+| 46 | 2 | | Size of private data
 | 48 | Public data size + Private data size | | Data
 |===
 
-Oversize chunks consist of data that is too large to fit into a single log record, hence it is stored in a seperate record here and referenced (by log entires in firehose).
+Oversize chunks contain data that is too large to fit into a single log record,
+hence it is stored in a seperate record here and referenced (by log entries in
+firehose).
 
-=== Statedump chunk
+=== StateDump chunk
 
-The Statedump chunk is variable of size and consists of:
+The StateDump chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -944,44 +946,52 @@ The Statedump chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 8 | | Activity identifier
-| 48 | 4 | | Unknown
-| 52 | 16 | | UUID
-| 68 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 2=protobuf, 3=data))*
-| 72 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
-| 76 | 64 | | [yellow-background]*Unknown (Object type string 1)*
-| 140 | 64 | | [yellow-background]*Unknown (Object type string 2)*
-| 204 | 64 | | [yellow-background]*Unknown (Name)*
-| 268 | ... | | [yellow-background]*Unknown (Data)*
+| 48 | 16 | | [yellow-background]*Unknown identifier* +
+Contains a UUID stored in big-endian
+| 64 | 4 | | Data type
+| 68 | 4 | | Data size
+| 72 | 64 | | [yellow-background]*Unknown*
+| 136 | 64 | | [yellow-background]*Unknown*
+| 200 | 64 | | Name +
+Contains an UTF-8 formatted string with an end-of-string character
+| 264 | data size | | Data
 |===
 
-=== Simpledump chunk
+==== Data type
 
-The Simpledump chunk is variable of size and consists of:
+1=plist, 2=protobuf, 3=data
+
+=== SimpleDump chunk
+
+The SimpleDump chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 4+| _Chunk header (tracev3_chunk_preamble)_
-| 0 | 4 | 0x6003 | Chunk tag (tag)
+| 0 | 4 | 0x6004 | Chunk tag (tag)
 | 4 | 4 | | Chunk sub tag (subtag)
 | 8 | 8 | | Chunk data size (length)
-4+| _Chunk data (tracev3_chunk_statedump)_
+4+| _Chunk data (tracev3_chunk_simpledump)_
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 8 | | Second number in proc_id #@#
 | 32 | 8 | | Continuous time
-| 40 | 8 | | Thread Id
-| 48 | 4 | | Unknown (offset?)
-| 52 | 2 | | Unknown (TTL?)
-| 54 | 2 | | Unknown (type?)
-| 56 | 16 | | Sender UUID
-| 72 | 16 | | DSC UUID
-| 88 | 4 | | Unknown (number of message strings?)
-| 92 | 4 | | Size of subsystem strings
-| 96 | 4 | | Size of message strings
-| 100 | Subsystem string size | | Subsystem String
-| ... | Message string size | | Message String
+| 40 | 8 | | Thread identifier
+| 48 | 4 | | [yellow-background]*Unknown (offset?)*
+| 52 | 2 | | [yellow-background]*Unknown (TTL?)*
+| 54 | 2 | | [yellow-background]*Unknown (type?)*
+| 56 | 16 | | Sender identifier +
+Contains a UUID stored in big-endian
+| 72 | 16 | | DSC identifier +
+Contains a UUID stored in big-endian
+| 88 | 4 | | [yellow-background]*Unknown (number of message strings?)*
+| 92 | 4 | | Subsystem string size
+| 96 | 4 | | Message string size
+| 100 | subsystem string size | | Subsystem string +
+Contains an UTF-8 formatted string with an end-of-string character
+| ... | message string size | | Message string +
+Contains an UTF-8 formatted string with an end-of-string character
 |===
-
 
 === Notes
 

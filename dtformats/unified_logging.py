@@ -307,7 +307,7 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
       ('timebase_denominator', 'Timebase denominator',
        '_FormatIntegerAsHexadecimal'),
       ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
-      ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
+      ('time_zone_offset', 'Time zone offset', '_FormatIntegerAsDecimal'),
       ('daylight_saving_flag', 'Daylight saving flag',
        '_FormatIntegerAsDecimal')]
 
@@ -317,7 +317,7 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
       ('kernel_time', 'Kernel Time', '_FormatIntegerAsDecimal'),
       ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
-      ('time_zone_offset', 'Timezone offset', '_FormatIntegerAsDecimal'),
+      ('time_zone_offset', 'Time zone offset', '_FormatIntegerAsDecimal'),
       ('daylight_saving_flag', 'Daylight saving flag',
        '_FormatIntegerAsDecimal')]
 
@@ -400,8 +400,18 @@ class TraceV3File(data_format.BinaryDataFile):
   _CHUNK_TAG_FIREHOSE = 0x00006001
   _CHUNK_TAG_OVERSIZE = 0x00006002
   _CHUNK_TAG_STATEDUMP = 0x00006003
+  _CHUNK_TAG_SIMPLEDUMP = 0x00006004
   _CHUNK_TAG_CATALOG = 0x0000600b
   _CHUNK_TAG_CHUNK_SET = 0x0000600d
+
+  _CHUNK_TAG_DESCRIPTIONS = {
+      0x00001000: 'Header',
+      0x00006001: 'Firehose',
+      0x00006002: 'Oversize',
+      0x00006003: 'StateDump',
+      0x00006004: 'SimpleDump',
+      0x0000600b: 'Catalog',
+      0x0000600d: 'ChunkSet'}
 
   _DEBUG_INFO_CATALOG = [
       ('sub_system_strings_offset', 'Sub system strings offset',
@@ -421,7 +431,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('sub_system_strings', 'Sub system strings', '_FormatArrayOfStrings')]
 
   _DEBUG_INFO_CHUNK_HEADER = [
-      ('chunk_tag', 'Chunk tag', '_FormatIntegerAsHexadecimal8'),
+      ('chunk_tag', 'Chunk tag', '_FormatChunkTag'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
 
@@ -447,8 +457,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
       ('format_string_location', 'Format string location',
        '_FormatIntegerAsHexadecimal8'),
-      ('thread_identifier', 'Thread identifier',
-       '_FormatIntegerAsHexadecimal8'),
+      ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
       ('continuous_time_lower', 'Continous time (lower 32-bit)',
        '_FormatIntegerAsDecimal'),
       ('continuous_time_upper', 'Continous time (upper 16-bit)',
@@ -463,7 +472,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('unknown_time', 'Unknown time', 'FormatIntegerAsPosixTime'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('time_zone_offset', 'Timezone_offset', '_FormatIntegerAsDecimal'),
+      ('time_zone_offset', 'Time zone offset', '_FormatIntegerAsDecimal'),
       ('daylight_savings_flag', 'Daylight Savings Flag',
        '_FormatIntegerAsDecimal'),
       ('unknown_flags', 'Unknown flags', '_FormatIntegerAsHexadecimal4')]
@@ -471,7 +480,7 @@ class TraceV3File(data_format.BinaryDataFile):
   _DEBUG_INFO_HEADER_CONTINOUS_TIME_SUB_CHUNK = [
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
-      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal')]
+      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_HEADER_SYSTEM_INFORMATION_SUB_CHUNK = [
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
@@ -504,24 +513,46 @@ class TraceV3File(data_format.BinaryDataFile):
   _DEBUG_INFO_OVERSIZE_CHUNK = [
       ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
       ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal'),
-      ('data_reference_index', 'Data Reference Index',
+      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
+      ('data_reference_index', 'Data reference index',
        '_FormatIntegerAsDecimal'),
       ('data_size', 'Data Size', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_SIMPLEDUMP_CHUNK = [
+      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
+      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
+      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
+      ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
+      ('sender_identifier', 'Sender identifier', '_FormatUUIDAsString'),
+      ('dsc_identifier', 'DSC identifier', '_FormatUUIDAsString'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
+      ('subsystem_string_size', 'Subsystem string size',
+       '_FormatIntegerAsDecimal'),
+      ('message_string_size', 'Message string size', '_FormatIntegerAsDecimal'),
+      ('subsystem_string', 'Subsystem string', '_FormatString'),
+      ('message_string', 'Message string', '_FormatString')]
 
   _DEBUG_INFO_STATEDUMP_CHUNK = [
       ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
       ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal'),
+      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
       ('activity_identifier', 'Activity Identifier', '_FormatIntegerAsDecimal'),
-      ('uuid', 'UUID', '_FormatUUIDAsString'),
-      ('data_type', 'Data Type', '_FormatIntegerAsDecimal'),
-      ('data_size', 'Data Size', '_FormatIntegerAsDecimal'),
-      ('object_type_string1', 'Object Type String1', '_FormatCharacterStream'),
-      ('object_type_string2', 'Object Type String2', '_FormatCharacterStream'),
-      ('name', 'Name', '_FormatString')]
+      ('unknown3', 'Unknown3', '_FormatUUIDAsString'),
+      ('data_type', 'Data type', '_FormatIntegerAsDecimal'),
+      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
+      ('unknown4', 'Unknown4', '_FormatDataInHexadecimal'),
+      ('unknown5', 'Unknown5', '_FormatDataInHexadecimal'),
+      ('name', 'Name', '_FormatString'),
+      ('data', 'Data', '_FormatDataInHexadecimal')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a tracev3 file.
@@ -532,16 +563,20 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     super(TraceV3File, self).__init__(debug=debug, output_writer=output_writer)
 
-  def _FormatCharacterStream(self, stream):
-    """Formats a stream of byte encoded characters.
+  def _FormatChunkTag(self, integer):
+    """Formats a chunk tag.
 
     Args:
-      stream (str): string.
+      integer (int): integer.
 
     Returns:
-      str: formatted string.
+      str: integer formatted as chunk tag.
     """
-    return stream.rstrip(b'\x00')
+    description = self._CHUNK_TAG_DESCRIPTIONS.get(integer, None)
+    if description:
+      return f'0x{integer:08x} ({description:s})'
+
+    return f'0x{integer:08x}'
 
   def _FormatArrayOfStrings(self, array_of_strings):
     """Formats an array of strings.
@@ -702,10 +737,19 @@ class TraceV3File(data_format.BinaryDataFile):
             data_offset)
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_OVERSIZE:
-        self._ReadOversizeChunk(chunkset_chunk_data)
+        self._ReadOversizeChunkData(
+            chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
+            data_offset)
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_STATEDUMP:
-        self._ReadStatedumpChunk(chunkset_chunk_data)
+        self._ReadStateDumpChunkData(
+            chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
+            data_offset)
+
+      elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_SIMPLEDUMP:
+        self._ReadSimpleDumpChunkData(
+            chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
+            data_offset)
 
       data_offset = data_end_offset
 
@@ -828,14 +872,17 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return header_chunk
 
-  def _ReadOversizeChunk(self, chunk_data):
-    """Reads an oversize chunk.
+  def _ReadOversizeChunkData(self, chunk_data, chunk_data_size, data_offset):
+    """Reads Oversize chunk data.
 
     Args:
-      chunk_data (bytes): chunk data.
+      chunk_data (bytes): Oversize chunk data.
+      chunk_data_size (int): size of the Oversize chunk data.
+      data_offset (int): offset of the Oversize chunk relative to the start
+          of the chunk set.
 
     Returns:
-      oversize_chunk: an oversize chunk.
+      oversize_chunk: an Oversize chunk.
 
     Raises:
       ParseError: if the chunk cannot be read.
@@ -843,22 +890,57 @@ class TraceV3File(data_format.BinaryDataFile):
     data_type_map = self._GetDataTypeMap('tracev3_oversize_chunk')
 
     oversize_chunk = self._ReadStructureFromByteStream(
-        chunk_data, 0, data_type_map, 'oversize chunk')
+        chunk_data, data_offset, data_type_map, 'Oversize chunk')
 
     if self._debug:
       self._DebugPrintStructureObject(
           oversize_chunk, self._DEBUG_INFO_OVERSIZE_CHUNK)
 
+    # TODO: check for trailing data.
+    _ = chunk_data_size
+
     return oversize_chunk
 
-  def _ReadStatedumpChunk(self, chunk_data):
-    """Reads a statedump chunk.
+  def _ReadSimpleDumpChunkData(self, chunk_data, chunk_data_size, data_offset):
+    """Reads SimpleDump chunk data.
 
     Args:
-      chunk_data (bytes): chunk data.
+      chunk_data (bytes): SimpleDump chunk data.
+      chunk_data_size (int): size of the SimpleDump chunk data.
+      data_offset (int): offset of the SimpleDump chunk relative to the start
+          of the chunk set.
 
     Returns:
-      statedump_chunk: a statedump chunk.
+      simpledump_chunk: a SimpleDump chunk.
+
+    Raises:
+      ParseError: if the chunk cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('tracev3_simpledump_chunk')
+
+    simpledump_chunk = self._ReadStructureFromByteStream(
+        chunk_data, data_offset, data_type_map, 'SimpleDump chunk')
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          simpledump_chunk, self._DEBUG_INFO_SIMPLEDUMP_CHUNK)
+
+    # TODO: check for trailing data.
+    _ = chunk_data_size
+
+    return simpledump_chunk
+
+  def _ReadStateDumpChunkData(self, chunk_data, chunk_data_size, data_offset):
+    """Reads StateDump chunk data.
+
+    Args:
+      chunk_data (bytes): StateDump chunk data.
+      chunk_data_size (int): size of the StateDump chunk data.
+      data_offset (int): offset of the StateDump chunk relative to the start
+          of the chunk set.
+
+    Returns:
+      statedump_chunk: a StateDump chunk.
 
     Raises:
       ParseError: if the chunk cannot be read.
@@ -866,11 +948,14 @@ class TraceV3File(data_format.BinaryDataFile):
     data_type_map = self._GetDataTypeMap('tracev3_statedump_chunk')
 
     statedump_chunk = self._ReadStructureFromByteStream(
-        chunk_data, 0, data_type_map, 'statedump chunk')
+        chunk_data, data_offset, data_type_map, 'StateDump chunk')
 
     if self._debug:
       self._DebugPrintStructureObject(
           statedump_chunk, self._DEBUG_INFO_STATEDUMP_CHUNK)
+
+    # TODO: check for trailing data.
+    _ = chunk_data_size
 
     return statedump_chunk
 

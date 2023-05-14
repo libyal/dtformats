@@ -274,9 +274,9 @@ members:
   data_type: uint16
 - name: catalog_dsc_index
   data_type: uint16
-- name: first_number_proc_id
+- name: process_identifier1
   data_type: uint64
-- name: second_number_proc_id
+- name: process_identifier2
   data_type: uint32
 - name: pid
   data_type: uint32
@@ -400,31 +400,6 @@ members:
   element_data_type: uint8
   number_of_elements: tracev3_backtrace.number_offsets
 ---
-name: tracev3_oversize
-type: structure
-description: TraceV3 oversize chunk.
-attributes:
-  byte_order: little-endian
-members:
-- name: first_number_proc_id
-  data_type: uint64
-- name: second_number_proc_id
-  data_type: uint32
-- name: ttl
-  data_type: uint32
-- name: continuous_time
-  data_type: uint64
-- name: data_ref_index
-  data_type: uint32
-- name: public_data_size
-  data_type: uint16
-- name: private_data_size
-  data_type: uint16
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: tracev3_oversize.public_data_size + tracev3_oversize.private_data_size
----
 name: tracev3_firehose_header
 type: structure
 description: TraceV3 firehose header.
@@ -521,7 +496,7 @@ members:
 ---
 name: tracev3_oversize_chunk
 type: structure
-description: TraceV3 oversize chunk.
+description: TraceV3 Oversize chunk.
 attributes:
   byte_order: little-endian
 members:
@@ -529,22 +504,71 @@ members:
   data_type: uint64
 - name: process_identifier2
   data_type: uint32
-- name: unknown3
-  data_type: uint32
+- name: ttl
+  data_type: uint8
+- name: unknown1
+  data_type: uint8
+- name: unknown2
+  data_type: uint16
 - name: continuous_time
   data_type: uint64
 - name: data_reference_index
   data_type: uint32
-- name: data_size
-  data_type: uint32
+- name: public_data_size
+  data_type: uint16
+- name: private_data_size
+  data_type: uint16
 - name: data
   type: stream
   element_data_type: byte
-  number_of_elements: tracev3_oversize_chunk.data_size
+  elements_data_size: tracev3_oversize_chunk.public_data_size + tracev3_oversize_chunk.private_data_size
+---
+name: tracev3_simpledump_chunk
+type: structure
+description: TraceV3 SimpleDump chunk.
+attributes:
+  byte_order: little-endian
+members:
+- name: process_identifier1
+  data_type: uint64
+- name: process_identifier2
+  data_type: uint64
+- name: continuous_time
+  data_type: uint64
+- name: thread_identifier
+  data_type: uint64
+- name: unknown1
+  data_type: uint32
+- name: unknown2
+  data_type: uint16
+- name: unknown3
+  data_type: uint16
+- name: sender_identifier
+  data_type: uuid_be
+- name: dsc_identifier
+  data_type: uuid_be
+- name: unknown4
+  data_type: uint32
+- name: subsystem_string_size
+  data_type: uint32
+- name: message_string_size
+  data_type: uint32
+- name: subsystem_string
+  elements_data_size: tracev3_simpledump_chunk.subsystem_string_size
+  type: string
+  encoding: utf8
+  element_data_type: char
+  elements_terminator: "\x00"
+- name: message_string
+  elements_data_size: tracev3_simpledump_chunk.message_string_size
+  type: string
+  encoding: utf8
+  element_data_type: char
+  elements_terminator: "\x00"
 ---
 name: tracev3_statedump_chunk
 type: structure
-description: TraceV3 statedump chunk.
+description: TraceV3 StateDump chunk.
 attributes:
   byte_order: little-endian
 members:
@@ -552,34 +576,37 @@ members:
   data_type: uint64
 - name: process_identifier2
   data_type: uint32
-- name: unknown3
-  data_type: uint32
+- name: ttl
+  data_type: uint8
+- name: unknown1
+  data_type: uint8
+- name: unknown2
+  data_type: uint16
 - name: continuous_time
   data_type: uint64
 - name: activity_identifier
-  data_type: uint32
-- name: unknown4
-  data_type: uint32
-- name: uuid
+  data_type: uint64
+- name: unknown3
   data_type: uuid_be
 - name: data_type
   data_type: uint32
 - name: data_size
   data_type: uint32
-- name: object_type_string1
-  type: stream
-  element_data_type: byte
-  number_of_elements: 64
-- name: object_type_string2
-  type: stream
-  element_data_type: byte
-  number_of_elements: 64
-- name: name
-  type: string
-  encoding: ascii
-  element_data_type: byte
+- name: unknown4
   elements_data_size: 64
+  type: stream
+  element_data_type: byte
+- name: unknown5
+  elements_data_size: 64
+  type: stream
+  element_data_type: byte
+- name: name
+  elements_data_size: 64
+  type: string
+  encoding: utf8
+  element_data_type: char
+  elements_terminator: "\x00"
 - name: data
   type: stream
   element_data_type: byte
-  number_of_elements: tracev3_statedump_chunk.data_size
+  elements_data_size: tracev3_statedump_chunk.data_size
