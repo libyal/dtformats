@@ -257,60 +257,105 @@ The chunk header is stored 64-bit aligned.
 | 0x600d | ChunkSet |
 |===
 
-=== Header chunk
+=== Header (chunk)
 
-The Header chunk is 208 bytes of size and consists of:
+The header (chunk) is 224 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 4+| _Chunk header (tracev3_chunk_preamble)_
 | 0 | 4 | 0x1000 | Chunk tag (tag)
-| 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 8 | | Chunk data size (length)
-4+| _Chunk data_ (tracev3_chunk_header)
+| 4 | 4 | 0x0011 | Chunk sub tag (subtag)
+| 8 | 8 | 208 | Chunk data size (length)
+4+| _Chunk data_ (tracev3_chunk_header)_
 | 16 | 4 | | Mach timebase numerator (first number in timebase # / #)
 | 20 | 4 | | Mach timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Continuous time
-| 32 | 8 | | [yellow-background]*Unknown time (related to starttime?)* +
-Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds where the upper 4 bytes should be 0
+| 32 | 4 | | [yellow-background]*Unknown time (related to starttime?)* +
+Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
+| 36 | 4 | | [yellow-background]*Unknown*
 | 40 | 4 | | [yellow-background]*Unknown*
-| 44 | 4 | | Timezone offset in minutes
-| 48 | 4 | | Daylight savings active +
-0 = daylight savings is not active (no-DST) +
-1 = daylight savings is active (DST)
+| 44 | 4 | | Timezone offset in minutes +
+Contains a signed integer
+| 48 | 4 | | Daylight savings time (DST) flag +
+0 = daylight savings time is not active (no-DST) +
+1 = daylight savings time is active (DST)
 | 52 | 4 | | [yellow-background]*Unknown (flags)* +
 (64bits) (is_boot)
-4+| _Sub chunk header (tracev3_subchunk_preamble) for the continous time sub chunk (tracev3_subchunk_continuous)_
-| 56 | 4 | 0x6100 | Sub chunk tag
-| 60 | 4 | | Sub chunk data size +
+| 56 | 16 | | <<header_continuous_time_sub_chunk,Header continuous time sub chunk>>
+| 72 | 64 | | <<header_system_information_sub_chunk,Header system information sub chunk>>
+| 136 | 32 | | <<header_generation_sub_chunk,Header generation sub chunk>>
+| 168 | 56 | | <<header_time_zone_sub_chunk,Header time zone sub chunk>>
+|===
+
+==== [[header_continuous_time_sub_chunk]]Header continuous time sub chunk
+
+The header continuous time sub chunk is 16 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _The sub chunk header (tracev3_subchunk_preamble)_
+| 0 | 4 | 0x6100 | Sub chunk tag
+| 4 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _The continous time sub chunk (tracev3_subchunk_continuous)_
-| 64 | 8 | | Continuous time (value data related to starttime?)
-4+| _Sub chunk header (tracev3_subchunk_preamble) for the system information sub chunk (tracev3_subchunk_systeminfo)_
-| 72 | 4 | 0x6101 | Sub chunk tag
-| 76 | 4 | | Sub chunk data size +
+4+| _The continuous time sub chunk data (tracev3_subchunk_continuous)_
+| 8 | 8 | | Continuous time (value data related to starttime?)
+|===
+
+==== [[header_system_information_sub_chunk]]Header system information sub chunk
+
+The header system information sub chunk is 64 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _The sub chunk header (tracev3_subchunk_preamble)_
+| 0 | 4 | 0x6101 | Sub chunk tag
+| 4 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _The system information sub chunk (tracev3_subchunk_systeminfo)_
-| 80 | 4 | | [yellow-background]*Unknown*
-| 84 | 4 | | [yellow-background]*Unknown*
-| 88 | 16 | | Build version string
-| 104 | 32 | | Hardware model string
-4+| _Sub chunk header (tracev3_subchunk_preamble) for the generation sub chunk (tracev3_subchunk_generation)_
-| 124 | 4 | 0x6102 | Sub chunk tag
-| 128 | 4 | | Sub chunk data size +
+4+| _The system information sub chunk data (tracev3_subchunk_systeminfo)_
+| 8 | 4 | | [yellow-background]*Unknown*
+| 12 | 4 | | [yellow-background]*Unknown*
+| 16 | 16 | | Build version +
+Contains an UTF-8 encoded string with end-of-string character
+| 32 | 32 | | Hardware model string +
+Contains an UTF-8 encoded string with end-of-string character
+|===
+
+==== [[header_generation_sub_chunk]]Header generation sub chunk
+
+The header generation sub chunk is 32 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _The sub chunk header (tracev3_subchunk_preamble)_
+| 0 | 4 | 0x6102 | Sub chunk tag
+| 4 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _The generation sub chunk (tracev3_subchunk_generation)_
-| 132 | 16 | | Boot identifier (Boot UUID) +
+4+| _The generation sub chunk data (tracev3_subchunk_generation)_
+| 8 | 16 | | Boot identifier (Boot UUID) +
 Contains a UUID stored in big-endian
-| 148 | 4 | | Process Identifier (PID) of logd
-| 152 | 4 | | Exit status (of logd)
-4+| _Sub chunk header (tracev3_subchunk_preamble) for the time zone sub chunk (tracev3_subchunk_timezone)_
-| 156 | 4 | 0x6103 | Sub chunk tag
-| 164 | 4 | | Sub chunk data size +
+| 24 | 4 | | Process identifier (PID) of logd
+| 28 | 4 | | Exit status (of logd)
+|===
+
+==== [[header_time_zone_sub_chunk]]Header time zone sub chunk
+
+The time zone generation sub chunk is 56 bytes of size and consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _The sub chunk header (tracev3_subchunk_preamble)_
+| 0 | 4 | 0x6103 | Sub chunk tag
+| 4 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
-4+| _The time zone sub chunk (tracev3_subchunk_timezone)_
-| 168 | 48 | | Path to timezone information file
+4+| _The time zone sub chunk data (tracev3_subchunk_timezone)_
+| 8 | 48 | | Path to time zone information file +
+Contains an UTF-8 encoded string with end-of-string character
 |===
 
 === Catalog chunk

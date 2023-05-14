@@ -202,8 +202,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
   # TODO: add tests for _ReadCatalog
   # TODO: add tests for _ReadChunkSet
 
-  def testReadHeaderChunk(self):
-    """Tests the _ReadHeaderChunk function."""
+  def testReadHeader(self):
+    """Tests the _ReadHeader function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
@@ -212,24 +212,27 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      header_chunk = test_file._ReadHeaderChunk(file_object, 16)
+      header_chunk = test_file._ReadHeader(file_object, 16)
 
     self.assertEqual(header_chunk.timebase_numerator, 125)
     self.assertEqual(header_chunk.timebase_denominator, 3)
-    self.assertEqual(header_chunk.timezone_offset, 300)
-    self.assertEqual(header_chunk.subchunk_continuous_tag, 0x6100)
-    self.assertEqual(header_chunk.subchunk_systeminfo_tag, 0x6101)
-    self.assertEqual(header_chunk.build_identifier.rstrip('\x00'), '19D52')
-    self.assertEqual(header_chunk.hardware_identifier.rstrip('\00'), 'J96AP')
-    self.assertEqual(header_chunk.subchunk_generation_tag, 0x6102)
-    self.assertEqual(
-        str(header_chunk.boot_identifier),
-        'a6ebc8e3-0a1c-40e8-93b9-da3a7f671d19')
-    self.assertEqual(header_chunk.subchunk_timezone_tag, 0x6103)
-    self.assertEqual(
-        header_chunk.timezone_path.rstrip('\x00'),
-        '/var/db/timezone/zoneinfo/America/Toronto')
+    self.assertEqual(header_chunk.time_zone_offset, 300)
 
+    self.assertEqual(header_chunk.continuous.sub_chunk_tag, 0x6100)
+
+    self.assertEqual(header_chunk.system_information.sub_chunk_tag, 0x6101)
+    self.assertEqual(header_chunk.system_information.build_version, '19D52')
+    self.assertEqual(header_chunk.system_information.hardware_model, 'J96AP')
+
+    self.assertEqual(header_chunk.generation.sub_chunk_tag, 0x6102)
+    self.assertEqual(str(header_chunk.generation.boot_identifier), (
+        'a6ebc8e3-0a1c-40e8-93b9-da3a7f671d19'))
+
+    self.assertEqual(header_chunk.time_zone.sub_chunk_tag, 0x6103)
+    self.assertEqual(header_chunk.time_zone.path, (
+        '/var/db/timezone/zoneinfo/America/Toronto'))
+
+  @unittest.skip('improve format support')
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()

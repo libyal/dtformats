@@ -57,8 +57,7 @@ class DSCFile(data_format.BinaryDataFile):
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
-      'unified_logging.yaml')
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_dsc.yaml')
 
   _DEBUG_INFO_FILE_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
@@ -293,8 +292,7 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
-      'unified_logging.yaml')
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_timesync.yaml')
 
   _BOOT_RECORD_SIGNATURE = b'\xb0\xbb'
   _SYNC_RECORD_SIGNATURE = b'Ts'
@@ -324,7 +322,7 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a timezone information file.
+    """Initializes a timesync database file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -396,10 +394,12 @@ class TraceV3File(data_format.BinaryDataFile):
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
-      'unified_logging.yaml')
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_tracev3.yaml')
 
+  _CHUNK_TAG_HEADER = 0x00001000
   _CHUNK_TAG_FIREHOSE = 0x00006001
+  _CHUNK_TAG_CATALOG = 0x0000600b
+  _CHUNK_TAG_CHUNK_SET = 0x0000600d
 
   _DEBUG_INFO_CATALOG = [
       ('sub_system_strings_offset', 'Sub system strings offset',
@@ -412,17 +412,16 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsHexadecimal8'),
       ('number_of_sub_chunks', 'Number of sub chunks',
        '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatDataInHexadecimal'),
+      ('earliest_firehose_timestamp', 'Earliest firehose timestamp',
+       '_FormatIntegerAsDecimal'),
       ('uuids', 'UUIDs', '_FormatArrayOfUUIDS'),
       ('sub_system_strings', 'Sub system strings', '_FormatArrayOfStrings')]
 
   _DEBUG_INFO_CHUNK_HEADER = [
       ('chunk_tag', 'Chunk tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
-      ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
+      ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_FIREHOSE_HEADER = [
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
@@ -433,7 +432,8 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsHexadecimal4'),
       ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
       ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal4'),
-      ('base_continous_time', 'Base continous time', '_FormatIntegerAsDecimal')]
+      ('base_continuous_time', 'Base continuous time',
+       '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT = [
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
@@ -443,36 +443,50 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsHexadecimal8'),
       ('thread_identifier', 'Thread identifier',
        '_FormatIntegerAsHexadecimal8'),
-      ('continous_time_lower', 'Continous time (lower 32-bit)',
+      ('continuous_time_lower', 'Continous time (lower 32-bit)',
        '_FormatIntegerAsDecimal'),
-      ('continous_time_upper', 'Continous time (upper 16-bit)',
+      ('continuous_time_upper', 'Continous time (upper 16-bit)',
        '_FormatIntegerAsDecimal'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_INFO_HEADER_CHUNK = [
+  _DEBUG_INFO_HEADER = [
       ('timebase_numerator', 'Timebase numerator', '_FormatIntegerAsDecimal'),
       ('timebase_denominator', 'Timebase denominator',
        '_FormatIntegerAsDecimal'),
-      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal'),
+      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
+      ('unknown_time', 'Unknown time', 'FormatIntegerAsPosixTime'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
       ('time_zone_offset', 'Timezone_offset', '_FormatIntegerAsDecimal'),
       ('daylight_savings_flag', 'Daylight Savings Flag',
        '_FormatIntegerAsDecimal'),
-      ('subchunk_continuous_tag', 'Subchunk Continuous Tag',
-       '_FormatIntegerAsHexadecimal4'),
-      ('continuous_time2', 'Continuous Time2', '_FormatIntegerAsDecimal'),
-      ('subchunk_systeminfo_tag', 'Subchunk Systeminfo Tag',
-       '_FormatIntegerAsHexadecimal4'),
-      ('build_identifier', 'Build Identifier', '_FormatString'),
-      ('hardware_identifier', 'Hardware Identifier', '_FormatString'),
-      ('subchunk_generation_tag', 'Subchunk Generation Tag',
-       '_FormatIntegerAsHexadecimal4'),
-      ('boot_identifier', 'Boot Identifier', '_FormatUUIDAsString'),
-      ('logd_process_identifier', 'Logd Process Identifier',
+      ('unknown_flags', 'Unknown flags', '_FormatIntegerAsHexadecimal4')]
+
+  _DEBUG_HEADER_CONTINOUS_TIME_SUB_CHUNK = [
+      ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
+      ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
+      ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_HEADER_SYSTEM_INFORMATION_SUB_CHUNK = [
+      ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
+      ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('build_version', 'Build version', '_FormatString'),
+      ('hardware_model', 'Hardware model', '_FormatString')]
+
+  _DEBUG_HEADER_GENERATION_SUB_CHUNK = [
+      ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
+      ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
+      ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
+      ('logd_process_identifier', 'logd process identifier (PID)',
        '_FormatIntegerAsDecimal'),
-      ('logd_exit_code', 'Logd Exit Code', '_FormatIntegerAsDecimal'),
-      ('subchunk_timezone_tag', 'Subchunk Timezone Tag',
-       '_FormatIntegerAsHexadecimal4'),
-      ('timezone_path', 'Timezone Path', '_FormatString')]
+      ('logd_exit_status', 'logd exit status', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_HEADER_TIME_ZONE_SUB_CHUNK = [
+      ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
+      ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
+      ('path', 'Path', '_FormatString')]
 
   _DEBUG_INFO_LZ4_BLOCK_HEADER = [
       ('signature', 'Signature', '_FormatStreamAsSignature'),
@@ -482,7 +496,7 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a timezone information file.
+    """Initializes a tracev3 file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -714,34 +728,41 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return firehose_tracepoint
 
-  def _ReadHeaderChunk(self, file_object, file_offset):
-    """Reads a Header Chunk.
+  def _ReadHeader(self, file_object, file_offset):
+    """Reads a header.
 
     Args:
        file_object (file): file-like object.
        file_offset (int): offset of the chunk relative to the start of the file.
 
     Raises:
-      ParseError: if the chunk cannot be read.
+      ParseError: if the header cannot be read.
 
     Returns:
-      header_chunk: a header chunk.
-
+      header: a header.
     """
-
-    data_type_map = self._GetDataTypeMap('tracev3_header_chunk')
+    data_type_map = self._GetDataTypeMap('tracev3_header')
 
     header_chunk, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'header chunk')
+        file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
       self._DebugPrintStructureObject(
-          header_chunk, self._DEBUG_INFO_HEADER_CHUNK)
+          header_chunk, self._DEBUG_INFO_HEADER)
+      self._DebugPrintStructureObject(
+          header_chunk.continuous, self._DEBUG_HEADER_CONTINOUS_TIME_SUB_CHUNK)
+      self._DebugPrintStructureObject(
+          header_chunk.system_information,
+          self._DEBUG_HEADER_SYSTEM_INFORMATION_SUB_CHUNK)
+      self._DebugPrintStructureObject(
+          header_chunk.generation, self._DEBUG_HEADER_GENERATION_SUB_CHUNK)
+      self._DebugPrintStructureObject(
+          header_chunk.time_zone, self._DEBUG_HEADER_TIME_ZONE_SUB_CHUNK)
 
     return header_chunk
 
   def ReadFileObject(self, file_object):
-    """Reads a timezone information file-like object.
+    """Reads a tracev3 file-like object.
 
     Args:
       file_object (file): file-like object.
@@ -755,13 +776,13 @@ class TraceV3File(data_format.BinaryDataFile):
       chunk_header = self._ReadChunkHeader(file_object, file_offset)
       file_offset += 16
 
-      if chunk_header.chunk_tag == 0x1000:
-        self._ReadHeaderChunk(file_object, file_offset)
+      if chunk_header.chunk_tag == self._CHUNK_TAG_HEADER:
+        self._ReadHeader(file_object, file_offset)
 
-      elif chunk_header.chunk_tag == 0x600b:
+      elif chunk_header.chunk_tag == self._CHUNK_TAG_CATALOG:
         self._ReadCatalog(file_object, file_offset, chunk_header)
 
-      elif chunk_header.chunk_tag == 0x600d:
+      elif chunk_header.chunk_tag == self._CHUNK_TAG_CHUNK_SET:
         self._ReadChunkSet(file_object, file_offset, chunk_header)
 
       file_offset += chunk_header.chunk_data_size
@@ -778,8 +799,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
-      'unified_logging.yaml')
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_uuidtext.yaml')
 
   _DEBUG_INFO_FILE_FOOTER = [
       ('library_path', 'Library path', '_FormatString')]
@@ -795,7 +815,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
        '_FormatArrayOfEntryDescriptors')]
 
   def __init__(self, debug=False, output_writer=None):
-    """Initializes a timezone information file.
+    """Initializes an uuidtext file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -878,7 +898,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
     return file_header
 
   def ReadFileObject(self, file_object):
-    """Reads a timezone information file-like object.
+    """Reads an uuidtext file-like object.
 
     Args:
       file_object (file): file-like object.
