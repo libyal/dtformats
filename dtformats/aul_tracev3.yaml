@@ -431,9 +431,9 @@ description: TraceV3 firehose header.
 attributes:
   byte_order: little-endian
 members:
-- name: first_number_proc_id
+- name: process_identifier1
   data_type: uint64
-- name: second_number_proc_id
+- name: process_identifier2
   data_type: uint32
 - name: ttl
   data_type: uint8
@@ -518,3 +518,68 @@ members:
 - name: alignment_padding
   type: padding
   alignment_size: 8
+---
+name: tracev3_oversize_chunk
+type: structure
+description: TraceV3 oversize chunk.
+attributes:
+  byte_order: little-endian
+members:
+- name: process_identifier1
+  data_type: uint64
+- name: process_identifier2
+  data_type: uint32
+- name: unknown3
+  data_type: uint32
+- name: continuous_time
+  data_type: uint64
+- name: data_reference_index
+  data_type: uint32
+- name: data_size
+  data_type: uint32
+- name: data
+  type: stream
+  element_data_type: byte
+  number_of_elements: tracev3_oversize_chunk.data_size
+---
+name: tracev3_statedump_chunk
+type: structure
+description: TraceV3 statedump chunk.
+attributes:
+  byte_order: little-endian
+members:
+- name: process_identifier1
+  data_type: uint64
+- name: process_identifier2
+  data_type: uint32
+- name: unknown3
+  data_type: uint32
+- name: continuous_time
+  data_type: uint64
+- name: activity_identifier
+  data_type: uint32
+- name: unknown4
+  data_type: uint32
+- name: uuid
+  data_type: uuid_be
+- name: data_type
+  data_type: uint32
+- name: data_size
+  data_type: uint32
+- name: object_type_string1
+  type: stream
+  element_data_type: byte
+  number_of_elements: 64
+- name: object_type_string2
+  type: stream
+  element_data_type: byte
+  number_of_elements: 64
+- name: name
+  type: string
+  encoding: ascii
+  element_data_type: byte
+  elements_data_size: 64
+- name: data
+  type: stream
+  element_data_type: byte
+  number_of_elements: tracev3_statedump_chunk.data_size
