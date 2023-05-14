@@ -944,15 +944,15 @@ The Statedump chunk is variable of size and consists of:
 | 28 | 1 | | TTL
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
-| 40 | 8 | | Activity Id
+| 40 | 8 | | Activity identifier
 | 48 | 4 | | Unknown
-| 48 | 16 | | UUID
-| 64 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 2=protobuf, 3=data))*
-| 68 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
-| 72 | 64 | | [yellow-background]*Unknown (Object type string 1)*
-| 136 | 64 | | [yellow-background]*Unknown (Object type string 2)*
-| 200 | 64 | | [yellow-background]*Unknown (Name)*
-| 264 | ... | | [yellow-background]*Unknown (Data)*
+| 52 | 16 | | UUID
+| 68 | 4 | | [yellow-background]*Unknown (Data Type (1=plist, 2=protobuf, 3=data))*
+| 72 | 4 | | [yellow-background]*Unknown (Size of data that follows)*
+| 76 | 64 | | [yellow-background]*Unknown (Object type string 1)*
+| 140 | 64 | | [yellow-background]*Unknown (Object type string 2)*
+| 204 | 64 | | [yellow-background]*Unknown (Name)*
+| 268 | ... | | [yellow-background]*Unknown (Data)*
 |===
 
 === Simpledump chunk
