@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Apple Unified Logging and Activity Tracing files."""
+"""Apple Unified Logging and _FormatIntegerAsHexadecimal8 Tracing files."""
 
 import lz4.block
 
@@ -430,16 +430,37 @@ class TraceV3File(data_format.BinaryDataFile):
       ('uuids', 'UUIDs', '_FormatArrayOfUUIDS'),
       ('sub_system_strings', 'Sub system strings', '_FormatArrayOfStrings')]
 
+  _DEBUG_INFO_CATALOG_PROCESS_INFORMATION_ENTRY = [
+      ('entry_index', 'Entry index', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
+      ('main_uuid_index', 'Main UUID index', '_FormatIntegerAsDecimal'),
+      ('dsc_uuid_index', 'DSC UUID index', '_FormatIntegerAsDecimal'),
+      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
+      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
+      ('process_identifier', 'process identifier (pid)',
+       '_FormatIntegerAsDecimal'),
+      ('effective_user_identifier', 'Effective user identifier (euid)',
+       '_FormatIntegerAsDecimal'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('number_of_uuid_entries', 'Number of UUID information entries',
+       '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
+      ('uuid_entries', 'UUID entries', '_FormatArrayOfCatalogUUIDEntries'),
+      ('number_of_sub_system_entries', 'Number of sub system entries',
+       '_FormatIntegerAsDecimal'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
+      ('sub_system_entries', 'Sub system entries',
+       '_FormatArrayOfCatalogSubSystemEntries'),
+      ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal')]
+
   _DEBUG_INFO_CHUNK_HEADER = [
       ('chunk_tag', 'Chunk tag', '_FormatChunkTag'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_FIREHOSE_HEADER = [
-      ('process_identifier1', 'Process identifier (PID) 1',
-       '_FormatIntegerAsDecimal'),
-      ('process_identifier2', 'Process identifier (PID) 2',
-       '_FormatIntegerAsDecimal'),
+      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
+      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
       ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
       ('collapsed', 'Collapsed', '_FormatIntegerAsDecimal'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
@@ -494,7 +515,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
       ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
-      ('logd_process_identifier', 'logd process identifier (PID)',
+      ('logd_process_identifier', 'logd process identifier (pid)',
        '_FormatIntegerAsDecimal'),
       ('logd_exit_status', 'logd exit status', '_FormatIntegerAsDecimal')]
 
@@ -511,8 +532,8 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_OVERSIZE_CHUNK = [
-      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
-      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
+      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
+      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
       ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
@@ -522,30 +543,34 @@ class TraceV3File(data_format.BinaryDataFile):
       ('data_size', 'Data Size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_SIMPLEDUMP_CHUNK = [
-      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
-      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
-      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
-      ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
-      ('sender_identifier', 'Sender identifier', '_FormatUUIDAsString'),
-      ('dsc_identifier', 'DSC identifier', '_FormatUUIDAsString'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('subsystem_string_size', 'Subsystem string size',
-       '_FormatIntegerAsDecimal'),
-      ('message_string_size', 'Message string size', '_FormatIntegerAsDecimal'),
-      ('subsystem_string', 'Subsystem string', '_FormatString'),
-      ('message_string', 'Message string', '_FormatString')]
-
-  _DEBUG_INFO_STATEDUMP_CHUNK = [
-      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
-      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
+      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
+      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
       ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
       ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
-      ('activity_identifier', 'Activity Identifier', '_FormatIntegerAsDecimal'),
+      ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
+      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal4'),
+      ('sender_identifier', 'Sender identifier', '_FormatUUIDAsString'),
+      ('dsc_identifier', 'DSC identifier', '_FormatUUIDAsString'),
+      ('unknown6', 'Unknown6', '_FormatIntegerAsHexadecimal8'),
+      ('sub_system_string_size', 'Sub system string size',
+       '_FormatIntegerAsDecimal'),
+      ('message_string_size', 'Message string size', '_FormatIntegerAsDecimal'),
+      ('sub_system_string', 'Sub system string', '_FormatString'),
+      ('message_string', 'Message string', '_FormatString')]
+
+  _DEBUG_INFO_STATEDUMP_CHUNK = [
+      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
+      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
+      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
+      ('activity_identifier', 'Activity identifier',
+       '_FormatIntegerAsHexadecimal8'),
       ('unknown3', 'Unknown3', '_FormatUUIDAsString'),
       ('data_type', 'Data type', '_FormatIntegerAsDecimal'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
@@ -592,6 +617,39 @@ class TraceV3File(data_format.BinaryDataFile):
         for string_index, string in enumerate(array_of_strings)])
     return f'{value:s}\n'
 
+  def _FormatArrayOfCatalogSubSystemEntries(self, array_of_entries):
+    """Formats an array of catalog sub system entries.
+
+    Args:
+      array_of_entries (list[tracev3_catalog_uuid_entry]): array of catalog sub
+          system entries.
+
+    Returns:
+      str: formatted array of catalog sub system entries.
+    """
+    value = '\n'.join([
+        (f'\tidentifier: {entry.identifier:d}, '
+         f'sub_system_offset: {entry.sub_system_offset:d}, '
+         f'category_offset: {entry.category_offset:d}')
+        for entry in array_of_entries])
+    return f'{value:s}\n'
+
+  def _FormatArrayOfCatalogUUIDEntries(self, array_of_entries):
+    """Formats an array of catalog UUID entries.
+
+    Args:
+      array_of_entries (list[tracev3_catalog_uuid_entry]): array of catalog
+          UUID entries.
+
+    Returns:
+      str: formatted array of catalog UUID entries.
+    """
+    value = '\n'.join([
+        (f'\tsize: {entry.size:d}, unknown1: 0x{entry.unknown1:x}, '
+         f'offset: {entry.offset:d}, reference: {entry.reference:d}')
+        for entry in array_of_entries])
+    return f'{value:s}\n'
+
   def _FormatArrayOfUUIDS(self, array_of_uuids):
     """Formats an array of UUIDs.
 
@@ -629,18 +687,34 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the chunk header cannot be read.
     """
-    chunk_data = file_object.read(chunk_header.chunk_data_size)
-
-    # TODO: use chunk_data or remove
-    _ = chunk_data
+    if self._debug:
+      chunk_data = file_object.read(chunk_header.chunk_data_size)
+      self._DebugPrintData('Catalog chunk data', chunk_data)
 
     data_type_map = self._GetDataTypeMap('tracev3_catalog')
 
-    catalog, _ = self._ReadStructureFromFileObject(
+    catalog, bytes_read = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'Catalog')
+
+    file_offset += bytes_read
 
     if self._debug:
       self._DebugPrintStructureObject(catalog, self._DEBUG_INFO_CATALOG)
+
+    data_type_map = self._GetDataTypeMap(
+        'tracev3_catalog_process_information_entry')
+
+    for entry_index in range(catalog.number_of_process_information_entries):
+      process_information_entry, bytes_read = self._ReadStructureFromFileObject(
+          file_object, file_offset, data_type_map,
+          f'Catalog process information entry: {entry_index:d}')
+
+      file_offset += bytes_read
+
+      if self._debug:
+        self._DebugPrintStructureObject(
+            process_information_entry,
+            self._DEBUG_INFO_CATALOG_PROCESS_INFORMATION_ENTRY)
 
   def _ReadChunkHeader(self, file_object, file_offset):
     """Reads a chunk header.
@@ -1001,8 +1075,8 @@ class Tracev3FirehoseData(object):
     firehose_tracepoints (list[Tracev3FirehoseTracepoint]): firehose
         tracepoints.
     private_data_virtual_offset (int): private data virtual offset.
-    process_identifier1 (int): first number in "proc_id #@#".
-    process_identifier2 (int): second number in "proc_id #@#".
+    proc_id_lower (int): second number in "proc_id #@#".
+    proc_id_upper (int): first number in "proc_id #@#".
     public_data_size (int): size of the Firehose data block.
   """
 
@@ -1012,8 +1086,8 @@ class Tracev3FirehoseData(object):
     self.base_continuous_time = None
     self.firehose_tracepoints = []
     self.private_data_virtual_offset = None
-    self.process_identifier1 = None
-    self.process_identifier2 = None
+    self.proc_id_lower = None
+    self.proc_id_upper = None
     self.public_data_size = None
 
   def CopyFromFirehoseHeader(self, header):
@@ -1024,8 +1098,8 @@ class Tracev3FirehoseData(object):
     """
     self.base_continuous_time = header.base_continuous_time
     self.private_data_virtual_offset = header.private_data_virtual_offset
-    self.process_identifier1 = header.process_identifier1
-    self.process_identifier2 = header.process_identifier2
+    self.proc_id_lower = header.proc_id_lower
+    self.proc_id_upper = header.proc_id_upper
     self.public_data_size = header.public_data_size
 
 

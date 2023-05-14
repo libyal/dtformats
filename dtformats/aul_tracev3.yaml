@@ -232,74 +232,74 @@ members:
 ---
 name: tracev3_catalog_uuid_entry
 type: structure
-description: TraceV3 Catalog UUID block.
+description: TraceV3 catalog UUID entry.
 attributes:
   byte_order: little-endian
 members:
 - name: size
   data_type: uint32
-- name: unknown
+- name: unknown1
   data_type: uint32
-- name: catalog_uuid_index
+- name: uuid_index
   data_type: uint16
-- name: absolute_offset
+- name: offset
   data_type: uint32
-- name: absolute_ref
+- name: reference
   data_type: uint16
 ---
-name: tracev3_catalog_subsystem_entry
+name: tracev3_catalog_sub_system_entry
 type: structure
-description: TraceV3 Catalog Subsystem block.
+description: TraceV3 catalog sub system entry.
 attributes:
   byte_order: little-endian
 members:
 - name: identifier
   data_type: uint16
-- name: subsystem_offset
+- name: sub_system_offset
   data_type: uint16
 - name: category_offset
   data_type: uint16
 ---
 name: tracev3_catalog_process_information_entry
 type: structure
-description: TraceV3 Catalog Process Information block.
+description: TraceV3 catalog process information entry.
 attributes:
   byte_order: little-endian
 members:
-- name: index
+- name: entry_index
   data_type: uint16
 - name: unknown1
   data_type: uint16
 - name: main_uuid_index
   data_type: uint16
-- name: catalog_dsc_index
+- name: dsc_uuid_index
   data_type: uint16
-- name: process_identifier1
+- name: proc_id_upper
   data_type: uint64
-- name: process_identifier2
+- name: proc_id_lower
   data_type: uint32
-- name: pid
+- name: process_identifier
   data_type: uint32
-- name: euid
+- name: effective_user_identifier
   data_type: uint32
 - name: unknown2
   data_type: uint32
-- name: num_uuid_entries
+- name: number_of_uuid_entries
   data_type: uint32
 - name: unknown3
   data_type: uint32
-- name: uuids
+- name: uuid_entries
   type: sequence
   element_data_type: tracev3_catalog_uuid_entry
-  number_of_elements: tracev3_catalog_process_information_entry.num_uuid_entries
-- name: num_subsystem_entries
+  number_of_elements: tracev3_catalog_process_information_entry.number_of_uuid_entries
+- name: number_of_sub_system_entries
   data_type: uint32
 - name: unknown4
   data_type: uint32
-- name: subsystems
+- name: sub_system_entries
   type: sequence
-  element_data_type: tracev3_catalog_subsystem_entry
-  number_of_elements: tracev3_catalog_process_information_entry.num_subsystem_entries
+  element_data_type: tracev3_catalog_sub_system_entry
+  number_of_elements: tracev3_catalog_process_information_entry.number_of_sub_system_entries
 - name: alignment_padding
   type: padding
   alignment_size: 8
@@ -406,9 +406,9 @@ description: TraceV3 firehose header.
 attributes:
   byte_order: little-endian
 members:
-- name: process_identifier1
+- name: proc_id_upper
   data_type: uint64
-- name: process_identifier2
+- name: proc_id_lower
   data_type: uint32
 - name: ttl
   data_type: uint8
@@ -500,9 +500,9 @@ description: TraceV3 Oversize chunk.
 attributes:
   byte_order: little-endian
 members:
-- name: process_identifier1
+- name: proc_id_upper
   data_type: uint64
-- name: process_identifier2
+- name: proc_id_lower
   data_type: uint32
 - name: ttl
   data_type: uint8
@@ -529,32 +529,38 @@ description: TraceV3 SimpleDump chunk.
 attributes:
   byte_order: little-endian
 members:
-- name: process_identifier1
+- name: proc_id_upper
   data_type: uint64
-- name: process_identifier2
-  data_type: uint64
+- name: proc_id_lower
+  data_type: uint32
+- name: ttl
+  data_type: uint8
+- name: unknown1
+  data_type: uint8
+- name: unknown2
+  data_type: uint16
 - name: continuous_time
   data_type: uint64
 - name: thread_identifier
   data_type: uint64
-- name: unknown1
-  data_type: uint32
-- name: unknown2
-  data_type: uint16
 - name: unknown3
+  data_type: uint32
+- name: unknown4
+  data_type: uint16
+- name: unknown5
   data_type: uint16
 - name: sender_identifier
   data_type: uuid_be
 - name: dsc_identifier
   data_type: uuid_be
-- name: unknown4
+- name: unknown6
   data_type: uint32
-- name: subsystem_string_size
+- name: sub_system_string_size
   data_type: uint32
 - name: message_string_size
   data_type: uint32
-- name: subsystem_string
-  elements_data_size: tracev3_simpledump_chunk.subsystem_string_size
+- name: sub_system_string
+  elements_data_size: tracev3_simpledump_chunk.sub_system_string_size
   type: string
   encoding: utf8
   element_data_type: char
@@ -572,9 +578,9 @@ description: TraceV3 StateDump chunk.
 attributes:
   byte_order: little-endian
 members:
-- name: process_identifier1
+- name: proc_id_upper
   data_type: uint64
-- name: process_identifier2
+- name: proc_id_lower
   data_type: uint32
 - name: ttl
   data_type: uint8

@@ -302,8 +302,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     firehose_data = test_file._ReadFirehoseChunkData(
         self._FIREHOST_CHUNK_DATA, len(self._FIREHOST_CHUNK_DATA), 0)
 
-    self.assertEqual(firehose_data.process_identifier1, 464530)
-    self.assertEqual(firehose_data.process_identifier2, 1391568)
+    self.assertEqual(firehose_data.proc_id_upper, 464530)
+    self.assertEqual(firehose_data.proc_id_lower, 1391568)
     self.assertEqual(firehose_data.public_data_size, 280)
     self.assertEqual(firehose_data.private_data_virtual_offset, 0x1000)
     self.assertEqual(firehose_data.base_continuous_time, 100366850831152)
@@ -375,8 +375,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
         uncompressed_data[data_offset:data_end_offset],
         chunkset_chunk_header.chunk_data_size, data_offset)
 
-    self.assertEqual(oversize_chunk.process_identifier1, 449241)
-    self.assertEqual(oversize_chunk.process_identifier2, 1345727)
+    self.assertEqual(oversize_chunk.proc_id_upper, 449241)
+    self.assertEqual(oversize_chunk.proc_id_lower, 1345727)
     self.assertEqual(oversize_chunk.ttl, 30)
     self.assertEqual(oversize_chunk.unknown1, 0)
     self.assertEqual(oversize_chunk.unknown2, 0)
@@ -393,21 +393,24 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     simpledump_chunk = test_file._ReadSimpleDumpChunkData(
         self._SIMPLEDUMP_CHUNK_DATA, len(self._SIMPLEDUMP_CHUNK_DATA), 0)
 
-    self.assertEqual(simpledump_chunk.process_identifier1, 1)
-    self.assertEqual(simpledump_chunk.process_identifier2, 7)
+    self.assertEqual(simpledump_chunk.proc_id_upper, 1)
+    self.assertEqual(simpledump_chunk.proc_id_lower, 7)
+    self.assertEqual(simpledump_chunk.ttl, 0)
+    self.assertEqual(simpledump_chunk.unknown1, 0)
+    self.assertEqual(simpledump_chunk.unknown2, 0)
     self.assertEqual(simpledump_chunk.continuous_time, 567448911)
     self.assertEqual(simpledump_chunk.thread_identifier, 1887)
-    self.assertEqual(simpledump_chunk.unknown1, 230724)
-    self.assertEqual(simpledump_chunk.unknown2, 0x0000)
-    self.assertEqual(simpledump_chunk.unknown3, 0x0000)
+    self.assertEqual(simpledump_chunk.unknown3, 230724)
+    self.assertEqual(simpledump_chunk.unknown4, 0x0000)
+    self.assertEqual(simpledump_chunk.unknown5, 0x0000)
     self.assertEqual(simpledump_chunk.sender_identifier, uuid.UUID(
         '1d625353-a9fa-3ec9-94c0-b2952315b2d2'))
     self.assertEqual(simpledump_chunk.dsc_identifier, uuid.UUID(
         'be7fe6ad-4560-3ae2-883e-432f78b45062'))
-    self.assertEqual(simpledump_chunk.unknown4, 1)
-    self.assertEqual(simpledump_chunk.subsystem_string_size, 0)
+    self.assertEqual(simpledump_chunk.unknown6, 1)
+    self.assertEqual(simpledump_chunk.sub_system_string_size, 0)
     self.assertEqual(simpledump_chunk.message_string_size, 42)
-    self.assertEqual(simpledump_chunk.subsystem_string, '')
+    self.assertEqual(simpledump_chunk.sub_system_string, '')
     self.assertEqual(simpledump_chunk.message_string, (
         'Skipping boot-task: restore-datapartition'))
 
@@ -419,8 +422,8 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     statedump_chunk = test_file._ReadStateDumpChunkData(
         self._STATEDUMP_CHUNK_DATA, len(self._STATEDUMP_CHUNK_DATA), 0)
 
-    self.assertEqual(statedump_chunk.process_identifier1, 292241)
-    self.assertEqual(statedump_chunk.process_identifier2, 875466)
+    self.assertEqual(statedump_chunk.proc_id_upper, 292241)
+    self.assertEqual(statedump_chunk.proc_id_lower, 875466)
     self.assertEqual(statedump_chunk.ttl, 14)
     self.assertEqual(statedump_chunk.unknown1, 0)
     self.assertEqual(statedump_chunk.unknown2, 0)

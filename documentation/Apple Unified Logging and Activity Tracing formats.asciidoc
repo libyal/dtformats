@@ -336,7 +336,7 @@ The size value does not include the 8 bytes of the sub chunk tag and data size
 4+| _The generation sub chunk data (tracev3_subchunk_generation)_
 | 8 | 16 | | Boot identifier (Boot UUID) +
 Contains a UUID stored in big-endian
-| 24 | 4 | | Process identifier (PID) of logd
+| 24 | 4 | | Process identifier (pid) of logd
 | 28 | 4 | | Exit status (of logd)
 |===
 
@@ -411,12 +411,12 @@ The Catalog process information entry is variable of size and consists of:
 | 20 | 4 | | Process identifier (pid)
 | 24 | 4 | | Effective user identifier (euid)
 | 28 | 4 | | [yellow-background]*Unknown*
-| 40 | 4 | | Number of UUID information entries (uuidinfos)
-| 44 | 4 | | [yellow-background]*Unknown*
-| 48 | 16 x ... | | UUID information entries array
-| ... | 4 | | Number of sub systems (subsystems)
+| 32 | 4 | | Number of UUID information entries (uuidinfos)
+| 36 | 4 | | [yellow-background]*Unknown*
+| 40 | 16 x ... | | UUID information entries array
+| ... | 4 | | Number of sub system entries (subsystems)
 | ... | 4 | | [yellow-background]*Unknown*
-| ... | 6 x ... | | Sub systems array
+| ... | 6 x ... | | Sub system entries array
 |===
 
 [NOTE]
@@ -679,7 +679,7 @@ Contains the delta relative to the base continuous time in the <<tracev3_filehos
 | 24 | 4 | | [yellow-background]*Unknown (activity identifier)*
 | 28 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
 4+| _Flags 0x0010 is set_
-| ... | 8 | | Process identifier (PID)
+| ... | 8 | | Process identifier (pid)
 4+| _Flags 0x0001 is set_
 | ... | 4 | | [yellow-background]*Unknown (activity identifier)*
 | ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
@@ -950,8 +950,10 @@ The StateDump chunk is variable of size and consists of:
 Contains a UUID stored in big-endian
 | 64 | 4 | | Data type
 | 68 | 4 | | Data size
-| 72 | 64 | | [yellow-background]*Unknown*
-| 136 | 64 | | [yellow-background]*Unknown*
+| 72 | 64 | | [yellow-background]*Unknown* +
+[yellow-background]*Oncly used when data type is 3?*
+| 136 | 64 | | [yellow-background]*Unknown* +
+[yellow-background]*Oncly used when data type is 3?*
 | 200 | 64 | | Name +
 Contains an UTF-8 formatted string with an end-of-string character
 | 264 | data size | | Data
@@ -959,7 +961,13 @@ Contains an UTF-8 formatted string with an end-of-string character
 
 ==== Data type
 
-1=plist, 2=protobuf, 3=data
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | | binary plist
+| 2 | | protocol buffer (protobuf)
+| 3 | | custom
+|===
 
 === SimpleDump chunk
 
@@ -974,7 +982,9 @@ The SimpleDump chunk is variable of size and consists of:
 | 8 | 8 | | Chunk data size (length)
 4+| _Chunk data (tracev3_chunk_simpledump)_
 | 16 | 8 | | First number in proc_id #@#
-| 24 | 8 | | Second number in proc_id #@#
+| 24 | 4 | | Second number in proc_id #@#
+| 28 | 1 | | TTL
+| 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Continuous time
 | 40 | 8 | | Thread identifier
 | 48 | 4 | | [yellow-background]*Unknown (offset?)*
