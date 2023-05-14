@@ -229,7 +229,8 @@ A tracev3 chunk (tracev3_chunk) is variable of size and consists of:
 | 0 | 4 | | Chunk tag (tag) +
 See section: <<chunk_tag_types,Chunk tag types>>
 | 4 | 4 | | Chunk sub tag (subtag)
-| 8 | 8 | | Chunk data size (length)
+| 8 | 8 | | Chunk data size (length) +
+[yellow-background]*Note that only the lower 32-bit has been observed to be used, so this could be 2 32-bit values as well*
 4+| _Chunk data_
 | 16 | chunk_data_size | | Chunk data
 |===
@@ -245,11 +246,8 @@ The chunk header is stored 64-bit aligned.
 | 0x1000 | Header |
 | | |
 | 0x6001 | Firehose |
-| | |
 | 0x6002 | Oversize |
-| | |
 | 0x6003 | StateDump |
-| | |
 | 0x6004 | SimpleDump |
 | | |
 | 0x600b | Catalog |
@@ -268,7 +266,7 @@ The header (chunk) is 224 bytes of size and consists of:
 | 0 | 4 | 0x1000 | Chunk tag (tag)
 | 4 | 4 | 0x0011 | Chunk sub tag (subtag)
 | 8 | 8 | 208 | Chunk data size (length)
-4+| _Chunk data_ (tracev3_chunk_header)_
+4+| _Chunk data (tracev3_chunk_header)_
 | 16 | 4 | | Mach timebase numerator (first number in timebase # / #)
 | 20 | 4 | | Mach timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Continuous time
@@ -562,8 +560,9 @@ The firehose chunk is variable of size and consists of:
 4+| _Chunk data (tracev3_chunk_log_preamble)_
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
-| 28 | 1 | | Collapsed
-| 29 | 3 | 0 | [yellow-background]*Unknown (Reserved)*
+| 28 | 1 | | TTL
+| 29 | 1 | | Collapsed
+| 30 | 2 | 0 | [yellow-background]*Unknown (Reserved)*
 | 32 | 2 | | Public data size (size_pub_data)
 | 34 | 2 | | Private data virtual offset +
 Contains 0x1000 if there is no private data
@@ -653,7 +652,7 @@ Each item is consists of the following structure:
 | 0 | 1 | | Item type
 | 1 | 1 | | Item size
 | 3 | Item size | | Item
-4+| _If item type in (0x1, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31, 0x32, 0x35, 0x40, 0x41, 0x42, 0xF2)_
+4+| _If item type in (0x1, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31, 0x32, 0x35, 0x40, 0x41, 0x42, 0xf2)_
 | ... | 2 | | Offset
 | ... | 2 | | Data size
 |===
@@ -692,13 +691,13 @@ Contains the delta relative to the base continuous time in the <<tracev3_filehos
 4+| _Formatter Flags_
 4+| _Flag 0x0020 is set_
 | ... | 2 | | Large offset data
-4+| _Flag 0x000C is set_
+4+| _Flag 0x000c is set_
 | ... | 2 | | Large shared cache
 4+| _Flags 0x0002 and 0x0008 are set_
 | ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
 4+| _Flags 0x0004 and 0x0020 are set_
 | ... | 2 | | Large offset data
-4+| _Flag 0x000A is set_
+4+| _Flag 0x000a is set_
 | ... | 16 | | UUID
 4+|
 | ... | ... | | [yellow-background]*Unknown (data?)*
@@ -736,13 +735,13 @@ Contains the offset relative to start of the private strings in the <<tracev3_fi
 4+| _Formatter Flags_
 4+| _Flag 0x0020 is set_
 | ... | 2 | | Large offset data
-4+| _Flag 0x000C is set_
+4+| _Flag 0x000c is set_
 | ... | 2 | | Large shared cache
 4+| _Flags 0x0002 and 0x0008 are set_
 | ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
 4+| _Flags 0x0004 and 0x0020 are set_
 | ... | 2 | | Large offset data
-4+| _Flag 0x000A is set_
+4+| _Flag 0x000a is set_
 | ... | 16 | | UUID
 4+| _Flags 0x0200 is set_
 | ... | 2 | | Sub system value

@@ -424,18 +424,20 @@ class TraceV3File(data_format.BinaryDataFile):
       ('chunk_tag', 'Chunk tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
-  # There was an inconsistency between the code here and the documentation,
-  # I took the documentation as correct
 
   _DEBUG_INFO_FIREHOSE_HEADER = [
-      ('process_identifier1', 'Process Identifier1', '_FormatIntegerAsDecimal'),
-      ('process_identifier2', 'Process Identifier2', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
+      ('process_identifier1', 'Process identifier (PID) 1',
+       '_FormatIntegerAsDecimal'),
+      ('process_identifier2', 'Process identifier (PID) 2',
+       '_FormatIntegerAsDecimal'),
+      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
+      ('collapsed', 'Collapsed', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
       ('public_data_size', 'Public data size', '_FormatIntegerAsDecimal'),
       ('private_data_virtual_offset', 'Private data virtual offset',
        '_FormatIntegerAsHexadecimal4'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal4'),
+      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
+      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
       ('base_continuous_time', 'Base continuous time',
        '_FormatIntegerAsDecimal')]
 
@@ -466,12 +468,12 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal'),
       ('unknown_flags', 'Unknown flags', '_FormatIntegerAsHexadecimal4')]
 
-  _DEBUG_HEADER_CONTINOUS_TIME_SUB_CHUNK = [
+  _DEBUG_INFO_HEADER_CONTINOUS_TIME_SUB_CHUNK = [
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
       ('continuous_time', 'Continuous Time', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_HEADER_SYSTEM_INFORMATION_SUB_CHUNK = [
+  _DEBUG_INFO_HEADER_SYSTEM_INFORMATION_SUB_CHUNK = [
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
@@ -479,7 +481,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('build_version', 'Build version', '_FormatString'),
       ('hardware_model', 'Hardware model', '_FormatString')]
 
-  _DEBUG_HEADER_GENERATION_SUB_CHUNK = [
+  _DEBUG_INFO_HEADER_GENERATION_SUB_CHUNK = [
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
       ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
@@ -487,7 +489,7 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal'),
       ('logd_exit_status', 'logd exit status', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_HEADER_TIME_ZONE_SUB_CHUNK = [
+  _DEBUG_INFO_HEADER_TIME_ZONE_SUB_CHUNK = [
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
       ('path', 'Path', '_FormatString')]
@@ -528,8 +530,7 @@ class TraceV3File(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(TraceV3File, self).__init__(
-        debug=debug, output_writer=output_writer)
+    super(TraceV3File, self).__init__(debug=debug, output_writer=output_writer)
 
   def _FormatCharacterStream(self, stream):
     """Formats a stream of byte encoded characters.
@@ -701,10 +702,10 @@ class TraceV3File(data_format.BinaryDataFile):
             data_offset)
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_OVERSIZE:
-        self._ReadOversizeChunkData(chunkset_chunk_data)
+        self._ReadOversizeChunk(chunkset_chunk_data)
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_STATEDUMP:
-        self._ReadStatedumpChunkData(chunkset_chunk_data)
+        self._ReadStatedumpChunk(chunkset_chunk_data)
 
       data_offset = data_end_offset
 
@@ -739,7 +740,7 @@ class TraceV3File(data_format.BinaryDataFile):
           firehose_header, self._DEBUG_INFO_FIREHOSE_HEADER)
 
     firehose_object = Tracev3FirehoseData()
-    firehose_object.PopulateFromHeader(firehose_header)
+    firehose_object.CopyFromFirehoseHeader(firehose_header)
 
     chunk_data_offset = 32
     while chunk_data_offset < chunk_data_size:
@@ -787,56 +788,57 @@ class TraceV3File(data_format.BinaryDataFile):
           firehose_tracepoint, self._DEBUG_INFO_FIREHOSE_TRACEPOINT)
 
     tracepoint_object = Tracev3FirehoseTracepoint()
-    tracepoint_object.PopulateFromData(firehose_tracepoint)
+    tracepoint_object.CopyFromFirehostTracepoint(firehose_tracepoint)
 
     # TODO populate the data and parse it based on the type of tracepoint
 
     return tracepoint_object
 
-  def _ReadHeader(self, file_object, file_offset):
-    """Reads a header.
+  def _ReadHeaderChunk(self, file_object, file_offset):
+    """Reads a header chunk.
 
     Args:
        file_object (file): file-like object.
        file_offset (int): offset of the chunk relative to the start of the file.
 
-    Raises:
-      ParseError: if the header cannot be read.
-
     Returns:
-      header: a header.
+      header_chunk: a header chunk.
+
+    Raises:
+      ParseError: if the header chunk cannot be read.
     """
-    data_type_map = self._GetDataTypeMap('tracev3_header')
+    data_type_map = self._GetDataTypeMap('tracev3_header_chunk')
 
     header_chunk, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'header')
+        file_object, file_offset, data_type_map, 'header chunk')
 
     if self._debug:
       self._DebugPrintStructureObject(
           header_chunk, self._DEBUG_INFO_HEADER)
       self._DebugPrintStructureObject(
-          header_chunk.continuous, self._DEBUG_HEADER_CONTINOUS_TIME_SUB_CHUNK)
+          header_chunk.continuous,
+          self._DEBUG_INFO_HEADER_CONTINOUS_TIME_SUB_CHUNK)
       self._DebugPrintStructureObject(
           header_chunk.system_information,
-          self._DEBUG_HEADER_SYSTEM_INFORMATION_SUB_CHUNK)
+          self._DEBUG_INFO_HEADER_SYSTEM_INFORMATION_SUB_CHUNK)
       self._DebugPrintStructureObject(
-          header_chunk.generation, self._DEBUG_HEADER_GENERATION_SUB_CHUNK)
+          header_chunk.generation, self._DEBUG_INFO_HEADER_GENERATION_SUB_CHUNK)
       self._DebugPrintStructureObject(
-          header_chunk.time_zone, self._DEBUG_HEADER_TIME_ZONE_SUB_CHUNK)
+          header_chunk.time_zone, self._DEBUG_INFO_HEADER_TIME_ZONE_SUB_CHUNK)
 
     return header_chunk
 
-  def _ReadOversizeChunkData(self, chunk_data):
-    """Reads Oversize chunk data.
+  def _ReadOversizeChunk(self, chunk_data):
+    """Reads an oversize chunk.
 
     Args:
-      chunk_data (bytes): firehose chunk data.
+      chunk_data (bytes): chunk data.
 
     Returns:
-      oversize_chunk: an oversize chunk
+      oversize_chunk: an oversize chunk.
 
     Raises:
-      ParseError: if the firehose chunk cannot be read.
+      ParseError: if the chunk cannot be read.
     """
     data_type_map = self._GetDataTypeMap('tracev3_oversize_chunk')
 
@@ -849,18 +851,18 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return oversize_chunk
 
-  def _ReadStatedumpChunkData(self, chunk_data):
-    """Reads Statedump chunk data.
+  def _ReadStatedumpChunk(self, chunk_data):
+    """Reads a statedump chunk.
 
-        Args:
-          chunk_data (bytes): firehose chunk data.
+    Args:
+      chunk_data (bytes): chunk data.
 
-        Returns:
-          statedump_chunk: a statedump chunk.
+    Returns:
+      statedump_chunk: a statedump chunk.
 
-        Raises:
-          ParseError: if the firehose chunk cannot be read.
-        """
+    Raises:
+      ParseError: if the chunk cannot be read.
+    """
     data_type_map = self._GetDataTypeMap('tracev3_statedump_chunk')
 
     statedump_chunk = self._ReadStructureFromByteStream(
@@ -888,7 +890,7 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset += 16
 
       if chunk_header.chunk_tag == self._CHUNK_TAG_HEADER:
-        self._ReadHeader(file_object, file_offset)
+        self._ReadHeaderChunk(file_object, file_offset)
 
       elif chunk_header.chunk_tag == self._CHUNK_TAG_CATALOG:
         self._ReadCatalog(file_object, file_offset, chunk_header)
@@ -904,72 +906,75 @@ class TraceV3File(data_format.BinaryDataFile):
 
       file_offset += alignment
 
+
 class Tracev3FirehoseData(object):
-  """TraceV3Firehose data.
+  """TraceV3 firehose data.
 
   Attributes:
-    process_identifier1 (int): first number in proc_id.
-    process_identifier2 (int): second number in proc_id.
-    public_data_size (int): size of the Firehose data block.
-    private_data_virtual_offset (int): private data virtual offset.
     base_continuous_time (int): base continuous time for events in the firehose
         chunk
-    firehose_tracepoints (list): list of Tracev3FirehoseTracepoint objects.
+    firehose_tracepoints (list[Tracev3FirehoseTracepoint]): firehose
+        tracepoints.
+    private_data_virtual_offset (int): private data virtual offset.
+    process_identifier1 (int): first number in "proc_id #@#".
+    process_identifier2 (int): second number in "proc_id #@#".
+    public_data_size (int): size of the Firehose data block.
   """
+
   def __init__(self):
     """Initializes a Firehose data block."""
     super(Tracev3FirehoseData, self).__init__()
+    self.base_continuous_time = None
+    self.firehose_tracepoints = []
+    self.private_data_virtual_offset = None
     self.process_identifier1 = None
     self.process_identifier2 = None
     self.public_data_size = None
-    self.private_data_virtual_offset = None
-    self.base_continuous_time = None
-    self.firehose_tracepoints = []
 
-  def PopulateFromHeader(self, header):
-    """Populates the attributes of the TraceV3Firehose from a firehose_header.
+  def CopyFromFirehoseHeader(self, header):
+    """Copies attributes a firehose header.
 
-      Args:
-        header (firehose_header): a firehose_header.
+    Args:
+      header (firehose_header): a firehose header.
     """
+    self.base_continuous_time = header.base_continuous_time
+    self.private_data_virtual_offset = header.private_data_virtual_offset
     self.process_identifier1 = header.process_identifier1
     self.process_identifier2 = header.process_identifier2
     self.public_data_size = header.public_data_size
-    self.private_data_virtual_offset = header.private_data_virtual_offset
-    self.base_continuous_time = header.base_continuous_time
+
 
 class Tracev3FirehoseTracepoint(object):
-  """TraceV3 Firehose Tracepoint.
+  """TraceV3 firehose tracepoint.
 
   Attributes:
+    continuous_time (int): continuous time.
+    data (bytes): content of the tracepoint.
+    data_size (int): size of the data segment.
     format_string_location (int): offset to the formated string location.
     thread_identifier (int): thread identifier.
-    continuous_time_lower (int): lower part of the continuous time.
-    continuous_time_upper (int): upper part of the continuous time.
-    data_size (int): size of the data segment.
-    data (bytes): content of the tracepoint.
   """
+
   def __init__(self):
     """Initialize a Firehose tracepoint."""
     super(Tracev3FirehoseTracepoint, self).__init__()
+    self.continuous_time = None
+    self.data = None
+    self.data_size = None
     self.format_string_location = None
     self.thread_identifier = None
-    self.continuous_time_lower = None
-    self.continuous_time_upper = None
-    self.data_size = None
-    self.data = None
 
-  def PopulateFromData(self, data):
-    """Populates the attributes of the TraceV3Tracepoint from parsed data.
+  def CopyFromFirehostTracepoint(self, tracepoint):
+    """Copies attributes a firehose tracepoint.
 
-      Args:
-        data (firehose_tracepoint): firehose tracepoint.
+    Args:
+      tracepoint (firehose_tracepoint): firehose tracepoint.
     """
-    self.format_string_location = data.format_string_location
-    self.thread_identifier = data.thread_identifier
-    self.continuous_time_lower = data.continuous_time_lower
-    self.continuous_time_upper = data.continuous_time_upper
-    self.data_size = data.data_size
+    self.continuous_time = tracepoint.continuous_time_lower + (
+        tracepoint.continuous_time_upper << 32 )
+    self.data_size = tracepoint.data_size
+    self.format_string_location = tracepoint.format_string_location
+    self.thread_identifier = tracepoint.thread_identifier
 
 
 class UUIDTextFile(data_format.BinaryDataFile):

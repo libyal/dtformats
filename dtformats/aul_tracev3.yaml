@@ -182,9 +182,9 @@ members:
   elements_data_size: 48
   elements_terminator: "\x00"
 ---
-name: tracev3_header
+name: tracev3_header_chunk
 type: structure
-description: TraceV3 header
+description: TraceV3 header chunk
 attributes:
   byte_order: little-endian
 members:

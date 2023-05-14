@@ -664,9 +664,9 @@ values:
 - name: META_FLOODFILL
   number: 0x0419
 - name: META_RECTANGLE
-  number: 0x041B
+  number: 0x041b
 - name: META_SETPIXEL
-  number: 0x041F
+  number: 0x041f
 - name: META_FRAMEREGION
   number: 0x0429
 - name: META_ANIMATEPALETTE
@@ -678,7 +678,7 @@ values:
 - name: META_EXTFLOODFILL
   number: 0x0548
 - name: META_ROUNDRECT
-  number: 0x061C
+  number: 0x061c
 - name: META_PATBLT
   number: 0x061d
 - name: META_ESCAPE

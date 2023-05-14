@@ -287,17 +287,17 @@ values:
 - name: NULL_PEN
   number: 0x80000008
 - name: OEM_FIXED_FONT
-  number: 0x8000000A
+  number: 0x8000000a
 - name: ANSI_FIXED_FONT
-  number: 0x8000000B
+  number: 0x8000000b
 - name: ANSI_VAR_FONT
-  number: 0x8000000C
+  number: 0x8000000c
 - name: SYSTEM_FONT
-  number: 0x8000000D
+  number: 0x8000000d
 - name: DEVICE_DEFAULT_FONT
-  number: 0x8000000E
+  number: 0x8000000e
 - name: DEFAULT_PALETTE
-  number: 0x8000000F
+  number: 0x8000000f
 - name: SYSTEM_FIXED_FONT
   number: 0x80000010
 - name: DEFAULT_GUI_FONT

@@ -592,13 +592,13 @@ members:
   condition: sockaddr.family == 0x02
 - name: ipv6_port
   data_type: uint16
-  condition: sockaddr.family == 0x1E
+  condition: sockaddr.family == 0x1e
 - name: ipv6_flowinfo
   data_type: uint32
-  condition: sockaddr.family == 0x1E
+  condition: sockaddr.family == 0x1e
 - name: ipv6_ip
   data_type: ipv6_address
-  condition: sockaddr.family == 0x1E
+  condition: sockaddr.family == 0x1e
 - name: ipv6_scope
   data_type: uint32
-  condition: sockaddr.family == 0x1E
+  condition: sockaddr.family == 0x1e
