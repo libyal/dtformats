@@ -19,18 +19,18 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
     test_file = bsm.BSMEventAuditingFile()
 
     ip_address = [127, 0, 0, 1]
-    formatted_ip_address = test_file._FormatArrayOfIntegersAsIPAddress(
+    formatted_ip_address, _ = test_file._FormatArrayOfIntegersAsIPAddress(
         ip_address)
     self.assertEqual(formatted_ip_address, '127.0.0.1')
 
     ip_address = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
-    formatted_ip_address = test_file._FormatArrayOfIntegersAsIPAddress(
+    formatted_ip_address, _ = test_file._FormatArrayOfIntegersAsIPAddress(
         ip_address)
     self.assertEqual(
         formatted_ip_address, '0000:0000:0000:0000:0000:0000:0000:0001')
 
     ip_address = []
-    formatted_ip_address = test_file._FormatArrayOfIntegersAsIPAddress(
+    formatted_ip_address, _ = test_file._FormatArrayOfIntegersAsIPAddress(
         ip_address)
     self.assertIsNone(formatted_ip_address)
 
@@ -45,7 +45,7 @@ class BSMEventAuditingFileTest(test_lib.BaseTestCase):
     """Tests the _FormatIntegerAsNetType function."""
     test_file = bsm.BSMEventAuditingFile()
 
-    formatted_net_type = test_file._FormatIntegerAsNetType(4)
+    formatted_net_type, _ = test_file._FormatIntegerAsNetType(4)
     self.assertEqual(formatted_net_type, '4')
 
     with self.assertRaises(errors.ParseError):

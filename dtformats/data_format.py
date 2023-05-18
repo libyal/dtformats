@@ -48,8 +48,8 @@ class BinaryDataFormat(object):
       data (bytes): data.
     """
     if self._output_writer:
-      self._output_writer.WriteText(f'{description:s}:\n')
-      self._output_writer.WriteText(self._FormatDataInHexadecimal(data))
+      lines, _ = self._FormatDataInHexadecimal(data)
+      self._output_writer.WriteText(f'{description:s}:\n{lines:s}')
 
   def _DebugPrintDecimalValue(self, description, value):
     """Prints a decimal value for debugging.
@@ -137,7 +137,8 @@ class BinaryDataFormat(object):
       data (bytes): data.
 
     Returns:
-      str: hexadecimal representation of the data.
+      tuple[str, bool]: hexadecimal representation of the data and True to
+          indicate there should be a new line after value description.
     """
     in_group = False
     previous_hexadecimal_string = None
@@ -191,7 +192,7 @@ class BinaryDataFormat(object):
         previous_hexadecimal_string = hexadecimal_string
 
     lines.extend(['', ''])
-    return '\n'.join(lines)
+    return '\n'.join(lines), True
 
   def _FormatArrayOfIntegersAsDecimals(self, array_of_integers):
     """Formats an array of integers as decimals.
@@ -200,9 +201,11 @@ class BinaryDataFormat(object):
       array_of_integers (list[int]): array of integers.
 
     Returns:
-      str: array of integers formatted as decimals.
+      tuple[str, bool]: array of integers formatted as decimals and False to
+          indicate there should be no new line after value description.
     """
-    return ', '.join([f'{integer:d}' for integer in array_of_integers])
+    lines = ', '.join([f'{integer:d}' for integer in array_of_integers])
+    return lines, False
 
   def _FormatArrayOfIntegersAsOffsets(self, array_of_integers):
     """Formats an array of integers as offset.
@@ -211,10 +214,12 @@ class BinaryDataFormat(object):
       array_of_integers (list[int]): array of integers.
 
     Returns:
-      str: array of integers formatted as offsets.
+      tuple[str, bool]: array of integers formatted as offsets and False to
+          indicate there should be no new line after value description.
     """
-    return ', '.join([
+    lines = ', '.join([
         f'{integer:d} (0x{integer:08x})' for integer in array_of_integers])
+    return lines, False
 
   def _FormatArrayOfIntegersAsIPv4Address(self, array_of_integers):
     """Formats an array of integers as an IPv4 address.
@@ -223,13 +228,15 @@ class BinaryDataFormat(object):
       array_of_integers (list[int]): array of integers.
 
     Returns:
-      str: array of integers formatted as an IPv4 address or None if the number
-          of integers in the array is not supported.
+      tuple[str, bool]: array of integers formatted as an IPv4 address or None
+          if the number of integers in the array is not supported and False to
+          indicate there should be no new line after value description.
     """
-    if len(array_of_integers) != 4:
-      return None
+    lines = None
+    if len(array_of_integers) == 4:
+      lines = '.'.join([f'{octet:d}' for octet in array_of_integers])
 
-    return '.'.join([f'{octet:d}' for octet in array_of_integers])
+    return lines, False
 
   def _FormatArrayOfIntegersAsIPv6Address(self, array_of_integers):
     """Formats an array of integers as an IPv6 address.
@@ -238,17 +245,19 @@ class BinaryDataFormat(object):
       array_of_integers (list[int]): array of integers.
 
     Returns:
-      str: array of integers formatted as an IPv6 address or None if the number
-          of integers in the array is not supported.
+      tuple[str, bool]: array of integers formatted as an IPv6 address or None
+          if the number of integers in the array is not supported and False to
+          indicate there should be no new line after value description.
     """
-    if len(array_of_integers) != 16:
-      return None
+    lines = None
+    if len(array_of_integers) == 16:
+      # Note that socket.inet_ntop() is not supported on Windows.
+      octet_pairs = zip(array_of_integers[0::2], array_of_integers[1::2])
+      octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
+      # TODO: omit ":0000" from the string.
+      lines = ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
 
-    # Note that socket.inet_ntop() is not supported on Windows.
-    octet_pairs = zip(array_of_integers[0::2], array_of_integers[1::2])
-    octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
-    # TODO: omit ":0000" from the string.
-    return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
+    return lines, False
 
   def _FormatFloatingPoint(self, floating_point):
     """Formats a floating-point number.
@@ -257,9 +266,10 @@ class BinaryDataFormat(object):
       floating_point (float): floating-point number.
 
     Returns:
-      str: formatted floating-point number.
+      tuple[str, bool]: formatted floating-point number and False to indicate
+          there should be no new line after value description.
     """
-    return f'{floating_point:f}'
+    return f'{floating_point:f}', False
 
   def _FormatIntegerAsDecimal(self, integer):
     """Formats an integer as a decimal.
@@ -268,9 +278,10 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as a decimal.
+      tuple[str, bool]: integer formatted as a decimal and False to indicate
+          there should be no new line after value description.
     """
-    return f'{integer:d}'
+    return f'{integer:d}', False
 
   def _FormatIntegerAsFiletime(self, integer):
     """Formats an integer as a FILETIME date and time value.
@@ -279,20 +290,21 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as a FILETIME date and time value.
+      tuple[str, bool]: integer formatted as a FILETIME date and time value and
+          False to indicate there should be no new line after value description.
     """
     if integer == 0:
-      return 'Not set (0)'
+      return 'Not set (0)', False
 
     if integer == 0x7fffffffffffffff:
-      return 'Never (0x7fffffffffffffff)'
+      return 'Never (0x7fffffffffffffff)', False
 
     date_time = dfdatetime_filetime.Filetime(timestamp=integer)
     date_time_string = date_time.CopyToDateTimeString()
     if not date_time_string:
-      return f'0x{integer:08x}'
+      return f'0x{integer:08x}', False
 
-    return f'{date_time_string:s} UTC'
+    return f'{date_time_string:s} UTC', False
 
   def _FormatIntegerAsHexadecimal2(self, integer):
     """Formats an integer as an 2-digit hexadecimal.
@@ -301,9 +313,10 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as an 2-digit hexadecimal.
+      tuple[str, bool]: integer formatted as a 2-digit hexadecimal and False
+          to indicate there should be no new line after value description.
     """
-    return f'0x{integer:02x}'
+    return f'0x{integer:02x}', False
 
   def _FormatIntegerAsHexadecimal4(self, integer):
     """Formats an integer as an 4-digit hexadecimal.
@@ -312,9 +325,10 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as an 4-digit hexadecimal.
+      tuple[str, bool]: integer formatted as a 4-digit hexadecimal and False
+          to indicate there should be no new line after value description.
     """
-    return f'0x{integer:04x}'
+    return f'0x{integer:04x}', False
 
   def _FormatIntegerAsHexadecimal8(self, integer):
     """Formats an integer as an 8-digit hexadecimal.
@@ -323,9 +337,10 @@ class BinaryDataFormat(object):
       integer (int): integer.
 
     Returns:
-      str: integer formatted as an 8-digit hexadecimal.
+      tuple[str, bool]: integer formatted as a 8-digit hexadecimal and False
+          to indicate there should be no new line after value description.
     """
-    return f'0x{integer:08x}'
+    return f'0x{integer:08x}', False
 
   def _FormatIntegerAsPosixTime(self, integer):
     """Formats an integer as a POSIX date and time value.
@@ -430,10 +445,22 @@ class BinaryDataFormat(object):
       if value_format_function:
         attribute_value = value_format_function(attribute_value)
 
+      # TODO: refactor formatting callbacks to return tuple.
+      if isinstance(attribute_value, tuple):
+        attribute_value, new_line_after_description = attribute_value
+      else:
+        new_line_after_description = True
+
       if isinstance(attribute_value, str) and '\n' in attribute_value:
         text = ''
         if description is not None:
-          text = f'{description:s}:\n'
+          if new_line_after_description:
+            text = f'{description:s}:\n'
+          else:
+            alignment, _ = divmod(len(description), 8)
+            alignment_string = '\t' * (8 - alignment + 1)
+            text = f'{description:s}{alignment_string:s}: '
+
         text = ''.join([text, attribute_value])
 
       else:

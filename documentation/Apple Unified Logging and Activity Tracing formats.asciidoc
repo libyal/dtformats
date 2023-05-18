@@ -404,8 +404,9 @@ The Catalog process information entry is variable of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 2 | | Entry index
 | 2 | 2 | | [yellow-background]*Unknown*
-| 4 | 2 | | Catalog UUID index of the main UUID
-| 6 | 2 | | Catalog UUID index of the dsc UUID
+| 4 | 2 | | Index of the main UUID in the Catalog UUIDs
+| 6 | 2 | | Index of the dsc UUID in the Catalog UUIDs +
+[yellow-background]*Where -1 (0xffff) represents not set?*
 | 8 | 8 | | First number in proc_id #@#
 | 16 | 4 | | Second number in proc_id #@#
 | 20 | 4 | | Process identifier (pid)
@@ -546,9 +547,9 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 | ... | 4 | "bv4$" | | LZ4 end of compressed data marker
 |===
 
-=== [[tracev3_filehose_chunk]]Firehose chunk
+=== [[tracev3_firehose_chunk]]Firehose chunk
 
-The firehose chunk is variable of size and consists of:
+The firehose chunk (tracev3_chunk_firehose) is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -571,7 +572,7 @@ Contains 0x1000 if there is no private data
 | 40 | 8 | | Base continuous time for events in the firehose chunk
 4+|
 | 48 | public data size - 16 | | public data +
-Contains one or more tracev3_chunk_firehose events
+Contains one or more <<tracev3_firehose_tracepoint,Firehose tracepoints>>
 | ... | ... | Private strings
 |===
 
@@ -609,30 +610,134 @@ firehose chunk:
 0x00000010  d0 0f 00 10 00 00 00 03  00 00 00 00 00 00 00 00  ................
 ....
 
-=== [[tracev3_filehose_tracepoint]]Firehose tracepoint
+=== [[tracev3_firehose_tracepoint]]Firehose tracepoint
 
-A firehose tracepoint (tracev3_chunk_firehose) is variable of size and consists of:
+A firehose tracepoint is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown*
-| 1 | 1 | | [yellow-background]*Unknown (Log type?)* +
-See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
+| 0 | 1 | | Activity type +
+See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 1 | 1 | | Log type +
+See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
-See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
+See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string location
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
-Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
+Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-| 24 | ... | | Data which contents depends on various values such as log type and flags
+| 24 | ... | | Data which contents depends on the flags
+| ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
 
-==== Firehose tracepoint data
+==== [[tracev3_firehose_tracepoint_activity_type]]Firehose tracepoint activity type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x02 | | Activity
+| 0x03 | | Trace
+| 0x04 | | Non-activity
+| | |
+| 0x06 | | Signpost
+| 0x07 | | Loss
+|===
+
+==== [[tracev3_firehose_tracepoint_log_type]]Firehose tracepoint log type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00 | | Default
+| 0x01 | | Info
+| 0x02 | | Debug
+| 0x03 | | Useraction
+| | |
+| 0x10 | | Error
+| 0x11 | | Fault
+| | |
+| 0x40 | | Thread Signpost Event
+| 0x41 | | Thread Signpost Start
+| 0x42 | | Thread Signpost End
+| | |
+| 0x80 | | Process Signpost Event
+| 0x81 | | Process Signpost Start
+| 0x82 | | Process Signpost End
+| | |
+| 0xc0 | | System Signpost Event
+| 0xc1 | | System Signpost Start
+| 0xc2 | | System Signpost End
+|===
+
+[yellow-background]*Other values are marked as "Default"?*
+
+==== [[tracev3_firehose_tracepoint_flags]]Firehose tracepoint flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0001 | | Has activity identifier +
+An activity or non-activity firehose tracepoint has an activity identifier +
+See section: <<tracev3_firehose_tracepoint_activity_identifier,Firehose tracepoint activity identifier>>
+| 0x000e | | <<tracev3_firehose_tracepoint_formatter_type,Formatter type>>
+| 0x0010 | | [yellow-background]*Unknown (has_unique_pid)*
+| 0x0020 | | Has large offset
+| | |
+| 0x0100 | | Has private string range +
+A non-activity firehose tracepoint has a private string range +
+See section: <<tracev3_firehose_tracepoint_private_strings_range,Firehose tracepoint private strings range>>
+| 0x0200 | | Has sub system value +
+A activity or non-activity firehose tracepoint has a sub system value
+| 0x0400 | | Has TTL value +
+A non-activity firehose tracepoint has a TTL value
+| 0x0800 | | Has data reference value +
+A non-activity firehose tracepoint has a data reference value to a 0x0602 BLOB
+| | |
+| 0x8000 | | Has signpost name reference value +
+A non-activity firehose tracepoint has a signpost name reference value
+|===
+
+===== [[tracev3_firehose_tracepoint_formatter_type]]Firehose tracepoint formatter type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0002 | | Message string is stored in an uuidtext file
+| 0x0004 | | Message string is stored in a dsc file
+| 0x0008 | | Message string is stored in an alternate uuidtext file
+| 0x000a | | [yellow-background]*TODO: describe*
+| 0x000c | | [yellow-background]*TODO: describe*
+|===
+
+==== [[tracev3_firehose_tracepoint_activity_identifier]]Firehose tracepoint activity identifier
+
+A firehose tracepoint activity identifier is 8 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Identifier
+| 0 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
+|===
+
+==== [[tracev3_firehose_tracepoint_private_strings_range]]Firehose tracepoint private strings range
+
+A firehose tracepoint private strings range is 4 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Private strings offset +
+Contains the offset relative to start of the private strings in the <<tracev3_firehose_chunk,Firehose chunk>>
+| 2 | 2 | | Private strings size
+|===
+
+==== [[tracev3_firehose_tracepoint_data_items]]Firehose tracepoint data items
 
 Data items inside the firehose tracepoint consist of the following structure:
 
@@ -640,21 +745,18 @@ Data items inside the firehose tracepoint consist of the following structure:
 |===
 | Offset | Size | Value | Description
 | 0 | 1 | | [yellow-background]*Unknown*
-| 1 | 1 | | Number of items
-| 2 | ... | | Items
+| 1 | 1 | | Number of data items
+| 2 | ... | | Data items
 |===
 
-Each item is consists of the following structure:
+Each data item is consists of the following structure:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 1 | | Item type
-| 1 | 1 | | Item size
-| 3 | Item size | | Item
-4+| _If item type in (0x1, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31, 0x32, 0x35, 0x40, 0x41, 0x42, 0xf2)_
-| ... | 2 | | Offset
-| ... | 2 | | Data size
+| 1 | 1 | | Data size
+| 2 | ... | | Data
 |===
 
 ==== Activity firehose tracepoint
@@ -664,28 +766,29 @@ An activity firehose tracepoint consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | Log activity type
+| 0 | 1 | 0x02 | Activity type +
+See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
+See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
-See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
+See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string location
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
-Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
+Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
 4+| _Log type != 0x3 is set_
 | 24 | 4 | | [yellow-background]*Unknown (activity identifier)*
-| 28 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+| 28 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
 4+| _Flags 0x0010 is set_
 | ... | 8 | | Process identifier (pid)
 4+| _Flags 0x0001 is set_
 | ... | 4 | | [yellow-background]*Unknown (activity identifier)*
-| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
 4+| _Flags 0x0200 is set_
 | ... | 4 | | [yellow-background]*Unknown (activity identifier)*
-| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
+| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
 4+|
 | ... | 4 | | [yellow-background]*Unknown (Message string reference)*
 4+| _Formatter Flags_
@@ -712,194 +815,53 @@ A non-activity firehose tracepoint (event) consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown*
+| 0 | 1 | 0x04 | Activity type +
+See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Firehose tracepoint log type>>
+See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
-See section: <<tracev3_firehose_tracepoint_flags,Firehose tracepoint flags>>
+See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string location
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
-Contains the delta relative to the base continuous time in the <<tracev3_filehose_chunk,Firehose chunk>>
+Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-4+| _Flags 0x0001 is set_
-| ... | 4 | | [yellow-background]*Unknown (activity identifier)*
-| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinal?)*
-4+| _Flags 0x0100 is set_
-| ... | 2 | | Private strings offset +
-Contains the offset relative to start of the private strings in the <<tracev3_filehose_chunk,Firehose chunk>>
-| ... | 2 | | Private strings size
-4+|
-| ... | 4 | | [yellow-background]*Unknown (Message string reference)*
-4+| _Formatter Flags_
-4+| _Flag 0x0020 is set_
-| ... | 2 | | Large offset data
-4+| _Flag 0x000c is set_
+4+| _Has activity identifier flag (0x0001) is set_
+| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has private strings range flag (0x0100) is set_
+| ... | 4 | | <<tracev3_firehose_tracepoint_private_strings_range,Private strings range>>
+4+| _Common_
+| ... | 4 | | [yellow-background]*Unknown (PCID)*
+4+| _Has large offset flag (0x0020) is set_
+| 0 | 2 | | Large offset data
+4+| _If formatter type == 0x0008_
+| ... | 2 | | uuidtext file index
+4+| _If formatter type == 0x000a_
+| ... | 16 | | relative UUID
+4+| _If formatter type == 0x000c_
 | ... | 2 | | Large shared cache
-4+| _Flags 0x0002 and 0x0008 are set_
-| ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
-4+| _Flags 0x0004 and 0x0020 are set_
-| ... | 2 | | Large offset data
-4+| _Flag 0x000a is set_
-| ... | 16 | | UUID
-4+| _Flags 0x0200 is set_
+4+| _Has sub system value flag (0x0200) is set_
 | ... | 2 | | Sub system value
-4+| _Flags 0x0400 is set_
+4+| _Has TTL value flag (0x0400) is set_
 | ... | 1 | | TTL value
-4+| _Flags 0x0800 is set_
+4+| _Has data reference value flag (0x0800) is set_
 | ... | 2 | | Data reference value
-4+| _Log type 0x80 is set_
-| ... | 8 | | [yellow-background]*Unknown (signpost string size)*
-4+| _Flags 0x8000 is set_
-| ... | 4 | | Signpost name reference value
-4+|
-| ... | ... | | [yellow-background]*Unknown (data?)*
+4+| _Common_
+| ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
 
-==== Notes
-
-....
 Old notes:
 
-A firehose tracepoint (firehose_tracepoint) is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | 0x04 | [yellow-background]*Unknown*
-| 1 | 1 | | [yellow-background]*Unknown (Log level?)*
-| 2 | 2 | | [yellow-background]*Unknown (Flags?)*
-| 4 | 4 | | [yellow-background]*Unknown (format string location?)*
-| 8 | 8 | | [yellow-background]*Unknown (thread identifier?)*
-| 16 | 8 | | [yellow-background]*Unknown (time related?)*
-| 24 | 4 | | [yellow-background]*Unknown (process information location?)*
-| 28 | 2 | | [yellow-background]*Unknown*
-| 30 | 2 | | [yellow-background]*Unknown*
-| 32 | 4 | | [yellow-background]*Unknown*
-| 36 | 2 | | [yellow-background]*Unknown (value string size)*
-| 38 | ... | | [yellow-background]*Unknown (value string)*
-| ... | ... | | Alignment padding
-|===
 ....
-
+4+| _Log type 0x80 is set_
+| ... | 8 | | [yellow-background]*Unknown (signpost string size)*
+4+| _Flags 0x8000 is set_
+| ... | 4 | | Signpost name reference value
+| ... | ... | | [yellow-background]*Unknown (data?)*
 ....
-0x00000020        02 02                                       ........_.......
-(main_exe, has_subsystem)
-....
-
-....
-tp 16 + 46:         log default (main_exe, has_subsystem)
-    time:           +3.790s
-    walltime:       1545925575 - 2018-12-27 16:46:15 (Thursday)
-    location:       pc:0x4b299 fmt:0x7a4d0
-
-fmt: points to location in
-/var/db/uuidtext/AB/414C1EC0233A05AF22029CC5E160EA
-
-00014350  00 00 00 00 00 00 00 6f  70 65 6e 64 69 72 65 63  |.......opendirec|
-00014360  74 6f 72 79 64 20 28 62  75 69 6c 64 20 25 7b 70  |toryd (build %{p|
-00014370  75 62 6c 69 63 7d 73 29  20 6c 61 75 6e 63 68 65  |ublic}s) launche|
-00014380  64 2e 2e 2e 00 00 00 66  61 69 6c 65 64 20 74 6f  |d......failed to|
-
-    image uuid:     AB414C1E-C023-3A05-AF22-029CC5E160EA
-[000] AB414C1E-C023-3A05-AF22-029CC5E160EA
-
-    image path:     /usr/libexec/opendirectoryd
-    format:         opendirectoryd (build %{public}s) launched...
-    subsystem:      1 com.apple.opendirectoryd.default
-opendirectoryd (build 483.200) launched...
-
-0x00000030  a3 94 e8 e1 00 00 16 00                           ................
-
-0x00000030                                       01 00 02 01  ................
-0x00000040  22 04 00 00 08 00 34 38  33 2e 32 30 30 00 00 00  ".....483.200...
-
-0x00000050  04 10 02 02 50 2c 07 00  9d 02 00 00 00 00 00 00  ....P,..........
-0x00000060  a2 87 0e e3 00 00 14 00  af 2b 00 00 01 00 03 02  .........+......
-0x00000070  21 04 00 00 00 00 00 04  02 00 00 00 00 00 00 00  !...............
-0x00000080  04 00 03 02 a0 72 07 00  a4 02 00 00 00 00 00 00  .....r..........
-0x00000090  bb 79 72 e3 00 00 3b 00  40 00 00 00 00 00 00 80  .yr...;.@.......
-0x000000a0  c0 8e 02 00 02 00 02 02  42 04 00 00 1f 00 00 04  ........B.......
-0x000000b0  d0 07 00 00 4f 44 4e 6f  64 65 43 72 65 61 74 65  ....ODNodeCreate
-0x000000c0  57 69 74 68 4e 61 6d 65  41 6e 64 4f 70 74 69 6f  WithNameAndOptio
-0x000000d0  6e 73 00 00 00 00 00 00  04 10 02 02 50 2c 07 00  ns..........P,..
-0x000000e0  9f 02 00 00 00 00 00 00  fe 49 5d e5 00 00 14 00  .........I].....
-0x000000f0  af 2b 00 00 01 00 03 02  21 04 00 00 00 00 00 04  .+......!.......
-0x00000100  02 00 00 00 00 00 00 00  04 00 02 02 d0 8f 07 00  ................
-0x00000110  9f 02 00 00 00 00 00 00  f3 b0 5e e5 00 00 3f 00  ..........^...?.
-0x00000120  54 3c 04 00 02 00 02 04  20 04 00 00 01 00 20 04  T<...... ..... .
-0x00000130  01 00 01 00 42 04 02 00  12 00 20 04 14 00 0b 00  ....B..... .....
-0x00000140  00 00 2f 41 63 74 69 76  65 20 44 69 72 65 63 74  ../Active Direct
-0x00000150  6f 72 79 00 20 61 73 20  68 69 64 64 65 6e 00 00  ory. as hidden..
-0x00000160  04 10 02 02 50 2c 07 00  9f 02 00 00 00 00 00 00  ....P,..........
-0x00000170  a3 0c 86 e5 00 00 14 00  af 2b 00 00 01 00 03 02  .........+......
-0x00000180  21 04 00 00 00 00 00 04  02 00 00 00 00 00 00 00  !...............
-0x00000190  04 00 02 02 d0 8f 07 00  9f 02 00 00 00 00 00 00  ................
-0x000001a0  23 29 86 e5 00 00 34 00  54 3c 04 00 02 00 02 04  #)....4.T<......
-0x000001b0  20 04 00 00 01 00 20 04  01 00 01 00 42 04 02 00   ..... .....B...
-0x000001c0  07 00 20 04 09 00 0b 00  00 00 2f 4c 6f 63 61 6c  .. ......./Local
-0x000001d0  00 20 61 73 20 68 69 64  64 65 6e 00 00 00 00 00  . as hidden.....
-0x000001e0  04 10 02 02 50 2c 07 00  9f 02 00 00 00 00 00 00  ....P,..........
-0x000001f0  c1 03 99 e5 00 00 14 00  af 2b 00 00 01 00 03 02  .........+......
-0x00000200  21 04 00 00 00 00 00 04  02 00 00 00 00 00 00 00  !...............
-0x00000210  04 00 02 02 e0 95 07 00  9f 02 00 00 00 00 00 00  ................
-0x00000220  74 9c 99 e5 00 00 5c 00  69 f6 03 00 01 00 02 02  t.....\.i.......
-0x00000230  42 04 00 00 08 00 42 04  08 00 40 00 2f 53 65 61  B.....B...@./Sea
-0x00000240  72 63 68 00 2f 4c 69 62  72 61 72 79 2f 50 72 65  rch./Library/Pre
-0x00000250  66 65 72 65 6e 63 65 73  2f 4f 70 65 6e 44 69 72  ferences/OpenDir
-0x00000260  65 63 74 6f 72 79 2f 43  6f 6e 66 69 67 75 72 61  ectory/Configura
-0x00000270  74 69 6f 6e 73 2f 2f 53  65 61 72 63 68 2e 70 6c  tions//Search.pl
-0x00000280  69 73 74 00 00 00 00 00  04 00 02 02 d0 8f 07 00  ist.............
-
-....
-
-==== [[tracev3_firehose_tracepoint_log_type]]Firehose tracepoint log type
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x01 | | [yellow-background]*Unknown (Info / Activity)*
-| 0x02 | | Debug
-| | |
-| 0x10 | | Error
-| 0x11 | | Fault
-| | |
-| 0x80 | | [yellow-background]*Unknown (Signpost flag? / Is event?)*
-| 0x81 | | [yellow-background]*Unknown (Process start)*
-| 0x82 | | [yellow-background]*Unknown (Process end)*
-| 0xc0 | | [yellow-background]*Unknown (System)*
-|===
-
-[yellow-background]*Other values are marked as "Default"?*
-
-==== [[tracev3_firehose_tracepoint_flags]]Firehose tracepoint flags
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x0001 | | Has activity identifier or sub system value +
-An activity or non-activity firehose tracepoint has an activity identifier
-| 0x0002 | | Message strings are stored in an uuidtext file
-| 0x0004 | | Message strings are stored in a dsc file
-| 0x0008 | | Message strings are stored in an alternate uuidtext file
-| 0x0010 | | [yellow-background]*Unknown (has_unique_pid)*
-| | |
-| 0x0100 | | Has private string range value +
-A non-activity firehose tracepoint has a private string range value
-| 0x0200 | | Has other activity identifier or sub system value +
-An activity firehose tracepoint has an other activity identifier +
-A non-activity firehose tracepoint has a sub system value
-| 0x0400 | | Has TTL value +
-A non-activity firehose tracepoint has a TTL value
-| 0x0800 | | Has data reference value +
-A non-activity firehose tracepoint has a data reference value to a 0x0602 BLOB
-| | |
-| 0x8000 | | Has signpost name reference value +
-A non-activity firehose tracepoint has a signpost name reference value
-|===
 
 === Oversize chunk
 

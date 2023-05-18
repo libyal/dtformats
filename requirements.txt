@@ -1,7 +1,7 @@
 pip >= 7.0.0
 PyYAML >= 3.10
 dfdatetime >= 20180510
-dtfabric >= 20230512
+dtfabric >= 20230518
 libfwps-python >= 20230131
 libfwsi-python >= 20150606
 libgzipf-python >= 20221229

@@ -115,7 +115,8 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
       str: formatted data stream structure
     """
     # TODO: print data_stream.size on a separate line
-    return self._FormatDataInHexadecimal(data_stream.stream)
+    lines, _ = self._FormatDataInHexadecimal(data_stream.stream)
+    return lines
 
   def _FormatDate(self, date):
     """Formats a date structure.

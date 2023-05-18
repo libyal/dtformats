@@ -1049,8 +1049,9 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       array_of_integers (list[int]): array of integers.
 
     Returns:
-      str: array of integers formatted as an IP address or None if the number
-          of integers in the sequence is not supported.
+      tuple[str, bool]: array of integers formatted as an IPv4 or IPv6 address
+          or None if the number of integers in the array is not supported and
+          False to indicate there should be no new line after value description.
     """
     number_of_integers = len(array_of_integers)
 
@@ -1059,7 +1060,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
     if number_of_integers == 16:
       return self._FormatArrayOfIntegersAsIPv6Address(array_of_integers)
 
-    return None
+    return None, False
 
   def _FormatIntegerAsEventType(self, integer):
     """Formats an integer as an event type.

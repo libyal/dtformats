@@ -125,10 +125,10 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     data = b'\x00\x01\x02\x03\x04\x05\x06'
     test_format._DebugPrintData('Description', data)
 
-    expected_output = [
-        'Description:\n',
-        ('0x00000000  00 01 02 03 04 05 06                              '
-         '.......\n\n')]
+    expected_output = [(
+        'Description:\n'
+        '0x00000000  00 01 02 03 04 05 06                              '
+        '.......\n\n')]
     self.assertEqual(output_writer.output, expected_output)
 
   def testDebugPrintDecimalValue(self):
@@ -173,7 +173,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         '0x00000000  00 01 02 03 04 05 06                              '
         '.......\n'
         '\n')
-    formatted_data = test_format._FormatDataInHexadecimal(data)
+    formatted_data, _ = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09'
@@ -181,7 +181,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         '0x00000000  00 01 02 03 04 05 06 07  08 09                    '
         '..........\n'
         '\n')
-    formatted_data = test_format._FormatDataInHexadecimal(data)
+    formatted_data, _ = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
@@ -189,7 +189,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         '0x00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
         '................\n'
         '\n')
-    formatted_data = test_format._FormatDataInHexadecimal(data)
+    formatted_data, _ = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
     data = (
@@ -203,14 +203,14 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         '0x00000020  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  '
         '................\n'
         '\n')
-    formatted_data = test_format._FormatDataInHexadecimal(data)
+    formatted_data, _ = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
   def testFormatArrayOfIntegersAsIPv4Address(self):
     """Tests the _FormatArrayOfIntegersAsIPv4Address function."""
     test_format = TestBinaryDataFormat()
 
-    ip_address = test_format._FormatArrayOfIntegersAsIPv4Address([
+    ip_address, _ = test_format._FormatArrayOfIntegersAsIPv4Address([
         0xc0, 0xa8, 0xcc, 0x62])
     self.assertEqual(ip_address, '192.168.204.98')
 
@@ -218,7 +218,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     """Tests the _FormatArrayOfIntegersAsIPv6Address function."""
     test_format = TestBinaryDataFormat()
 
-    ip_address = test_format._FormatArrayOfIntegersAsIPv6Address([
+    ip_address, _ = test_format._FormatArrayOfIntegersAsIPv6Address([
         0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00,
         0x00, 0x42, 0x83, 0x29])
     self.assertEqual(ip_address, '2001:0db8:0000:0000:0000:ff00:0042:8329')
