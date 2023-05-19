@@ -8,6 +8,7 @@ import uuid
 
 import lz4.block
 
+from dtformats import errors
 from dtformats import unified_logging
 
 from tests import test_lib
@@ -215,6 +216,19 @@ class TraceV3FileTest(test_lib.BaseTestCase):
       0x10, 0x00, 0x09, 0x00, 0x94, 0x5a, 0xa2, 0x01, 0x7f, 0x00, 0x03, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
 
+  _FIREHOST_TRACEPOINT_ACTIVITY_DATA = bytes(bytearray([
+      0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x3b, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+      0xe1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x48, 0x7e, 0x04, 0x00]))
+
+  _FIREHOST_TRACEPOINT_LOSS_DATA = bytes(bytearray([
+      0xce, 0x9a, 0x31, 0x07, 0x00, 0x00, 0x00, 0x00, 0x95, 0xaa, 0xef, 0x56,
+      0x00, 0x00, 0x00, 0x00, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+
+  _FIREHOST_TRACEPOINT_NON_ACTIVITY_DATA = bytes(bytearray([
+      0x6c, 0x86, 0x03, 0x00, 0x06, 0x00, 0x08, 0x23, 0x01, 0x41, 0x04, 0x00,
+      0x00, 0x00, 0x00]))
+
   _HEADER_CHUNK_DATA = bytes(bytearray([
       0x7d, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0xc2, 0x55, 0xe0, 0xb5,
       0x32, 0x3f, 0x00, 0x00, 0xb6, 0xcc, 0x56, 0x62, 0x00, 0x00, 0x00, 0x00,
@@ -302,6 +316,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     firehose_data = test_file._ReadFirehoseChunkData(
         self._FIREHOST_CHUNK_DATA, len(self._FIREHOST_CHUNK_DATA), 0)
 
+    self.assertIsNotNone(firehose_data)
     self.assertEqual(firehose_data.proc_id_upper, 464530)
     self.assertEqual(firehose_data.proc_id_lower, 1391568)
     self.assertEqual(firehose_data.public_data_size, 280)
@@ -315,6 +330,61 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(firehose_tracepoint.format_string_location, 142377933)
     self.assertEqual(firehose_tracepoint.thread_identifier, 11462671)
 
+  def testReadFirehoseTracepointActivityData(self):
+    """Tests the _ReadFirehoseTracepointActivityData function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    activity = test_file._ReadFirehoseTracepointActivityData(
+        0x0213, self._FIREHOST_TRACEPOINT_ACTIVITY_DATA, 0)
+
+    self.assertIsNotNone(activity)
+    self.assertEqual(activity.activity_identifier1.identifier, 224)
+    self.assertEqual(activity.process_identifier, 59)
+    self.assertEqual(activity.activity_identifier2.identifier, 224)
+    self.assertEqual(activity.activity_identifier3.identifier, 225)
+    self.assertEqual(activity.unknown_pcid, 0x00047e48)
+
+    with self.assertRaises(errors.ParseError):
+      test_file._ReadFirehoseTracepointActivityData(
+          0xffff, self._FIREHOST_TRACEPOINT_ACTIVITY_DATA, 0)
+
+  def testReadFirehoseTracepointLossData(self):
+    """Tests the _ReadFirehoseTracepointLossData function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    loss = test_file._ReadFirehoseTracepointLossData(
+        0x0000, self._FIREHOST_TRACEPOINT_LOSS_DATA, 0)
+
+    self.assertIsNotNone(loss)
+    self.assertEqual(loss.start_time, 120691406)
+    self.assertEqual(loss.end_time, 1458547349)
+    self.assertEqual(loss.number_of_messages, 63)
+
+    with self.assertRaises(errors.ParseError):
+      test_file._ReadFirehoseTracepointLossData(
+          0xffff, self._FIREHOST_TRACEPOINT_LOSS_DATA, 0)
+
+  def testReadFirehoseTracepointNonActivityData(self):
+    """Tests the _ReadFirehoseTracepointNonActivityData function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    non_activity = test_file._ReadFirehoseTracepointNonActivityData(
+        0x0602, self._FIREHOST_TRACEPOINT_NON_ACTIVITY_DATA, 0)
+
+    self.assertIsNotNone(non_activity)
+    self.assertEqual(non_activity.unknown_pcid, 0x0003866c)
+    self.assertEqual(non_activity.sub_system_value, 6)
+    self.assertEqual(non_activity.ttl_value, 8)
+    self.assertEqual(non_activity.unknown1, 0x23)
+    self.assertEqual(non_activity.number_of_data_items, 1)
+
+    with self.assertRaises(errors.ParseError):
+      test_file._ReadFirehoseTracepointNonActivityData(
+          0xffff, self._FIREHOST_TRACEPOINT_NON_ACTIVITY_DATA, 0)
+
   def testReadHeaderChunk(self):
     """Tests the _ReadHeaderChunk function."""
     output_writer = test_lib.TestOutputWriter()
@@ -323,6 +393,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     with io.BytesIO(self._HEADER_CHUNK_DATA) as file_object:
       header_chunk = test_file._ReadHeaderChunk(file_object, 0)
 
+    self.assertIsNotNone(header_chunk)
     self.assertEqual(header_chunk.timebase_numerator, 125)
     self.assertEqual(header_chunk.timebase_denominator, 3)
     self.assertEqual(header_chunk.time_zone_offset, 300)
@@ -375,6 +446,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
         uncompressed_data[data_offset:data_end_offset],
         chunkset_chunk_header.chunk_data_size, data_offset)
 
+    self.assertIsNotNone(oversize_chunk)
     self.assertEqual(oversize_chunk.proc_id_upper, 449241)
     self.assertEqual(oversize_chunk.proc_id_lower, 1345727)
     self.assertEqual(oversize_chunk.ttl, 30)
@@ -393,6 +465,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     simpledump_chunk = test_file._ReadSimpleDumpChunkData(
         self._SIMPLEDUMP_CHUNK_DATA, len(self._SIMPLEDUMP_CHUNK_DATA), 0)
 
+    self.assertIsNotNone(simpledump_chunk)
     self.assertEqual(simpledump_chunk.proc_id_upper, 1)
     self.assertEqual(simpledump_chunk.proc_id_lower, 7)
     self.assertEqual(simpledump_chunk.ttl, 0)
@@ -422,6 +495,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     statedump_chunk = test_file._ReadStateDumpChunkData(
         self._STATEDUMP_CHUNK_DATA, len(self._STATEDUMP_CHUNK_DATA), 0)
 
+    self.assertIsNotNone(statedump_chunk)
     self.assertEqual(statedump_chunk.proc_id_upper, 292241)
     self.assertEqual(statedump_chunk.proc_id_lower, 875466)
     self.assertEqual(statedump_chunk.ttl, 14)

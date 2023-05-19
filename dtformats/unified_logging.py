@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Apple Unified Logging and _FormatIntegerAsHexadecimal8 Tracing files."""
+"""Apple Unified Logging and Activity Tracing files."""
 
 import lz4.block
 
@@ -428,6 +428,9 @@ class TraceV3File(data_format.BinaryDataFile):
       _CHUNK_TAG_CATALOG: 'Catalog',
       _CHUNK_TAG_CHUNK_SET: 'ChunkSet'}
 
+  _DATA_ITEM_TYPE_DESCRIPTIONS = {
+      }
+
   _FLAG_HAS_ACTIVITY_IDENTIFIER = 0x0001
   _FLAG_HAS_LARGE_OFFSET = 0x0020
   _FLAG_HAS_PRIVATE_STRINGS_RANGE = 0x0100
@@ -475,7 +478,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('dsc_uuid', 'DSC UUID', '_FormatUUIDAsString'),
       ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
       ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
-      ('process_identifier', 'process identifier (pid)',
+      ('process_identifier', 'Process identifier (PID)',
        '_FormatIntegerAsDecimal'),
       ('effective_user_identifier', 'Effective user identifier (euid)',
        '_FormatIntegerAsDecimal'),
@@ -495,14 +498,6 @@ class TraceV3File(data_format.BinaryDataFile):
       ('chunk_tag', 'Chunk tag', '_FormatChunkTag'),
       ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
       ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_FIREHOSE_ACTIVITY_IDENTIFIER = [
-      ('identifier', 'Identifier', '_FormatIntegerAsDecimal'),
-      ('sentinel', 'Sentinel', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_FIREHOSE_PRIVATE_STRINGS_RANGE = [
-      ('offset', 'Offset', '_FormatIntegerAsHexadecimal8'),
-      ('size', 'Size', '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_FIREHOSE_HEADER = [
       ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
@@ -534,20 +529,77 @@ class TraceV3File(data_format.BinaryDataFile):
       ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM = [
-      ('item_type', 'Item type', '_FormatIntegerAsDecimal'),
+      ('item_type', 'Item type', '_FormatDataItemType'),
       ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
-  _DEBUG_INFO_FIREHOSE_TRACEPOINT_NON_ACTIVITY = [
+  _DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY = [
+      ('activity_identifier1', 'Activity identifier1',
+       '_FormatActivityIdentifier'),
+      ('process_identifier', 'Process identifier (PID)',
+       '_FormatIntegerAsDecimal'),
+      ('activity_identifier2', 'Activity identifier2',
+       '_FormatActivityIdentifier'),
+      ('activity_identifier3', 'Activity identifier3',
+       '_FormatActivityIdentifier'),
       ('unknown_pcid', 'Unknown PCID', '_FormatIntegerAsHexadecimal8'),
       ('large_offset', 'Large offset', '_FormatIntegerAsHexadecimal4'),
       ('uuidtext_file_index', 'UUIDText file index', '_FormatIntegerAsDecimal'),
       ('relative_uuid', 'Relative UUID', '_FormatUUIDAsString'),
       ('large_shared_cache', 'Large shared cache', '_FormatIntegerAsDecimal'),
-      ('sub_system_value', 'Sub system value', '_FormatIntegerAsDecimal'),
+      ('sub_system_value', 'Sub system value', '_FormatIntegerAsHexadecimal4'),
       ('ttl_value', 'TTL value', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
-       '_FormatIntegerAsDecimal'),
+       '_FormatIntegerAsHexadecimal4'),
+      ('signpost_name_reference_value', 'Signpost name reference value',
+       '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('number_of_data_items', 'Number of data items',
+       '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_FIREHOSE_TRACEPOINT_LOSS = [
+      ('start_time', 'Start time', '_FormatIntegerAsDecimal'),
+      ('end_time', 'End time', '_FormatIntegerAsDecimal'),
+      ('number_of_messages', 'Number of messages', '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_FIREHOSE_TRACEPOINT_NON_ACTIVITY = [
+      ('activity_identifier', 'Activity identifier',
+       '_FormatActivityIdentifier'),
+      ('private_strings_range', 'Private string range',
+       '_FormatPrivateStringsRange'),
+      ('unknown_pcid', 'Unknown PCID', '_FormatIntegerAsHexadecimal8'),
+      ('large_offset', 'Large offset', '_FormatIntegerAsHexadecimal4'),
+      ('uuidtext_file_index', 'UUIDText file index', '_FormatIntegerAsDecimal'),
+      ('relative_uuid', 'Relative UUID', '_FormatUUIDAsString'),
+      ('large_shared_cache', 'Large shared cache', '_FormatIntegerAsDecimal'),
+      ('sub_system_value', 'Sub system value', '_FormatIntegerAsHexadecimal4'),
+      ('ttl_value', 'TTL value', '_FormatIntegerAsDecimal'),
+      ('data_reference_value', 'Data reference value',
+       '_FormatIntegerAsHexadecimal4'),
+      ('signpost_name_reference_value', 'Signpost name reference value',
+       '_FormatIntegerAsHexadecimal8'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
+      ('number_of_data_items', 'Number of data items',
+       '_FormatIntegerAsDecimal')]
+
+  _DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST = [
+      ('activity_identifier', 'Activity identifier',
+       '_FormatActivityIdentifier'),
+      ('private_strings_range', 'Private string range',
+       '_FormatPrivateStringsRange'),
+      ('unknown_pcid', 'Unknown PCID', '_FormatIntegerAsHexadecimal8'),
+      ('large_offset', 'Large offset', '_FormatIntegerAsHexadecimal4'),
+      ('uuidtext_file_index', 'UUIDText file index', '_FormatIntegerAsDecimal'),
+      ('relative_uuid', 'Relative UUID', '_FormatUUIDAsString'),
+      ('large_shared_cache', 'Large shared cache', '_FormatIntegerAsDecimal'),
+      ('signpost_identifier', 'Signpost identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('sub_system_value', 'Sub system value', '_FormatIntegerAsHexadecimal4'),
+      ('ttl_value', 'TTL value', '_FormatIntegerAsDecimal'),
+      ('data_reference_value', 'Data reference value',
+       '_FormatIntegerAsHexadecimal4'),
+      ('signpost_name_reference_value', 'Signpost name reference value',
+       '_FormatIntegerAsHexadecimal8'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('number_of_data_items', 'Number of data items',
        '_FormatIntegerAsDecimal')]
@@ -582,7 +634,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('sub_chunk_tag', 'Sub chunk tag', '_FormatIntegerAsHexadecimal4'),
       ('sub_chunk_data_size', 'Sub chunk data size', '_FormatIntegerAsDecimal'),
       ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
-      ('logd_process_identifier', 'logd process identifier (pid)',
+      ('logd_process_identifier', 'logd process identifier (PID)',
        '_FormatIntegerAsDecimal'),
       ('logd_exit_status', 'logd exit status', '_FormatIntegerAsDecimal')]
 
@@ -656,6 +708,19 @@ class TraceV3File(data_format.BinaryDataFile):
     super(TraceV3File, self).__init__(debug=debug, output_writer=output_writer)
     self._catalog_process_entries = {}
 
+  def _FormatActivityIdentifier(self, activity_identifier):
+    """Formats an activity activity identifier.
+
+    Args:
+      activity_identifier (tracev3_firehose_tracepoint_activity_identifier):
+          activity identifier.
+
+    Returns:
+      str: formatted activity identifier.
+    """
+    return (f'{activity_identifier.identifier:d} '
+            f'(sentinel: 0x{activity_identifier.sentinel:08x})')
+
   def _FormatActivityType(self, integer):
     """Formats an activity type.
 
@@ -666,83 +731,6 @@ class TraceV3File(data_format.BinaryDataFile):
       str: integer formatted as activity type.
     """
     description = self._ACTIVITY_TYPE_DESCRIPTIONS.get(integer, None)
-    if description:
-      return f'0x{integer:02x} ({description:s})'
-
-    return f'0x{integer:02x}'
-
-  def _FormatChunkTag(self, integer):
-    """Formats a chunk tag.
-
-    Args:
-      integer (int): integer.
-
-    Returns:
-      str: integer formatted as chunk tag.
-    """
-    description = self._CHUNK_TAG_DESCRIPTIONS.get(integer, None)
-    if description:
-      return f'0x{integer:08x} ({description:s})'
-
-    return f'0x{integer:08x}'
-
-  def _FormatFirehoseTracepointFlags(self, integer):
-    """Formats firehost tracepoint flags.
-
-    Args:
-      integer (int): integer.
-
-    Returns:
-      tuple[str, bool]: integer formatted as firehost tracepoint flags and
-          False to indicate there should be no new line after value description.
-    """
-    lines = [f'0x{integer:04x}']
-
-    if integer & 0x0001:
-      lines.append('\tHas activity identfier (0x0001)')
-
-    formatter_type = integer & 0x000e
-    if formatter_type == 0x0002:
-      lines.append('\tMessage in uuidtext file (0x0002)')
-    elif formatter_type == 0x0004:
-      lines.append('\tMessage in DSC file (0x0004)')
-    elif formatter_type == 0x0008:
-      lines.append('\tMessage in alternate uuidtext file (0x0008)')
-    elif formatter_type == 0x000a:
-      lines.append('\t(0x000a)')
-    elif formatter_type == 0x000c:
-      lines.append('\t(0x000c)')
-
-    if integer & 0x0010:
-      lines.append('\tUnique PID (0x0010)')
-    if integer & 0x0020:
-      lines.append('\tHas large offset (0x0020)')
-
-    if integer & 0x0100:
-      lines.append('\tHas private strings range (0x0100)')
-    if integer & 0x0200:
-      lines.append('\tHas sub system value (0x0200)')
-    if integer & 0x0400:
-      lines.append('\tHas TTL value (0x0400)')
-    if integer & 0x0800:
-      lines.append('\tHas data reference value (0x0800)')
-
-    if integer & 0x8000:
-      lines.append('\tHas signpost name reference value (0x8000)')
-
-    lines.extend(['', ''])
-    return '\n'.join(lines), False
-
-  def _FormatLogType(self, integer):
-    """Formats a log type.
-
-    Args:
-      integer (int): integer.
-
-    Returns:
-      str: integer formatted as log type.
-    """
-    description = self._LOG_TYPE_DESCRIPTIONS.get(integer, None)
     if description:
       return f'0x{integer:02x} ({description:s})'
 
@@ -808,6 +796,110 @@ class TraceV3File(data_format.BinaryDataFile):
         f'\t[{uuid_index:03d}] {uuid!s}'
         for uuid_index, uuid in enumerate(array_of_uuids)])
     return f'{value:s}\n'
+
+  def _FormatChunkTag(self, integer):
+    """Formats a chunk tag.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as chunk tag.
+    """
+    description = self._CHUNK_TAG_DESCRIPTIONS.get(integer, None)
+    if description:
+      return f'0x{integer:08x} ({description:s})'
+
+    return f'0x{integer:08x}'
+
+  def _FormatDataItemType(self, integer):
+    """Formats a data item type.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as data item type.
+    """
+    description = self._DATA_ITEM_TYPE_DESCRIPTIONS.get(integer, None)
+    if description:
+      return f'0x{integer:02x} ({description:s})'
+
+    return f'0x{integer:02x}'
+
+  def _FormatFirehoseTracepointFlags(self, integer):
+    """Formats firehost tracepoint flags.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      tuple[str, bool]: integer formatted as firehost tracepoint flags and
+          False to indicate there should be no new line after value description.
+    """
+    lines = [f'0x{integer:04x}']
+
+    if integer & 0x0001:
+      lines.append('\tHas activity identfier (0x0001)')
+
+    formatter_type = integer & 0x000e
+    if formatter_type == 0x0002:
+      lines.append('\tMessage in uuidtext file (0x0002)')
+    elif formatter_type == 0x0004:
+      lines.append('\tMessage in DSC file (0x0004)')
+    elif formatter_type == 0x0008:
+      lines.append('\tMessage in alternate uuidtext file (0x0008)')
+    elif formatter_type == 0x000a:
+      lines.append('\t(0x000a)')
+    elif formatter_type == 0x000c:
+      lines.append('\t(0x000c)')
+
+    if integer & 0x0010:
+      lines.append('\tHas process identifier (PID) value (0x0010)')
+    if integer & 0x0020:
+      lines.append('\tHas large offset (0x0020)')
+
+    if integer & 0x0100:
+      lines.append('\tHas private strings range (0x0100)')
+    if integer & 0x0200:
+      lines.append('\tHas sub system value (0x0200)')
+    if integer & 0x0400:
+      lines.append('\tHas TTL value (0x0400)')
+    if integer & 0x0800:
+      lines.append('\tHas data reference value (0x0800)')
+
+    if integer & 0x8000:
+      lines.append('\tHas signpost name reference value (0x8000)')
+
+    lines.extend(['', ''])
+    return '\n'.join(lines), False
+
+  def _FormatLogType(self, integer):
+    """Formats a log type.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as log type.
+    """
+    description = self._LOG_TYPE_DESCRIPTIONS.get(integer, None)
+    if description:
+      return f'0x{integer:02x} ({description:s})'
+
+    return f'0x{integer:02x}'
+
+  def _FormatPrivateStringsRange(self, strings_range):
+    """Formats a private strings range.
+
+    Args:
+      strings_range (tracev3_firehose_tracepoint_private_strings_range):
+          private strings range.
+
+    Returns:
+      str: formatted private strings range.
+    """
+    return f'offset: 0x{strings_range.offset:04x}, size: {strings_range.size:d}'
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -1099,25 +1191,42 @@ class TraceV3File(data_format.BinaryDataFile):
 
     activity_type = firehose_tracepoint.activity_type
 
+    # TODO: make this a struct group.
     if activity_type == self._ACTIVITY_TYPE_ACTIVITY:
-      # TODO: implement
-      pass
+      if firehose_tracepoint.log_type not in (0x01, ):
+        raise errors.ParseError(
+            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+      self._ReadFirehoseTracepointActivityData(
+          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
 
     elif activity_type == self._ACTIVITY_TYPE_TRACE:
       # TODO: implement
       pass
 
     elif activity_type == self._ACTIVITY_TYPE_NON_ACTIVITY:
+      if firehose_tracepoint.log_type not in (0x00, 0x01, 0x10, 0x11):
+        raise errors.ParseError(
+            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
       self._ReadFirehoseTracepointNonActivityData(
           firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
 
     elif activity_type == self._ACTIVITY_TYPE_SIGNPOST:
-      # TODO: implement
-      pass
+      if firehose_tracepoint.log_type not in (0x80, 0x81, 0x82, 0xc2):
+        raise errors.ParseError(
+            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+      self._ReadFirehoseTracepointSignpostData(
+          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
 
     elif activity_type == self._ACTIVITY_TYPE_LOSS:
-      # TODO: implement
-      pass
+      if firehose_tracepoint.log_type not in (0x00, ):
+        raise errors.ParseError(
+            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+      self._ReadFirehoseTracepointLossData(
+          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
 
     else:
       raise errors.ParseError(
@@ -1125,19 +1234,101 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return tracepoint_object
 
+  def _ReadFirehoseTracepointActivityData(
+      self, flags, tracepoint_data, data_offset):
+    """Reads firehose tracepoint activity data.
+
+    Args:
+      flags (bytes): firehose tracepoint flags.
+      tracepoint_data (bytes): firehose tracepoint data.
+      data_offset (int): offset of the firehose tracepoint data relative to
+          the start of the chunk set.
+
+    Returns:
+      tracev3_firehose_tracepoint_activity: activity.
+
+    Raises:
+      ParseError: if the activity data cannot be read.
+    """
+    supported_flags = 0x0001 | 0x000e | 0x0010 | 0x0020 | 0x0200
+
+    if flags & ~supported_flags != 0:
+      raise errors.ParseError(f'Unsupported flags: 0x{flags:04x}.')
+
+    data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint_activity')
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'tracev3_firehose_tracepoint_flags': flags,
+        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+
+    activity = self._ReadStructureFromByteStream(
+        tracepoint_data, data_offset, data_type_map, 'activity',
+        context=context)
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          activity, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY)
+
+    return activity
+
+  def _ReadFirehoseTracepointLossData(
+      self, flags, tracepoint_data, data_offset):
+    """Reads firehose tracepoint loss data.
+
+    Args:
+      flags (bytes): firehose tracepoint flags.
+      tracepoint_data (bytes): firehose tracepoint data.
+      data_offset (int): offset of the firehose tracepoint data relative to
+          the start of the chunk set.
+
+    Returns:
+      tracev3_firehose_tracepoint_loss: loss.
+
+    Raises:
+      ParseError: if the loss data cannot be read.
+    """
+    supported_flags = 0x0000
+
+    if flags & ~supported_flags != 0:
+      raise errors.ParseError(f'Unsupported flags: 0x{flags:04x}.')
+
+    data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint_loss')
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'tracev3_firehose_tracepoint_flags': flags,
+        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+
+    loss = self._ReadStructureFromByteStream(
+        tracepoint_data, data_offset, data_type_map, 'loss', context=context)
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          loss, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_LOSS)
+
+    return loss
+
   def _ReadFirehoseTracepointNonActivityData(
-      self, flags, non_activity_data, data_offset):
+      self, flags, tracepoint_data, data_offset):
     """Reads firehose tracepoint non-activity data.
 
     Args:
       flags (bytes): firehose tracepoint flags.
-      non_activity_data (bytes): non-activity data.
-      data_offset (int): offset of the non-activity relative to the start of
-          the chunk set.
+      tracepoint_data (bytes): firehose tracepoint data.
+      data_offset (int): offset of the firehose tracepoint data relative to
+          the start of the chunk set.
+
+    Returns:
+      tracev3_firehose_tracepoint_non_activity: non-activity.
 
     Raises:
-      ParseError: if the non-activity cannot be read.
+      ParseError: if the non-activity data cannot be read.
     """
+    supported_flags = (
+        0x0001 | 0x000e | 0x0020 | 0x0100 | 0x0200 | 0x0400 | 0x0800)
+
+    if flags & ~supported_flags != 0:
+      raise errors.ParseError(f'Unsupported flags: 0x{flags:04x}.')
+
     data_type_map = self._GetDataTypeMap(
         'tracev3_firehose_tracepoint_non_activity')
 
@@ -1146,23 +1337,58 @@ class TraceV3File(data_format.BinaryDataFile):
         'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
 
     non_activity = self._ReadStructureFromByteStream(
-        non_activity_data, data_offset, data_type_map,
+        tracepoint_data, data_offset, data_type_map,
         'non-activity', context=context)
 
     if self._debug:
-      if non_activity.activity_identifier:
-        self._DebugPrintStructureObject(
-            non_activity.activity_identifier,
-            self._DEBUG_INFO_FIREHOSE_ACTIVITY_IDENTIFIER)
-      if non_activity.private_strings_range:
-        self._DebugPrintStructureObject(
-            non_activity.private_strings_range,
-            self._DEBUG_INFO_FIREHOSE_PRIVATE_STRINGS_RANGE)
       self._DebugPrintStructureObject(
           non_activity, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_NON_ACTIVITY)
       for data_item in non_activity.data_items:
         self._DebugPrintStructureObject(
             data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
+
+    return non_activity
+
+  def _ReadFirehoseTracepointSignpostData(
+      self, flags, tracepoint_data, data_offset):
+    """Reads firehose tracepoint signpost data.
+
+    Args:
+      flags (bytes): firehose tracepoint flags.
+      tracepoint_data (bytes): firehose tracepoint data.
+      data_offset (int): offset of the firehose tracepoint data relative to
+          the start of the chunk set.
+
+    Returns:
+      tracev3_firehose_tracepoint_signpost: signpost.
+
+    Raises:
+      ParseError: if the signpost data cannot be read.
+    """
+    supported_flags = (
+        0x0001 | 0x000e | 0x0020 | 0x0100 | 0x0200 | 0x0400 | 0x0800 | 0x8000)
+
+    if flags & ~supported_flags != 0:
+      raise errors.ParseError(f'Unsupported flags: 0x{flags:04x}.')
+
+    data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint_signpost')
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'tracev3_firehose_tracepoint_flags': flags,
+        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+
+    signpost = self._ReadStructureFromByteStream(
+        tracepoint_data, data_offset, data_type_map, 'signpost',
+        context=context)
+
+    if self._debug:
+      self._DebugPrintStructureObject(
+          signpost, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST)
+      for data_item in signpost.data_items:
+        self._DebugPrintStructureObject(
+            data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
+
+    return signpost
 
   def _ReadHeaderChunk(self, file_object, file_offset):
     """Reads a header chunk.

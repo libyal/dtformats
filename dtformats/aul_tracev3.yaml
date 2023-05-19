@@ -425,29 +425,6 @@ members:
   element_data_type: uint8
   number_of_elements: tracev3_backtrace.number_offsets
 ---
-name: tracev3_firehose_activity_identifier
-type: structure
-description: TraceV3 firehose activity identifier
-attributes:
-  byte_order: little-endian
-members:
-- name: identifier
-  data_type: uint32
-- name: sentinel
-  data_type: uint32
-  value: 0x80000000
----
-name: tracev3_firehose_private_strings_range
-type: structure
-description: TraceV3 firehose private strings range
-attributes:
-  byte_order: little-endian
-members:
-- name: offset
-  data_type: uint16
-- name: size
-  data_type: uint16
----
 name: tracev3_firehose_header
 type: structure
 description: TraceV3 firehose header.
@@ -488,32 +465,6 @@ members:
 - name: count
   data_type: uint64
 ---
-name: tracev3_firehose_tracepoint_data_item_string_type
-type: structure
-description: TraceV3 firehose tracepoint data item of string type
-attributes:
-  byte_order: little-endian
-members:
-- name: offset
-  data_type: uint16
-- name: message_data_size
-  data_type: uint16
----
-name: tracev3_firehose_tracepoint_data_item
-type: structure
-description: TraceV3 firehose tracepont data item
-attributes:
-  byte_order: little-endian
-members:
-- name: item_type
-  data_type: uint8
-- name: data_size
-  data_type: uint8
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: tracev3_firehose_tracepoint_data_item.data_size
----
 name: tracev3_firehose_tracepoint
 type: structure
 description: TraceV3 firehose tracepoint.
@@ -544,6 +495,100 @@ members:
   type: padding
   alignment_size: 8
 ---
+name: tracev3_firehose_tracepoint_activity_identifier
+type: structure
+description: TraceV3 firehose tracepoint activity identifier
+attributes:
+  byte_order: little-endian
+members:
+- name: identifier
+  data_type: uint32
+- name: sentinel
+  data_type: uint32
+  value: 0x80000000
+---
+name: tracev3_firehose_tracepoint_data_item_string_type
+type: structure
+description: TraceV3 firehose tracepoint data item of string type
+attributes:
+  byte_order: little-endian
+members:
+- name: offset
+  data_type: uint16
+- name: message_data_size
+  data_type: uint16
+---
+name: tracev3_firehose_tracepoint_data_item
+type: structure
+description: TraceV3 firehose tracepont data item
+attributes:
+  byte_order: little-endian
+members:
+- name: item_type
+  data_type: uint8
+- name: data_size
+  data_type: uint8
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: tracev3_firehose_tracepoint_data_item.data_size
+---
+name: tracev3_firehose_tracepoint_private_strings_range
+type: structure
+description: TraceV3 firehose tracepoint private strings range
+attributes:
+  byte_order: little-endian
+members:
+- name: offset
+  data_type: uint16
+- name: size
+  data_type: uint16
+---
+name: tracev3_firehose_tracepoint_activity
+type: structure
+description: TraceV3 firehose tracepoint activity data.
+attributes:
+  byte_order: little-endian
+members:
+- name: activity_identifier1
+  data_type: tracev3_firehose_tracepoint_activity_identifier
+- name: process_identifier
+  data_type: uint64
+  condition: tracev3_firehose_tracepoint_flags & 0x0010 != 0
+- name: activity_identifier2
+  data_type: tracev3_firehose_tracepoint_activity_identifier
+  condition: tracev3_firehose_tracepoint_flags & 0x0001 != 0
+- name: activity_identifier3
+  data_type: tracev3_firehose_tracepoint_activity_identifier
+  condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
+- name: unknown_pcid
+  data_type: uint32
+- name: large_offset
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_flags & 0x0020 != 0
+- name: uuidtext_file_index
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_formatter_type == 0x0008
+- name: relative_uuid
+  data_type: uuid_be
+  condition: tracev3_firehose_tracepoint_formatter_type == 0x000a
+- name: large_shared_cache
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_formatter_type == 0x000c
+---
+name: tracev3_firehose_tracepoint_loss
+type: structure
+description: TraceV3 firehose tracepoint loss data.
+attributes:
+  byte_order: little-endian
+members:
+- name: start_time
+  data_type: uint64
+- name: end_time
+  data_type: uint64
+- name: number_of_messages
+  data_type: uint64
+---
 name: tracev3_firehose_tracepoint_non_activity
 type: structure
 description: TraceV3 firehose tracepoint non-activity data.
@@ -551,10 +596,10 @@ attributes:
   byte_order: little-endian
 members:
 - name: activity_identifier
-  data_type: tracev3_firehose_activity_identifier
+  data_type: tracev3_firehose_tracepoint_activity_identifier
   condition: tracev3_firehose_tracepoint_flags & 0x0001 != 0
 - name: private_strings_range
-  data_type: tracev3_firehose_private_strings_range
+  data_type: tracev3_firehose_tracepoint_private_strings_range
   condition: tracev3_firehose_tracepoint_flags & 0x0100 != 0
 - name: unknown_pcid
   data_type: uint32
@@ -587,6 +632,56 @@ members:
   type: sequence
   element_data_type: tracev3_firehose_tracepoint_data_item
   number_of_elements: tracev3_firehose_tracepoint_non_activity.number_of_data_items
+---
+name: tracev3_firehose_tracepoint_signpost
+type: structure
+description: TraceV3 firehose tracepoint signpost data.
+attributes:
+  byte_order: little-endian
+members:
+- name: activity_identifier
+  data_type: tracev3_firehose_tracepoint_activity_identifier
+  condition: tracev3_firehose_tracepoint_flags & 0x0001 != 0
+- name: private_strings_range
+  data_type: tracev3_firehose_tracepoint_private_strings_range
+  condition: tracev3_firehose_tracepoint_flags & 0x0100 != 0
+- name: unknown_pcid
+  data_type: uint32
+- name: large_offset
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_flags & 0x0020 != 0
+- name: uuidtext_file_index
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_formatter_type == 0x0008
+- name: relative_uuid
+  data_type: uuid_be
+  condition: tracev3_firehose_tracepoint_formatter_type == 0x000a
+- name: large_shared_cache
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_formatter_type == 0x000c
+- name: signpost_identifier
+  data_type: uint64
+- name: sub_system_value
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
+- name: ttl_value
+  data_type: uint8
+  condition: tracev3_firehose_tracepoint_flags & 0x0400 != 0
+- name: data_reference_value
+  data_type: uint8
+  condition: tracev3_firehose_tracepoint_flags & 0x0800 != 0
+- name: signpost_name_reference_value
+  data_type: uint32
+  condition: tracev3_firehose_tracepoint_flags & 0x8000 != 0
+# TODO: unknown 16-bit value when large_shared_cache != 0 ?
+- name: unknown1
+  data_type: uint8
+- name: number_of_data_items
+  data_type: uint8
+- name: data_items
+  type: sequence
+  element_data_type: tracev3_firehose_tracepoint_data_item
+  number_of_elements: tracev3_firehose_tracepoint_signpost.number_of_data_items
 ---
 name: tracev3_oversize_chunk
 type: structure

@@ -640,12 +640,16 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x02 | | Activity
+| 0x02 | | Activity +
+See section: <<tracev3_firehose_tracepoint_activity,Activity firehose tracepoint>>
 | 0x03 | | Trace
-| 0x04 | | Non-activity
+| 0x04 | | Non-activity +
+See section: <<tracev3_firehose_tracepoint_non_activity,Non-activity firehose tracepoint>>
 | | |
-| 0x06 | | Signpost
-| 0x07 | | Loss
+| 0x06 | | Signpost +
+See section: <<tracev3_firehose_tracepoint_signpost,Signpost firehose tracepoint>>
+| 0x07 | | Loss +
+See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 |===
 
 ==== [[tracev3_firehose_tracepoint_log_type]]Firehose tracepoint log type
@@ -685,7 +689,7 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 An activity or non-activity firehose tracepoint has an activity identifier +
 See section: <<tracev3_firehose_tracepoint_activity_identifier,Firehose tracepoint activity identifier>>
 | 0x000e | | <<tracev3_firehose_tracepoint_formatter_type,Formatter type>>
-| 0x0010 | | [yellow-background]*Unknown (has_unique_pid)*
+| 0x0010 | | Has process identifier value (has_unique_pid)
 | 0x0020 | | Has large offset
 | | |
 | 0x0100 | | Has private string range +
@@ -697,6 +701,7 @@ A activity or non-activity firehose tracepoint has a sub system value
 A non-activity firehose tracepoint has a TTL value
 | 0x0800 | | Has data reference value +
 A non-activity firehose tracepoint has a data reference value to a 0x0602 BLOB
+| 0x1000 | | [yellow-background]*Unknown*
 | | |
 | 0x8000 | | Has signpost name reference value +
 A non-activity firehose tracepoint has a signpost name reference value
@@ -759,9 +764,42 @@ Each data item is consists of the following structure:
 | 2 | ... | | Data
 |===
 
-==== Activity firehose tracepoint
+===== Item type
 
-An activity firehose tracepoint consists of:
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00 | | [yellow-background]*Unknown* +
+Contains a 32-bit or 64-bit value
+3+|
+| 0x02 | | [yellow-background]*Unknown* +
+Contains a 32-bit or 64-bit value
+3+|
+| 0x20 | | [yellow-background]*Unknown (string type)*
+| 0x21 | | [yellow-background]*Unknown (private string type)*
+| 0x22 | | [yellow-background]*Unknown (string type)* +
+Contains a 32-bit value
+3+|
+| 0x25 | | [yellow-background]*Unknown (private string type)*
+3+|
+| 0x30 | | [yellow-background]*Unknown (string type)*
+| 0x31 | | [yellow-background]*Unknown (private string type)*
+| 0x32 | | [yellow-background]*Unknown (string type)*
+3+|
+| 0x35 | | [yellow-background]*Unknown (private string type)*
+3+|
+| 0x40 | | [yellow-background]*Unknown (string type)*
+| 0x41 | | [yellow-background]*Unknown (private string type)* +
+Contains a 32-bit value
+| 0x42 | | [yellow-background]*Unknown (string type)* +
+Contains a 32-bit value
+3+|
+| 0xf2 | | [yellow-background]*Unknown (base64 encoded string)*
+|===
+
+==== [[tracev3_firehose_tracepoint_activity]]Activity firehose tracepoint
+
+An activity firehose tracepoint is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -778,39 +816,31 @@ See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-4+| _Log type != 0x3 is set_
-| 24 | 4 | | [yellow-background]*Unknown (activity identifier)*
-| 28 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
-4+| _Flags 0x0010 is set_
+4+| _Log type != 0x3_
+| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has process identifier value flag (0x0010) is set_
 | ... | 8 | | Process identifier (pid)
-4+| _Flags 0x0001 is set_
-| ... | 4 | | [yellow-background]*Unknown (activity identifier)*
-| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
-4+| _Flags 0x0200 is set_
-| ... | 4 | | [yellow-background]*Unknown (activity identifier)*
-| ... | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
-4+|
-| ... | 4 | | [yellow-background]*Unknown (Message string reference)*
-4+| _Formatter Flags_
-4+| _Flag 0x0020 is set_
-| ... | 2 | | Large offset data
-4+| _Flag 0x000c is set_
+4+| _Has activity identifier flag (0x0001) is set_
+| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has sub system value flag (0x0200) is set_
+| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Common_
+| ... | 4 | | [yellow-background]*Unknown (PCID)*
+4+| _Has large offset flag (0x0020) is set_
+| 0 | 2 | | Large offset data
+4+| _If formatter type == 0x0008_
+| ... | 2 | | uuidtext file index
+4+| _If formatter type == 0x000a_
+| ... | 16 | | relative UUID
+4+| _If formatter type == 0x000c_
 | ... | 2 | | Large shared cache
-4+| _Flags 0x0002 and 0x0008 are set_
-| ... | 2 | | [yellow-background]*Unknown (uuid_file_index)*
-4+| _Flags 0x0004 and 0x0020 are set_
-| ... | 2 | | Large offset data
-4+| _Flag 0x000a is set_
-| ... | 16 | | UUID
-4+|
-| ... | ... | | [yellow-background]*Unknown (data?)*
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
 
-==== Non-activity firehose tracepoint
+==== [[tracev3_firehose_tracepoint_non_activity]]Non-activity firehose tracepoint
 
-A non-activity firehose tracepoint (event) consists of:
+A non-activity firehose tracepoint is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -858,10 +888,89 @@ Old notes:
 ....
 4+| _Log type 0x80 is set_
 | ... | 8 | | [yellow-background]*Unknown (signpost string size)*
-4+| _Flags 0x8000 is set_
+4+| _Has signpost name reference value flag (0x8000) is set_
 | ... | 4 | | Signpost name reference value
 | ... | ... | | [yellow-background]*Unknown (data?)*
 ....
+
+==== [[tracev3_firehose_tracepoint_singpost]]Signpost firehose tracepoint
+
+A signpost firehose tracepoint is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x06 | Activity type +
+See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 1 | 1 | | Log type +
+See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+| 2 | 2 | | Flags +
+See section: <<tracev3_firehose_tracepoint_flags,Flags>>
+| 4 | 4 | | Format string location
+| 8 | 8 | | Thread identifier
+| 16 | 6 | | Continuous time delta +
+Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
+| 22 | 2 | | Data size
+4+| _Start of data_
+4+| _Has activity identifier flag (0x0001) is set_
+| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has private strings range flag (0x0100) is set_
+| ... | 4 | | <<tracev3_firehose_tracepoint_private_strings_range,Private strings range>>
+4+| _Common_
+| ... | 4 | | [yellow-background]*Unknown (PCID)*
+4+| _Has large offset flag (0x0020) is set_
+| 0 | 2 | | Large offset data
+4+| _If formatter type == 0x0008_
+| ... | 2 | | uuidtext file index
+4+| _If formatter type == 0x000a_
+| ... | 16 | | relative UUID
+4+| _If formatter type == 0x000c_
+| ... | 2 | | Large shared cache
+4+| _Has sub system value flag (0x0200) is set_
+| ... | 2 | | Sub system value
+4+| _Common_
+| ... | 8 | | Signpost identifier
+4+| _Has TTL value flag (0x0400) is set_
+| ... | 1 | | TTL value
+4+| _Has data reference value flag (0x0800) is set_
+| ... | 2 | | Data reference value
+4+| _Has signpost name reference value flag (0x8000) is set_
+| ... | 4 | | Signpost name reference value
+| ... | ... | | [yellow-background]*Unknown (data?)*
+4+| _Common_
+| ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
+4+| _End of data_
+| ... | ... | | 64-bit alignment padding
+|===
+
+==== [[tracev3_firehose_tracepoint_loss]]Loss firehose tracepoint
+
+A loss firehose tracepoint is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x07 | Activity type +
+See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 1 | 1 | | Log type +
+See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+| 2 | 2 | 0x00 | Flags +
+See section: <<tracev3_firehose_tracepoint_flags,Flags>>
+| 4 | 4 | | Format string location
+| 8 | 8 | | Thread identifier
+| 16 | 6 | | Continuous time delta +
+Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
+| 22 | 2 | | Data size
+4+| _Start of data_
+| ... | 8 | | Start time +
+Contains the date and time the loss started
+| ... | 8 | | End time +
+Contains the date and time the loss ended
+| ... | 8 | | Number of messages +
+Contains the number of messages lost
+4+| _End of data_
+| ... | ... | | 64-bit alignment padding
+|===
 
 === Oversize chunk
 
