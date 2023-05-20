@@ -762,7 +762,8 @@ A firehose tracepoint data item is variable of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 1 | | Value type
 | 1 | 1 | | Data item data size
-| 2 | ... | | Data item data
+| 2 | ... | | Data item data +
+Contains inline data or a value data range
 |===
 
 ===== Value type
@@ -772,46 +773,46 @@ A firehose tracepoint data item is variable of size and consists of:
 | Value | Identifier | Description
 | 0x00 | | [yellow-background]*Unknown* +
 Contains a 32-bit or 64-bit value
-| 0x01 | | [yellow-background]*Unknown* +
+| 0x01 | | [yellow-background]*Unknown (integer)* +
 Contains a 32-bit value
 | 0x02 | | [yellow-background]*Unknown (integer)* +
-Contains a 32-bit or 64-bit value
+Contains a 8-bit, 16-bit, 32-bit or 64-bit value
 3+|
 | 0x12 | | [yellow-background]*Unknown* +
 Contains a 32-bit value
 3+|
-| 0x20 | | [yellow-background]*Unknown (string type)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
-| 0x21 | | [yellow-background]*Unknown (private string type)* +
+| 0x20 | | [yellow-background]*Unknown (string)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+| 0x21 | | [yellow-background]*Unknown (private string)* +
+Contains a 32-bit value, formatted as "<private>"
+| 0x22 | | [yellow-background]*Unknown (string)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+3+|
+| 0x25 | | [yellow-background]*Unknown (private string)* +
 Contains a 32-bit value
-| 0x22 | | [yellow-background]*Unknown (string type)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
-| 0x25 | | [yellow-background]*Unknown (private string type)* +
+| 0x30 | | [yellow-background]*Unknown (string)*
+| 0x31 | | [yellow-background]*Unknown (private string)* +
 Contains a 32-bit value
+| 0x32 | | [yellow-background]*Unknown (binary data)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
 3+|
-| 0x30 | | [yellow-background]*Unknown (string type)*
-| 0x31 | | [yellow-background]*Unknown (private string type)* +
+| 0x35 | | [yellow-background]*Unknown (private string)*
+3+|
+| 0x40 | | [yellow-background]*Unknown (string)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+| 0x41 | | [yellow-background]*Unknown (private string)* +
 Contains a 32-bit value
-| 0x32 | | [yellow-background]*Unknown (binary data type)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains binary data.
+| 0x42 | | [yellow-background]*Unknown (string)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
-| 0x35 | | [yellow-background]*Unknown (private string type)*
-3+|
-| 0x40 | | [yellow-background]*Unknown (string type)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
-| 0x41 | | [yellow-background]*Unknown (private string type)* +
-Contains a 32-bit value
-| 0x42 | | [yellow-background]*Unknown (string type)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
-3+|
-| 0xf2 | | [yellow-background]*Unknown (UUID type)*
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UUID.
+| 0xf2 | | [yellow-background]*Unknown (UUID)*
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UUID.
 |===
 
-===== [[tracev3_firehose_tracepoint_data_time_with_value_data]]Firehose tracepoint data item with value data
+===== [[tracev3_firehose_tracepoint_data_time_with_value_data_range]]Firehose tracepoint data item with value data range
 
-A firehose tracepoint data item with value data is 6 bytes of size and consists
+A firehose tracepoint data item with value data range is 6 bytes of size and consists
 of:
 
 [cols="1,1,1,5",options="header"]
@@ -819,9 +820,10 @@ of:
 | Offset | Size | Value | Description
 | 0 | 1 | | Value type
 | 1 | 1 | 4 | Data item data size
-| 2 | 2 | | Value data offset +
+4+| _Data item data_
+| 2 | 2 | | Value data (range) offset +
 The offset is relative to the start of the values data in the <<tracev3_firehose_tracepoint_data_items,Firehose tracepoint data items>>
-| 4 | 2 | | Value data size
+| 4 | 2 | | Value data (range) size
 |===
 
 ==== [[tracev3_firehose_tracepoint_activity]]Activity firehose tracepoint
@@ -999,6 +1001,104 @@ Contains the date and time the loss ended
 Contains the number of messages lost
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
+|===
+
+==== [[tracev3_firehose_tracepoint_format_string]]Firehose tracepoint format string
+
+Format string operators are defined in the following format:
+
+....
+%[value_type_decoder] [flags] [width] [.precision] [length_modifier] conversion_specifier
+....
+
+Where `%%` represents a literal `%`.
+
+Also see `man 3 os_log` and `man 3 printf` on MacOS.
+
+The built-in value type decoders are:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "{bitrate}" | | Formatted as a bit-rate value, for example "123 kbps"
+| "{bool}" | | Formatted as a lower-case boolean value, for example "true" or "false"
+| "{BOOL}" | | Formatted as a uppoer-case boolean value, for example "YES" or "NO"
+| "{bytes}" | | Formatted a bytes value, for example "4.72 kB"
+| "{darwin.errno}" | | Formatted as a system error, for example "[32: Broken pipe]"
+| "{darwin.mode}" | | Formatted as a file mode value, for example "drwxr-xr-x"
+| "{darwin.signal}" | | Formatted as a signal, for example "[sigsegv: Segmentation Fault]"
+| "{errno}" | | Formatted as a system error, for example "[32: Broken pipe]"
+| "{iec-bitrate}" | | Formatted as an IEC bit-rate value, for example "118 Kibps"
+| "{iec-bytes}" | | Formatted as IEC bytes value, for example "4.61 KiB"
+| "{in_addr}" | | Formatted as an IPv4 address, for example "127.0.0.1"
+| "{in6_addr}" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
+| "{private}" | | Private log argument
+| "{public}" | | Public log argument
+| "{sockaddr}" | | Formatted as socket address, for example "fe80::f:86ff:fee9:5c16"
+| "{time_t}" | | Formatted as a seconds precision date and time value, for example "2016-01-12 19:41:37"
+| "{timespec}" | | Formatted as a nanoseconds precision date and time value, for example "2016-01-12 19:41:37.2382382823"
+| "{timeval}" | | Formatted as a microseconds precision date and time value, for example "2016-01-12 19:41:37.774236"
+| "{uuid_t}" | | Formatted as an UUID, for example "10742E39-0657-41F8-AB99-878C5EC2DCAA"
+|===
+
+The flags are defined as:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "#" | |
+| "0" | | Value should be padded with 0
+| "-" | |
+| " " | |
+| "+" | |
+| "'" | |
+|===
+
+The length modifiers are defined as:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "h" | | short
+| "hh" | | char
+| "j" | | intmax_t or uintmax_t
+| "l" | | (unsigned) long
+| "ll" | | (unsigned) long long
+| "q" | | (unsigned) long long
+| "t" | | ptrdiff_t
+| "z" | | size_t
+|===
+
+The types are defined as:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "@" | | Obj-C/CF/Swift object
+| "a" | |
+| "A" | |
+| "c" | | Character value
+| "C" | | Equivalent to "lc"
+| "d" | | Signed decimal integer value
+| "D" | |
+| "e" | |
+| "E" | |
+| "f" | |
+| "F" | |
+| "g" | |
+| "G" | |
+| "i" | |
+| "n" | |
+| "o" | |
+| "O" | |
+| "p" | | Pointer value
+| "P" | | Binary data
+| "s" | | String value
+| "S" | | Equivalent to "ls"
+| "u" | | Unsigned decimal integer value
+| "U" | |
+| "x" | | Lower case hexadecimal interger value
+| "X" | | Upper case hexadecimal interger value
 |===
 
 === Oversize chunk

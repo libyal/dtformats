@@ -19,18 +19,18 @@ attributes:
   size: 1
   units: bytes
 ---
+name: int8
+type: integer
+attributes:
+  format: signed
+  size: 1
+  units: bytes
+---
 name: uint8
 type: integer
 attributes:
   format: unsigned
   size: 1
-  units: bytes
----
-name: uint16
-type: integer
-attributes:
-  format: unsigned
-  size: 2
   units: bytes
 ---
 name: int16
@@ -40,18 +40,11 @@ attributes:
   size: 2
   units: bytes
 ---
-name: uint32
+name: uint16
 type: integer
 attributes:
   format: unsigned
-  size: 4
-  units: bytes
----
-name: uint64
-type: integer
-attributes:
-  format: unsigned
-  size: 8
+  size: 2
   units: bytes
 ---
 name: int32
@@ -61,10 +54,24 @@ attributes:
   size: 4
   units: bytes
 ---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
 name: int64
 type: integer
 attributes:
   format: signed
+  size: 8
+  units: bytes
+---
+name: uint64
+type: integer
+attributes:
+  format: unsigned
   size: 8
   units: bytes
 ---
@@ -85,6 +92,30 @@ type: string
 encoding: utf8
 element_data_type: char
 elements_terminator: "\x00"
+---
+name: int16le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: signed
+  size: 2
+  units: bytes
+---
+name: int32le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: signed
+  size: 4
+  units: bytes
+---
+name: int64le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: signed
+  size: 8
+  units: bytes
 ---
 name: uint16le
 type: integer
@@ -505,14 +536,25 @@ members:
   data_type: uint8
 - name: data_size
   data_type: uint8
+---
+name: tracev3_firehose_tracepoint_data_item_with_inline_data
+type: structure
+description: TraceV3 firehose tracepoint data item with inline data
+attributes:
+  byte_order: little-endian
+members:
+- name: value_type
+  data_type: uint8
+- name: data_size
+  data_type: uint8
 - name: data
   type: stream
   element_data_type: byte
-  elements_data_size: tracev3_firehose_tracepoint_data_item_base.data_size
+  elements_data_size: tracev3_firehose_tracepoint_data_item_with_inline_data.data_size
 ---
-name: tracev3_firehose_tracepoint_data_time_with_value_data
+name: tracev3_firehose_tracepoint_data_time_with_value_data_range
 type: structure
-description: TraceV3 firehose tracepoint data item with value data
+description: TraceV3 firehose tracepoint data item with value data range
 attributes:
   byte_order: little-endian
 members:
@@ -531,9 +573,9 @@ name: tracev3_firehose_tracepoint_data_item
 type: structure-group
 base: tracev3_firehose_tracepoint_data_item_base
 identifier: value_type
-default: tracev3_firehose_tracepoint_data_item_base
+default: tracev3_firehose_tracepoint_data_item_with_inline_data
 members:
-- tracev3_firehose_tracepoint_data_time_with_value_data
+- tracev3_firehose_tracepoint_data_time_with_value_data_range
 ---
 name: tracev3_firehose_tracepoint_string_range
 type: structure

@@ -15,6 +15,25 @@ from dtformats import unified_logging
 from tests import test_lib
 
 
+class ErrorFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Error format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    formatted_value = unified_logging.ErrorFormatStringDecoder.FormatValue(2)
+    self.assertEqual(formatted_value, '[2: No such file or directory]')
+
+
+class FileModeFormatStringDecoderTest(test_lib.BaseTestCase):
+  """File mode format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    formatted_value = unified_logging.FileModeFormatStringDecoder.FormatValue(
+        0o700)
+    self.assertEqual(formatted_value, '-rwx------')
+
+
 class DSCFileTest(test_lib.BaseTestCase):
   """Shared-Cache Strings (dsc) file tests."""
 
@@ -397,7 +416,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    activity = test_file._ReadFirehoseTracepointActivityData(
+    activity, _ = test_file._ReadFirehoseTracepointActivityData(
         0x01, 0x0213, self._FIREHOST_TRACEPOINT_ACTIVITY_DATA, 0)
 
     self.assertIsNotNone(activity)
@@ -411,29 +430,12 @@ class TraceV3FileTest(test_lib.BaseTestCase):
       test_file._ReadFirehoseTracepointActivityData(
           0x01, 0xffff, self._FIREHOST_TRACEPOINT_ACTIVITY_DATA, 0)
 
-  def testReadFirehoseTracepointLossData(self):
-    """Tests the _ReadFirehoseTracepointLossData function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.TraceV3File(output_writer=output_writer)
-
-    loss = test_file._ReadFirehoseTracepointLossData(
-        0x0000, self._FIREHOST_TRACEPOINT_LOSS_DATA, 0)
-
-    self.assertIsNotNone(loss)
-    self.assertEqual(loss.start_time, 120691406)
-    self.assertEqual(loss.end_time, 1458547349)
-    self.assertEqual(loss.number_of_messages, 63)
-
-    with self.assertRaises(errors.ParseError):
-      test_file._ReadFirehoseTracepointLossData(
-          0xffff, self._FIREHOST_TRACEPOINT_LOSS_DATA, 0)
-
   def testReadFirehoseTracepointLogData(self):
     """Tests the _ReadFirehoseTracepointLogData function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    log = test_file._ReadFirehoseTracepointLogData(
+    log, _ = test_file._ReadFirehoseTracepointLogData(
         0x0602, self._FIREHOST_TRACEPOINT_LOG_DATA, 0)
 
     self.assertIsNotNone(log)
@@ -446,6 +448,23 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     with self.assertRaises(errors.ParseError):
       test_file._ReadFirehoseTracepointLogData(
           0xffff, self._FIREHOST_TRACEPOINT_LOG_DATA, 0)
+
+  def testReadFirehoseTracepointLossData(self):
+    """Tests the _ReadFirehoseTracepointLossData function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    loss, _ = test_file._ReadFirehoseTracepointLossData(
+        0x0000, self._FIREHOST_TRACEPOINT_LOSS_DATA, 0)
+
+    self.assertIsNotNone(loss)
+    self.assertEqual(loss.start_time, 120691406)
+    self.assertEqual(loss.end_time, 1458547349)
+    self.assertEqual(loss.number_of_messages, 63)
+
+    with self.assertRaises(errors.ParseError):
+      test_file._ReadFirehoseTracepointLossData(
+          0xffff, self._FIREHOST_TRACEPOINT_LOSS_DATA, 0)
 
   def testReadHeaderChunk(self):
     """Tests the _ReadHeaderChunk function."""
@@ -571,6 +590,51 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(statedump_chunk.unknown5, b'\x00' * 64)
     self.assertEqual(statedump_chunk.name, 'SpringBoard - Combined List')
     self.assertEqual(statedump_chunk.data, self._STATEDUMP_CHUNK_DATA[248:])
+
+  def testRewriteFormatString(self):
+    """Tests the _RewriteFormatString function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    format_string, decoders = test_file._RewriteFormatString(None)
+    self.assertEqual(format_string, '')
+    self.assertEqual(decoders, [])
+
+    format_string, decoders = test_file._RewriteFormatString('text')
+    self.assertEqual(format_string, 'text')
+    self.assertEqual(decoders, [])
+
+    format_string, decoders = test_file._RewriteFormatString('%%')
+    self.assertEqual(format_string, '%')
+    self.assertEqual(decoders, [])
+
+    format_string, decoders = test_file._RewriteFormatString('%d')
+    self.assertEqual(format_string, '{:d}')
+    self.assertEqual(decoders, [(None, 'signed')])
+
+    format_string, decoders = test_file._RewriteFormatString('%s')
+    self.assertEqual(format_string, '{:s}')
+    self.assertEqual(decoders, [(None, None)])
+
+    format_string, decoders = test_file._RewriteFormatString('%p')
+    self.assertEqual(format_string, '{:d}')
+    self.assertEqual(decoders, [(None, 'unsigned')])
+
+    format_string, decoders = test_file._RewriteFormatString('%u')
+    self.assertEqual(format_string, '{:d}')
+    self.assertEqual(decoders, [(None, 'unsigned')])
+
+    format_string, decoders = test_file._RewriteFormatString('0x%lx')
+    self.assertEqual(format_string, '0x{:x}')
+    self.assertEqual(decoders, [(None, 'unsigned')])
+
+    format_string, decoders = test_file._RewriteFormatString('0x%02x')
+    self.assertEqual(format_string, '0x{:02x}')
+    self.assertEqual(decoders, [(None, 'unsigned')])
+
+    format_string, decoders = test_file._RewriteFormatString('%{public}s')
+    self.assertEqual(format_string, '{:s}')
+    self.assertEqual(decoders, [('public', None)])
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
