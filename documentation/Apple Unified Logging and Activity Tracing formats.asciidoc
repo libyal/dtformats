@@ -205,6 +205,7 @@ document:
 * macOS 10.15 (Catalina)
 * macOS 11 (Big Sur)
 * macOS 12 (Monterey)
+* macOS 13 (Ventura)
 
 == [[tracev3_file_format]]tracev3 file format
 
@@ -269,7 +270,8 @@ The header (chunk) is 224 bytes of size and consists of:
 4+| _Chunk data (tracev3_chunk_header)_
 | 16 | 4 | | Mach timebase numerator (first number in timebase # / #)
 | 20 | 4 | | Mach timebase denominator (second number in timebase # / #)
-| 24 | 8 | | Continuous time
+| 24 | 8 | | Start time +
+Contains a continous time
 | 32 | 4 | | [yellow-background]*Unknown time (related to starttime?)* +
 Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
 | 36 | 4 | | [yellow-background]*Unknown*
@@ -279,12 +281,20 @@ Contains a signed integer
 | 48 | 4 | | Daylight savings time (DST) flag +
 0 = daylight savings time is not active (no-DST) +
 1 = daylight savings time is active (DST)
-| 52 | 4 | | [yellow-background]*Unknown (flags)* +
-(64bits) (is_boot)
+| 52 | 4 | | <<tracev3_header_flags,Header flags>>
 | 56 | 16 | | <<header_continuous_time_sub_chunk,Header continuous time sub chunk>>
 | 72 | 64 | | <<header_system_information_sub_chunk,Header system information sub chunk>>
 | 136 | 32 | | <<header_generation_sub_chunk,Header generation sub chunk>>
 | 168 | 56 | | <<header_time_zone_sub_chunk,Header time zone sub chunk>>
+|===
+
+==== [[tracev3_header_flags]]Header flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00000001 | 64bits |
+| 0x00000002 | is_boot |
 |===
 
 ==== [[header_continuous_time_sub_chunk]]Header continuous time sub chunk
@@ -321,6 +331,8 @@ Contains an UTF-8 encoded string with end-of-string character
 | 32 | 32 | | Hardware model string +
 Contains an UTF-8 encoded string with end-of-string character
 |===
+
+Notes: one of the unknowns is likely architecture like (x86_64h)
 
 ==== [[header_generation_sub_chunk]]Header generation sub chunk
 
@@ -397,15 +409,15 @@ CATALOG_V3
 
 ==== [[catalog_process_information_entry]]Catalog process information entry
 
-The Catalog process information entry is variable of size and consists of:
+The catalog process information entry is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | 2 | | Entry index
 | 2 | 2 | | [yellow-background]*Unknown*
-| 4 | 2 | | Index of the main UUID in the Catalog UUIDs
-| 6 | 2 | | Index of the dsc UUID in the Catalog UUIDs +
+| 4 | 2 | | Index of the main UUID in the catalog UUIDs
+| 6 | 2 | | Index of the dsc UUID in the catalog UUIDs +
 [yellow-background]*Where -1 (0xffff) represents not set?*
 | 8 | 8 | | First number in proc_id #@#
 | 16 | 4 | | Second number in proc_id #@#
@@ -421,11 +433,11 @@ The Catalog process information entry is variable of size and consists of:
 |===
 
 [NOTE]
-The Catalog process information entry is stored 64-bit aligned.
+The catalog process information entry is stored 64-bit aligned.
 
 ===== Catalog process information UUID information entry
 
-The Catalog process information UUID information entry is 16 bytes of size
+The catalog process information UUID information entry is 16 bytes of size
 and consists of:
 
 [cols="1,1,1,5",options="header"]
@@ -433,14 +445,15 @@ and consists of:
 | Offset | Size | Value | Description
 | 0 | 4 | | Size
 | 4 | 4 | | [yellow-background]*Unknown*
-| 8 | 2 | | Catalog UUID index
-| 10 | 4 | | Load address offset
-| 14 | 2 | | Load address reference
+| 8 | 2 | | UUID index +
+Contains an index of an UUID in the catalog UUIDs
+| 10 | 4 | | Load address (lower 32-bit)
+| 14 | 2 | | Load address (upper 16-bit)
 |===
 
 ===== Catalog process information sub system
 
-The Catalog process information sub system is 6 bytes of size and consists of:
+The catalog process information sub system is 6 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -454,7 +467,7 @@ The offset is relative to the start of the catalog sub system strings
 
 ==== [[catalog_sub_chunk]]Catalog sub chunk
 
-The Catalog sub chunk describes metadata for the chunk to follow and consists of:
+The catalog sub chunk describes metadata for the chunk to follow and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -568,7 +581,8 @@ The firehose chunk (tracev3_chunk_firehose) is variable of size and consists of:
 | 34 | 2 | | Private data virtual offset +
 Contains 0x1000 if there is no private data
 | 36 | 2 | | [yellow-background]*Unknown*
-| 38 | 2 | | [yellow-background]*Unknown*
+| 38 | 2 | | [yellow-background]*Unknown* +
+0x0300: persist
 | 40 | 8 | | Base continuous time for events in the firehose chunk
 4+|
 | 48 | public data size - 16 | | public data +
@@ -640,11 +654,11 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x02 | | Activity +
+| 0x02 | activity | Activity +
 See section: <<tracev3_firehose_tracepoint_activity,Activity firehose tracepoint>>
 | 0x03 | | Trace
-| 0x04 | | Non-activity +
-See section: <<tracev3_firehose_tracepoint_non_activity,Non-activity firehose tracepoint>>
+| 0x04 | log | Log +
+See section: <<tracev3_firehose_tracepoint_log,Log firehose tracepoint>>
 | | |
 | 0x06 | | Signpost +
 See section: <<tracev3_firehose_tracepoint_signpost,Signpost firehose tracepoint>>
@@ -657,13 +671,13 @@ See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00 | | Default
-| 0x01 | | Info
+| 0x00 | default | Default
+| 0x01 | info | Info
 | 0x02 | | Debug
-| 0x03 | | Useraction
+| 0x03 | useraction | Useraction
 | | |
-| 0x10 | | Error
-| 0x11 | | Fault
+| 0x10 | error | Error
+| 0x11 | fault | Fault
 | | |
 | 0x40 | | Thread Signpost Event
 | 0x41 | | Thread Signpost Start
@@ -685,66 +699,46 @@ See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x0001 | | Has activity identifier +
-An activity or non-activity firehose tracepoint has an activity identifier +
-See section: <<tracev3_firehose_tracepoint_activity_identifier,Firehose tracepoint activity identifier>>
-| 0x000e | | <<tracev3_firehose_tracepoint_formatter_type,Formatter type>>
+| 0x0001 | has_current_aid | Has current activity identifier
+| 0x000e | | <<tracev3_firehose_tracepoint_format_string_type,Format string type>>
 | 0x0010 | | Has process identifier value (has_unique_pid)
-| 0x0020 | | Has large offset
+| 0x0020 | has_large_offset | Has large offset data
 | | |
-| 0x0100 | | Has private string range +
-A non-activity firehose tracepoint has a private string range +
-See section: <<tracev3_firehose_tracepoint_private_strings_range,Firehose tracepoint private strings range>>
-| 0x0200 | | Has sub system value +
-A activity or non-activity firehose tracepoint has a sub system value
-| 0x0400 | | Has TTL value +
-A non-activity firehose tracepoint has a TTL value
-| 0x0800 | | Has data reference value +
-A non-activity firehose tracepoint has a data reference value to a 0x0602 BLOB
+| 0x0100 | | Has private strings range
+| 0x0200 | has_subsystem | Has sub system value
+| 0x0400 | | Has TTL value
+| 0x0800 | | Has data reference value
 | 0x1000 | | [yellow-background]*Unknown*
 | | |
-| 0x8000 | | Has signpost name reference value +
-A non-activity firehose tracepoint has a signpost name reference value
+| 0x8000 | | Has signpost name reference value
 |===
 
-===== [[tracev3_firehose_tracepoint_formatter_type]]Firehose tracepoint formatter type
+===== [[tracev3_firehose_tracepoint_format_string_type]]Firehose tracepoint format string type
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x0002 | | Message string is stored in an uuidtext file
-| 0x0004 | | Message string is stored in a dsc file
-| 0x0008 | | Message string is stored in an alternate uuidtext file
-| 0x000a | | [yellow-background]*TODO: describe*
-| 0x000c | | [yellow-background]*TODO: describe*
+| 0x0002 | main_exe | Format string is stored in an uuidtext file by proc_id
+| 0x0004 | shared_cache | Format string is stored in a dsc file
+| 0x0008 | absolute | Format string is stored in an uuidtext file by reference
+| 0x000a | uuid_relative | Format string is stored in an uuidtext file by identifier
+| 0x000c | large_shared_cache | Format string is stored in a dsc file
 |===
 
-==== [[tracev3_firehose_tracepoint_activity_identifier]]Firehose tracepoint activity identifier
+==== [[tracev3_firehose_tracepoint_strings_range]]Firehose tracepoint strings range
 
-A firehose tracepoint activity identifier is 8 bytes of size and consists of:
+A firehose tracepoint strings range is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Identifier
-| 0 | 4 | 0x80000000 | [yellow-background]*Unknown (sentinel?)*
-|===
-
-==== [[tracev3_firehose_tracepoint_private_strings_range]]Firehose tracepoint private strings range
-
-A firehose tracepoint private strings range is 4 bytes of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | | Private strings offset +
-Contains the offset relative to start of the private strings in the <<tracev3_firehose_chunk,Firehose chunk>>
-| 2 | 2 | | Private strings size
+| 0 | 2 | | Range offset
+| 2 | 2 | | Range size
 |===
 
 ==== [[tracev3_firehose_tracepoint_data_items]]Firehose tracepoint data items
 
-Data items inside the firehose tracepoint consist of the following structure:
+Firehose tracepoint data items are variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -752,49 +746,78 @@ Data items inside the firehose tracepoint consist of the following structure:
 | 0 | 1 | | [yellow-background]*Unknown*
 | 1 | 1 | | Number of data items
 | 2 | ... | | Data items
+| ... | ... | | Values data
 |===
 
-Each data item is consists of the following structure:
+===== Firehose tracepoint data item
+
+A firehose tracepoint data item is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | Item type
-| 1 | 1 | | Data size
-| 2 | ... | | Data
+| 0 | 1 | | Value type
+| 1 | 1 | | Data item data size
+| 2 | ... | | Data item data
 |===
 
-===== Item type
+===== Value type
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
 | 0x00 | | [yellow-background]*Unknown* +
 Contains a 32-bit or 64-bit value
-3+|
-| 0x02 | | [yellow-background]*Unknown* +
+| 0x01 | | [yellow-background]*Unknown* +
+Contains a 32-bit value
+| 0x02 | | [yellow-background]*Unknown (integer)* +
 Contains a 32-bit or 64-bit value
 3+|
-| 0x20 | | [yellow-background]*Unknown (string type)*
-| 0x21 | | [yellow-background]*Unknown (private string type)*
-| 0x22 | | [yellow-background]*Unknown (string type)* +
+| 0x12 | | [yellow-background]*Unknown* +
 Contains a 32-bit value
 3+|
-| 0x25 | | [yellow-background]*Unknown (private string type)*
+| 0x20 | | [yellow-background]*Unknown (string type)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+| 0x21 | | [yellow-background]*Unknown (private string type)* +
+Contains a 32-bit value
+| 0x22 | | [yellow-background]*Unknown (string type)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+3+|
+| 0x25 | | [yellow-background]*Unknown (private string type)* +
+Contains a 32-bit value
 3+|
 | 0x30 | | [yellow-background]*Unknown (string type)*
-| 0x31 | | [yellow-background]*Unknown (private string type)*
-| 0x32 | | [yellow-background]*Unknown (string type)*
+| 0x31 | | [yellow-background]*Unknown (private string type)* +
+Contains a 32-bit value
+| 0x32 | | [yellow-background]*Unknown (binary data type)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains binary data.
 3+|
 | 0x35 | | [yellow-background]*Unknown (private string type)*
 3+|
-| 0x40 | | [yellow-background]*Unknown (string type)*
+| 0x40 | | [yellow-background]*Unknown (string type)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x41 | | [yellow-background]*Unknown (private string type)* +
 Contains a 32-bit value
 | 0x42 | | [yellow-background]*Unknown (string type)* +
-Contains a 32-bit value
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
-| 0xf2 | | [yellow-background]*Unknown (base64 encoded string)*
+| 0xf2 | | [yellow-background]*Unknown (UUID type)*
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data,Firehose tracepoint string data item>> where the value data contains an UUID.
+|===
+
+===== [[tracev3_firehose_tracepoint_data_time_with_value_data]]Firehose tracepoint data item with value data
+
+A firehose tracepoint data item with value data is 6 bytes of size and consists
+of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Value type
+| 1 | 1 | 4 | Data item data size
+| 2 | 2 | | Value data offset +
+The offset is relative to the start of the values data in the <<tracev3_firehose_tracepoint_data_items,Firehose tracepoint data items>>
+| 4 | 2 | | Value data size
 |===
 
 ==== [[tracev3_firehose_tracepoint_activity]]Activity firehose tracepoint
@@ -816,31 +839,31 @@ See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-4+| _Log type != 0x3_
-| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Log type != 0x03_
+| ... | 8 | | Activity identifier
 4+| _Has process identifier value flag (0x0010) is set_
 | ... | 8 | | Process identifier (pid)
-4+| _Has activity identifier flag (0x0001) is set_
-| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has current activity identifier flag (0x0001) is set_
+| ... | 8 | | Current activity identifier
 4+| _Has sub system value flag (0x0200) is set_
-| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+| ... | 8 | | Activity identifier
 4+| _Common_
-| ... | 4 | | [yellow-background]*Unknown (PCID)*
+| ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
 | 0 | 2 | | Large offset data
-4+| _If formatter type == 0x0008_
-| ... | 2 | | uuidtext file index
-4+| _If formatter type == 0x000a_
-| ... | 16 | | relative UUID
-4+| _If formatter type == 0x000c_
+4+| _If format string type == 0x0008_
+| ... | 2 | | UUID entry load address (upper 16-bit)
+4+| _If format string type == 0x000a_
+| ... | 16 | | uuidtext file identifier (or image uuid)
+4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
 
-==== [[tracev3_firehose_tracepoint_non_activity]]Non-activity firehose tracepoint
+==== [[tracev3_firehose_tracepoint_log]]Log firehose tracepoint
 
-A non-activity firehose tracepoint is variable of size and consists of:
+A log firehose tracepoint is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -857,19 +880,20 @@ See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-4+| _Has activity identifier flag (0x0001) is set_
-| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has current activity identifier flag (0x0001) is set_
+| ... | 8 | | Current activity identifier
 4+| _Has private strings range flag (0x0100) is set_
-| ... | 4 | | <<tracev3_firehose_tracepoint_private_strings_range,Private strings range>>
+| ... | 4 | | <<tracev3_firehose_tracepoint_strings_range,Private strings range>> +
+Where the range offset is relative to start of the private strings in the <<tracev3_firehose_chunk,Firehose chunk>>
 4+| _Common_
-| ... | 4 | | [yellow-background]*Unknown (PCID)*
+| ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
 | 0 | 2 | | Large offset data
-4+| _If formatter type == 0x0008_
-| ... | 2 | | uuidtext file index
-4+| _If formatter type == 0x000a_
-| ... | 16 | | relative UUID
-4+| _If formatter type == 0x000c_
+4+| _If format string type == 0x0008_
+| ... | 2 | | UUID entry load address (upper 16-bit)
+4+| _If format string type == 0x000a_
+| ... | 16 | | uuidtext file identifier (or image uuid)
+4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
 4+| _Has sub system value flag (0x0200) is set_
 | ... | 2 | | Sub system value
@@ -912,19 +936,20 @@ See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-4+| _Has activity identifier flag (0x0001) is set_
-| ... | 8 | | <<tracev3_firehose_tracepoint_activity_identifier,Activity identifier>>
+4+| _Has current activity identifier flag (0x0001) is set_
+| ... | 8 | | Current activity identifier
 4+| _Has private strings range flag (0x0100) is set_
-| ... | 4 | | <<tracev3_firehose_tracepoint_private_strings_range,Private strings range>>
+| ... | 4 | | <<tracev3_firehose_tracepoint_strings_range,Private strings range>> +
+Where the range offset is relative to start of the private strings in the <<tracev3_firehose_chunk,Firehose chunk>>
 4+| _Common_
-| ... | 4 | | [yellow-background]*Unknown (PCID)*
+| ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
 | 0 | 2 | | Large offset data
-4+| _If formatter type == 0x0008_
-| ... | 2 | | uuidtext file index
-4+| _If formatter type == 0x000a_
-| ... | 16 | | relative UUID
-4+| _If formatter type == 0x000c_
+4+| _If format string type == 0x0008_
+| ... | 2 | | UUID entry load address (upper 16-bit)
+4+| _If format string type == 0x000a_
+| ... | 16 | | uuidtext file identifier (or image uuid)
+4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
 4+| _Has sub system value flag (0x0200) is set_
 | ... | 2 | | Sub system value
@@ -1055,15 +1080,15 @@ The SimpleDump chunk is variable of size and consists of:
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | TTL
-| 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
-| 32 | 8 | | Continuous time
+| 29 | 1 | | Type
+| 29 | 2 | 0 | [yellow-background]*Unknown (Reserved?)*
+| 32 | 8 | | Timestamp +
+Contains a continous time
 | 40 | 8 | | Thread identifier
-| 48 | 4 | | [yellow-background]*Unknown (offset?)*
-| 52 | 2 | | [yellow-background]*Unknown (TTL?)*
-| 54 | 2 | | [yellow-background]*Unknown (type?)*
+| 48 | 8 | | Offset
 | 56 | 16 | | Sender identifier +
 Contains a UUID stored in big-endian
-| 72 | 16 | | DSC identifier +
+| 72 | 16 | | Shared-Cache Strings (dsc) identifier +
 Contains a UUID stored in big-endian
 | 88 | 4 | | [yellow-background]*Unknown (number of message strings?)*
 | 92 | 4 | | Subsystem string size
@@ -1187,6 +1212,7 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 | macOS 10.15 (Catalina) | 1.0
 | macOS 11 (Big Sur) | 1.0
 | macOS 12 (Monterey) | 2.0
+| macOS 13 (Ventura) | 2.0
 |===
 
 === Shared-Cache Strings (dsc) range descriptor
@@ -1200,9 +1226,8 @@ and consist of:
 |===
 | Offset | Size | Value | Description
 | 0 | 4 | | UUID descriptor index
-| 4 | 4 | | (dsc) range offset +
-The offset is relative to [yellow-background]*unknown*
-| 8 | 4 | | [yellow-background]*Unknown (data offset?)* +
+| 4 | 4 | | (dsc) range offset
+| 8 | 4 | | Data offset +
 The offset is relative to the start of the file
 | 12 | 4 | | (dsc) range size
 |===
@@ -1215,9 +1240,9 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | (dsc) range offset +
+| 0 | 8 | | (dsc) range offset
+| 8 | 4 | | Data offset +
 The offset is relative to the start of the file
-| 8 | 4 | | [yellow-background]*Unknown (data offset?)*
 | 12 | 4 | | (dsc) range size
 | 16 | 8 | | UUID descriptor index
 |===
@@ -1232,8 +1257,7 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | (dsc) text offset +
-The offset is relative to [yellow-background]*unknown*
+| 0 | 4 | | (dsc) text offset
 | 4 | 4 | | (dsc) text size
 | 8 | 16 | | Sender (process or library) identifier +
 Contains a UUID stored in big-endian +
@@ -1251,7 +1275,6 @@ and consist of:
 |===
 | Offset | Size | Value | Description
 | 0 | 8 | | (dsc) text offset
-The offset is relative to [yellow-background]*unknown*
 | 8 | 4 | | (dsc) text size
 | 12 | 16 | | Sender (process or library) identifier +
 Contains a UUID stored in big-endian +

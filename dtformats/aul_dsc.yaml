@@ -72,9 +72,9 @@ description: Shared-Cache strings (dsc) range descriptor version 2.
 attributes:
   byte_order: little-endian
 members:
-- name: unknown_offset
-  data_type: uint64
 - name: range_offset
+  data_type: uint64
+- name: data_offset
   data_type: uint32
 - name: range_size
   data_type: uint32
@@ -121,6 +121,7 @@ members:
   type: stream
   element_data_type: byte
   number_of_elements: 4
+  value: "hcsd"
 - name: major_format_version
   data_type: uint16
 - name: minor_format_version

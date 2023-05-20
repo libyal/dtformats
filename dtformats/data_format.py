@@ -433,7 +433,6 @@ class BinaryDataFormat(object):
     """
     lines = []
 
-    attribute_value = ''
     for attribute_name, description, value_format_callback in debug_info:
       attribute_value = getattr(structure_object, attribute_name, None)
       if attribute_value is None:
@@ -468,7 +467,7 @@ class BinaryDataFormat(object):
 
       lines.append(text)
 
-    if not attribute_value or attribute_value[:-2] != '\n\n':
+    if not lines[-1] or lines[-1][-2:] != '\n\n':
       lines.append('\n')
 
     return ''.join(lines)

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Apple Unified Logging and Activity Tracing files."""
 
+import os
+
 import lz4.block
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps
@@ -13,6 +15,7 @@ class DSCRange(object):
   """Shared-Cache Strings (dsc) range.
 
   Attributes:
+    data_offset (int): offset of the format string data.
     path (str): path.
     range_offset (int): the offset of the range.
     range_sizes (int): the size of the range.
@@ -23,6 +26,7 @@ class DSCRange(object):
   def __init__(self):
     """Initializes a Shared-Cache Strings (dsc) range."""
     super(DSCRange, self).__init__()
+    self.data_offset = None
     self.path = None
     self.range_offset = None
     self.range_size = None
@@ -74,7 +78,6 @@ class DSCFile(data_format.BinaryDataFile):
       ('data_offset', 'Data offset', '_FormatIntegerAsHexadecimal8'),
       ('range_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
       ('range_size', 'Range size', '_FormatIntegerAsDecimal'),
-      ('unknown_offset', 'Unknown offset', '_FormatIntegerAsHexadecimal8'),
       ('uuid_descriptor_index', 'UUID descriptor index',
        '_FormatIntegerAsDecimal')]
 
@@ -141,6 +144,30 @@ class DSCFile(data_format.BinaryDataFile):
 
     return file_header
 
+  def _ReadFormatString(self, file_object, file_offset):
+    """Reads a format string.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the format string data relative to the start
+          of the file.
+
+    Returns:
+      str: format string.
+
+    Raises:
+      ParseError: if the format string cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('cstring')
+
+    format_string, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'format string')
+
+    if self._debug:
+      self._DebugPrintValue('Format string', format_string)
+
+    return format_string
+
   def _ReadRangeDescriptors(
       self, file_object, file_offset, version, number_of_ranges):
     """Reads the range descriptors.
@@ -181,6 +208,7 @@ class DSCFile(data_format.BinaryDataFile):
             range_descriptor, self._DEBUG_INFO_RANGE_DESCRIPTOR)
 
       dsc_range = DSCRange()
+      dsc_range.data_offset = range_descriptor.data_offset
       dsc_range.range_offset = range_descriptor.range_offset
       dsc_range.range_size = range_descriptor.range_size
       dsc_range.uuid_index = range_descriptor.uuid_descriptor_index
@@ -258,6 +286,29 @@ class DSCFile(data_format.BinaryDataFile):
       self._DebugPrintValue('UUID path', uuid_path)
 
     return uuid_path
+
+  def GetFormatString(self, format_string_location):
+    """Retrieves a format string.
+
+    Args:
+      format_string_location (int): location of the format string.
+
+    Returns:
+      str: format string or None if not available.
+
+    Raises:
+      ParseError: if the format string cannot be read.
+    """
+    for dsc_range in self.ranges:
+      if format_string_location < dsc_range.range_offset:
+        continue
+
+      relative_offset = format_string_location - dsc_range.range_offset
+      if relative_offset <= dsc_range.range_size:
+        file_offset = dsc_range.data_offset + relative_offset
+        return self._ReadFormatString(self._file_object, file_offset)
+
+    return None
 
   def ReadFileObject(self, file_object):
     """Reads a shared-cache strings (dsc) file-like object.
@@ -400,16 +451,16 @@ class TraceV3File(data_format.BinaryDataFile):
 
   _ACTIVITY_TYPE_ACTIVITY = 0x02
   _ACTIVITY_TYPE_TRACE = 0x03
-  _ACTIVITY_TYPE_NON_ACTIVITY = 0x04
+  _ACTIVITY_TYPE_LOG = 0x04
   _ACTIVITY_TYPE_SIGNPOST = 0x06
   _ACTIVITY_TYPE_LOSS = 0x07
 
   _ACTIVITY_TYPE_DESCRIPTIONS = {
       _ACTIVITY_TYPE_ACTIVITY: 'Activity',
-      _ACTIVITY_TYPE_TRACE: 'Trace',
-      _ACTIVITY_TYPE_NON_ACTIVITY: 'Non-activity',
+      _ACTIVITY_TYPE_LOG: 'Log',
+      _ACTIVITY_TYPE_LOSS: 'Loss',
       _ACTIVITY_TYPE_SIGNPOST: 'Signpost',
-      _ACTIVITY_TYPE_LOSS: 'Loss'}
+      _ACTIVITY_TYPE_TRACE: 'Trace'}
 
   _CHUNK_TAG_HEADER = 0x00001000
   _CHUNK_TAG_FIREHOSE = 0x00006001
@@ -428,8 +479,10 @@ class TraceV3File(data_format.BinaryDataFile):
       _CHUNK_TAG_CATALOG: 'Catalog',
       _CHUNK_TAG_CHUNK_SET: 'ChunkSet'}
 
-  _DATA_ITEM_TYPE_DESCRIPTIONS = {
+  _DATA_ITEM_VALUE_TYPE_DESCRIPTIONS = {
       }
+
+  _DATA_ITEM_STRING_VALUE_TYPES = (0x20, 0x22, 0x40, 0x42)
 
   _FLAG_HAS_ACTIVITY_IDENTIFIER = 0x0001
   _FLAG_HAS_LARGE_OFFSET = 0x0020
@@ -529,24 +582,35 @@ class TraceV3File(data_format.BinaryDataFile):
       ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM = [
-      ('item_type', 'Item type', '_FormatDataItemType'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
+      ('value_type', 'Value type', '_FormatDataItemValueType'),
+      ('data_size', 'Data item data size', '_FormatIntegerAsDecimal'),
+      ('data', 'Data item data', '_FormatDataInHexadecimal'),
+      ('value_data_offset', 'Value data offset',
+       '_FormatIntegerAsHexadecimal4'),
+      ('value_data_size', 'Value data size', '_FormatIntegerAsDecimal'),
+      ('value_data', 'Value data', '_FormatDataInHexadecimal'),
+      ('string', 'String', '_FormatString'),
+      ('uuid', 'UUID', '_FormatUUIDAsString')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY = [
       ('activity_identifier1', 'Activity identifier1',
-       '_FormatActivityIdentifier'),
+       '_FormatIntegerAsHexadecimal8'),
       ('process_identifier', 'Process identifier (PID)',
        '_FormatIntegerAsDecimal'),
+      ('current_activity_identifier', 'Current activity identifier',
+       '_FormatIntegerAsHexadecimal8'),
       ('activity_identifier2', 'Activity identifier2',
-       '_FormatActivityIdentifier'),
-      ('activity_identifier3', 'Activity identifier3',
-       '_FormatActivityIdentifier'),
-      ('unknown_pcid', 'Unknown PCID', '_FormatIntegerAsHexadecimal8'),
-      ('large_offset', 'Large offset', '_FormatIntegerAsHexadecimal4'),
-      ('uuidtext_file_index', 'UUIDText file index', '_FormatIntegerAsDecimal'),
-      ('relative_uuid', 'Relative UUID', '_FormatUUIDAsString'),
-      ('large_shared_cache', 'Large shared cache', '_FormatIntegerAsDecimal'),
+       '_FormatIntegerAsHexadecimal8'),
+      ('load_address_lower', 'UUID entry load address (lower 32-bit)',
+       '_FormatIntegerAsHexadecimal8'),
+      ('large_offset_data', 'Large offset data',
+       '_FormatIntegerAsHexadecimal4'),
+      ('load_address_upper', 'UUID entry load address (upper 16-bit)',
+       '_FormatIntegerAsHexadecimal4'),
+      ('uuidtext_file_identifier', 'UUIDText file identifier',
+       '_FormatUUIDAsString'),
+      ('large_shared_cache_data', 'Large shared cache data',
+       '_FormatIntegerAsHexadecimal4'),
       ('sub_system_value', 'Sub system value', '_FormatIntegerAsHexadecimal4'),
       ('ttl_value', 'TTL value', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
@@ -562,16 +626,20 @@ class TraceV3File(data_format.BinaryDataFile):
       ('end_time', 'End time', '_FormatIntegerAsDecimal'),
       ('number_of_messages', 'Number of messages', '_FormatIntegerAsDecimal')]
 
-  _DEBUG_INFO_FIREHOSE_TRACEPOINT_NON_ACTIVITY = [
-      ('activity_identifier', 'Activity identifier',
-       '_FormatActivityIdentifier'),
-      ('private_strings_range', 'Private string range',
-       '_FormatPrivateStringsRange'),
-      ('unknown_pcid', 'Unknown PCID', '_FormatIntegerAsHexadecimal8'),
-      ('large_offset', 'Large offset', '_FormatIntegerAsHexadecimal4'),
-      ('uuidtext_file_index', 'UUIDText file index', '_FormatIntegerAsDecimal'),
-      ('relative_uuid', 'Relative UUID', '_FormatUUIDAsString'),
-      ('large_shared_cache', 'Large shared cache', '_FormatIntegerAsDecimal'),
+  _DEBUG_INFO_FIREHOSE_TRACEPOINT_LOG = [
+      ('current_activity_identifier', 'Current activity identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('private_strings_range', 'Private strings range', '_FormatStringsRange'),
+      ('load_address_lower', 'UUID entry load address (lower 32-bit)',
+       '_FormatIntegerAsHexadecimal8'),
+      ('large_offset_data', 'Large offset data',
+       '_FormatIntegerAsHexadecimal4'),
+      ('load_address_upper', 'UUID entry load address (upper 16-bit)',
+       '_FormatIntegerAsHexadecimal4'),
+      ('uuidtext_file_identifier', 'UUIDText file identifier',
+       '_FormatUUIDAsString'),
+      ('large_shared_cache_data', 'Large shared cache data',
+       '_FormatIntegerAsHexadecimal4'),
       ('sub_system_value', 'Sub system value', '_FormatIntegerAsHexadecimal4'),
       ('ttl_value', 'TTL value', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
@@ -583,15 +651,19 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST = [
-      ('activity_identifier', 'Activity identifier',
-       '_FormatActivityIdentifier'),
-      ('private_strings_range', 'Private string range',
-       '_FormatPrivateStringsRange'),
-      ('unknown_pcid', 'Unknown PCID', '_FormatIntegerAsHexadecimal8'),
-      ('large_offset', 'Large offset', '_FormatIntegerAsHexadecimal4'),
-      ('uuidtext_file_index', 'UUIDText file index', '_FormatIntegerAsDecimal'),
-      ('relative_uuid', 'Relative UUID', '_FormatUUIDAsString'),
-      ('large_shared_cache', 'Large shared cache', '_FormatIntegerAsDecimal'),
+      ('current_activity_identifier', 'Current activity identifier',
+       '_FormatIntegerAsHexadecimal8'),
+      ('private_strings_range', 'Private strings range', '_FormatStringsRange'),
+      ('load_address_lower', 'UUID entry load address (lower 32-bit)',
+       '_FormatIntegerAsHexadecimal8'),
+      ('large_offset_data', 'Large offset data',
+       '_FormatIntegerAsHexadecimal4'),
+      ('load_address_upper', 'UUID entry load address (upper 16-bit)',
+       '_FormatIntegerAsHexadecimal4'),
+      ('uuidtext_file_identifier', 'UUIDText file identifier',
+       '_FormatUUIDAsString'),
+      ('large_shared_cache_data', 'Large shared cache data',
+       '_FormatIntegerAsHexadecimal4'),
       ('signpost_identifier', 'Signpost identifier',
        '_FormatIntegerAsHexadecimal8'),
       ('sub_system_value', 'Sub system value', '_FormatIntegerAsHexadecimal4'),
@@ -608,7 +680,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('timebase_numerator', 'Timebase numerator', '_FormatIntegerAsDecimal'),
       ('timebase_denominator', 'Timebase denominator',
        '_FormatIntegerAsDecimal'),
-      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
+      ('start_time', 'Start time', '_FormatIntegerAsDecimal'),
       ('unknown_time', 'Unknown time', 'FormatIntegerAsPosixTime'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
@@ -665,13 +737,11 @@ class TraceV3File(data_format.BinaryDataFile):
       ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
       ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
       ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('continuous_time', 'Continuous time', '_FormatIntegerAsDecimal'),
+      ('type', 'Type', '_FormatIntegerAsDecimal'),
+      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
+      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
       ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal4'),
+      ('offset', 'Offset', '_FormatIntegerAsHexadecimal8'),
       ('sender_identifier', 'Sender identifier', '_FormatUUIDAsString'),
       ('dsc_identifier', 'DSC identifier', '_FormatUUIDAsString'),
       ('unknown6', 'Unknown6', '_FormatIntegerAsHexadecimal8'),
@@ -706,20 +776,61 @@ class TraceV3File(data_format.BinaryDataFile):
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(TraceV3File, self).__init__(debug=debug, output_writer=output_writer)
-    self._catalog_process_entries = {}
+    self._cached_dsc_files = {}
+    self._cached_uuidtext_files = {}
+    self._catalog = None
+    self._catalog_process_information_entries = {}
+    self._uuidtext_path = None
 
-  def _FormatActivityIdentifier(self, activity_identifier):
-    """Formats an activity activity identifier.
+  def _BuildCatalogProcessInformationEntries(self, catalog):
+    """Builds the catalog process information lookup table.
 
     Args:
-      activity_identifier (tracev3_firehose_tracepoint_activity_identifier):
-          activity identifier.
-
-    Returns:
-      str: formatted activity identifier.
+      catalog (tracev3_catalog): catalog.
     """
-    return (f'{activity_identifier.identifier:d} '
-            f'(sentinel: 0x{activity_identifier.sentinel:08x})')
+    # TODO:
+    for uuid in catalog.uuids:
+      uuid_string = uuid.hex.upper()
+      if uuid_string == '00000000000000000000000000000000':
+        continue
+
+      # TODO: test if a corresponding DSC file exists.
+      # TODO: test if a corresponding uuidtext file exists.
+
+    catalog_strings_map = self._GetCatalogSubSystemStringMap(catalog)
+
+    self._catalog_process_information_entries = {}
+
+    for process_information_entry in catalog.process_information_entries:
+      if process_information_entry.main_uuid_index >= 0:
+        process_information_entry.main_uuid = catalog.uuids[
+            process_information_entry.main_uuid_index]
+
+      if process_information_entry.dsc_uuid_index >= 0:
+        process_information_entry.dsc_uuid = catalog.uuids[
+            process_information_entry.dsc_uuid_index]
+
+      if self._debug:
+        self._DebugPrintStructureObject(
+            process_information_entry,
+            self._DEBUG_INFO_CATALOG_PROCESS_INFORMATION_ENTRY)
+
+      for sub_system_entry in process_information_entry.sub_system_entries:
+        sub_system = catalog_strings_map.get(
+            sub_system_entry.sub_system_offset, None)
+        category = catalog_strings_map.get(
+            sub_system_entry.category_offset, None)
+        print(f'Identifier: {sub_system_entry.identifier:d}, '
+              f'Sub system: {sub_system:s}, Category: {category:s}')
+      print('')
+
+      proc_id = (f'{process_information_entry.proc_id_upper:d}@'
+                 f'{process_information_entry.proc_id_lower:d}')
+      if proc_id in self._catalog_process_information_entries:
+        raise errors.ParseError(f'proc_id: {proc_id:s} already set')
+
+      self._catalog_process_information_entries[proc_id] = (
+          process_information_entry)
 
   def _FormatActivityType(self, integer):
     """Formats an activity type.
@@ -754,8 +865,8 @@ class TraceV3File(data_format.BinaryDataFile):
     """Formats an array of catalog sub system entries.
 
     Args:
-      array_of_entries (list[tracev3_catalog_uuid_entry]): array of catalog sub
-          system entries.
+      array_of_entries (list[tracev3_catalog_sub_system_entry]): array of
+          catalog sub system entries.
 
     Returns:
       str: formatted array of catalog sub system entries.
@@ -778,8 +889,9 @@ class TraceV3File(data_format.BinaryDataFile):
       str: formatted array of catalog UUID entries.
     """
     value = '\n'.join([
-        (f'\tsize: {entry.size:d}, unknown1: 0x{entry.unknown1:x}, '
-         f'offset: {entry.offset:d}, reference: {entry.reference:d}')
+        (f'\tload address: 0x{entry.load_address_upper:04x}'
+         f'{entry.load_address_lower:08x}, size: {entry.size:d}, '
+         f'UUID index: {entry.uuid_index:d}, unknown1: 0x{entry.unknown1:x}')
         for entry in array_of_entries])
     return f'{value:s}\n'
 
@@ -812,16 +924,16 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return f'0x{integer:08x}'
 
-  def _FormatDataItemType(self, integer):
-    """Formats a data item type.
+  def _FormatDataItemValueType(self, integer):
+    """Formats a data item value type.
 
     Args:
       integer (int): integer.
 
     Returns:
-      str: integer formatted as data item type.
+      str: integer formatted as data item value type.
     """
-    description = self._DATA_ITEM_TYPE_DESCRIPTIONS.get(integer, None)
+    description = self._DATA_ITEM_VALUE_TYPE_DESCRIPTIONS.get(integer, None)
     if description:
       return f'0x{integer:02x} ({description:s})'
 
@@ -840,24 +952,24 @@ class TraceV3File(data_format.BinaryDataFile):
     lines = [f'0x{integer:04x}']
 
     if integer & 0x0001:
-      lines.append('\tHas activity identfier (0x0001)')
+      lines.append('\tHas current activity identfier (0x0001)')
 
-    formatter_type = integer & 0x000e
-    if formatter_type == 0x0002:
-      lines.append('\tMessage in uuidtext file (0x0002)')
-    elif formatter_type == 0x0004:
-      lines.append('\tMessage in DSC file (0x0004)')
-    elif formatter_type == 0x0008:
-      lines.append('\tMessage in alternate uuidtext file (0x0008)')
-    elif formatter_type == 0x000a:
-      lines.append('\t(0x000a)')
-    elif formatter_type == 0x000c:
-      lines.append('\t(0x000c)')
+    format_string_type = integer & 0x000e
+    if format_string_type == 0x0002:
+      lines.append('\tFormat string in uuidtext file by proc_id (0x0002)')
+    elif format_string_type == 0x0004:
+      lines.append('\tFormat string in DSC file (0x0004)')
+    elif format_string_type == 0x0008:
+      lines.append('\tFormat string in uuidtext file by reference (0x0008)')
+    elif format_string_type == 0x000a:
+      lines.append('\tFormat string in uuidtext file by identifier (0x000a)')
+    elif format_string_type == 0x000c:
+      lines.append('\tFormat string in DSC file (0x000c)')
 
     if integer & 0x0010:
       lines.append('\tHas process identifier (PID) value (0x0010)')
     if integer & 0x0020:
-      lines.append('\tHas large offset (0x0020)')
+      lines.append('\tHas large offset data (0x0020)')
 
     if integer & 0x0100:
       lines.append('\tHas private strings range (0x0100)')
@@ -889,18 +1001,6 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return f'0x{integer:02x}'
 
-  def _FormatPrivateStringsRange(self, strings_range):
-    """Formats a private strings range.
-
-    Args:
-      strings_range (tracev3_firehose_tracepoint_private_strings_range):
-          private strings range.
-
-    Returns:
-      str: formatted private strings range.
-    """
-    return f'offset: 0x{strings_range.offset:04x}, size: {strings_range.size:d}'
-
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
 
@@ -911,6 +1011,17 @@ class TraceV3File(data_format.BinaryDataFile):
       str: stream formatted as a signature.
     """
     return stream.decode('ascii')
+
+  def _FormatStringsRange(self, strings_range):
+    """Formats a strings range.
+
+    Args:
+      strings_range (tracev3_firehose_tracepoint_strings_range): strings range.
+
+    Returns:
+      str: formatted strings range.
+    """
+    return f'offset: 0x{strings_range.offset:04x}, size: {strings_range.size:d}'
 
   def _GetCatalogSubSystemStringMap(self, catalog):
     """Retrieves a map of the catalog sub system strings and offsets.
@@ -930,6 +1041,137 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return strings_map
 
+  def _GetFirehostTracepointFormatString(
+      self, proc_id, firehose_tracepoint, tracepoint_data_object):
+    """Retrieves a firehost tracepoint format string.
+
+    Args:
+      proc_id (str): identifier of the process information entry in the catalog.
+      firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
+      tracepoint_data_object (object): firehose tracepoint data object.
+
+    Returns:
+      str: format string or None if not available.
+
+    Raises:
+      ParseError: if the format string cannot be retrieved.
+    """
+    format_string_type = firehose_tracepoint.flags & 0x000e
+    if format_string_type not in (0x0002, 0x0004, 0x0008, 0x000a, 0x000c):
+      return None
+
+    if firehose_tracepoint.format_string_location & 0x80000000 != 0:
+      return '%s'
+
+    process_information_entry = (
+        self._catalog_process_information_entries.get(proc_id, None))
+    if not process_information_entry:
+      raise errors.ParseError((
+          f'Unable to retrieve process information entry: {proc_id:s} from '
+          f'catalog'))
+
+    uuid_string = None
+    if format_string_type == 0x0002:
+      uuid_string = process_information_entry.main_uuid.hex.upper()
+
+    elif format_string_type in (0x0004, 0x000c):
+      uuid_string = process_information_entry.dsc_uuid.hex.upper()
+
+    elif format_string_type == 0x0008:
+      load_address_upper = tracepoint_data_object.load_address_upper
+      load_address_lower = tracepoint_data_object.load_address_lower
+
+      for uuid_entry in process_information_entry.uuid_entries:
+        if (load_address_upper != uuid_entry.load_address_upper or
+            load_address_lower < uuid_entry.load_address_lower):
+          continue
+
+        if load_address_lower <= (
+            uuid_entry.load_address_lower + uuid_entry.size):
+          uuid = self._catalog.uuids[uuid_entry.uuid_index]
+          uuid_string = uuid.hex.upper()
+          break
+
+    elif format_string_type == 0x000a:
+      uuid_string = tracepoint_data_object.uuidtext_file_identifier.hex.upper()
+
+    format_string = None
+
+    if format_string_type in (0x0002, 0x0008, 0x000a):
+      uuidtext_file = self._GetUUIDTextFile(uuid_string)
+      if uuidtext_file:
+        format_string = uuidtext_file.GetFormatString(
+            firehose_tracepoint.format_string_location)
+
+    else:
+      format_string_location = 0
+      if tracepoint_data_object.large_offset_data:
+        format_string_location = firehose_tracepoint.format_string_location
+
+        large_offset_data = tracepoint_data_object.large_offset_data
+        large_shared_cache_data = (
+            (tracepoint_data_object.large_shared_cache_data or 0) // 2)
+
+        if (large_offset_data != large_shared_cache_data and
+            format_string_type != 0x0004):
+          format_string_location |= large_shared_cache_data << 32
+
+        elif format_string_type == 0x0004:
+          format_string_location &= 0x0fffffff
+          format_string_location |= 0x80000000
+        else:
+          format_string_location |= large_offset_data << 32
+
+      if self._debug:
+        value_string, _ = self._FormatIntegerAsHexadecimal8(
+            format_string_location)
+        self._DebugPrintValue('Full format string location', value_string)
+
+      dsc_file = self._GetDSCFile(uuid_string)
+      if dsc_file:
+        format_string = dsc_file.GetFormatString(format_string_location)
+
+    if self._debug and format_string:
+      self._DebugPrintValue('Format string', format_string)
+
+    return format_string
+
+  def _GetDSCFile(self, uuid_string):
+    """Retrieves a specific shared-cache strings (DSC) file.
+
+    Args:
+      uuid_string (str): string representation of the UUID.
+
+    Returns:
+      DSCFile: a shared-cache strings (DSC) file or None if not available.
+    """
+    dsc_file = self._cached_dsc_files.get(uuid_string, None)
+    if not dsc_file:
+      dsc_file = self._ReadDSCFile(uuid_string)
+      self._cached_dsc_files[uuid_string] = dsc_file
+
+    # TODO: add upper limit for number of files in the cache.
+
+    return dsc_file
+
+  def _GetUUIDTextFile(self, uuid_string):
+    """Retrieves a specific uuidtext file.
+
+    Args:
+      uuid_string (str): string representation of the UUID.
+
+    Returns:
+      UUIDTextFile: an uuidtext file or None if not available.
+    """
+    uuidtext_file = self._cached_uuidtext_files.get(uuid_string, None)
+    if not uuidtext_file:
+      uuidtext_file = self._ReadUUIDTextFile(uuid_string)
+      self._cached_uuidtext_files[uuid_string] = uuidtext_file
+
+    # TODO: add upper limit for number of files in the cache.
+
+    return uuidtext_file
+
   def _ReadCatalog(self, file_object, file_offset, chunk_header):
     """Reads a catalog.
 
@@ -938,6 +1180,9 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset (int): offset of the catalog data relative to the start
           of the file.
       chunk_header (tracev3_chunk_header): the chunk header of the catalog.
+
+    Returns:
+      tracev3_catalog: catalog.
 
     Raises:
       ParseError: if the chunk header cannot be read.
@@ -956,39 +1201,7 @@ class TraceV3File(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintStructureObject(catalog, self._DEBUG_INFO_CATALOG)
 
-    catalog_strings_map = self._GetCatalogSubSystemStringMap(catalog)
-
-    self._catalog_process_entries = {}
-
-    for process_information_entry in catalog.process_information_entries:
-      if process_information_entry.main_uuid_index >= 0:
-        process_information_entry.main_uuid = catalog.uuids[
-            process_information_entry.main_uuid_index]
-
-      if process_information_entry.dsc_uuid_index >= 0:
-        process_information_entry.dsc_uuid = catalog.uuids[
-            process_information_entry.dsc_uuid_index]
-
-      if self._debug:
-        self._DebugPrintStructureObject(
-            process_information_entry,
-            self._DEBUG_INFO_CATALOG_PROCESS_INFORMATION_ENTRY)
-
-      for sub_system_entry in process_information_entry.sub_system_entries:
-        sub_system = catalog_strings_map.get(
-            sub_system_entry.sub_system_offset, None)
-        category = catalog_strings_map.get(
-            sub_system_entry.category_offset, None)
-        print(f'Identifier: {sub_system_entry.identifier:d}, '
-              f'Sub system: {sub_system:s}, Category: {category:s}')
-      print('')
-
-      proc_id = (f'{process_information_entry.proc_id_upper:d}@'
-                 f'{process_information_entry.proc_id_lower:d}')
-      if proc_id in self._catalog_process_entries:
-        raise errors.ParseError(f'proc_id: {proc_id:s} already set')
-
-      self._catalog_process_entries[proc_id] = process_information_entry
+    return catalog
 
   def _ReadChunkHeader(self, file_object, file_offset):
     """Reads a chunk header.
@@ -1107,6 +1320,24 @@ class TraceV3File(data_format.BinaryDataFile):
 
       data_offset += alignment
 
+  def _ReadDSCFile(self, uuid_string):
+    """Reads a specific shared-cache strings (DSC) file.
+
+    Args:
+      uuid_string (str): string representation of the UUID.
+
+    Returns:
+      DSCFile: a shared-cache strings (DSC) file or None if not available.
+    """
+    dsc_file_path = os.path.join(self._uuidtext_path, 'dsc', uuid_string)
+    if not os.path.exists(dsc_file_path):
+      return None
+
+    dsc_file = DSCFile()
+    dsc_file.Open(dsc_file_path)
+
+    return dsc_file
+
   def _ReadFirehoseChunkData(self, chunk_data, chunk_data_size, data_offset):
     """Reads firehose chunk data.
 
@@ -1115,9 +1346,6 @@ class TraceV3File(data_format.BinaryDataFile):
       chunk_data_size (int): size of the firehose chunk data.
       data_offset (int): offset of the firehose chunk relative to the start
           of the chunk set.
-
-    Returns:
-      Tracev3FirehoseData: Firehose data
 
     Raises:
       ParseError: if the firehose chunk cannot be read.
@@ -1134,8 +1362,8 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           firehose_header, self._DEBUG_INFO_FIREHOSE_HEADER)
 
-    firehose_object = Tracev3FirehoseData()
-    firehose_object.CopyFromFirehoseHeader(firehose_header)
+    proc_id = '{0:d}@{1:d}'.format(
+        firehose_header.proc_id_upper, firehose_header.proc_id_lower)
 
     if firehose_header.private_data_virtual_offset < 4096:
       private_data_size = 4096 - firehose_header.private_data_virtual_offset
@@ -1147,17 +1375,72 @@ class TraceV3File(data_format.BinaryDataFile):
       firehose_tracepoint = self._ReadFirehoseTracepointData(
           chunk_data[chunk_data_offset:], data_offset + chunk_data_offset)
 
-      chunk_data_offset += 24 + firehose_tracepoint.data_size
+      chunk_data_offset += 24
+
+      activity_type = firehose_tracepoint.activity_type
+      if activity_type not in (
+          self._ACTIVITY_TYPE_ACTIVITY, self._ACTIVITY_TYPE_TRACE,
+          self._ACTIVITY_TYPE_LOG, self._ACTIVITY_TYPE_SIGNPOST,
+          self._ACTIVITY_TYPE_LOSS):
+        raise errors.ParseError(
+            f'Unsupported activity type: 0x{activity_type:02x}.')
+
+      tracepoint_data_object = None
+
+      if activity_type == self._ACTIVITY_TYPE_ACTIVITY:
+        if firehose_tracepoint.log_type not in (0x01, 0x03):
+          raise errors.ParseError(
+              f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+        tracepoint_data_object = self._ReadFirehoseTracepointActivityData(
+            firehose_tracepoint.log_type, firehose_tracepoint.flags,
+            firehose_tracepoint.data, data_offset + chunk_data_offset)
+
+      elif activity_type == self._ACTIVITY_TYPE_TRACE:
+        # TODO: implement
+        pass
+
+      elif activity_type == self._ACTIVITY_TYPE_LOG:
+        if firehose_tracepoint.log_type not in (0x00, 0x01, 0x02, 0x10, 0x11):
+          raise errors.ParseError(
+              f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+        tracepoint_data_object = self._ReadFirehoseTracepointLogData(
+            firehose_tracepoint.flags, firehose_tracepoint.data,
+            data_offset + chunk_data_offset)
+
+      elif activity_type == self._ACTIVITY_TYPE_SIGNPOST:
+        if firehose_tracepoint.log_type not in (0x80, 0x81, 0x82, 0xc2):
+          raise errors.ParseError(
+              f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+        tracepoint_data_object = self._ReadFirehoseTracepointSignpostData(
+            firehose_tracepoint.flags, firehose_tracepoint.data,
+            data_offset + chunk_data_offset)
+
+      elif activity_type == self._ACTIVITY_TYPE_LOSS:
+        if firehose_tracepoint.log_type not in (0x00, ):
+          raise errors.ParseError(
+              f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
+
+        self._ReadFirehoseTracepointLossData(
+            firehose_tracepoint.flags, firehose_tracepoint.data,
+            data_offset + chunk_data_offset)
+
+      if self._catalog and tracepoint_data_object:
+        format_string = self._GetFirehostTracepointFormatString(
+            proc_id, firehose_tracepoint, tracepoint_data_object)
+
+        # TODO: implement
+        _ = format_string
+
+      chunk_data_offset += firehose_tracepoint.data_size
 
       _, alignment = divmod(chunk_data_offset, 8)
       if alignment > 0:
         alignment = 8 - alignment
 
       chunk_data_offset += alignment
-
-      firehose_object.firehose_tracepoints.append(firehose_tracepoint)
-
-    return firehose_object
 
   def _ReadFirehoseTracepointData(self, tracepoint_data, data_offset):
     """Reads firehose tracepoint data.
@@ -1168,7 +1451,7 @@ class TraceV3File(data_format.BinaryDataFile):
           the start of the chunk set.
 
     Returns:
-      Tracev3FirehoseTracepoint: a firehose tracepoint.
+      tracev3_firehose_tracepoint: firehose tracepoint.
 
     Raises:
       ParseError: if the firehose tracepoint cannot be read.
@@ -1182,63 +1465,14 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           firehose_tracepoint, self._DEBUG_INFO_FIREHOSE_TRACEPOINT)
 
-    tracepoint_object = Tracev3FirehoseTracepoint()
-    tracepoint_object.CopyFromFirehostTracepoint(firehose_tracepoint)
-
-    # TODO populate the data and parse it based on the type of tracepoint
-
-    data_offset += 24
-
-    activity_type = firehose_tracepoint.activity_type
-
-    # TODO: make this a struct group.
-    if activity_type == self._ACTIVITY_TYPE_ACTIVITY:
-      if firehose_tracepoint.log_type not in (0x01, ):
-        raise errors.ParseError(
-            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
-
-      self._ReadFirehoseTracepointActivityData(
-          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
-
-    elif activity_type == self._ACTIVITY_TYPE_TRACE:
-      # TODO: implement
-      pass
-
-    elif activity_type == self._ACTIVITY_TYPE_NON_ACTIVITY:
-      if firehose_tracepoint.log_type not in (0x00, 0x01, 0x10, 0x11):
-        raise errors.ParseError(
-            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
-
-      self._ReadFirehoseTracepointNonActivityData(
-          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
-
-    elif activity_type == self._ACTIVITY_TYPE_SIGNPOST:
-      if firehose_tracepoint.log_type not in (0x80, 0x81, 0x82, 0xc2):
-        raise errors.ParseError(
-            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
-
-      self._ReadFirehoseTracepointSignpostData(
-          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
-
-    elif activity_type == self._ACTIVITY_TYPE_LOSS:
-      if firehose_tracepoint.log_type not in (0x00, ):
-        raise errors.ParseError(
-            f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
-
-      self._ReadFirehoseTracepointLossData(
-          firehose_tracepoint.flags, firehose_tracepoint.data, data_offset)
-
-    else:
-      raise errors.ParseError(
-          f'Unsupported activity type: 0x{activity_type:02x}.')
-
-    return tracepoint_object
+    return firehose_tracepoint
 
   def _ReadFirehoseTracepointActivityData(
-      self, flags, tracepoint_data, data_offset):
+      self, log_type, flags, tracepoint_data, data_offset):
     """Reads firehose tracepoint activity data.
 
     Args:
+      log_type (bytes): firehose tracepoint log type.
       flags (bytes): firehose tracepoint flags.
       tracepoint_data (bytes): firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint data relative to
@@ -1259,7 +1493,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e,
+        'tracev3_firehose_tracepoint_log_type': log_type})
 
     activity = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'activity',
@@ -1270,6 +1505,65 @@ class TraceV3File(data_format.BinaryDataFile):
           activity, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY)
 
     return activity
+
+  def _ReadFirehoseTracepointDataItems(
+      self, tracepoint_data, data_offset, data_items, values_data_offset):
+    """Reads firehose tracepoint data items.
+
+    Args:
+      tracepoint_data (bytes): firehose tracepoint data.
+      data_offset (int): offset of the firehose tracepoint data relative to
+          the start of the chunk set.
+      data_items (list[tracev3_firehose_tracepoint_data_item]): data items.
+      values_data_offset (int): offset of the valuesdata relative to the start
+          of the firehose tracepoint data.
+
+    Raises:
+      ParseError: if the data items cannot be read.
+    """
+    for data_item in data_items:
+      if data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
+        if data_item.value_data_size > 0:
+          # Note that the string data does not necessarily include
+          # an end-of-string character hence the cstring data_type_map is not
+          # used here.
+          value_data_offset = values_data_offset + data_item.value_data_offset
+          string_data = tracepoint_data[
+              value_data_offset:value_data_offset + data_item.value_data_size]
+
+          try:
+            data_item.string = string_data.decode('utf-8')
+          except UnicodeDecodeError:
+            pass
+
+      elif data_item.value_type == 0x32:
+        value_data_offset = values_data_offset + data_item.value_data_offset
+        data_item.value_data = tracepoint_data[
+            value_data_offset:value_data_offset + data_item.value_data_size]
+
+      elif data_item.value_type == 0xf2:
+        if data_item.value_data_size != 16:
+          raise errors.ParseError((
+              f'Unsupported data item value size: '
+              f'{data_item.value_data_size:d}.'))
+
+        data_type_map = self._GetDataTypeMap('uuid_be')
+
+        value_data_offset = values_data_offset + data_item.value_data_offset
+        data_item.uuid = self._ReadStructureFromByteStream(
+            tracepoint_data[value_data_offset:],
+            data_offset + value_data_offset, data_type_map, 'UUID')
+
+      if self._debug:
+        self._DebugPrintStructureObject(
+            data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
+
+        if data_item.value_type not in (
+            0x00, 0x01, 0x02, 0x12, 0x20, 0x21, 0x22, 0x25, 0x31, 0x32,
+            0x40, 0x41, 0x42, 0x72, 0xf2):
+          raise errors.ParseError((
+              f'Unsupported data item value type: '
+              f'0x{data_item.value_type:02x}.'))
 
   def _ReadFirehoseTracepointLossData(
       self, flags, tracepoint_data, data_offset):
@@ -1296,7 +1590,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
 
     loss = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'loss', context=context)
@@ -1307,9 +1601,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return loss
 
-  def _ReadFirehoseTracepointNonActivityData(
-      self, flags, tracepoint_data, data_offset):
-    """Reads firehose tracepoint non-activity data.
+  def _ReadFirehoseTracepointLogData(self, flags, tracepoint_data, data_offset):
+    """Reads firehose tracepoint log data.
 
     Args:
       flags (bytes): firehose tracepoint flags.
@@ -1318,36 +1611,35 @@ class TraceV3File(data_format.BinaryDataFile):
           the start of the chunk set.
 
     Returns:
-      tracev3_firehose_tracepoint_non_activity: non-activity.
+      tracev3_firehose_tracepoint_log: log.
 
     Raises:
-      ParseError: if the non-activity data cannot be read.
+      ParseError: if the log data cannot be read.
     """
     supported_flags = (
-        0x0001 | 0x000e | 0x0020 | 0x0100 | 0x0200 | 0x0400 | 0x0800)
+        0x0001 | 0x000e | 0x0020 | 0x0100 | 0x0200 | 0x0400 | 0x0800 | 0x1000)
 
     if flags & ~supported_flags != 0:
       raise errors.ParseError(f'Unsupported flags: 0x{flags:04x}.')
 
-    data_type_map = self._GetDataTypeMap(
-        'tracev3_firehose_tracepoint_non_activity')
+    data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint_log')
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
 
-    non_activity = self._ReadStructureFromByteStream(
-        tracepoint_data, data_offset, data_type_map,
-        'non-activity', context=context)
+    log = self._ReadStructureFromByteStream(
+        tracepoint_data, data_offset, data_type_map, 'log', context=context)
 
     if self._debug:
       self._DebugPrintStructureObject(
-          non_activity, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_NON_ACTIVITY)
-      for data_item in non_activity.data_items:
-        self._DebugPrintStructureObject(
-            data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
+          log, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_LOG)
 
-    return non_activity
+    self._ReadFirehoseTracepointDataItems(
+        tracepoint_data, data_offset, log.data_items,
+        context.byte_size)
+
+    return log
 
   def _ReadFirehoseTracepointSignpostData(
       self, flags, tracepoint_data, data_offset):
@@ -1375,7 +1667,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_formatter_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
 
     signpost = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'signpost',
@@ -1384,9 +1676,9 @@ class TraceV3File(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintStructureObject(
           signpost, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST)
-      for data_item in signpost.data_items:
-        self._DebugPrintStructureObject(
-            data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
+
+    self._ReadFirehoseTracepointDataItems(
+        tracepoint_data, data_offset, signpost.data_items, context.byte_size)
 
     return signpost
 
@@ -1511,6 +1803,42 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return statedump_chunk
 
+  def _ReadUUIDTextFile(self, uuid_string):
+    """Reads a specific uuidtext file.
+
+    Args:
+      uuid_string (str): string representation of the UUID.
+
+    Returns:
+      UUIDTextFile: an uuidtext file or None if not available.
+    """
+    uuidtext_file_path = os.path.join(
+        self._uuidtext_path, uuid_string[0:2], uuid_string[2:])
+    if not os.path.exists(uuidtext_file_path):
+      return None
+
+    uuidtext_file = UUIDTextFile()
+    uuidtext_file.Open(uuidtext_file_path)
+
+    return uuidtext_file
+
+  def Close(self):
+    """Closes a binary data file.
+
+    Raises:
+      IOError: if the file is not opened.
+      OSError: if the file is not opened.
+    """
+    for dsc_file in self._cached_dsc_files.values():
+      if dsc_file:
+        dsc_file.Close()
+
+    for uuidtext_file in self._cached_uuidtext_files.values():
+      if uuidtext_file:
+        uuidtext_file.Close()
+
+    super(TraceV3File, self).Close()
+
   def ReadFileObject(self, file_object):
     """Reads a tracev3 file-like object.
 
@@ -1520,6 +1848,12 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
+    # The uuidtext files are stored in ../../../uuidtext/ relative from
+    # the tracev3 file.
+    path_segments = os.path.abspath(self._path).split(os.path.sep)[:-3]
+    path_segments.append('uuidtext')
+    self._uuidtext_path = os.path.join(os.path.sep, *path_segments)
+
     file_offset = 0
 
     while file_offset < self._file_size:
@@ -1530,7 +1864,9 @@ class TraceV3File(data_format.BinaryDataFile):
         self._ReadHeaderChunk(file_object, file_offset)
 
       elif chunk_header.chunk_tag == self._CHUNK_TAG_CATALOG:
-        self._ReadCatalog(file_object, file_offset, chunk_header)
+        self._catalog = self._ReadCatalog(
+            file_object, file_offset, chunk_header)
+        self._BuildCatalogProcessInformationEntries(self._catalog)
 
       elif chunk_header.chunk_tag == self._CHUNK_TAG_CHUNK_SET:
         self._ReadChunkSet(file_object, file_offset, chunk_header)
@@ -1544,76 +1880,6 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset += alignment
 
 
-class Tracev3FirehoseData(object):
-  """TraceV3 firehose data.
-
-  Attributes:
-    base_continuous_time (int): base continuous time for events in the firehose
-        chunk
-    firehose_tracepoints (list[Tracev3FirehoseTracepoint]): firehose
-        tracepoints.
-    private_data_virtual_offset (int): private data virtual offset.
-    proc_id_lower (int): second number in "proc_id #@#".
-    proc_id_upper (int): first number in "proc_id #@#".
-    public_data_size (int): size of the Firehose data block.
-  """
-
-  def __init__(self):
-    """Initializes a Firehose data block."""
-    super(Tracev3FirehoseData, self).__init__()
-    self.base_continuous_time = None
-    self.firehose_tracepoints = []
-    self.private_data_virtual_offset = None
-    self.proc_id_lower = None
-    self.proc_id_upper = None
-    self.public_data_size = None
-
-  def CopyFromFirehoseHeader(self, header):
-    """Copies attributes a firehose header.
-
-    Args:
-      header (firehose_header): a firehose header.
-    """
-    self.base_continuous_time = header.base_continuous_time
-    self.private_data_virtual_offset = header.private_data_virtual_offset
-    self.proc_id_lower = header.proc_id_lower
-    self.proc_id_upper = header.proc_id_upper
-    self.public_data_size = header.public_data_size
-
-
-class Tracev3FirehoseTracepoint(object):
-  """TraceV3 firehose tracepoint.
-
-  Attributes:
-    continuous_time (int): continuous time.
-    data (bytes): content of the tracepoint.
-    data_size (int): size of the data segment.
-    format_string_location (int): offset to the formated string location.
-    thread_identifier (int): thread identifier.
-  """
-
-  def __init__(self):
-    """Initialize a Firehose tracepoint."""
-    super(Tracev3FirehoseTracepoint, self).__init__()
-    self.continuous_time = None
-    self.data = None
-    self.data_size = None
-    self.format_string_location = None
-    self.thread_identifier = None
-
-  def CopyFromFirehostTracepoint(self, tracepoint):
-    """Copies attributes a firehose tracepoint.
-
-    Args:
-      tracepoint (firehose_tracepoint): firehose tracepoint.
-    """
-    self.continuous_time = tracepoint.continuous_time_lower + (
-        tracepoint.continuous_time_upper << 32 )
-    self.data_size = tracepoint.data_size
-    self.format_string_location = tracepoint.format_string_location
-    self.thread_identifier = tracepoint.thread_identifier
-
-
 class UUIDTextFile(data_format.BinaryDataFile):
   """Apple Unified Logging and Activity Tracing (uuidtext) file."""
 
@@ -1625,7 +1891,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
       ('library_path', 'Library path', '_FormatString')]
 
   _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
+      ('signature', 'Signature', '_FormatStreamAsSignature'),
       ('major_format_version', 'Major format version',
        '_FormatIntegerAsDecimal'),
       ('minor_format_version', 'Minor format version',
@@ -1641,8 +1907,14 @@ class UUIDTextFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(UUIDTextFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+    super(UUIDTextFile, self).__init__(debug=debug, output_writer=output_writer)
+    self._entry_descriptors = []
+    self._file_footer = None
+
+  @property
+  def library_name(self):
+    """str: library path associated with the file."""
+    return getattr(self._file_footer, 'library_path', None)
 
   def _FormatArrayOfEntryDescriptors(self, array_of_entry_descriptors):
     """Formats an array of entry descriptors.
@@ -1661,6 +1933,18 @@ class UUIDTextFile(data_format.BinaryDataFile):
             array_of_entry_descriptors)])
     return f'{value:s}\n'
 
+  def _FormatStreamAsSignature(self, stream):
+    """Formats a stream as a signature.
+
+    Args:
+      stream (bytes): stream.
+
+    Returns:
+      str: stream formatted as a signature.
+    """
+    return (f'\\x{stream[0]:02x}\\x{stream[1]:02x}\\x{stream[2]:02x}'
+            f'\\x{stream[3]:02x}')
+
   def _ReadFileFooter(self, file_object, file_offset):
     """Reads a file footer.
 
@@ -1668,6 +1952,9 @@ class UUIDTextFile(data_format.BinaryDataFile):
       file_object (file): file-like object.
       file_offset (int): offset of the file footer relative to the start
           of the file.
+
+    Returns:
+      uuidtext_file_footer: a file footer.
 
     Raises:
       ParseError: if the file footer cannot be read.
@@ -1680,6 +1967,8 @@ class UUIDTextFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintStructureObject(
           file_footer, self._DEBUG_INFO_FILE_FOOTER)
+
+    return file_footer
 
   def _ReadFileHeader(self, file_object):
     """Reads a file header.
@@ -1702,10 +1991,6 @@ class UUIDTextFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           file_header, self._DEBUG_INFO_FILE_HEADER)
 
-    if file_header.signature != 0x66778899:
-      raise errors.ParseError(
-          f'Unsupported signature: 0x{file_header.signature:04x}.')
-
     format_version = (
         file_header.major_format_version, file_header.minor_format_version)
     if format_version != (2, 1):
@@ -1716,6 +2001,53 @@ class UUIDTextFile(data_format.BinaryDataFile):
           f'Unsupported format version: {format_version_string:s}')
 
     return file_header
+
+  def _ReadFormatString(self, file_object, file_offset):
+    """Reads a format string.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the format string data relative to the start
+          of the file.
+
+    Returns:
+      str: format string.
+
+    Raises:
+      ParseError: if the format string cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('cstring')
+
+    format_string, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'format string')
+
+    if self._debug:
+      self._DebugPrintValue('Format string', format_string)
+
+    return format_string
+
+  def GetFormatString(self, format_string_location):
+    """Retrieves a format string.
+
+    Args:
+      format_string_location (int): location of the format string.
+
+    Returns:
+      str: format string or None if not available.
+
+    Raises:
+      ParseError: if the format string cannot be read.
+    """
+    for file_offset, entry_descriptor in self._entry_descriptors:
+      if format_string_location < entry_descriptor.offset:
+        continue
+
+      relative_offset = format_string_location - entry_descriptor.offset
+      if relative_offset <= entry_descriptor.data_size:
+        file_offset += relative_offset
+        return self._ReadFormatString(self._file_object, file_offset)
+
+    return None
 
   def ReadFileObject(self, file_object):
     """Reads an uuidtext file-like object.
@@ -1728,8 +2060,12 @@ class UUIDTextFile(data_format.BinaryDataFile):
     """
     file_header = self._ReadFileHeader(file_object)
 
+    self._entry_descriptors = []
+
     file_offset = file_object.tell()
     for entry_descriptor in file_header.entry_descriptors:
+      self._entry_descriptors.append((file_offset, entry_descriptor))
+
       file_offset += entry_descriptor.data_size
 
-    self._ReadFileFooter(file_object, file_offset)
+    self._file_footer = self._ReadFileFooter(file_object, file_offset)
