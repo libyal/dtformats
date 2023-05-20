@@ -672,6 +672,8 @@ See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 |===
 | Value | Identifier | Description
 | 0x00 | default | Default
+| 0x01 | create | Create +
+Note that appears to be only used by the "Activity" activity type, other activity types use info
 | 0x01 | info | Info
 | 0x02 | | Debug
 | 0x03 | useraction | Useraction
@@ -705,6 +707,8 @@ See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 | 0x0020 | has_large_offset | Has large offset data
 | | |
 | 0x0100 | | Has private strings range
+| 0x0200 | has_other_aid | Has other activity identifier +
+Note that appears to be only used by the "Activity" activity type, other activity types use has_subsystem
 | 0x0200 | has_subsystem | Has sub system value
 | 0x0400 | | Has TTL value
 | 0x0800 | | Has data reference value
@@ -839,14 +843,14 @@ See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-4+| _Log type != 0x03_
-| ... | 8 | | Activity identifier
-4+| _Has process identifier value flag (0x0010) is set_
-| ... | 8 | | Process identifier (pid)
 4+| _Has current activity identifier flag (0x0001) is set_
 | ... | 8 | | Current activity identifier
-4+| _Has sub system value flag (0x0200) is set_
-| ... | 8 | | Activity identifier
+4+| _Has process identifier value flag (0x0010) is set_
+| ... | 8 | | Process identifier (pid)
+4+| _Has other activity identifier (0x0200) is set_
+| ... | 8 | | Other activity identifier
+4+| _Log type != 0x03_
+| ... | 8 | | New activity identifier
 4+| _Common_
 | ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_

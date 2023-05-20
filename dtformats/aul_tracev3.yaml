@@ -552,18 +552,18 @@ description: TraceV3 firehose tracepoint activity data.
 attributes:
   byte_order: little-endian
 members:
-- name: activity_identifier1
-  data_type: uint64
-  condition: tracev3_firehose_tracepoint_log_type != 0x03
-- name: process_identifier
-  data_type: uint64
-  condition: tracev3_firehose_tracepoint_flags & 0x0010 != 0
 - name: current_activity_identifier
   data_type: uint64
   condition: tracev3_firehose_tracepoint_flags & 0x0001 != 0
-- name: activity_identifier2
+- name: process_identifier
+  data_type: uint64
+  condition: tracev3_firehose_tracepoint_flags & 0x0010 != 0
+- name: other_activity_identifier
   data_type: uint64
   condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
+- name: new_activity_identifier
+  data_type: uint64
+  condition: tracev3_firehose_tracepoint_log_type != 0x03
 - name: load_address_lower
   data_type: uint32
 - name: large_offset_data

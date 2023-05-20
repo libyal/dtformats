@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Apple Unified Logging and Activity Tracing files."""
 
+import collections
 import os
 
 import lz4.block
@@ -593,13 +594,13 @@ class TraceV3File(data_format.BinaryDataFile):
       ('uuid', 'UUID', '_FormatUUIDAsString')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY = [
-      ('activity_identifier1', 'Activity identifier1',
+      ('current_activity_identifier', 'Current activity identifier',
        '_FormatIntegerAsHexadecimal8'),
       ('process_identifier', 'Process identifier (PID)',
        '_FormatIntegerAsDecimal'),
-      ('current_activity_identifier', 'Current activity identifier',
+      ('other_activity_identifier', 'Other activity identifier',
        '_FormatIntegerAsHexadecimal8'),
-      ('activity_identifier2', 'Activity identifier2',
+      ('new_activity_identifier', 'New activity identifier',
        '_FormatIntegerAsHexadecimal8'),
       ('load_address_lower', 'UUID entry load address (lower 32-bit)',
        '_FormatIntegerAsHexadecimal8'),
@@ -768,6 +769,8 @@ class TraceV3File(data_format.BinaryDataFile):
       ('name', 'Name', '_FormatString'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
+  _MAXIMUM_CACHED_FILES = 64
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a tracev3 file.
 
@@ -776,8 +779,8 @@ class TraceV3File(data_format.BinaryDataFile):
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(TraceV3File, self).__init__(debug=debug, output_writer=output_writer)
-    self._cached_dsc_files = {}
-    self._cached_uuidtext_files = {}
+    self._cached_dsc_files = collections.OrderedDict()
+    self._cached_uuidtext_files = collections.OrderedDict()
     self._catalog = None
     self._catalog_process_information_entries = {}
     self._uuidtext_path = None
@@ -788,15 +791,6 @@ class TraceV3File(data_format.BinaryDataFile):
     Args:
       catalog (tracev3_catalog): catalog.
     """
-    # TODO:
-    for uuid in catalog.uuids:
-      uuid_string = uuid.hex.upper()
-      if uuid_string == '00000000000000000000000000000000':
-        continue
-
-      # TODO: test if a corresponding DSC file exists.
-      # TODO: test if a corresponding uuidtext file exists.
-
     catalog_strings_map = self._GetCatalogSubSystemStringMap(catalog)
 
     self._catalog_process_information_entries = {}
@@ -831,6 +825,41 @@ class TraceV3File(data_format.BinaryDataFile):
 
       self._catalog_process_information_entries[proc_id] = (
           process_information_entry)
+
+  def _CalculateFormatFormatStringLocation(
+    self, firehose_tracepoint, tracepoint_data_object):
+    """Calculates the format string location.
+
+    Args:
+      firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
+      tracepoint_data_object (object): firehose tracepoint data object.
+
+    Returns:
+      int: format string location.
+    """
+    format_string_location = firehose_tracepoint.format_string_location
+
+    large_offset_data = tracepoint_data_object.large_offset_data
+    large_shared_cache_data = tracepoint_data_object.large_shared_cache_data
+    if large_shared_cache_data:
+      calculated_large_offset_data = large_shared_cache_data >> 1
+      if large_offset_data != calculated_large_offset_data:
+        print((f'Large offset data mismatch stored: ('
+               f'0x{large_offset_data:04x}, calculated: '
+               f'0x{calculated_large_offset_data:04x})'))
+
+      large_offset_data = tracepoint_data_object.large_shared_cache_data
+
+    if large_offset_data:
+      format_string_location |= large_offset_data << 31
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsHexadecimal8(
+          format_string_location)
+      self._DebugPrintValue('Calculated format string location', value_string)
+      self._DebugPrintText('\n')
+
+    return format_string_location
 
   def _FormatActivityType(self, integer):
     """Formats an activity type.
@@ -1095,44 +1124,23 @@ class TraceV3File(data_format.BinaryDataFile):
     elif format_string_type == 0x000a:
       uuid_string = tracepoint_data_object.uuidtext_file_identifier.hex.upper()
 
-    format_string = None
+    format_string_location = self._CalculateFormatFormatStringLocation(
+        firehose_tracepoint, tracepoint_data_object)
 
+    format_string = None
     if format_string_type in (0x0002, 0x0008, 0x000a):
       uuidtext_file = self._GetUUIDTextFile(uuid_string)
       if uuidtext_file:
-        format_string = uuidtext_file.GetFormatString(
-            firehose_tracepoint.format_string_location)
+        format_string = uuidtext_file.GetFormatString(format_string_location)
 
     else:
-      format_string_location = 0
-      if tracepoint_data_object.large_offset_data:
-        format_string_location = firehose_tracepoint.format_string_location
-
-        large_offset_data = tracepoint_data_object.large_offset_data
-        large_shared_cache_data = (
-            (tracepoint_data_object.large_shared_cache_data or 0) // 2)
-
-        if (large_offset_data != large_shared_cache_data and
-            format_string_type != 0x0004):
-          format_string_location |= large_shared_cache_data << 32
-
-        elif format_string_type == 0x0004:
-          format_string_location &= 0x0fffffff
-          format_string_location |= 0x80000000
-        else:
-          format_string_location |= large_offset_data << 32
-
-      if self._debug:
-        value_string, _ = self._FormatIntegerAsHexadecimal8(
-            format_string_location)
-        self._DebugPrintValue('Full format string location', value_string)
-
       dsc_file = self._GetDSCFile(uuid_string)
       if dsc_file:
         format_string = dsc_file.GetFormatString(format_string_location)
 
     if self._debug and format_string:
       self._DebugPrintValue('Format string', format_string)
+      self._DebugPrintText('\n')
 
     return format_string
 
@@ -1148,9 +1156,14 @@ class TraceV3File(data_format.BinaryDataFile):
     dsc_file = self._cached_dsc_files.get(uuid_string, None)
     if not dsc_file:
       dsc_file = self._ReadDSCFile(uuid_string)
+      if len(self._cached_dsc_files) >= self._MAXIMUM_CACHED_FILES:
+        _, cached_dsc_file = self._cached_dsc_files.popitem(last=True)
+        if cached_dsc_file:
+          cached_dsc_file.Close()
+
       self._cached_dsc_files[uuid_string] = dsc_file
 
-    # TODO: add upper limit for number of files in the cache.
+    self._cached_dsc_files.move_to_end(uuid_string, last=False)
 
     return dsc_file
 
@@ -1166,9 +1179,14 @@ class TraceV3File(data_format.BinaryDataFile):
     uuidtext_file = self._cached_uuidtext_files.get(uuid_string, None)
     if not uuidtext_file:
       uuidtext_file = self._ReadUUIDTextFile(uuid_string)
+      if len(self._cached_uuidtext_files) >= self._MAXIMUM_CACHED_FILES:
+        _, cached_uuidtext_file = self._cached_uuidtext_files.popitem(last=True)
+        if cached_uuidtext_file:
+          cached_uuidtext_file.Close()
+
       self._cached_uuidtext_files[uuid_string] = uuidtext_file
 
-    # TODO: add upper limit for number of files in the cache.
+    self._cached_uuidtext_files.move_to_end(uuid_string, last=False)
 
     return uuidtext_file
 
@@ -1430,8 +1448,6 @@ class TraceV3File(data_format.BinaryDataFile):
       if self._catalog and tracepoint_data_object:
         format_string = self._GetFirehostTracepointFormatString(
             proc_id, firehose_tracepoint, tracepoint_data_object)
-
-        # TODO: implement
         _ = format_string
 
       chunk_data_offset += firehose_tracepoint.data_size

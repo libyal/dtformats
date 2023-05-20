@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for Apple Unified Logging and Activity Tracing files."""
 
+import collections
 import io
 import os
 import unittest
@@ -290,6 +291,53 @@ class TraceV3FileTest(test_lib.BaseTestCase):
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x09]))
 
+  def testCalculateFormatFormatStringLocation(self):
+    """Tests the _CalculateFormatFormatStringLocation function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    firehose_tracepoint_tuple = collections.namedtuple(
+        'firehose_tracepoint', ['flags', 'format_string_location'])
+    tracepoint_data_object_tuple = collections.namedtuple(
+        'tracepoint_data_object', [
+            'large_offset_data', 'large_shared_cache_data'])
+
+    firehose_tracepoint = firehose_tracepoint_tuple(
+        flags=0x0002, format_string_location=0x00964b95)
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0, large_shared_cache_data=0)
+
+    format_string_location = test_file._CalculateFormatFormatStringLocation(
+        firehose_tracepoint, tracepoint_data_object)
+    self.assertEqual(format_string_location, 0x964b95)
+
+    firehose_tracepoint = firehose_tracepoint_tuple(
+        flags=0x0002, format_string_location=0x28dd2b31)
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0xff4b, large_shared_cache_data=0)
+
+    format_string_location = test_file._CalculateFormatFormatStringLocation(
+        firehose_tracepoint, tracepoint_data_object)
+    self.assertEqual(format_string_location, 0x7fa5a8dd2b31)
+
+    firehose_tracepoint = firehose_tracepoint_tuple(
+        flags=0x000c, format_string_location=0x15a557c5)
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0x0001, large_shared_cache_data=0x0002)
+
+    format_string_location = test_file._CalculateFormatFormatStringLocation(
+        firehose_tracepoint, tracepoint_data_object)
+    self.assertEqual(format_string_location, 0x115a557c5)
+
+    firehose_tracepoint = firehose_tracepoint_tuple(
+        flags=0x000c, format_string_location=0x6c8fbbd0)
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0x0001, large_shared_cache_data=0x0011)
+
+    format_string_location = test_file._CalculateFormatFormatStringLocation(
+        firehose_tracepoint, tracepoint_data_object)
+    self.assertEqual(format_string_location, 0x8ec8fbbd0)
+
   # TODO: add tests for _FormatArrayOfStrings
   # TODO: add tests for _FormatArrayOfUUIDS
   # TODO: add tests for _FormatStreamAsSignature
@@ -353,10 +401,10 @@ class TraceV3FileTest(test_lib.BaseTestCase):
         0x01, 0x0213, self._FIREHOST_TRACEPOINT_ACTIVITY_DATA, 0)
 
     self.assertIsNotNone(activity)
-    self.assertEqual(activity.activity_identifier1, 0x80000000000000e0)
-    self.assertEqual(activity.process_identifier, 59)
     self.assertEqual(activity.current_activity_identifier, 0x80000000000000e0)
-    self.assertEqual(activity.activity_identifier2, 0x80000000000000e1)
+    self.assertEqual(activity.process_identifier, 59)
+    self.assertEqual(activity.other_activity_identifier, 0x80000000000000e0)
+    self.assertEqual(activity.new_activity_identifier, 0x80000000000000e1)
     self.assertEqual(activity.load_address_lower, 0x00047e48)
 
     with self.assertRaises(errors.ParseError):
