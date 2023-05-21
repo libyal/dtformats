@@ -778,36 +778,37 @@ Contains a 32-bit value
 | 0x02 | | [yellow-background]*Unknown (integer)* +
 Contains a 8-bit, 16-bit, 32-bit or 64-bit value
 3+|
-| 0x12 | | [yellow-background]*Unknown* +
-Contains a 32-bit value
+| 0x12 | | [yellow-background]*Unknown (format string precision)* +
+Contains a 32-bit value +
+This value has been seen to be used in combination with format strings like "%.16s" and "%.*s", where this value contains the number of characters of the string that should be printed.
 3+|
 | 0x20 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
-| 0x21 | | [yellow-background]*Unknown (private string)* +
+| 0x21 | | [yellow-background]*Unknown (private value)* +
 Contains a 32-bit value, formatted as "<private>"
 | 0x22 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
-| 0x25 | | [yellow-background]*Unknown (private string)* +
-Contains a 32-bit value
+| 0x25 | | [yellow-background]*Unknown (sensitive value)* +
+Contains a 32-bit value, formatted as "<private>"
 3+|
 | 0x30 | | [yellow-background]*Unknown (string)*
-| 0x31 | | [yellow-background]*Unknown (private string)* +
-Contains a 32-bit value
+| 0x31 | | [yellow-background]*Unknown (private value)* +
+Contains a 32-bit value, formatted as "<private>"
 | 0x32 | | [yellow-background]*Unknown (binary data)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
 3+|
-| 0x35 | | [yellow-background]*Unknown (private string)*
+| 0x35 | | [yellow-background]*Unknown (private value)*
 3+|
 | 0x40 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
-| 0x41 | | [yellow-background]*Unknown (private string)* +
-Contains a 32-bit value
+| 0x41 | | [yellow-background]*Unknown (private value)* +
+Contains a 32-bit value, formatted as "<private>"
 | 0x42 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
-| 0xf2 | | [yellow-background]*Unknown (UUID)*
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UUID.
+| 0xf2 | | [yellow-background]*Unknown (binary data)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
 |===
 
 ===== [[tracev3_firehose_tracepoint_data_time_with_value_data_range]]Firehose tracepoint data item with value data range
@@ -1020,33 +1021,77 @@ The built-in value type decoders are:
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| "{bitrate}" | | Formatted as a bit-rate value, for example "123 kbps"
-| "{bool}" | | Formatted as a lower-case boolean value, for example "true" or "false"
-| "{BOOL}" | | Formatted as a uppoer-case boolean value, for example "YES" or "NO"
-| "{bytes}" | | Formatted a bytes value, for example "4.72 kB"
-| "{darwin.errno}" | | Formatted as a system error, for example "[32: Broken pipe]"
-| "{darwin.mode}" | | Formatted as a file mode value, for example "drwxr-xr-x"
-| "{darwin.signal}" | | Formatted as a signal, for example "[sigsegv: Segmentation Fault]"
-| "{errno}" | | Formatted as a system error, for example "[32: Broken pipe]"
-| "{iec-bitrate}" | | Formatted as an IEC bit-rate value, for example "118 Kibps"
-| "{iec-bytes}" | | Formatted as IEC bytes value, for example "4.61 KiB"
-| "{in_addr}" | | Formatted as an IPv4 address, for example "127.0.0.1"
-| "{in6_addr}" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
-| "{private}" | | Private log argument
-| "{public}" | | Public log argument
-| "{sockaddr}" | | Formatted as socket address, for example "fe80::f:86ff:fee9:5c16"
-| "{time_t}" | | Formatted as a seconds precision date and time value, for example "2016-01-12 19:41:37"
-| "{timespec}" | | Formatted as a nanoseconds precision date and time value, for example "2016-01-12 19:41:37.2382382823"
-| "{timeval}" | | Formatted as a microseconds precision date and time value, for example "2016-01-12 19:41:37.774236"
-| "{uuid_t}" | | Formatted as an UUID, for example "10742E39-0657-41F8-AB99-878C5EC2DCAA"
+| "bitrate" | | Formatted as a bit-rate value, for example "123 kbps"
+| "bool" | | Formatted as a lower-case boolean value, for example "true" or "false"
+| "BOOL" | | Formatted as a uppoer-case boolean value, for example "YES" or "NO"
+| "bytes" | | Formatted a bytes value, for example "4.72 kB"
+| "darwin.errno" | | Formatted as a system error, for example "[32: Broken pipe]"
+| "darwin.mode" | | Formatted as a file mode value, for example "drwxr-xr-x"
+| "darwin.signal" | | Formatted as a signal, for example "[sigsegv: Segmentation Fault]"
+| "iec-bitrate" | | Formatted as an IEC bit-rate value, for example "118 Kibps"
+| "iec-bytes" | | Formatted as IEC bytes value, for example "4.61 KiB"
+| "in_addr" | | Formatted as an IPv4 address, for example "127.0.0.1"
+| "in6_addr" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
+| "sockaddr" | | Formatted as socket address, for example "fe80::f:86ff:fee9:5c16"
+| "time_t" | | Formatted as a seconds precision date and time value, for example "2016-01-12 19:41:37"
+| "timespec" | | Formatted as a nanoseconds precision date and time value, for example "2016-01-12 19:41:37.2382382823"
+| "timeval" | | Formatted as a microseconds precision date and time value, for example "2016-01-12 19:41:37.774236"
+| "uuid_t" | | Formatted as an UUID, for example "10742E39-0657-41F8-AB99-878C5EC2DCAA"
 |===
+
+Other observerd value type decoders are:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "errno" | | Formatted as a system error, for example "[32: Broken pipe]"
+| "location:_CLClientManagerStateTrackerState" | | Formatted as a <<locationd_core_location_client_manager_state_tracker_state,locationd Core Location client manager (CLClientManager) state tracker state>>
+| "location:_CLLocationManagerStateTrackerState" | | Formatted as a <<locationd_core_location_location_manager_state_tracker_state,locationd Core Location location manager (CLLocationManager) state tracker state>>
+| "location:CLClientAuthorizationStatus" | |
+| "location:CLDaemonStatus_Type::Reachability" | |
+| "location:CLSubHarvesterIdentifier" | |
+| "location:escape_only" | |
+| "location:IOMessage" | |
+| "location:SqliteResult" | | Formatted as a <<locationd_sqlite_result,locationd SQLite result>>
+| "mask.hash" | | Formatted as a <<mask_hash,Mask hash>>
+| "mdns:acceptable" | |
+| "mdns:addrmv" | |
+| "mdns:dns.counts" | |
+| "mdns:dns.idflags" | |
+| "mdns:dnshdr" | |
+| "mdns:gaiopts" | |
+| "mdns:nreason" | |
+| "mdns:protocol" | |
+| "mdns:rd.svcb" | |
+| "mdns:rrtype" | |
+| "mdns:yesno" | |
+| "mdnsresponder:domain_name" | |
+| "mdnsresponder:ip_addr" | | Formatted as a <<mdnsresponder_ip_address,mDNSResponder IP address>>
+| "mdnsresponder:mac_addr" | | Formatted as a <<mdnsresponder_mac_address,mDNSResponder MAC address>>
+| "network:in_addr" | | Formatted as an IPv4 address, for example "127.0.0.1"
+| "network:in6_addr" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
+| "network:sockaddr" | |
+| "network:tcp_flags" | |
+| "network:tcp_state" | |
+| "odtypes:ODError" | |
+| "odtypes:mbr_details" | |
+| "odtypes:mbridtype" | |
+| "odtypes:nt_sid_t" | |
+| "sensitive" | |
+| "private" | | Private log argument
+| "public" | | Public log argument
+|===
+
+[NOTE]
+The multiple value type decoders can be used in combination for example
+"%{public,uuid_t}.16P" or "%{private, mask.hash, mdnsresponder:ip_addr}.20P".
 
 The flags are defined as:
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| "#" | |
+| "#" | | Value should be converted to an "alternate form"
 | "0" | | Value should be padded with 0
 | "-" | |
 | " " | |
@@ -1069,36 +1114,45 @@ The length modifiers are defined as:
 | "z" | | size_t
 |===
 
+The .precision is defined as:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "0" | | Observed that this has no effect in "%.0s"
+| "*" | | An additional integer argument supplies the field width or precision.
+|===
+
 The types are defined as:
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
 | "@" | | Obj-C/CF/Swift object
-| "a" | |
-| "A" | |
+| "a" | | Floating-point value
+| "A" | | Floating-point value
 | "c" | | Character value
-| "C" | | Equivalent to "lc"
+| "C" | | wide character value, equivalent to "lc"
 | "d" | | Signed decimal integer value
-| "D" | |
-| "e" | |
-| "E" | |
-| "f" | |
-| "F" | |
-| "g" | |
-| "G" | |
-| "i" | |
+| "D" | | Long signed decimal integer value, equivalent to "ld"
+| "e" | | Floating-point value
+| "E" | | Floating-point value
+| "f" | | Floating-point value
+| "F" | | Floating-point value
+| "g" | | Floating-point value
+| "G" | | Floating-point value
+| "i" | | Signed decimal integer value
 | "n" | |
-| "o" | |
-| "O" | |
-| "p" | | Pointer value
+| "o" | | Octal integer value
+| "O" | | Long octal integer value, equivalent to "lo"
+| "p" | | Pointer value, equivalent to "0x%x"
 | "P" | | Binary data
 | "s" | | String value
-| "S" | | Equivalent to "ls"
+| "S" | | Wide character string value, equivalent to "ls"
 | "u" | | Unsigned decimal integer value
-| "U" | |
-| "x" | | Lower case hexadecimal interger value
-| "X" | | Upper case hexadecimal interger value
+| "U" | | Long unsigned decimal integer value, equivalent to "lu"
+| "x" | | Hexadecimal interger value, formatter in lower case
+| "X" | | Hexadecimal interger value, formatter in upper case
 |===
 
 === Oversize chunk
@@ -1438,6 +1492,200 @@ The UUID text (uuidtext) entry descriptor is 8 bytes of size and consists of:
 | 0 | ... | | Path of sender process/library +
 Contains an UTF-8 formatted string with an end-of-string character
 |===
+
+== Value type decoders
+
+=== [[locationd_core_location_client_manager_state_tracker_state]]locationd Core Location client manager (CLClientManager) state tracker state
+
+The locationd Core Location client manager (CLClientManager) state tracker
+state is 8 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Location enabled status
+| 4 | 4 | | Location restricted +
+Contains a boolean value where false if 0 or true otherwise
+|===
+
+[yellow-background]*TODO confirm location enabled status is the first value in the
+structure. Only seen data where both values are 0.*
+
+The value is formatted as:
+
+....
+{"locationRestricted":false,"locationServicesEnabledStatus":0}
+....
+
+=== [[locationd_core_location_location_manager_state_tracker_state]]locationd Core Location location manager (CLLocationManager) state tracker state
+
+The locationd ore Location location manager (CLLocationManager) state tracker
+state is 64 or 72 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Distance filter +
+Contains a floating-point value
+| 8 | 8 | | Desired accuracy +
+Contains a floating-point value
+| 16 | 1 | | Updating location +
+Contains a boolean value where false if 0 or true otherwise
+| 17 | 1 | | Requestiong location +
+Contains a boolean value where false if 0 or true otherwise
+| 18 | 1 | | Requestiong ranging +
+Contains a boolean value where false if 0 or true otherwise
+| 19 | 1 | | Updating ranging +
+Contains a boolean value where false if 0 or true otherwise
+| 20 | 1 | | Updating heading +
+Contains a boolean value where false if 0 or true otherwise
+| 21 | 3 | | [yellow-background]*Unknown*
+| 24 | 8 | | Heading filter +
+Contains a floating-point value
+| 32 | 1 | | Allows location prompts +
+Contains a boolean value where false if 0 or true otherwise
+| 33 | 1 | | Allows altered accessory location +
+Contains a boolean value where false if 0 or true otherwise
+| 34 | 1 | | Dynamic accuracy reduction enabled +
+Contains a boolean value where false if 0 or true otherwise
+| 35 | 1 | | Previous authorization status valid +
+Contains a boolean value where false if 0 or true otherwise
+| 36 | 4 | | Previous authorization status
+| 40 | 1 | | Limits precision +
+Contains a boolean value where false if 0 or true otherwise
+| 41 | 7 | | [yellow-background]*Unknown*
+| 48 | 8 | | Activity type +
+Contains a signed integer
+| 56 | 4 | | Pauses location updates automatically +
+Contains a signed integer
+| 60 | 1 | | Paused +
+Contains a boolean value where false if 0 or true otherwise
+| 61 | 1 | | Allows background location updates +
+Contains a boolean value where false if 0 or true otherwise
+| 62 | 1 | | Shows background location indicator +
+Contains a boolean value where false if 0 or true otherwise
+| 63 | 1 | | Allows map correction +
+Contains a boolean value where false if 0 or true otherwise
+4+| _Additional values if size > 64_
+| 64 | 1 | | Batching location +
+Contains a boolean value where false if 0 or true otherwise
+| 65 | 1 | | Updating vehicle speed +
+Contains a boolean value where false if 0 or true otherwise
+| 66 | 1 | | Updating vehicle heading +
+Contains a boolean value where false if 0 or true otherwise
+| 67 | 1 | | Match information enabled +
+Contains a boolean value where false if 0 or true otherwise
+| 68 | 1 | | Ground altitude enabled +
+Contains a boolean value where false if 0 or true otherwise
+| 69 | 1 | | Fusion information enabled +
+Contains a boolean value where false if 0 or true otherwise
+| 70 | 1 | | Courtesy prompt needed +
+Contains a boolean value where false if 0 or true otherwise
+| 71 | 1 | | Is authorized for widget updates +
+Contains a boolean value where false if 0 or true otherwise
+|===
+
+The value is formatted as:
+
+....
+{"previousAuthorizationStatusValid":false,"paused":false,"requestingLocation":false,"updatingVehicleSpeed":false,"desiredAccuracy":100,"allowsBackgroundLocationUpdates":false,"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,"allowsLocationPrompts":true,"activityType":0,"groundAltitudeEnabled":false,"pausesLocationUpdatesAutomatially":1,"fusionInfoEnabled":false,"isAuthorizedForWidgetUpdates":false,"updatingVehicleHeading":false,"batchingLocation":false,"showsBackgroundLocationIndicator":false,"updatingLocation":false,"requestingRanging":false,"updatingHeading":false,"previousAuthorizationStatus":0,"allowsMapCorrection":true,"matchInfoEnabled":false,"allowsAlteredAccessoryLoctions":false,"updatingRanging":false,"limitsPrecision":false,"courtesyPromptNeeded":false,"headingFilter":1}
+....
+
+=== [[locationd_sqlite_result]]locationd SQLite result
+
+The locationd SQLite result is 4 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | SQLite result or error code
+|===
+
+The value is formatted as:
+
+....
+"%s"
+....
+
+Where "%s" contains one fo the following identifiers based on the
+<<locationd_sqlite_result_values,value>> for example:
+
+....
+"SQLITE_OK"
+....
+
+==== [[locationd_sqlite_result_values]]locationd SQLite result values
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | SQLITE_OK |
+| 1 | SQLITE_ERROR |
+| 2 | SQLITE_INTERNAL |
+| 3 | SQLITE_PERM |
+| 4 | SQLITE_ABORT |
+| 5 | SQLITE_BUSY |
+| 6 | SQLITE_LOCKED |
+| 7 | SQLITE_NOMEM |
+| 8 | SQLITE_READONLY |
+| 9 | SQLITE_INTERRUPT |
+| 10 | SQLITE_IOERR |
+| 11 | SQLITE_CORRUPT |
+| 12 | SQLITE_NOTFOUND |
+| 13 | SQLITE_FULL |
+| 14 | SQLITE_CANTOPEN |
+| 15 | SQLITE_PROTOCOL |
+| 16 | SQLITE_EMPTY |
+| 17 | SQLITE_SCHEMA |
+| 18 | SQLITE_TOOBIG |
+| 19 | SQLITE_CONSTRAINT |
+| 20 | SQLITE_MISMATCH |
+| 21 | SQLITE_MISUSE |
+| 22 | SQLITE_NOLFS |
+| 23 | SQLITE_AUTH |
+| 24 | SQLITE_FORMAT |
+| 25 | SQLITE_RANGE |
+| 26 | SQLITE_NOTADB |
+| 27 | SQLITE_NOTICE |
+| 28 | SQLITE_WARNING |
+3+|
+| 100 | SQLITE_ROW |
+| 101 | SQLITE_DONE |
+3+|
+| 266 | SQLITE IO ERR READ |
+|===
+
+=== [[mask_hash]]Mask hash
+
+The mask hash is 16 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 16 | | [yellow-background]*Unknown*
+|===
+
+The value is formatted as:
+
+....
+<mask.hash: '%s'>
+....
+
+Where "%s" contains the value encoded in base64, for example:
+
+....
+<mask.hash: 'HR/T++mmRmq3Mn+2mGECsg=='>
+....
+
+=== [[mdnsresponder_ip_address]]mDNSResponder IP address
+
+It is currently unknown how the value is formatted is has only been observed
+in combination with the "mask.hash" value type formatter.
+
+=== [[mdnsresponder_mac_address]]mDNSResponder MAC address
+
+It is currently unknown how the value is formatted is has only been observed
+in combination with the "mask.hash" value type formatter.
 
 == Notes
 

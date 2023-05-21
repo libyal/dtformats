@@ -2,11 +2,15 @@
 """Apple Unified Logging and Activity Tracing files."""
 
 import abc
+import base64
 import collections
 import re
 import os
+import uuid
 
 import lz4.block
+
+from dfdatetime import posix_time as dfdatetime_posix_time
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps
 
@@ -57,12 +61,27 @@ class DSCUUID(object):
     self.text_size = None
 
 
+class ValueTypeDecoder(object):
+  """Value type decoder.
+
+  Attributes:
+    names (list[str]): names of format string decoders.
+    type_hint (str): hint about value data type.
+  """
+
+  def __init__(self):
+    """Initializes a value type decoder."""
+    super(ValueTypeDecoder, self).__init__()
+    # TODO: add value to indicate use of precision value
+    self.names = []
+    self.type_hint = None
+
+
 class BaseFormatStringDecoder(object):
   """Format string decoder interface."""
 
-  @classmethod
   @abc.abstractmethod
-  def FormatValue(cls, value):
+  def FormatValue(self, value):
     """Formats a value.
 
     Args:
@@ -73,25 +92,59 @@ class BaseFormatStringDecoder(object):
     """
 
 
-class ErrorFormatStringDecoder(BaseFormatStringDecoder):
-  """Error format string decoder."""
+class BooleanFormatStringDecoder(BaseFormatStringDecoder):
+  """Boolean value format string decoder."""
 
-  @classmethod
-  def FormatValue(cls, error_code):  # pylint: disable=arguments-renamed
+  def FormatValue(self, value):
+    """Formats a boolean value.
+
+    Args:
+      value (int): boolean value.
+
+    Returns:
+      str: formatted boolean value.
+    """
+    if value:
+      return 'true'
+
+    return 'false'
+
+
+class DateTimeInSecondsFormatStringDecoder(BaseFormatStringDecoder):
+  """Date and time value in seconds format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats a date and time value in seconds.
+
+    Args:
+      value (int): timestamp that contains the number of seconds since
+          1970-01-01 00:00:00.
+
+    Returns:
+      str: formatted date and time value in seconds.
+    """
+    date_time = dfdatetime_posix_time.PosixTime(timestamp=value)
+    return date_time.CopyToDateTimeString()
+
+
+class ErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
+  """Error code format string decoder."""
+
+  def FormatValue(self, value):
     """Formats an error code value.
 
     Args:
-      error_code (int): error code.
+      value (int): error code.
 
     Returns:
       str: formatted error code value.
     """
     error_message = darwin.DARWIN_ERROR_CODES.get(
-        error_code, 'UNKNOWN: {0:d}'.format(error_code))
+        value, 'UNKNOWN: {0:d}'.format(value))
 
     # TODO: determine what the MacOS log tool shows when an error message is
     # not defined.
-    return f'[{error_code:d}: {error_message:s}]'
+    return f'[{value:d}: {error_message:s}]'
 
 
 class FileModeFormatStringDecoder(BaseFormatStringDecoder):
@@ -105,42 +158,351 @@ class FileModeFormatStringDecoder(BaseFormatStringDecoder):
       0xa000: 'l',
       0xc000: 's'}
 
-  @classmethod
-  def FormatValue(cls, mode):  # pylint: disable=arguments-renamed
+  def FormatValue(self, value):
     """Formats a file mode value.
 
     Args:
-      mode (int): file mode.
+      value (int): file mode.
 
     Returns:
       str: formatted file mode value.
     """
     string_parts = 10 * ['-']
 
-    if mode & 0x0001:
+    if value & 0x0001:
       string_parts[9] = 'x'
-    if mode & 0x0002:
+    if value & 0x0002:
       string_parts[8] = 'w'
-    if mode & 0x0004:
+    if value & 0x0004:
       string_parts[7] = 'r'
 
-    if mode & 0x0008:
+    if value & 0x0008:
       string_parts[6] = 'x'
-    if mode & 0x0010:
+    if value & 0x0010:
       string_parts[5] = 'w'
-    if mode & 0x0020:
+    if value & 0x0020:
       string_parts[4] = 'r'
 
-    if mode & 0x0040:
+    if value & 0x0040:
       string_parts[3] = 'x'
-    if mode & 0x0080:
+    if value & 0x0080:
       string_parts[2] = 'w'
-    if mode & 0x0100:
+    if value & 0x0100:
       string_parts[1] = 'r'
 
-    string_parts[0] = cls._FILE_TYPES.get(mode & 0xf000, '-')
+    string_parts[0] = self._FILE_TYPES.get(value & 0xf000, '-')
 
     return ''.join(string_parts)
+
+
+class IPv4FormatStringDecoder(BaseFormatStringDecoder):
+  """IPv4 value format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats an IPv4 value.
+
+    Args:
+      value (bytes): IPv4 value.
+
+    Returns:
+      str: formatted IPv4 value.
+    """
+    if len(value) != 4:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    return '.'.join([f'{octet:d}' for octet in value])
+
+
+class IPv6FormatStringDecoder(BaseFormatStringDecoder):
+  """IPv6 value format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats an IPv6 value.
+
+    Args:
+      value (bytes): IPv6 value.
+
+    Returns:
+      str: formatted IPv6 value.
+    """
+    if len(value) != 16:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    # Note that socket.inet_ntop() is not supported on Windows.
+    octet_pairs = zip(value[0::2], value[1::2])
+    octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
+    # TODO: omit ":0000" from the string.
+    return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
+
+
+class LocationStructureFormatStringDecoder(
+    BaseFormatStringDecoder, data_format.BinaryDataFormat):
+  """Shared functionality for location structure format string decoders."""
+
+  # pylint: disable=abstract-method
+
+  def _FormatStructure(self, structure, value_mappings):
+    """Formats a structure.
+
+    Args:
+      structure (object): structure object to format.
+      value_mappings (tuple[str, str]): mappings of output values to structure
+          values.
+
+    Return:
+      str: formatted structure.
+    """
+    values = []
+
+    for name, attribute_name in value_mappings:
+      attribute_value = getattr(structure, attribute_name, None)
+      if isinstance(attribute_value, bool):
+        if attribute_value:
+          attribute_value = 'true'
+        else:
+          attribute_value = 'false'
+
+      elif isinstance(attribute_value, int):
+        attribute_value = f'{attribute_value:d}'
+
+      elif isinstance(attribute_value, float):
+        attribute_value = f'{attribute_value:.0f}'
+
+      values.append(f'"{name:s}":{attribute_value:s}')
+
+    values_string = ','.join(values)
+
+    return f'{{{values_string:s}}}'
+
+
+class LocationClientManagerStateFormatStringDecoder(
+    LocationStructureFormatStringDecoder):
+  """Location client manager state format string decoder."""
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'macos_core_location.yaml')
+
+  _VALUE_MAPPINGS = [
+      ('locationRestricted', 'location_restricted'),
+      ('locationServicesEnabledStatus', 'location_enabled_status')]
+
+  def FormatValue(self, value):
+    """Formats a location client manager state value.
+
+    Args:
+      value (str): location client manager state value.
+
+    Returns:
+      str: formatted location client manager state value.
+    """
+    if len(value) != 8:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    data_type_map = self._GetDataTypeMap('client_manager_state_tracker_state')
+
+    tracker_state = self._ReadStructureFromByteStream(
+        value, 0, data_type_map, 'client manager state tracker state')
+
+    return self._FormatStructure(tracker_state, self._VALUE_MAPPINGS)
+
+
+class LocationLocationManagerStateFormatStringDecoder(
+    LocationStructureFormatStringDecoder):
+  """Location location manager state format string decoder."""
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'macos_core_location.yaml')
+
+  _VALUE_MAPPINGS = [
+      ('previousAuthorizationStatusValid',
+       'previous_authorization_status_valid'),
+      ('paused', 'paused'),
+      ('requestingLocation', 'requesting_location'),
+      ('updatingVehicleSpeed', 'updating_vehicle_speed'),
+      ('desiredAccuracy', 'desired_accuracy'),
+      ('allowsBackgroundLocationUpdates', 'allows_background_location_updates'),
+      ('dynamicAccuracyReductionEnabled', 'dynamic_accuracy_reduction_enabled'),
+      ('distanceFilter', 'distance_filter'),
+      ('allowsLocationPrompts', 'allows_location_prompts'),
+      ('activityType', 'activity_type'),
+      ('groundAltitudeEnabled', 'ground_altitude_enabled'),
+      ('pausesLocationUpdatesAutomatially',
+       'pauses_location_updates_automatially'),
+      ('fusionInfoEnabled', 'fusion_information_enabled'),
+      ('isAuthorizedForWidgetUpdates', 'is_authorized_for_widget_updates'),
+      ('updatingVehicleHeading', 'updating_vehicle_heading'),
+      ('batchingLocation', 'batching_location'),
+      ('showsBackgroundLocationIndicator',
+       'shows_background_location_indicator'),
+      ('updatingLocation', 'updating_location'),
+      ('requestingRanging', 'requesting_ranging'),
+      ('updatingHeading', 'updating_heading'),
+      ('previousAuthorizationStatus', 'previous_authorization_status'),
+      ('allowsMapCorrection', 'allows_map_correction'),
+      ('matchInfoEnabled', 'match_information_enabled'),
+      ('allowsAlteredAccessoryLoctions', 'allows_altered_accessory_location'),
+      ('updatingRanging', 'updating_ranging'),
+      ('limitsPrecision', 'limits_precision'),
+      ('courtesyPromptNeeded', 'courtesy_prompt_needed'),
+      ('headingFilter', 'heading_filter')]
+
+  def FormatValue(self, value):
+    """Formats a location location manager state value.
+
+    Args:
+      value (str): location location manager state value.
+
+    Returns:
+      str: formatted location location manager state value.
+    """
+    value_size = len(value)
+    if value_size == 64:
+      data_type_name = 'location_manager_state_tracker_state_v1'
+    elif value_size == 72:
+      data_type_name = 'location_manager_state_tracker_state_v2'
+    else:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    data_type_map = self._GetDataTypeMap(data_type_name)
+
+    tracker_state = self._ReadStructureFromByteStream(
+        value, 0, data_type_map, 'location manager state tracker state')
+
+    return self._FormatStructure(tracker_state, self._VALUE_MAPPINGS)
+
+
+class LocationEscapeOnlyFormatStringDecoder(BaseFormatStringDecoder):
+  """Location escape only format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats a location value.
+
+    Args:
+      value (str): location value.
+
+    Returns:
+      str: formatted location value.
+    """
+    value = value or ''
+    value = value.replace('/', '\\/')
+    return ''.join(['"', value, '"'])
+
+
+class LocationSQLiteResultFormatStringDecoder(BaseFormatStringDecoder):
+  """Location SQLite result format string decoder."""
+
+  _SQLITE_RESULTS = {
+      0: 'SQLITE_OK',
+      1: 'SQLITE_ERROR',
+      2: 'SQLITE_INTERNAL',
+      3: 'SQLITE_PERM',
+      4: 'SQLITE_ABORT',
+      5: 'SQLITE_BUSY',
+      6: 'SQLITE_LOCKED',
+      7: 'SQLITE_NOMEM',
+      8: 'SQLITE_READONLY',
+      9: 'SQLITE_INTERRUPT',
+      10: 'SQLITE_IOERR',
+      11: 'SQLITE_CORRUPT',
+      12: 'SQLITE_NOTFOUND',
+      13: 'SQLITE_FULL',
+      14: 'SQLITE_CANTOPEN',
+      15: 'SQLITE_PROTOCOL',
+      16: 'SQLITE_EMPTY',
+      17: 'SQLITE_SCHEMA',
+      18: 'SQLITE_TOOBIG',
+      19: 'SQLITE_CONSTRAINT',
+      20: 'SQLITE_MISMATCH',
+      21: 'SQLITE_MISUSE',
+      22: 'SQLITE_NOLFS',
+      23: 'SQLITE_AUTH',
+      24: 'SQLITE_FORMAT',
+      25: 'SQLITE_RANGE',
+      26: 'SQLITE_NOTADB',
+      27: 'SQLITE_NOTICE',
+      28: 'SQLITE_WARNING',
+      100: 'SQLITE_ROW',
+      101: 'SQLITE_DONE',
+      266: 'SQLITE IO ERR READ'}
+
+  def FormatValue(self, value):
+    """Formats a SQLite result value.
+
+    Args:
+      value (bytes): SQLite result.
+
+    Returns:
+      str: formatted SQLite result value.
+    """
+    if len(value) != 4:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    integer_value = int.from_bytes(value, 'little', signed=False)
+    string_value = self._SQLITE_RESULTS.get(
+        integer_value, 'SQLITE UNKNOWN: {0:d}'.format(integer_value))
+
+    # TODO: determine what the MacOS log tool shows when an SQLite result is
+    # not defined.
+    return f'"{string_value:s}"'
+
+
+class MaskHashFormatStringDecoder(BaseFormatStringDecoder):
+  """Mask hash format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats a value as a mask hash.
+
+    Args:
+      value (bytes): value.
+
+    Returns:
+      str: formatted value as a mask hash.
+    """
+    base64_string = base64.b64encode(value).decode('ascii')
+    return f'<mask.hash: \'{base64_string:s}\'>'
+
+
+class UUIDFormatStringDecoder(BaseFormatStringDecoder):
+  """UUID value format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats an UUID value.
+
+    Args:
+      value (bytes): UUID value.
+
+    Returns:
+      str: formatted UUID value.
+    """
+    uuid_value = uuid.UUID(bytes=value)
+    return f'{uuid_value!s}'.upper()
+
+
+class YesNoFormatStringDecoder(BaseFormatStringDecoder):
+  """Yes/No value format string decoder."""
+
+  def FormatValue(self, value):
+    """Formats a yes/no value.
+
+    Args:
+      value (int): yes/no value.
+
+    Returns:
+      str: formatted yes/no value.
+    """
+    if value:
+      return 'YES'
+
+    return 'NO'
 
 
 class DSCFile(data_format.BinaryDataFile):
@@ -883,14 +1245,39 @@ class TraceV3File(data_format.BinaryDataFile):
 
   _FORMAT_STRING_TYPE_HINTS = {
       'd': 'signed',
+      'i': 'signed',
       'p': 'unsigned',
       'u': 'unsigned',
       'x': 'unsigned'}
 
+  _FORMAT_STRING_PYTHON_SPECIFIERS = {
+      '@': 's',
+      'i': 'd',
+      'p': 'x',
+      'P': 's',
+      'u': 'd'}
+
   _FORMAT_STRING_DECODERS = {
-      'darwin.errno': ErrorFormatStringDecoder,
-      'darwin.mode': FileModeFormatStringDecoder,
-      'error': ErrorFormatStringDecoder}
+      'bool': BooleanFormatStringDecoder(),
+      'BOOL': YesNoFormatStringDecoder(),
+      'darwin.errno': ErrorCodeFormatStringDecoder(),
+      'darwin.mode': FileModeFormatStringDecoder(),
+      'errno': ErrorCodeFormatStringDecoder(),
+      'in_addr': IPv4FormatStringDecoder(),
+      'in6_addr': IPv6FormatStringDecoder(),
+      'location:_CLClientManagerStateTrackerState': (
+          LocationClientManagerStateFormatStringDecoder()),
+      'location:_CLLocationManagerStateTrackerState': (
+          LocationLocationManagerStateFormatStringDecoder()),
+      'location:escape_only': LocationEscapeOnlyFormatStringDecoder(),
+      'location:SqliteResult': LocationSQLiteResultFormatStringDecoder(),
+      'network:in_addr': IPv4FormatStringDecoder(),
+      'network:in6_addr': IPv6FormatStringDecoder(),
+      'mask.hash': MaskHashFormatStringDecoder(),
+      'time_t': DateTimeInSecondsFormatStringDecoder(),
+      'uuid_t': UUIDFormatStringDecoder()}
+
+  _FORMAT_STRING_DECODER_NAMES = frozenset(_FORMAT_STRING_DECODERS.keys())
 
   _MAXIMUM_CACHED_FILES = 64
   _MAXIMUM_CACHED_FORMAT_STRINGS = 1024
@@ -1241,8 +1628,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
         if load_address_lower <= (
             uuid_entry.load_address_lower + uuid_entry.size):
-          uuid = self._catalog.uuids[uuid_entry.uuid_index]
-          uuid_string = uuid.hex.upper()
+          uuid_value = self._catalog.uuids[uuid_entry.uuid_index]
+          uuid_string = uuid_value.hex.upper()
           break
 
     elif format_string_type == 0x000a:
@@ -1586,21 +1973,13 @@ class TraceV3File(data_format.BinaryDataFile):
             format_string, value_type_decoders = self._RewriteFormatString(
                 format_string)
 
-        number_of_data_items = getattr(
-            tracepoint_data_object, 'number_of_data_items', 0)
-        if not number_of_data_items:
+        data_items = getattr(tracepoint_data_object, 'data_items', None)
+        if not data_items:
           values = []
         else:
-          number_of_value_type_decoders = len(value_type_decoders)
-          if (number_of_value_type_decoders > 0 and
-              number_of_value_type_decoders != number_of_data_items):
-            raise errors.ParseError(
-                'Mismatch in number of data items and value type decoders.')
-
           values = self._ReadFirehoseTracepointDataItems(
-              firehose_tracepoint.data, data_offset,
-              tracepoint_data_object.data_items, bytes_read,
-              value_type_decoders)
+              firehose_tracepoint.data, data_offset + chunk_data_offset,
+              data_items, bytes_read, value_type_decoders)
 
         if format_string:
           if values:
@@ -1693,7 +2072,7 @@ class TraceV3File(data_format.BinaryDataFile):
       data_items (list[tracev3_firehose_tracepoint_data_item]): data items.
       values_data_offset (int): offset of the valuesdata relative to the start
           of the firehose tracepoint data.
-      value_type_decoders (list[tuple[str, str]]): value type decoders.
+      value_type_decoders (list[ValueTypeDecoder]): value type decoders.
 
     Returns:
       list[object]: data item values.
@@ -1701,34 +2080,38 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the data items cannot be read.
     """
+    number_of_value_type_decoders = len(value_type_decoders)
+    value_type_decoder_index = 0
+
     values = []
 
-    decoder = None
-    type_hint = None
-
-    for item_index, data_item in enumerate(data_items):
+    for data_item in data_items:
       value = None
 
-      if value_type_decoders:
-        decoder, type_hint = value_type_decoders[item_index]
+      if value_type_decoder_index < number_of_value_type_decoders:
+        decoder = value_type_decoders[value_type_decoder_index]
+      else:
+        decoder = None
 
-      if data_item.value_type in (0x01, 0x02):
+      if data_item.value_type in (0x00, 0x01, 0x02):
+        type_hint = getattr(decoder, 'type_hint', None) or 'unsigned'
         data_type_map_name = self._DATA_ITEM_INTEGER_DATA_MAP_NAMES.get(
-            type_hint or 'unsigned', {}).get(data_item.data_size, None)
+            type_hint, {}).get(data_item.data_size, None)
 
         if data_type_map_name:
           data_type_map = self._GetDataTypeMap(data_type_map_name)
 
           # TODO: calculate data offset for debugging purposes.
-          data_item.integer = self._ReadStructureFromByteStream(
+          _ = data_offset
+
+          value = self._ReadStructureFromByteStream(
               data_item.data, 0, data_type_map, data_type_map_name)
 
-          value = data_item.integer
+          if self._debug:
+            data_item.integer = value
 
       elif data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
-        if data_item.value_data_size == 0:
-          data_item.string = '(null)'
-        else:
+        if data_item.value_data_size > 0:
           # Note that the string data does not necessarily include
           # an end-of-string character hence the cstring data_type_map is not
           # used here.
@@ -1737,36 +2120,20 @@ class TraceV3File(data_format.BinaryDataFile):
               value_data_offset:value_data_offset + data_item.value_data_size]
 
           try:
-            data_item.string = string_data.decode('utf-8').rstrip('\x00')
+            value = string_data.decode('utf-8').rstrip('\x00')
           except UnicodeDecodeError:
             pass
 
-        value = data_item.string
+        if self._debug:
+          data_item.string = value
 
-      elif data_item.value_type == 0x21:
-        value = '<private>'
-
-      elif data_item.value_type == 0x32:
+      elif data_item.value_type in (0x32, 0xf2):
         value_data_offset = values_data_offset + data_item.value_data_offset
-        data_item.value_data = tracepoint_data[
+        value = tracepoint_data[
             value_data_offset:value_data_offset + data_item.value_data_size]
 
-        value = data_item.value_data
-
-      elif data_item.value_type == 0xf2:
-        if data_item.value_data_size != 16:
-          raise errors.ParseError((
-              f'Unsupported data item value size: '
-              f'{data_item.value_data_size:d}.'))
-
-        data_type_map = self._GetDataTypeMap('uuid_be')
-
-        value_data_offset = values_data_offset + data_item.value_data_offset
-        data_item.uuid = self._ReadStructureFromByteStream(
-            tracepoint_data[value_data_offset:],
-            data_offset + value_data_offset, data_type_map, 'UUID')
-
-        value = tracepoint_data[value_data_offset:value_data_offset + 16]
+        if self._debug:
+          data_item.value_data = value
 
       if self._debug:
         self._DebugPrintStructureObject(
@@ -1779,11 +2146,25 @@ class TraceV3File(data_format.BinaryDataFile):
               f'Unsupported data item value type: '
               f'0x{data_item.value_type:02x}.'))
 
-      decoder_class = self._FORMAT_STRING_DECODERS.get(decoder, None)
-      if decoder_class:
-        value = decoder_class.FormatValue(value)
+      if data_item.value_type == 0x12:
+        # TODO: use this value to limit the size of the next string value
+        continue
+
+      if data_item.value_type in (0x21, 0x25, 0x31, 0x41):
+        value = '<private>'
+
+      elif decoder and decoder.names:
+        decoder_class = self._FORMAT_STRING_DECODERS.get(decoder.names[0], None)
+        if decoder_class:
+          value = decoder_class.FormatValue(value)
+
+      if (value is None and
+          data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES):
+        value = '(null)'
 
       values.append(value)
+
+      value_type_decoder_index += 1
 
     return values
 
@@ -2056,27 +2437,58 @@ class TraceV3File(data_format.BinaryDataFile):
     format_string_segments = []
     value_type_decoders = []
 
+    specifier_index = 0
     last_match_end = 0
     for match in self._FORMAT_STRING_OPERATOR_REGEX.finditer(format_string):
       literal, decoder, flags, width, precision, specifier = match.groups()
 
       match_start, match_end = match.span()
       if match_start > last_match_end:
-        format_string_segments.append(format_string[last_match_end:match_start])
+        string_segment = format_string[last_match_end:match_start]
+        string_segment = string_segment.replace('{', '{{')
+        string_segment = string_segment.replace('}', '}}')
+        format_string_segments.append(string_segment)
 
       if literal == '%%':
         literal = '%'
       elif specifier:
+        if specifier == 'P':
+          precision = ''
+        elif specifier == 's' and precision in ('.0', '.*'):
+          precision = ''
+        else:
+          precision = precision or ''
+
         type_hint = self._FORMAT_STRING_TYPE_HINTS.get(specifier, None)
 
-        if specifier in ('p', 'u'):
-          specifier = 'd'
+        decoder = decoder or ''
+        decoder_names = [value.strip() for value in decoder.split(',')]
 
-        precision = precision or ''
+        # Remove private, public and sensitive value type decoders.
+        decoder_names = [
+            value for value in decoder_names
+            if value not in ('', 'private', 'public', 'sensitive')]
+
+        if self._FORMAT_STRING_DECODER_NAMES.intersection(decoder_names):
+          specifier = 's'
+
         width = width or ''
-        literal = f'{{:{flags:s}{precision:s}{width:s}{specifier:s}}}'
+        python_specifier = self._FORMAT_STRING_PYTHON_SPECIFIERS.get(
+            specifier, specifier)
 
-        value_type_decoders.append((decoder, type_hint))
+        literal = (f'{{{specifier_index:d}:{flags:s}{precision:s}{width:s}'
+                   f'{python_specifier:s}}}')
+
+        if specifier == 'p':
+          literal = ''.join(['0x', literal])
+
+        specifier_index += 1
+
+        value_type_decoder = ValueTypeDecoder()
+        value_type_decoder.names = decoder_names
+        value_type_decoder.type_hint = type_hint
+
+        value_type_decoders.append(value_type_decoder)
 
       format_string_segments.append(literal)
 
@@ -2084,7 +2496,10 @@ class TraceV3File(data_format.BinaryDataFile):
 
     string_size = len(format_string)
     if string_size > last_match_end:
-      format_string_segments.append(format_string[last_match_end:string_size])
+      string_segment = format_string[last_match_end:string_size]
+      string_segment = string_segment.replace('{', '{{')
+      string_segment = string_segment.replace('}', '}}')
+      format_string_segments.append(string_segment)
 
     return ''.join(format_string_segments), value_type_decoders
 

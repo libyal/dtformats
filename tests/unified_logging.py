@@ -15,12 +15,39 @@ from dtformats import unified_logging
 from tests import test_lib
 
 
-class ErrorFormatStringDecoderTest(test_lib.BaseTestCase):
-  """Error format string decoder tests."""
+class BooleanFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Boolean value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    formatted_value = unified_logging.ErrorFormatStringDecoder.FormatValue(2)
+    test_decoder = unified_logging.BooleanFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1)
+    self.assertEqual(formatted_value, 'true')
+
+    formatted_value = test_decoder.FormatValue(0)
+    self.assertEqual(formatted_value, 'false')
+
+
+class DateTimeInSecondsFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Date and time value in seconds format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.DateTimeInSecondsFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1684642680)
+    self.assertEqual(formatted_value, '2023-05-21 04:18:00')
+
+
+class ErrorCodeFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Error code format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.ErrorCodeFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(2)
     self.assertEqual(formatted_value, '[2: No such file or directory]')
 
 
@@ -29,9 +56,154 @@ class FileModeFormatStringDecoderTest(test_lib.BaseTestCase):
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    formatted_value = unified_logging.FileModeFormatStringDecoder.FormatValue(
-        0o700)
+    test_decoder = unified_logging.FileModeFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(0o700)
     self.assertEqual(formatted_value, '-rwx------')
+
+
+class IPv4FormatStringDecoderTest(test_lib.BaseTestCase):
+  """IPv4 value format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([0xc0, 0xa8, 0xcc, 0x62]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.IPv4FormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, '192.168.204.98')
+
+
+class IPv6FormatStringDecoderTest(test_lib.BaseTestCase):
+  """IPv6 value format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00,
+      0x00, 0x42, 0x83, 0x29]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.IPv6FormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, '2001:0db8:0000:0000:0000:ff00:0042:8329')
+
+
+class LocationClientManagerStateFormatStringDecoder(test_lib.BaseTestCase):
+  """Location client manager state value format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.LocationClientManagerStateFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, (
+        '{"locationRestricted":false,"locationServicesEnabledStatus":0}'))
+
+
+class LocationLocationManagerStateFormatStringDecoder(test_lib.BaseTestCase):
+  """Location location manager state value format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xbf, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x59, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f, 0x01, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.LocationLocationManagerStateFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, (
+        '{"previousAuthorizationStatusValid":false,"paused":false,'
+        '"requestingLocation":false,"updatingVehicleSpeed":false,'
+        '"desiredAccuracy":100,"allowsBackgroundLocationUpdates":false,'
+        '"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,'
+        '"allowsLocationPrompts":true,"activityType":0,'
+        '"groundAltitudeEnabled":false,"pausesLocationUpdatesAutomatially":1,'
+        '"fusionInfoEnabled":false,"isAuthorizedForWidgetUpdates":false,'
+        '"updatingVehicleHeading":false,"batchingLocation":false,'
+        '"showsBackgroundLocationIndicator":false,"updatingLocation":false,'
+        '"requestingRanging":false,"updatingHeading":false,'
+        '"previousAuthorizationStatus":0,"allowsMapCorrection":true,'
+        '"matchInfoEnabled":false,"allowsAlteredAccessoryLoctions":false,'
+        '"updatingRanging":false,"limitsPrecision":false,'
+        '"courtesyPromptNeeded":false,"headingFilter":1}'))
+
+
+class LocationEscapeOnlyFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Location escape only format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.LocationEscapeOnlyFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(None)
+    self.assertEqual(formatted_value, '""')
+
+    formatted_value = test_decoder.FormatValue(
+        'NSBundle </System/Library/LocationBundles/TimeZone.bundle>')
+    self.assertEqual(formatted_value, (
+        '"NSBundle <\\/System\\/Library\\/LocationBundles\\/TimeZone.bundle>"'))
+
+
+class LocationSQLiteResultFormatStringDecoder(test_lib.BaseTestCase):
+  """Location SQLite result format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.LocationSQLiteResultFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(b'\x00\x00\x00\x00')
+    self.assertEqual(formatted_value, '"SQLITE_OK"')
+
+
+class MaskHashFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Mask hash format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.MaskHashFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(
+        b'\x1d\x1f\xd3\xfb\xe9\xa6Fj\xb72\x7f\xb6\x98a\x02\xb2')
+    self.assertEqual(formatted_value, (
+        '<mask.hash: \'HR/T++mmRmq3Mn+2mGECsg==\'>'))
+
+
+class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
+  """UUID value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.UUIDFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(
+        b'\x1d\x1f\xd3\xfb\xe9\xa6Fj\xb72\x7f\xb6\x98a\x02\xb2')
+    self.assertEqual(formatted_value, '1D1FD3FB-E9A6-466A-B732-7FB6986102B2')
+
+
+class YesNoFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Yes/No value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.YesNoFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1)
+    self.assertEqual(formatted_value, 'YES')
+
+    formatted_value = test_decoder.FormatValue(0)
+    self.assertEqual(formatted_value, 'NO')
 
 
 class DSCFileTest(test_lib.BaseTestCase):
@@ -598,43 +770,123 @@ class TraceV3FileTest(test_lib.BaseTestCase):
 
     format_string, decoders = test_file._RewriteFormatString(None)
     self.assertEqual(format_string, '')
-    self.assertEqual(decoders, [])
+    self.assertEqual(len(decoders), 0)
 
     format_string, decoders = test_file._RewriteFormatString('text')
     self.assertEqual(format_string, 'text')
-    self.assertEqual(decoders, [])
+    self.assertEqual(len(decoders), 0)
 
     format_string, decoders = test_file._RewriteFormatString('%%')
     self.assertEqual(format_string, '%')
-    self.assertEqual(decoders, [])
+    self.assertEqual(len(decoders), 0)
 
     format_string, decoders = test_file._RewriteFormatString('%d')
-    self.assertEqual(format_string, '{:d}')
-    self.assertEqual(decoders, [(None, 'signed')])
+    self.assertEqual(format_string, '{0:d}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'signed')
 
-    format_string, decoders = test_file._RewriteFormatString('%s')
-    self.assertEqual(format_string, '{:s}')
-    self.assertEqual(decoders, [(None, None)])
+    format_string, decoders = test_file._RewriteFormatString('%i')
+    self.assertEqual(format_string, '{0:d}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'signed')
 
     format_string, decoders = test_file._RewriteFormatString('%p')
-    self.assertEqual(format_string, '{:d}')
-    self.assertEqual(decoders, [(None, 'unsigned')])
+    self.assertEqual(format_string, '0x{0:x}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
 
     format_string, decoders = test_file._RewriteFormatString('%u')
-    self.assertEqual(format_string, '{:d}')
-    self.assertEqual(decoders, [(None, 'unsigned')])
+    self.assertEqual(format_string, '{0:d}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
+
+    format_string, decoders = test_file._RewriteFormatString('%x')
+    self.assertEqual(format_string, '{0:x}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
 
     format_string, decoders = test_file._RewriteFormatString('0x%lx')
-    self.assertEqual(format_string, '0x{:x}')
-    self.assertEqual(decoders, [(None, 'unsigned')])
+    self.assertEqual(format_string, '0x{0:x}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
 
     format_string, decoders = test_file._RewriteFormatString('0x%02x')
-    self.assertEqual(format_string, '0x{:02x}')
-    self.assertEqual(decoders, [(None, 'unsigned')])
+    self.assertEqual(format_string, '0x{0:02x}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
+
+    format_string, decoders = test_file._RewriteFormatString('%s')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString('%@')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString('%.*s')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString('%.16P')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
 
     format_string, decoders = test_file._RewriteFormatString('%{public}s')
-    self.assertEqual(format_string, '{:s}')
-    self.assertEqual(decoders, [('public', None)])
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString(
+        '%{public,uuid_t}.16P')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, ['uuid_t'])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString(
+        '"msg%{public}.0s"')
+    self.assertEqual(format_string, '"msg{0:s}"')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString(
+        '%{public, location:escape_only}s')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, ['location:escape_only'])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString(
+        '%{private, mask.hash, mdnsresponder:ip_addr}.20P')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, ['mask.hash', 'mdnsresponder:ip_addr'])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString((
+        'Transform Manager cache hits: %d / %ld (%.2f%%). Size = %zu entries '
+        '(events), %zu transforms, %zu bytes'))
+    self.assertEqual(format_string, (
+        'Transform Manager cache hits: {0:d} / {1:d} ({2:.2f}%). Size = {3:d} '
+        'entries (events), {4:d} transforms, {5:d} bytes'))
+    self.assertEqual(len(decoders), 6)
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
