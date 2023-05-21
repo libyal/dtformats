@@ -1016,6 +1016,9 @@ Where `%%` represents a literal `%`.
 
 Also see `man 3 os_log` and `man 3 printf` on MacOS.
 
+[NOTE]
+A missing data item is formatted as "<decode: missing data>".
+
 The built-in value type decoders are:
 
 [cols="1,1,5",options="header"]
@@ -1058,7 +1061,7 @@ Other observerd value type decoders are:
 | "mdns:addrmv" | |
 | "mdns:dns.counts" | |
 | "mdns:dns.idflags" | |
-| "mdns:dnshdr" | |
+| "mdns:dnshdr" | | Formatted as a <<msdns_dns_header,mdns DNS header>>
 | "mdns:gaiopts" | |
 | "mdns:nreason" | |
 | "mdns:protocol" | |
@@ -1093,9 +1096,9 @@ The flags are defined as:
 | Value | Identifier | Description
 | "#" | | Value should be converted to an "alternate form"
 | "0" | | Value should be padded with 0
-| "-" | |
-| " " | |
-| "+" | |
+| "-" | | Value should be right-justified instead of left-justified
+| " " | | Value should be padded with space
+| "+" | | Add the '+' sign in front of positive values
 | "'" | |
 |===
 
@@ -1675,6 +1678,27 @@ Where "%s" contains the value encoded in base64, for example:
 
 ....
 <mask.hash: 'HR/T++mmRmq3Mn+2mGECsg=='>
+....
+
+=== [[msdns_dns_header]]mdns DNS header
+
+The mdns DNS header is 12 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Identifier
+| 2 | 2 | | Flags
+| 4 | 2 | | Number of questions
+| 6 | 2 | | Number of answers
+| 8 | 2 | | Number of authority records
+| 10 | 2 | | Number of additional records
+|===
+
+The value is formatted as:
+
+....
+id: 0x0000 (0), flags: 0x8180 (R/Query, RD, RA, NoError), counts: 1/0/0/0
 ....
 
 === [[mdnsresponder_ip_address]]mDNSResponder IP address

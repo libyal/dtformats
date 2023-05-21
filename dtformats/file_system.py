@@ -65,8 +65,6 @@ class FileSystemHelper(object):
       list[str]: path segments.
     """
 
-# TODO: implement a dfVFS file system helper.
-
 
 class NativeFileSystemHelper(object):
   """Python native system helper."""

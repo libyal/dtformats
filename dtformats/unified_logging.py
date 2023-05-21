@@ -293,7 +293,7 @@ class LocationClientManagerStateFormatStringDecoder(
     """Formats a location client manager state value.
 
     Args:
-      value (str): location client manager state value.
+      value (bytes): location client manager state value.
 
     Returns:
       str: formatted location client manager state value.
@@ -356,7 +356,7 @@ class LocationLocationManagerStateFormatStringDecoder(
     """Formats a location location manager state value.
 
     Args:
-      value (str): location location manager state value.
+      value (bytes): location location manager state value.
 
     Returns:
       str: formatted location location manager state value.
@@ -470,6 +470,111 @@ class MaskHashFormatStringDecoder(BaseFormatStringDecoder):
     return f'<mask.hash: \'{base64_string:s}\'>'
 
 
+class MDNSDNSHeaderFormatStringDecoder(
+    BaseFormatStringDecoder, data_format.BinaryDataFormat):
+  """mDNS DNS header format string decoder."""
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric definition file.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('macos_mdns.yaml')
+
+  # Note that the flag names have a specific formatting order.
+  _FLAG_NAMES = [
+      (0x0400, 'AA'),  # Authoritative Answer
+      (0x0200, 'TC'),  # Truncated Response
+      (0x0100, 'RD'),  # Recursion Desired
+      (0x0080, 'RA'),  # Recursion Available
+      (0x0020, 'AD'),  # Authentic Data
+      (0x0010, 'CD')]  # Checking Disabled
+
+  _OPERATION_BITMASK = 0x7800
+
+  _OPERATION_NAMES = {
+      0: 'Query',
+      1: 'IQuery',
+      2: 'Status',
+      3: 'Unassigned',
+      4: 'Notify',
+      5: 'Update',
+      6: 'DSO'}
+
+  _RESPONSE_CODE_BITMASK = 0x000f
+
+  _RESPONSE_CODES = {
+      0: 'NoError',
+      1: 'FormErr',
+      2: 'ServFail',
+      3: 'NXDomain',
+      4: 'NotImp',
+      5: 'Refused',
+      6: 'YXDomain',
+      7: 'YXRRSet',
+      8: 'NXRRSet',
+      9: 'NotAuth',
+      10: 'NotZone',
+      11: 'DSOTypeNI'}
+
+  _RESPONSE_OR_QUERY_BITMASK = 0x8000
+
+  def _FormatFlags(self, flags):
+    """Formats the flags value.
+
+    Args:
+      flags (int): flags
+
+    Returns:
+      str: formatted flags value.
+    """
+    reponse_code = flags & self._RESPONSE_CODE_BITMASK
+    reponse_code = self._RESPONSE_CODES.get(reponse_code, '?')
+
+    flag_names = []
+
+    for bitmask, name in self._FLAG_NAMES:
+      if flags & bitmask:
+        flag_names.append(name)
+
+    flag_names = ', '.join(flag_names)
+
+    operation = (flags & self._OPERATION_BITMASK) >> 11
+    operation_name = self._OPERATION_NAMES.get(operation, '?')
+
+    query_or_response = (
+        'R' if flags & self._RESPONSE_OR_QUERY_BITMASK else 'Q')
+
+    return (f'{query_or_response:s}/{operation_name:s}, {flag_names:s}, '
+            f'{reponse_code:s}')
+
+  def FormatValue(self, value):
+    """Formats a mDNS DNS header state value.
+
+    Args:
+      value (bytes): mDNS DNS header state value.
+
+    Returns:
+      str: formatted location client manager state value.
+    """
+    if len(value) != 12:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    data_type_map = self._GetDataTypeMap('mdsn_dns_header')
+
+    dns_header = self._ReadStructureFromByteStream(
+        value, 0, data_type_map, 'DNS header')
+
+    formatted_flags = self._FormatFlags(dns_header.flags)
+
+    return (f'id: 0x{dns_header.identifier:04x} '
+            f'({dns_header.identifier:d}), '
+            f'flags: 0x{dns_header.flags:04x} '
+            f'({formatted_flags:s}), counts: '
+            f'{dns_header.number_of_questions:d}/'
+            f'{dns_header.number_of_answers:d}/'
+            f'{dns_header.number_of_authority_records:d}/'
+            f'{dns_header.number_of_additional_records:d}')
+
+
 class UUIDFormatStringDecoder(BaseFormatStringDecoder):
   """UUID value format string decoder."""
 
@@ -538,14 +643,17 @@ class DSCFile(data_format.BinaryDataFile):
       ('sender_identifier', 'Sender identifier', '_FormatUUIDAsString'),
       ('path_offset', 'Path offset', '_FormatIntegerAsHexadecimal8')]
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a shared-cache strings (dsc) file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(DSCFile, self).__init__(debug=debug, output_writer=output_writer)
+    super(DSCFile, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     self.ranges = []
     self.uuids = []
 
@@ -825,15 +933,17 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
       ('daylight_saving_flag', 'Daylight saving flag',
        '_FormatIntegerAsDecimal')]
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a timesync database file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(TimesyncDatabaseFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     self._boot_record_data_type_map = self._GetDataTypeMap(
         'timesync_boot_record')
     self._sync_record_data_type_map = self._GetDataTypeMap(
@@ -1244,17 +1354,25 @@ class TraceV3File(data_format.BinaryDataFile):
 
   _FORMAT_STRING_TYPE_HINTS = {
       'd': 'signed',
+      'D': 'signed',
       'i': 'signed',
+      'o': 'unsigned',
+      'O': 'unsigned',
       'p': 'unsigned',
       'u': 'unsigned',
-      'x': 'unsigned'}
+      'U': 'unsigned',
+      'x': 'unsigned',
+      'X': 'unsigned'}
 
   _FORMAT_STRING_PYTHON_SPECIFIERS = {
       '@': 's',
+      'D': 'd',
       'i': 'd',
+      'O': 'o',
       'p': 'x',
       'P': 's',
-      'u': 'd'}
+      'u': 'd',
+      'U': 'd'}
 
   _FORMAT_STRING_DECODERS = {
       'bool': BooleanFormatStringDecoder(),
@@ -1270,6 +1388,7 @@ class TraceV3File(data_format.BinaryDataFile):
           LocationLocationManagerStateFormatStringDecoder()),
       'location:escape_only': LocationEscapeOnlyFormatStringDecoder(),
       'location:SqliteResult': LocationSQLiteResultFormatStringDecoder(),
+      'mdns:dnshdr': MDNSDNSHeaderFormatStringDecoder(),
       'network:in_addr': IPv4FormatStringDecoder(),
       'network:in6_addr': IPv6FormatStringDecoder(),
       'mask.hash': MaskHashFormatStringDecoder(),
@@ -1281,14 +1400,17 @@ class TraceV3File(data_format.BinaryDataFile):
   _MAXIMUM_CACHED_FILES = 64
   _MAXIMUM_CACHED_FORMAT_STRINGS = 1024
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a tracev3 file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(TraceV3File, self).__init__(debug=debug, output_writer=output_writer)
+    super(TraceV3File, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     self._cached_dsc_files = collections.OrderedDict()
     self._cached_uuidtext_files = collections.OrderedDict()
     self._catalog = None
@@ -1857,12 +1979,15 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       DSCFile: a shared-cache strings (DSC) file or None if not available.
     """
+    if not self._uuidtext_path:
+      return None
+
     dsc_file_path = self._file_system_helper.JoinPath([
         self._uuidtext_path, 'dsc', uuid_string])
     if not self._file_system_helper.CheckFileExistsByPath(dsc_file_path):
       return None
 
-    dsc_file = DSCFile()
+    dsc_file = DSCFile(file_system_helper=self._file_system_helper)
     dsc_file.Open(dsc_file_path)
 
     return dsc_file
@@ -2166,6 +2291,9 @@ class TraceV3File(data_format.BinaryDataFile):
 
       value_type_decoder_index += 1
 
+    while len(values) < number_of_value_type_decoders:
+      values.append('<decode: missing data>')
+
     return values
 
   def _ReadFirehoseTracepointLogData(self, flags, tracepoint_data, data_offset):
@@ -2411,12 +2539,16 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       UUIDTextFile: an uuidtext file or None if not available.
     """
-    uuidtext_file_path = self._file_system_helper.JoinPath([
-        self._uuidtext_path, uuid_string[0:2], uuid_string[2:]])
-    if not self._file_system_helper.CheckFileExistsByPath(uuidtext_file_path):
+    if not self._uuidtext_path:
       return None
 
-    uuidtext_file = UUIDTextFile()
+    uuidtext_file_path = self._file_system_helper.JoinPath([
+        self._uuidtext_path, uuid_string[0:2], uuid_string[2:]])
+    result = self._file_system_helper.CheckFileExistsByPath(uuidtext_file_path)
+    if not result:
+      return None
+
+    uuidtext_file = UUIDTextFile(file_system_helper=self._file_system_helper)
     uuidtext_file.Open(uuidtext_file_path)
 
     return uuidtext_file
@@ -2452,9 +2584,10 @@ class TraceV3File(data_format.BinaryDataFile):
       if literal == '%%':
         literal = '%'
       elif specifier:
-        if specifier == 'P':
-          precision = ''
-        elif specifier == 's' and precision in ('.0', '.*'):
+        flags = flags.replace('-', '>')
+
+        if specifier in ('P', 'x', 'X') or (
+            specifier == 's' and precision in ('.0', '.*')):
           precision = ''
         else:
           precision = precision or ''
@@ -2529,11 +2662,32 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    # The uuidtext files are stored in ../../../uuidtext/ relative from
+    # The uuidtext files can be stored in multiple locations relative from
     # the tracev3 file.
-    path_segments = self._file_system_helper.SplitPath(self._path)[:-3]
-    path_segments.append('uuidtext')
-    self._uuidtext_path = self._file_system_helper.JoinPath(path_segments)
+    # * in ../ for *.logarchive/logdata.LiveData.tracev3
+    # * in ../../ for .logarchive/*/*.tracev3
+    # * in ../../uuidtext/ for /private/var/db/diagnostics/*/*.tracev3
+    path_segments = self._file_system_helper.SplitPath(self._path)
+    # Remove the filename from the path.
+    path_segments.pop(-1)
+    # Traverse into parent directory.
+    path_segments.pop(-1)
+
+    if not path_segments[-1].lower().endswith('.logarchive'):
+      path_segments.pop(-1)
+
+    if path_segments[-1].lower().endswith('.logarchive'):
+      path_segments.append('dsc')
+      dsc_path = self._file_system_helper.JoinPath(path_segments)
+      if self._file_system_helper.CheckFileExistsByPath(dsc_path):
+        path_segments.pop(-1)
+        self._uuidtext_path = self._file_system_helper.JoinPath(path_segments)
+
+    else:
+      path_segments.append('uuidtext')
+      uuidtext_path = self._file_system_helper.JoinPath(path_segments)
+      if self._file_system_helper.CheckFileExistsByPath(uuidtext_path):
+        self._uuidtext_path = uuidtext_path
 
     file_offset = 0
 
@@ -2581,14 +2735,17 @@ class UUIDTextFile(data_format.BinaryDataFile):
       ('entry_descriptors', 'Entry descriptors',
        '_FormatArrayOfEntryDescriptors')]
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes an uuidtext file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(UUIDTextFile, self).__init__(debug=debug, output_writer=output_writer)
+    super(UUIDTextFile, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     self._entry_descriptors = []
     self._file_footer = None
 

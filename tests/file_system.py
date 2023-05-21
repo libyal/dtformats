@@ -65,6 +65,7 @@ class NativeFileSystemHelperTest(test_lib.BaseTestCase):
     test_helper = file_system.NativeFileSystemHelper()
 
     expected_path_segments = list(pathlib.Path(test_file_path).parts)
+    expected_path_segments[0] = os.path.sep
 
     path_segments = test_helper.SplitPath(test_file_path)
     self.assertEqual(path_segments, expected_path_segments)

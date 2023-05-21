@@ -90,7 +90,7 @@ class IPv6FormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, '2001:0db8:0000:0000:0000:ff00:0042:8329')
 
 
-class LocationClientManagerStateFormatStringDecoder(test_lib.BaseTestCase):
+class LocationClientManagerStateFormatStringDecoderTest(test_lib.BaseTestCase):
   """Location client manager state value format string decoder tests."""
 
   _VALUE_DATA = bytes(bytearray([
@@ -106,7 +106,8 @@ class LocationClientManagerStateFormatStringDecoder(test_lib.BaseTestCase):
         '{"locationRestricted":false,"locationServicesEnabledStatus":0}'))
 
 
-class LocationLocationManagerStateFormatStringDecoder(test_lib.BaseTestCase):
+class LocationLocationManagerStateFormatStringDecoderTest(
+    test_lib.BaseTestCase):
   """Location location manager state value format string decoder tests."""
 
   _VALUE_DATA = bytes(bytearray([
@@ -156,7 +157,7 @@ class LocationEscapeOnlyFormatStringDecoderTest(test_lib.BaseTestCase):
         '"NSBundle <\\/System\\/Library\\/LocationBundles\\/TimeZone.bundle>"'))
 
 
-class LocationSQLiteResultFormatStringDecoder(test_lib.BaseTestCase):
+class LocationSQLiteResultFormatStringDecoderTest(test_lib.BaseTestCase):
   """Location SQLite result format string decoder tests."""
 
   def testFormatValue(self):
@@ -178,6 +179,22 @@ class MaskHashFormatStringDecoderTest(test_lib.BaseTestCase):
         b'\x1d\x1f\xd3\xfb\xe9\xa6Fj\xb72\x7f\xb6\x98a\x02\xb2')
     self.assertEqual(formatted_value, (
         '<mask.hash: \'HR/T++mmRmq3Mn+2mGECsg==\'>'))
+
+
+class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
+  """mDNS DNS header format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x00, 0x00, 0x81, 0x80, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.MDNSDNSHeaderFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, (
+        'id: 0x0000 (0), flags: 0x8180 (R/Query, RD, RA, NoError), '
+        'counts: 1/0/0/0'))
 
 
 class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
@@ -786,11 +803,29 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(decoders[0].names, [])
     self.assertEqual(decoders[0].type_hint, 'signed')
 
+    format_string, decoders = test_file._RewriteFormatString('%D')
+    self.assertEqual(format_string, '{0:d}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'signed')
+
     format_string, decoders = test_file._RewriteFormatString('%i')
     self.assertEqual(format_string, '{0:d}')
     self.assertEqual(len(decoders), 1)
     self.assertEqual(decoders[0].names, [])
     self.assertEqual(decoders[0].type_hint, 'signed')
+
+    format_string, decoders = test_file._RewriteFormatString('%o')
+    self.assertEqual(format_string, '{0:o}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
+
+    format_string, decoders = test_file._RewriteFormatString('%o')
+    self.assertEqual(format_string, '{0:o}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
 
     format_string, decoders = test_file._RewriteFormatString('%p')
     self.assertEqual(format_string, '0x{0:x}')
@@ -799,6 +834,12 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(decoders[0].type_hint, 'unsigned')
 
     format_string, decoders = test_file._RewriteFormatString('%u')
+    self.assertEqual(format_string, '{0:d}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
+
+    format_string, decoders = test_file._RewriteFormatString('%U')
     self.assertEqual(format_string, '{0:d}')
     self.assertEqual(len(decoders), 1)
     self.assertEqual(decoders[0].names, [])
@@ -816,8 +857,20 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(decoders[0].names, [])
     self.assertEqual(decoders[0].type_hint, 'unsigned')
 
+    format_string, decoders = test_file._RewriteFormatString('0x%2.2x')
+    self.assertEqual(format_string, '0x{0:2x}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
+
     format_string, decoders = test_file._RewriteFormatString('0x%02x')
     self.assertEqual(format_string, '0x{0:02x}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertEqual(decoders[0].type_hint, 'unsigned')
+
+    format_string, decoders = test_file._RewriteFormatString('%X')
+    self.assertEqual(format_string, '{0:X}')
     self.assertEqual(len(decoders), 1)
     self.assertEqual(decoders[0].names, [])
     self.assertEqual(decoders[0].type_hint, 'unsigned')
@@ -828,13 +881,19 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(decoders[0].names, [])
     self.assertIsNone(decoders[0].type_hint)
 
-    format_string, decoders = test_file._RewriteFormatString('%@')
-    self.assertEqual(format_string, '{0:s}')
+    format_string, decoders = test_file._RewriteFormatString('%-6s')
+    self.assertEqual(format_string, '{0:>6s}')
     self.assertEqual(len(decoders), 1)
     self.assertEqual(decoders[0].names, [])
     self.assertIsNone(decoders[0].type_hint)
 
     format_string, decoders = test_file._RewriteFormatString('%.*s')
+    self.assertEqual(format_string, '{0:s}')
+    self.assertEqual(len(decoders), 1)
+    self.assertEqual(decoders[0].names, [])
+    self.assertIsNone(decoders[0].type_hint)
+
+    format_string, decoders = test_file._RewriteFormatString('%@')
     self.assertEqual(format_string, '{0:s}')
     self.assertEqual(len(decoders), 1)
     self.assertEqual(decoders[0].names, [])
