@@ -90,11 +90,11 @@ And files:
 
 The Persist, Signpost and Special sub directories can contain zero or more
 files with the extension .tracev3. These files are stored in the
-<<tracev3_file_format,tracev3 file format>>
+<<tracev3_file_format,tracev3 file format>>.
 
 The timesync sub directory can contain one or more files with the extension
 .timesync. These files are stored in the
-<<timesync_database_file_format,timesync database file format>>
+<<timesync_database_file_format,timesync database file format>>.
 
 ==== logd.[0-9].log
 
@@ -120,11 +120,22 @@ daemon itself.
 These are delimited by headers of the form `--- !logd <type> record` where type is one of:
 
 * purge
-** Records of type "Persist Periodic Purge" detail tracev3 files in the `Persist/` subdirectory that have been purged, including the size of the file and how many files in the `Persist/` subdirectory remain.
-** Records of type "Signpost Periodic Compaction" lists the files that have undergone compaction, all observed have been in the `Signpost/` subdirectory.
-** Records of type "Special Periodic Compaction" lists the files that have undergone compaction, all observed have been in the `Special/` subdirectory.
 * snapshot
-** Unknown. Example
+* statistics
+* uuid purge
+
+===== purge logdata statistics
+
+The purge logdata statistics consist of:
+
+* Records of type "Persist Periodic Purge" detail tracev3 files in the `Persist/` subdirectory that have been purged, including the size of the file and how many files in the `Persist/` subdirectory remain.
+* Records of type "Signpost Periodic Compaction" lists the files that have undergone compaction, all observed have been in the `Signpost/` subdirectory.
+* Records of type "Special Periodic Compaction" lists the files that have undergone compaction, all observed have been in the `Special/` subdirectory.
+
+===== snapshot logdata statistics
+
+The purpose of the snapshot logdata statistics is currently unknown. An example
+of a log record:
 
 ....
 --- !logd snapshot record
@@ -133,11 +144,18 @@ time   : 2022-11-20 03:04:48+0000
 flags  : 0x3
 ....
 
-* statistics
-** Records of type "File Rotate" list, per file, how many records it contains and a list of each process that produced records in the file, sorted descendingly by total record count. Example:
-** Records of type "Memory Rollover" appear to be total number of records, and a list of each process that produced records, but globally and not for any particular file.
-* uuid purge
-** List of UUIDs that have been purged
+===== statistics logdata statistics
+
+The statistics logdata statistics consist of:
+
+* Records of type "File Rotate" list, per file, how many records it contains and a list of each process that produced records in the file, sorted descendingly by total record count. Example:
+* Records of type "Memory Rollover" appear to be total number of records, and a list of each process that produced records, but globally and not for any particular file.
+
+===== uuid purge logdata statistics
+
+The uuid perger logdata statistics consist of:
+
+* List of UUIDs that have been purged
 
 ==== shutdown.log
 
@@ -151,6 +169,8 @@ After <x>s, these clients are still here:
 		remaining client pid: <pid> (/<process>/<uuid>) (repeats)
 SIGTERM: [<timestamp>] All buffers flushed
 ....
+
+==== version.plist
 
 [yellow-background]*TODO describe what version.plist file contains*
 
@@ -290,6 +310,8 @@ Contains a signed integer
 
 ==== [[tracev3_header_flags]]Header flags
 
+[yellow-background]*TODO confirm these values*
+
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
@@ -332,7 +354,8 @@ Contains an UTF-8 encoded string with end-of-string character
 Contains an UTF-8 encoded string with end-of-string character
 |===
 
-Notes: one of the unknowns is likely architecture like (x86_64h)
+[NOTE]
+One of the unknowns is likely architecture like (x86_64h).
 
 ==== [[header_generation_sub_chunk]]Header generation sub chunk
 
@@ -401,11 +424,7 @@ Contains an array of <<catalog_process_information_entry,Catalog process informa
 Contains an array of <<catalog_sub_chunk,Catalog sub chunks>>
 |===
 
-....
-tracev3_chunk_catalog
-tracev3_chunk_catalog_v2
-CATALOG_V3
-....
+[yellow-background]*TODO this appears version 3 of the catalog, what about other versions?*
 
 ==== [[catalog_process_information_entry]]Catalog process information entry
 
@@ -418,7 +437,7 @@ The catalog process information entry is variable of size and consists of:
 | 2 | 2 | | [yellow-background]*Unknown*
 | 4 | 2 | | Index of the main UUID in the catalog UUIDs
 | 6 | 2 | | Index of the dsc UUID in the catalog UUIDs +
-[yellow-background]*Where -1 (0xffff) represents not set?*
+Where -1 (0xffff) represents not set
 | 8 | 8 | | First number in proc_id #@#
 | 16 | 4 | | Second number in proc_id #@#
 | 20 | 4 | | Process identifier (pid)
@@ -483,18 +502,6 @@ The catalog sub chunk describes metadata for the chunk to follow and consists of
 The offset is relative to the start of the catalog sub system strings
 | ... | ... | 0 | 64-bit alignment padding
 |===
-
-....
-[000]
-           startts : 40533
-             endts : 4549897714
-         uncomp sz : 62200
-         comp algo : 256
-                 procinfos : 10
-                   indexes : 0,1,2,3,4,5,6,7,8,9,
-                   subcats : 25
-                   offsets : 0,337,177,113,33,259,308,228,132,422,70,375,296,248,216,41,25,442,394,348,158,62,431,223,191,
-....
 
 === ChunkSet chunk
 
@@ -592,8 +599,8 @@ Contains one or more <<tracev3_firehose_tracepoint,Firehose tracepoints>>
 
 [NOTE]
 It appears that the size of a firehose chunk can grow to 4096 bytes, with
-public data as the header of that 4096 block and private data at the end (as a
-footer).
+public data as the header of that 4096 block and private data at the end (as
+a footer).
 
 [NOTE]
 'Collapsed' indicates if the empty bytes in between have been removed to shrink
@@ -603,26 +610,6 @@ from 4096.
 [NOTE]
 This chunk is usually 64-bit aligned with padding, but at times it is not. It
 is unknown if there is a flag to control this behavior.
-
-....
-tracev3_chunk_firehose
-tracev3_chunk_firehose_old
-....
-
-....
-chunk 4:            tag:0x6001, subtag:0x0000, length:4064
-
-firehose chunk:
-    proc_id:        74@75
-    TTL:            0
-    collapsed:      0
-    size:           public:4048, priv:0
-    stream:         persist
-    base:           0
-
-0x00000000  4a 00 00 00 00 00 00 00  4b 00 00 00 00 00 00 00  J.......K.......
-0x00000010  d0 0f 00 10 00 00 00 03  00 00 00 00 00 00 00 00  ................
-....
 
 === [[tracev3_firehose_tracepoint]]Firehose tracepoint
 
@@ -914,16 +901,6 @@ Where the range offset is relative to start of the private strings in the <<trac
 | ... | ... | | 64-bit alignment padding
 |===
 
-Old notes:
-
-....
-4+| _Log type 0x80 is set_
-| ... | 8 | | [yellow-background]*Unknown (signpost string size)*
-4+| _Has signpost name reference value flag (0x8000) is set_
-| ... | 4 | | Signpost name reference value
-| ... | ... | | [yellow-background]*Unknown (data?)*
-....
-
 ==== [[tracev3_firehose_tracepoint_singpost]]Signpost firehose tracepoint
 
 A signpost firehose tracepoint is variable of size and consists of:
@@ -1014,7 +991,7 @@ Format string operators are defined in the following format:
 
 Where `%%` represents a literal `%`.
 
-Also see `man 3 os_log` and `man 3 printf` on MacOS.
+Also see `man 3 os_log` and `man 3 printf` on Mac OS.
 
 [NOTE]
 A missing data item is formatted as "<decode: missing data>".
@@ -1216,7 +1193,7 @@ Contains an UTF-8 formatted string with an end-of-string character
 | 264 | data size | | Data
 |===
 
-==== Data type
+==== StateDump chunk data type
 
 [cols="1,1,5",options="header"]
 |===
@@ -1262,13 +1239,10 @@ Contains an UTF-8 formatted string with an end-of-string character
 
 === Notes
 
-....
-log raw-dump -f ${FILE}.tracev3
-....
+To view the contents of a tracev3 file on Mac OS:
 
 ....
-tracev3_chunk_oversize_old
-tracev3_chunk_statedump
+log raw-dump -f ${FILE}.tracev3
 ....
 
 == [[timesync_database_file_format]]timesync database file format
@@ -1329,6 +1303,8 @@ Signed integer that contains the number of nanoseconds since January 1, 1970 00:
 Timestamp appears to be stored in UTC but the log tool shows the local time zone.
 
 === Notes
+
+To view the contents of timesync files on Mac OS:
 
 ....
 log raw-dump -t /var/db/diagnostics/timesync/
@@ -1445,6 +1421,8 @@ The offset is relative to the start of the file
 |===
 
 === Notes
+
+To view the contents of a shared-cache strings (dsc) file on Mac OS:
 
 ....
 log raw-dump -s /var/db/uuidtext/dsc/${FILE}
