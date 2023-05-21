@@ -5,7 +5,6 @@ import abc
 import base64
 import collections
 import re
-import os
 import uuid
 
 import lz4.block
@@ -1858,8 +1857,9 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       DSCFile: a shared-cache strings (DSC) file or None if not available.
     """
-    dsc_file_path = os.path.join(self._uuidtext_path, 'dsc', uuid_string)
-    if not os.path.exists(dsc_file_path):
+    dsc_file_path = self._file_system_helper.JoinPath([
+        self._uuidtext_path, 'dsc', uuid_string])
+    if not self._file_system_helper.CheckFileExistsByPath(dsc_file_path):
       return None
 
     dsc_file = DSCFile()
@@ -2411,9 +2411,9 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       UUIDTextFile: an uuidtext file or None if not available.
     """
-    uuidtext_file_path = os.path.join(
-        self._uuidtext_path, uuid_string[0:2], uuid_string[2:])
-    if not os.path.exists(uuidtext_file_path):
+    uuidtext_file_path = self._file_system_helper.JoinPath([
+        self._uuidtext_path, uuid_string[0:2], uuid_string[2:]])
+    if not self._file_system_helper.CheckFileExistsByPath(uuidtext_file_path):
       return None
 
     uuidtext_file = UUIDTextFile()
@@ -2531,9 +2531,9 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     # The uuidtext files are stored in ../../../uuidtext/ relative from
     # the tracev3 file.
-    path_segments = os.path.abspath(self._path).split(os.path.sep)[:-3]
+    path_segments = self._file_system_helper.SplitPath(self._path)[:-3]
     path_segments.append('uuidtext')
-    self._uuidtext_path = os.path.join(os.path.sep, *path_segments)
+    self._uuidtext_path = self._file_system_helper.JoinPath(path_segments)
 
     file_offset = 0
 

@@ -12,6 +12,7 @@ from dtfabric.runtime import data_maps as dtfabric_data_maps
 from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import errors
+from dtformats import file_system
 
 
 class BinaryDataFormat(object):
@@ -723,18 +724,23 @@ class BinaryDataFormat(object):
 class BinaryDataFile(BinaryDataFormat):
   """Binary data file."""
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a binary data file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
+    if not file_system_helper:
+      file_system_helper = file_system.NativeFileSystemHelper()
+
     super(BinaryDataFile, self).__init__(
         debug=debug, output_writer=output_writer)
     self._file_object = None
     self._file_object_opened_in_object = False
     self._file_size = 0
+    self._file_system_helper = file_system_helper
     self._path = None
 
   def Close(self):
@@ -766,12 +772,10 @@ class BinaryDataFile(BinaryDataFormat):
     if self._file_object:
       raise IOError('File already opened')
 
-    stat_object = os.stat(path)
-
-    file_object = open(path, 'rb')  # pylint: disable=consider-using-with
-
-    self._file_size = stat_object.st_size
+    self._file_size = self._file_system_helper.GetFileSizeByPath(path)
     self._path = path
+
+    file_object = self._file_system_helper.OpenFileByPath(path)
 
     self.ReadFileObject(file_object)
 

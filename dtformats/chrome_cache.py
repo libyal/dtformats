@@ -3,12 +3,12 @@
 
 import datetime
 import logging
-import os
 
 from dtfabric import errors as dtfabric_errors
 
 from dtformats import data_format
 from dtformats import errors
+from dtformats import file_system
 
 
 def SuperFastHash(key):
@@ -639,15 +639,20 @@ class ChromeCacheParser(object):
 
   _UINT32LE = _FABRIC.CreateDataTypeMap('uint32le')
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a Chrome Cache parser.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
+    if not file_system_helper:
+      file_system_helper = file_system.NativeFileSystemHelper()
+
     super(ChromeCacheParser, self).__init__()
     self._debug = debug
+    self._file_system_helper = file_system_helper
     self._output_writer = output_writer
 
   def ParseDirectory(self, path):
@@ -659,8 +664,8 @@ class ChromeCacheParser(object):
     Raises:
       ParseError: if the directory cannot be read.
     """
-    index_file_path = os.path.join(path, 'index')
-    if not os.path.exists(index_file_path):
+    index_file_path = self._file_system_helper.JoinPath(path, 'index')
+    if not self._file_system_helper.CheckFileExistsByPath(index_file_path):
       raise errors.ParseError(
           f'Missing index file: {index_file_path:s}')
 
@@ -671,9 +676,11 @@ class ChromeCacheParser(object):
     have_all_data_block_files = True
     for cache_address in index_file.index_table.values():
       if cache_address.filename not in data_block_files:
-        data_block_file_path = os.path.join(path, cache_address.filename)
+        data_block_file_path = self._file_system_helper.JoinPath(
+            path, cache_address.filename)
 
-        if not os.path.exists(data_block_file_path):
+        if not self._file_system_helper.CheckFileExistsByPath(
+            data_block_file_path):
           logging.error(f'Missing data block file: {data_block_file_path:s}')
           have_all_data_block_files = False
 

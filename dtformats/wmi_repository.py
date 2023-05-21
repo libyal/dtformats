@@ -11,6 +11,7 @@ from dtfabric.runtime import data_maps as dtfabric_data_maps
 
 from dtformats import data_format
 from dtformats import errors
+from dtformats import file_system
 
 
 class ClassDefinitionProperty(object):
@@ -3312,17 +3313,22 @@ class CIMRepository(data_format.BinaryDataFormat):
       'ROOT\\subscription',
       'ROOT\\WMI']
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a CIM repository.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
+    if not file_system_helper:
+      file_system_helper = file_system.NativeFileSystemHelper()
+
     super(CIMRepository, self).__init__()
     self._debug = debug
     self._class_definitions_by_hash = {}
     self._class_value_data_map_by_hash = {}
+    self._file_system_helper = file_system_helper
     self._index_binary_tree_file = None
     self._index_mapping_table = None
     self._index_root_page = None
@@ -3400,7 +3406,9 @@ class CIMRepository(data_format.BinaryDataFormat):
     for mapping_file_number in range(1, 4):
       filename_as_glob = self._FormatFilenameAsGlob(
           f'mapping{mapping_file_number:d}.map')
-      mapping_file_glob = glob.glob(os.path.join(path, filename_as_glob))
+      path_with_glob = self._file_system_helper.JoinPath([
+          path, filename_as_glob])
+      mapping_file_glob = glob.glob(path_with_glob)
       if not mapping_file_glob:
         continue
 
@@ -3737,7 +3745,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       IndexBinaryTreeFile: index binary tree file or None if not available.
     """
     filename_as_glob = self._FormatFilenameAsGlob('index.btr')
-    index_binary_tree_file_glob = os.path.join(path, filename_as_glob)
+    index_binary_tree_file_glob = self._file_system_helper.JoinPath([
+        path, filename_as_glob])
 
     index_binary_tree_file_path = glob.glob(index_binary_tree_file_glob)
     if not index_binary_tree_file_path:
@@ -3763,7 +3772,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       MappingFile: mapping file or None if not available.
     """
     filename_as_glob = self._FormatFilenameAsGlob(filename)
-    mapping_file_glob = os.path.join(path, filename_as_glob)
+    mapping_file_glob = self._file_system_helper.JoinPath([
+        path, filename_as_glob])
 
     mapping_file_path = glob.glob(mapping_file_glob)
     if not mapping_file_path:
@@ -3788,7 +3798,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       file: file-like object or None if not available.
     """
     filename_as_glob = self._FormatFilenameAsGlob('mapping.ver')
-    mapping_version_file_glob = os.path.join(path, filename_as_glob)
+    mapping_version_file_glob = self._file_system_helper.JoinPath([
+        path, filename_as_glob])
 
     mapping_version_file_path = glob.glob(mapping_version_file_glob)
     if not mapping_version_file_path:
@@ -3806,7 +3817,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       ObjectsDataFile: objects data file or None if not available.
     """
     filename_as_glob = self._FormatFilenameAsGlob('objects.data')
-    objects_data_file_glob = os.path.join(path, filename_as_glob)
+    objects_data_file_glob = self._file_system_helper.JoinPath([
+        path, filename_as_glob])
 
     objects_data_file_path = glob.glob(objects_data_file_glob)
     if not objects_data_file_path:
@@ -3831,7 +3843,8 @@ class CIMRepository(data_format.BinaryDataFormat):
       RepositoryFile: repository file or None if not available.
     """
     filename_as_glob = self._FormatFilenameAsGlob('cim.rep')
-    repository_file_glob = os.path.join(path, filename_as_glob)
+    repository_file_glob = self._file_system_helper.JoinPath([
+        path, filename_as_glob])
 
     repository_file_path = glob.glob(repository_file_glob)
     if not repository_file_path:
