@@ -15,6 +15,192 @@ from dtformats import unified_logging
 from tests import test_lib
 
 
+class StringFormatterTest(test_lib.BaseTestCase):
+  """String formatter tests."""
+
+  # pylint: disable=protected-access
+
+  def testParseFormatString(self):
+    """Tests the ParseFormatString function."""
+    test_formatter = unified_logging.StringFormatter()
+
+    test_formatter.ParseFormatString(None)
+    self.assertEqual(test_formatter._decoders, [])
+    self.assertIsNone(test_formatter._format_string)
+    self.assertEqual(test_formatter._formatters, [])
+    self.assertEqual(test_formatter._type_hints, [])
+
+    test_formatter.ParseFormatString('text')
+    self.assertEqual(test_formatter._decoders, [])
+    self.assertEqual(test_formatter._format_string, 'text')
+    self.assertEqual(test_formatter._formatters, [])
+    self.assertEqual(test_formatter._type_hints, [])
+
+    test_formatter.ParseFormatString('%%')
+    self.assertEqual(test_formatter._decoders, [])
+    self.assertEqual(test_formatter._format_string, '%')
+    self.assertEqual(test_formatter._formatters, [])
+    self.assertEqual(test_formatter._type_hints, [])
+
+    test_formatter.ParseFormatString('%d')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:d}'])
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+
+    test_formatter.ParseFormatString('%3.3d')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:3d}'])
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+
+    test_formatter.ParseFormatString('%D')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:d}'])
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+
+    test_formatter.ParseFormatString('%i')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:d}'])
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+
+    test_formatter.ParseFormatString('%o')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:o}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%O')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:o}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%p')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['0x{0:x}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%u')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:d}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%U')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:d}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%x')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:x}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('0x%lx')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '0x{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:x}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('0x%2.2x')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '0x{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:2x}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('0x%02x')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '0x{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:02x}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%X')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:X}'])
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+
+    test_formatter.ParseFormatString('%s')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%-6s')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:>6s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%.*s')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%@')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%.16P')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%{public}s')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%{public,uuid_t}.16P')
+    self.assertEqual(test_formatter._decoders, [['uuid_t']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('"msg%{public}.0s"')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '"msg{0:s}"')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%{public, location:escape_only}s')
+    self.assertEqual(test_formatter._decoders, [['location:escape_only']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString(
+        '%{private, mask.hash, mdnsresponder:ip_addr}.20P')
+    self.assertEqual(test_formatter._decoders, [[
+        'mask.hash', 'mdnsresponder:ip_addr']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString((
+        'Transform Manager cache hits: %d / %ld (%.2f%%). Size = %zu entries '
+        '(events), %zu transforms, %zu bytes'))
+    self.assertEqual(test_formatter._decoders, [[], [], [], [], [], []])
+    self.assertEqual(test_formatter._format_string, (
+        'Transform Manager cache hits: {0:s} / {1:s} ({2:s}%). Size = {3:s} '
+        'entries (events), {4:s} transforms, {5:s} bytes'))
+    self.assertEqual(test_formatter._formatters, [
+        '{0:d}', '{0:d}', '{0:.2f}', '{0:d}', '{0:d}', '{0:d}'])
+    self.assertEqual(test_formatter._type_hints, [
+        'signed', 'signed', None, 'unsigned', 'unsigned', 'unsigned'])
+
+
 class BooleanFormatStringDecoderTest(test_lib.BaseTestCase):
   """Boolean value format string decoder tests."""
 
@@ -779,173 +965,6 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(statedump_chunk.unknown5, b'\x00' * 64)
     self.assertEqual(statedump_chunk.name, 'SpringBoard - Combined List')
     self.assertEqual(statedump_chunk.data, self._STATEDUMP_CHUNK_DATA[248:])
-
-  def testRewriteFormatString(self):
-    """Tests the _RewriteFormatString function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.TraceV3File(output_writer=output_writer)
-
-    format_string, decoders = test_file._RewriteFormatString(None)
-    self.assertEqual(format_string, '')
-    self.assertEqual(len(decoders), 0)
-
-    format_string, decoders = test_file._RewriteFormatString('text')
-    self.assertEqual(format_string, 'text')
-    self.assertEqual(len(decoders), 0)
-
-    format_string, decoders = test_file._RewriteFormatString('%%')
-    self.assertEqual(format_string, '%')
-    self.assertEqual(len(decoders), 0)
-
-    format_string, decoders = test_file._RewriteFormatString('%d')
-    self.assertEqual(format_string, '{0:d}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'signed')
-
-    format_string, decoders = test_file._RewriteFormatString('%D')
-    self.assertEqual(format_string, '{0:d}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'signed')
-
-    format_string, decoders = test_file._RewriteFormatString('%i')
-    self.assertEqual(format_string, '{0:d}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'signed')
-
-    format_string, decoders = test_file._RewriteFormatString('%o')
-    self.assertEqual(format_string, '{0:o}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%o')
-    self.assertEqual(format_string, '{0:o}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%p')
-    self.assertEqual(format_string, '0x{0:x}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%u')
-    self.assertEqual(format_string, '{0:d}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%U')
-    self.assertEqual(format_string, '{0:d}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%x')
-    self.assertEqual(format_string, '{0:x}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('0x%lx')
-    self.assertEqual(format_string, '0x{0:x}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('0x%2.2x')
-    self.assertEqual(format_string, '0x{0:2x}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('0x%02x')
-    self.assertEqual(format_string, '0x{0:02x}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%X')
-    self.assertEqual(format_string, '{0:X}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertEqual(decoders[0].type_hint, 'unsigned')
-
-    format_string, decoders = test_file._RewriteFormatString('%s')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString('%-6s')
-    self.assertEqual(format_string, '{0:>6s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString('%.*s')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString('%@')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString('%.16P')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString('%{public}s')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString(
-        '%{public,uuid_t}.16P')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, ['uuid_t'])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString(
-        '"msg%{public}.0s"')
-    self.assertEqual(format_string, '"msg{0:s}"')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, [])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString(
-        '%{public, location:escape_only}s')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, ['location:escape_only'])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString(
-        '%{private, mask.hash, mdnsresponder:ip_addr}.20P')
-    self.assertEqual(format_string, '{0:s}')
-    self.assertEqual(len(decoders), 1)
-    self.assertEqual(decoders[0].names, ['mask.hash', 'mdnsresponder:ip_addr'])
-    self.assertIsNone(decoders[0].type_hint)
-
-    format_string, decoders = test_file._RewriteFormatString((
-        'Transform Manager cache hits: %d / %ld (%.2f%%). Size = %zu entries '
-        '(events), %zu transforms, %zu bytes'))
-    self.assertEqual(format_string, (
-        'Transform Manager cache hits: {0:d} / {1:d} ({2:.2f}%). Size = {3:d} '
-        'entries (events), {4:d} transforms, {5:d} bytes'))
-    self.assertEqual(len(decoders), 6)
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""

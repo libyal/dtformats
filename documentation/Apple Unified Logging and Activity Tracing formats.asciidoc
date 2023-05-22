@@ -56,6 +56,9 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
+Apple Unified Logging and Activity Tracing was introduced in macOS 10.12
+(Sierra) and are used to store system logs.
+
 Apple Unified Logging and Activity Tracing consists of:
 
 * Diagnostics data
@@ -220,6 +223,7 @@ These files are store in the <<shared_cache_strings_file_format,Shared-Cache str
 The following version of programs were used to test the information within this
 document:
 
+* macOS 10.12 (Sierra)
 * macOS 10.13 (High Sierra)
 * macOS 10.14 (Mojave)
 * macOS 10.15 (Catalina)
@@ -760,8 +764,8 @@ Contains inline data or a value data range
 | Value | Identifier | Description
 | 0x00 | | [yellow-background]*Unknown* +
 Contains a 32-bit or 64-bit value
-| 0x01 | | [yellow-background]*Unknown (integer)* +
-Contains a 32-bit value
+| 0x01 | | [yellow-background]*Unknown (private value)* +
+Contains a 32-bit value, formatted as "<private>"
 | 0x02 | | [yellow-background]*Unknown (integer)* +
 Contains a 8-bit, 16-bit, 32-bit or 64-bit value
 3+|
@@ -1344,6 +1348,7 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 [cols="1,5",options="header"]
 |===
 | OS version | Format version
+| macOS 10.12 (Sierra) | [yellow-background]*TODO*
 | macOS 10.13 (High Sierra) | 1.0
 | macOS 10.14 (Mojave) | 1.0
 | macOS 10.15 (Catalina) | 1.0

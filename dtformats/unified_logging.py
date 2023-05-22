@@ -60,20 +60,212 @@ class DSCUUID(object):
     self.text_size = None
 
 
-class ValueTypeDecoder(object):
-  """Value type decoder.
+class StringFormatter(object):
+  """String formatter."""
 
-  Attributes:
-    names (list[str]): names of format string decoders.
-    type_hint (str): hint about value data type.
-  """
+  _OPERATOR_REGEX = re.compile(
+      r'(%'
+      r'(?:\{([^\}]{1,64})\})?'         # Optional value type decoder.
+      r'([-+0 #]{0,5})'                 # Optional flags.
+      r'([0-9]+|\*)?'                   # Optional width.
+      r'(\.(?:[0-9]+|\*))?'             # Optional precision.
+      r'(?:h|hh|j|l|ll|L|t|q|z)?'       # Optional length modifier.
+      r'([@aAcCdDeEfFgGinoOpPsSuUxX])'  # Conversion specifier.
+      r'|%%)')
+
+  _PYTHON_SPECIFIERS = {
+      '@': 's',
+      'D': 'd',
+      'i': 'd',
+      'O': 'o',
+      'p': 'x',
+      'P': 's',
+      'u': 'd',
+      'U': 'd'}
+
+  _TYPE_HINTS = {
+      'd': 'signed',
+      'D': 'signed',
+      'i': 'signed',
+      'o': 'unsigned',
+      'O': 'unsigned',
+      'p': 'unsigned',
+      'u': 'unsigned',
+      'U': 'unsigned',
+      'x': 'unsigned',
+      'X': 'unsigned'}
 
   def __init__(self):
-    """Initializes a value type decoder."""
-    super(ValueTypeDecoder, self).__init__()
-    # TODO: add value to indicate use of precision value
-    self.names = []
-    self.type_hint = None
+    """Initializes a string formatter."""
+    super(StringFormatter, self).__init__()
+    self._decoders = []
+    self._format_string = None
+    self._formatters = []
+    self._type_hints = []
+
+  @property
+  def number_of_formatters(self):
+    """int: number of formatters."""
+    return len(self._formatters)
+
+  def FormatString(self, values):
+    """Formats the string.
+
+    Args:
+      values (list[str]): values.
+
+    Returns:
+      str: formatted string.
+    """
+    if self._format_string is None:
+      # TODO: determine what the MacOS log tool shows.
+      formatted_string = 'ERROR: missing format string\n'
+    elif self._formatters:
+      formatted_string = self._format_string.format(*values)
+    else:
+      formatted_string = self._format_string
+
+    if formatted_string[-1] != '\n':
+      return f'{formatted_string:s}\n'
+
+    return formatted_string
+
+  def FormatValue(self, value_index, value, precision=None):
+    """Formats a value.
+
+    Args:
+      value_index (int): value index.
+      value (object): value.
+      precision (int): precision.
+
+    Returns:
+      str: formatted value or None if not available.
+    """
+    try:
+      formatter = self._formatters[value_index]
+    except IndexError:
+      return None
+
+    # TODO: add precision support.
+    _ = precision
+    return formatter.format(value)
+
+  def GetDecoderNamesByIndex(self, value_index):
+    """Retrieves the decoder names of a specific value.
+
+    Args:
+      value_index (int): value index.
+
+    Returns:
+      list[str]: decoder names.
+    """
+    try:
+      return self._decoders[value_index]
+    except IndexError:
+      return []
+
+  def GetTypeHintByIndex(self, value_index):
+    """Retrieves the specific type of a specific value..
+
+    Args:
+      value_index (int): value index.
+
+    Returns:
+      list[str]: type hint or None if not available.
+    """
+    try:
+      return self._type_hints[value_index]
+    except IndexError:
+      return None
+
+  def ParseFormatString(self, format_string):
+    """Parses an Unified Logging format string.
+
+    Args:
+      format_string (str): Unified Logging format string.
+    """
+    self._decoders = []
+    self._format_string = None
+    self._formatters = []
+    self._type_hints = []
+
+    if not format_string:
+      return
+
+    specifier_index = 0
+    last_match_end = 0
+    segments = []
+
+    for match in self._OPERATOR_REGEX.finditer(format_string):
+      literal, decoder, flags, width, precision, specifier = match.groups()
+
+      match_start, match_end = match.span()
+      if match_start > last_match_end:
+        string_segment = format_string[last_match_end:match_start]
+        string_segment = string_segment.replace('{', '{{')
+        string_segment = string_segment.replace('}', '}}')
+        segments.append(string_segment)
+
+      if literal == '%%':
+        literal = '%'
+      elif specifier:
+        flags = flags.replace('-', '>')
+
+        decoder = decoder or ''
+        decoder_names = [value.strip() for value in decoder.split(',')]
+
+        # Remove private, public and sensitive value type decoders.
+        decoder_names = [
+            value for value in decoder_names
+            if value not in ('', 'private', 'public', 'sensitive')]
+
+        width = width or ''
+
+        if decoder_names:
+          python_specifier = 's'
+        else:
+          python_specifier = self._PYTHON_SPECIFIERS.get(specifier, specifier)
+
+        # Ignore the precision of specifier "P" since it refers to the binary
+        # data not the resulting string.
+
+        # Prevent: "ValueError: Precision not allowed in integer format
+        # specifier", "Format specifier missing precision" and ".0" formatting
+        # as an empty string.
+        if specifier == 'P' or python_specifier in ('d', 'o', 'x', 'X') or (
+            python_specifier == 's' and precision in ('.0', '.*')):
+          precision = ''
+        else:
+          precision = precision or ''
+
+        if specifier == 'p':
+          formatter = (
+              f'0x{{0:{flags:s}{precision:s}{width:s}{python_specifier:s}}}')
+        else:
+          formatter = (
+              f'{{0:{flags:s}{precision:s}{width:s}{python_specifier:s}}}')
+
+        type_hint = self._TYPE_HINTS.get(specifier, None)
+
+        self._decoders.append(decoder_names)
+        self._formatters.append(formatter)
+        self._type_hints.append(type_hint)
+
+        literal = f'{{{specifier_index:d}:s}}'
+        specifier_index += 1
+
+      last_match_end = match_end
+
+      segments.append(literal)
+
+    string_size = len(format_string)
+    if string_size > last_match_end:
+      string_segment = format_string[last_match_end:string_size]
+      string_segment = string_segment.replace('{', '{{')
+      string_segment = string_segment.replace('}', '}}')
+      segments.append(string_segment)
+
+    self._format_string = ''.join(segments)
 
 
 class BaseFormatStringDecoder(object):
@@ -232,7 +424,7 @@ class IPv6FormatStringDecoder(BaseFormatStringDecoder):
     # Note that socket.inet_ntop() is not supported on Windows.
     octet_pairs = zip(value[0::2], value[1::2])
     octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
-    # TODO: omit ":0000" from the string.
+    # TODO: determine if ":0000" should be omitted from the string.
     return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
 
 
@@ -1040,9 +1232,11 @@ class TraceV3File(data_format.BinaryDataFile):
       _CHUNK_TAG_CATALOG: 'Catalog',
       _CHUNK_TAG_CHUNK_SET: 'ChunkSet'}
 
-  _DATA_ITEM_VALUE_TYPE_DESCRIPTIONS = {
-      }
+  _DATA_ITEM_VALUE_TYPE_DESCRIPTIONS = {}
 
+  _DATA_ITEM_BINARY_DATA_VALUE_TYPES = (0x32, 0xf2)
+  _DATA_ITEM_INTEGER_VALUE_TYPES = (0x00, 0x02)
+  _DATA_ITEM_PRIVATE_VALUE_TYPES = (0x01, 0x21, 0x25, 0x31, 0x41)
   _DATA_ITEM_STRING_VALUE_TYPES = (0x20, 0x22, 0x40, 0x42)
 
   _DATA_ITEM_INTEGER_DATA_MAP_NAMES = {
@@ -1342,38 +1536,6 @@ class TraceV3File(data_format.BinaryDataFile):
       ('name', 'Name', '_FormatString'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
-  _FORMAT_STRING_OPERATOR_REGEX = re.compile(
-      r'(%'
-      r'(?:\{([^\}]{1,64})\})?'         # Optional value type decoder.
-      r'([-+0 #]{0,5})'                 # Optional flags.
-      r'([0-9]+|\*)?'                   # Optional width.
-      r'(\.(?:[0-9]+|\*))?'             # Optional precision.
-      r'(?:h|hh|j|l|ll|L|t|q|z)?'       # Optional length modifier.
-      r'([@aAcCdDeEfFgGinoOpPsSuUxX])'  # Conversion specifier.
-      r'|%%)')
-
-  _FORMAT_STRING_TYPE_HINTS = {
-      'd': 'signed',
-      'D': 'signed',
-      'i': 'signed',
-      'o': 'unsigned',
-      'O': 'unsigned',
-      'p': 'unsigned',
-      'u': 'unsigned',
-      'U': 'unsigned',
-      'x': 'unsigned',
-      'X': 'unsigned'}
-
-  _FORMAT_STRING_PYTHON_SPECIFIERS = {
-      '@': 's',
-      'D': 'd',
-      'i': 'd',
-      'O': 'o',
-      'p': 'x',
-      'P': 's',
-      'u': 'd',
-      'U': 'd'}
-
   _FORMAT_STRING_DECODERS = {
       'bool': BooleanFormatStringDecoder(),
       'BOOL': YesNoFormatStringDecoder(),
@@ -1446,9 +1608,13 @@ class TraceV3File(data_format.BinaryDataFile):
             sub_system_entry.sub_system_offset, None)
         category = catalog_strings_map.get(
             sub_system_entry.category_offset, None)
-        print(f'Identifier: {sub_system_entry.identifier:d}, '
-              f'Sub system: {sub_system:s}, Category: {category:s}')
-      print('')
+        if self._debug:
+          self._DebugPrintText((
+              f'Identifier: {sub_system_entry.identifier:d}, '
+              f'Sub system: {sub_system:s}, Category: {category:s}\n'))
+
+      if self._debug:
+        self._DebugPrintText('\n')
 
       proc_id = (f'{process_information_entry.proc_id_upper:d}@'
                  f'{process_information_entry.proc_id_lower:d}')
@@ -1474,11 +1640,13 @@ class TraceV3File(data_format.BinaryDataFile):
     large_offset_data = tracepoint_data_object.large_offset_data
     large_shared_cache_data = tracepoint_data_object.large_shared_cache_data
     if large_shared_cache_data:
-      calculated_large_offset_data = large_shared_cache_data >> 1
-      if large_offset_data != calculated_large_offset_data:
-        print((f'Large offset data mismatch stored: ('
-               f'0x{large_offset_data:04x}, calculated: '
-               f'0x{calculated_large_offset_data:04x})'))
+      if self._debug:
+        calculated_large_offset_data = large_shared_cache_data >> 1
+        if large_offset_data != calculated_large_offset_data:
+          self._DebugPrintText((
+              f'Large offset data mismatch stored: ('
+              f'0x{large_offset_data:04x}, calculated: '
+              f'0x{calculated_large_offset_data:04x})\n'))
 
       large_offset_data = tracepoint_data_object.large_shared_cache_data
 
@@ -2004,9 +2172,6 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the firehose chunk cannot be read.
     """
-    # TODO: clean up
-    _ = chunk_data_size
-
     data_type_map = self._GetDataTypeMap('tracev3_firehose_header')
 
     firehose_header = self._ReadStructureFromByteStream(
@@ -2053,8 +2218,8 @@ class TraceV3File(data_format.BinaryDataFile):
                 firehose_tracepoint.data, data_offset + chunk_data_offset))
 
       elif activity_type == self._ACTIVITY_TYPE_TRACE:
-        # TODO: implement
-        pass
+        # TODO: implement.
+        raise errors.ParseError('Unsupported trace activity type.')
 
       elif activity_type == self._ACTIVITY_TYPE_LOG:
         if firehose_tracepoint.log_type not in (0x00, 0x01, 0x02, 0x10, 0x11):
@@ -2087,16 +2252,11 @@ class TraceV3File(data_format.BinaryDataFile):
                 data_offset + chunk_data_offset))
 
       if tracepoint_data_object:
-        value_type_decoders = []
-
-        if not self._catalog:
-          format_string = None
-        else:
+        string_formatter = StringFormatter()
+        if self._catalog:
           format_string = self._GetFirehostTracepointFormatString(
               proc_id, firehose_tracepoint, tracepoint_data_object)
-          if format_string:
-            format_string, value_type_decoders = self._RewriteFormatString(
-                format_string)
+          string_formatter.ParseFormatString(format_string)
 
         data_items = getattr(tracepoint_data_object, 'data_items', None)
         if not data_items:
@@ -2104,13 +2264,12 @@ class TraceV3File(data_format.BinaryDataFile):
         else:
           values = self._ReadFirehoseTracepointDataItems(
               firehose_tracepoint.data, data_offset + chunk_data_offset,
-              data_items, bytes_read, value_type_decoders)
+              data_items, bytes_read, string_formatter)
 
-        if format_string:
-          if values:
-            print(format_string.format(*values))
-          else:
-            print(format_string)
+        if self._catalog:
+          output_string = string_formatter.FormatString(values)
+          # TODO: move this to the script.
+          print(output_string, end='')
 
       chunk_data_offset += firehose_tracepoint.data_size
 
@@ -2119,6 +2278,9 @@ class TraceV3File(data_format.BinaryDataFile):
         alignment = 8 - alignment
 
       chunk_data_offset += alignment
+
+    if self._debug and chunk_data_offset < chunk_data_size:
+      self._DebugPrintData('Trailing data', chunk_data[chunk_data_offset:])
 
   def _ReadFirehoseTracepointData(self, tracepoint_data, data_offset):
     """Reads firehose tracepoint data.
@@ -2187,7 +2349,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
   def _ReadFirehoseTracepointDataItems(
       self, tracepoint_data, data_offset, data_items, values_data_offset,
-      value_type_decoders):
+      string_formatter):
     """Reads firehose tracepoint data items.
 
     Args:
@@ -2197,31 +2359,26 @@ class TraceV3File(data_format.BinaryDataFile):
       data_items (list[tracev3_firehose_tracepoint_data_item]): data items.
       values_data_offset (int): offset of the valuesdata relative to the start
           of the firehose tracepoint data.
-      value_type_decoders (list[ValueTypeDecoder]): value type decoders.
+      string_formatter (StringFormatter): string formatter.
 
     Returns:
-      list[object]: data item values.
+      list[str]: string representations of the values.
 
     Raises:
       ParseError: if the data items cannot be read.
     """
-    number_of_value_type_decoders = len(value_type_decoders)
-    value_type_decoder_index = 0
-
     values = []
+
+    value_index = 0
+    precision = None
 
     for data_item in data_items:
       value = None
 
-      if value_type_decoder_index < number_of_value_type_decoders:
-        decoder = value_type_decoders[value_type_decoder_index]
-      else:
-        decoder = None
-
-      if data_item.value_type in (0x00, 0x01, 0x02):
-        type_hint = getattr(decoder, 'type_hint', None) or 'unsigned'
+      if data_item.value_type in self._DATA_ITEM_INTEGER_VALUE_TYPES:
+        type_hint = string_formatter.GetTypeHintByIndex(value_index)
         data_type_map_name = self._DATA_ITEM_INTEGER_DATA_MAP_NAMES.get(
-            type_hint, {}).get(data_item.data_size, None)
+            type_hint or 'unsigned', {}).get(data_item.data_size, None)
 
         if data_type_map_name:
           data_type_map = self._GetDataTypeMap(data_type_map_name)
@@ -2252,7 +2409,7 @@ class TraceV3File(data_format.BinaryDataFile):
         if self._debug:
           data_item.string = value
 
-      elif data_item.value_type in (0x32, 0xf2):
+      elif data_item.value_type in self._DATA_ITEM_BINARY_DATA_VALUE_TYPES:
         value_data_offset = values_data_offset + data_item.value_data_offset
         value = tracepoint_data[
             value_data_offset:value_data_offset + data_item.value_data_size]
@@ -2272,26 +2429,35 @@ class TraceV3File(data_format.BinaryDataFile):
               f'0x{data_item.value_type:02x}.'))
 
       if data_item.value_type == 0x12:
-        # TODO: use this value to limit the size of the next string value
+        precision = value
         continue
 
-      if data_item.value_type in (0x21, 0x25, 0x31, 0x41):
+      decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
+      if data_item.value_type in self._DATA_ITEM_PRIVATE_VALUE_TYPES:
         value = '<private>'
 
-      elif decoder and decoder.names:
-        decoder_class = self._FORMAT_STRING_DECODERS.get(decoder.names[0], None)
+      elif decoder_names:
+        decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_names[0], None)
         if decoder_class:
           value = decoder_class.FormatValue(value)
+        else:
+          value = f'<decode: unsupported decoder: {decoder_names[0]:s}>'
 
-      if (value is None and
-          data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES):
-        value = '(null)'
+      elif data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
+        if value is None:
+          value = '(null)'
+
+      else:
+        value = string_formatter.FormatValue(
+            value_index, value, precision=precision)
+
+      precision = None
 
       values.append(value)
 
-      value_type_decoder_index += 1
+      value_index += 1
 
-    while len(values) < number_of_value_type_decoders:
+    while len(values) < string_formatter.number_of_formatters:
       values.append('<decode: missing data>')
 
     return values
@@ -2460,15 +2626,18 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     data_type_map = self._GetDataTypeMap('tracev3_oversize_chunk')
 
+    context = dtfabric_data_maps.DataTypeMapContext()
+
     oversize_chunk = self._ReadStructureFromByteStream(
-        chunk_data, data_offset, data_type_map, 'Oversize chunk')
+        chunk_data, data_offset, data_type_map, 'Oversize chunk',
+        context=context)
 
     if self._debug:
       self._DebugPrintStructureObject(
           oversize_chunk, self._DEBUG_INFO_OVERSIZE_CHUNK)
 
-    # TODO: check for trailing data.
-    _ = chunk_data_size
+    if self._debug and context.byte_size < chunk_data_size:
+      self._DebugPrintData('Trailing data', chunk_data[context.byte_size:])
 
     return oversize_chunk
 
@@ -2489,15 +2658,18 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     data_type_map = self._GetDataTypeMap('tracev3_simpledump_chunk')
 
+    context = dtfabric_data_maps.DataTypeMapContext()
+
     simpledump_chunk = self._ReadStructureFromByteStream(
-        chunk_data, data_offset, data_type_map, 'SimpleDump chunk')
+        chunk_data, data_offset, data_type_map, 'SimpleDump chunk',
+        context=context)
 
     if self._debug:
       self._DebugPrintStructureObject(
           simpledump_chunk, self._DEBUG_INFO_SIMPLEDUMP_CHUNK)
 
-    # TODO: check for trailing data.
-    _ = chunk_data_size
+    if self._debug and context.byte_size < chunk_data_size:
+      self._DebugPrintData('Trailing data', chunk_data[context.byte_size:])
 
     return simpledump_chunk
 
@@ -2518,15 +2690,18 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     data_type_map = self._GetDataTypeMap('tracev3_statedump_chunk')
 
+    context = dtfabric_data_maps.DataTypeMapContext()
+
     statedump_chunk = self._ReadStructureFromByteStream(
-        chunk_data, data_offset, data_type_map, 'StateDump chunk')
+        chunk_data, data_offset, data_type_map, 'StateDump chunk',
+        context=context)
 
     if self._debug:
       self._DebugPrintStructureObject(
           statedump_chunk, self._DEBUG_INFO_STATEDUMP_CHUNK)
 
-    # TODO: check for trailing data.
-    _ = chunk_data_size
+    if self._debug and context.byte_size < chunk_data_size:
+      self._DebugPrintData('Trailing data', chunk_data[context.byte_size:])
 
     return statedump_chunk
 
@@ -2552,89 +2727,6 @@ class TraceV3File(data_format.BinaryDataFile):
     uuidtext_file.Open(uuidtext_file_path)
 
     return uuidtext_file
-
-  def _RewriteFormatString(self, format_string):
-    """Rewrites an Unified Logging format string to a Python format string.
-
-    Args:
-      format_string (str): Unified Logging format string.
-
-    Returns:
-      tuple[str, list[tuple[str, str]]]: Python format string and value type
-          decoders.
-    """
-    if not format_string:
-      return '', []
-
-    format_string_segments = []
-    value_type_decoders = []
-
-    specifier_index = 0
-    last_match_end = 0
-    for match in self._FORMAT_STRING_OPERATOR_REGEX.finditer(format_string):
-      literal, decoder, flags, width, precision, specifier = match.groups()
-
-      match_start, match_end = match.span()
-      if match_start > last_match_end:
-        string_segment = format_string[last_match_end:match_start]
-        string_segment = string_segment.replace('{', '{{')
-        string_segment = string_segment.replace('}', '}}')
-        format_string_segments.append(string_segment)
-
-      if literal == '%%':
-        literal = '%'
-      elif specifier:
-        flags = flags.replace('-', '>')
-
-        if specifier in ('P', 'x', 'X') or (
-            specifier == 's' and precision in ('.0', '.*')):
-          precision = ''
-        else:
-          precision = precision or ''
-
-        type_hint = self._FORMAT_STRING_TYPE_HINTS.get(specifier, None)
-
-        decoder = decoder or ''
-        decoder_names = [value.strip() for value in decoder.split(',')]
-
-        # Remove private, public and sensitive value type decoders.
-        decoder_names = [
-            value for value in decoder_names
-            if value not in ('', 'private', 'public', 'sensitive')]
-
-        if self._FORMAT_STRING_DECODER_NAMES.intersection(decoder_names):
-          specifier = 's'
-
-        width = width or ''
-        python_specifier = self._FORMAT_STRING_PYTHON_SPECIFIERS.get(
-            specifier, specifier)
-
-        literal = (f'{{{specifier_index:d}:{flags:s}{precision:s}{width:s}'
-                   f'{python_specifier:s}}}')
-
-        if specifier == 'p':
-          literal = ''.join(['0x', literal])
-
-        specifier_index += 1
-
-        value_type_decoder = ValueTypeDecoder()
-        value_type_decoder.names = decoder_names
-        value_type_decoder.type_hint = type_hint
-
-        value_type_decoders.append(value_type_decoder)
-
-      format_string_segments.append(literal)
-
-      last_match_end = match_end
-
-    string_size = len(format_string)
-    if string_size > last_match_end:
-      string_segment = format_string[last_match_end:string_size]
-      string_segment = string_segment.replace('{', '{{')
-      string_segment = string_segment.replace('}', '}}')
-      format_string_segments.append(string_segment)
-
-    return ''.join(format_string_segments), value_type_decoders
 
   def Close(self):
     """Closes a binary data file.
