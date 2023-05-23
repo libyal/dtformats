@@ -560,7 +560,7 @@ attributes:
 members:
 - name: value_type
   data_type: uint8
-  values: [0x20, 0x22, 0x32, 0x40, 0x42, 0xf2]
+  values: [0x20, 0x21, 0x22, 0x32, 0x40, 0x42, 0xf2]
 - name: data_size
   data_type: uint8
   value: 4
@@ -577,7 +577,7 @@ default: tracev3_firehose_tracepoint_data_item_with_inline_data
 members:
 - tracev3_firehose_tracepoint_data_time_with_value_data_range
 ---
-name: tracev3_firehose_tracepoint_string_range
+name: tracev3_firehose_tracepoint_data_range
 type: structure
 description: TraceV3 firehose tracepoint string range
 attributes:
@@ -621,6 +621,21 @@ members:
   data_type: uint16
   condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
 ---
+name: tracev3_firehose_tracepoint_activity_data_items
+type: structure
+description: TraceV3 firehose tracepoint activity data.
+attributes:
+  byte_order: little-endian
+members:
+- name: unknown1
+  data_type: uint8
+- name: number_of_data_items
+  data_type: uint8
+- name: data_items
+  type: sequence
+  element_data_type: tracev3_firehose_tracepoint_data_item
+  number_of_elements: tracev3_firehose_tracepoint_log.number_of_data_items
+---
 name: tracev3_firehose_tracepoint_loss
 type: structure
 description: TraceV3 firehose tracepoint loss data.
@@ -643,8 +658,8 @@ members:
 - name: current_activity_identifier
   data_type: uint64
   condition: tracev3_firehose_tracepoint_flags & 0x0001 != 0
-- name: private_strings_range
-  data_type: tracev3_firehose_tracepoint_string_range
+- name: private_data_range
+  data_type: tracev3_firehose_tracepoint_data_range
   condition: tracev3_firehose_tracepoint_flags & 0x0100 != 0
 - name: load_address_lower
   data_type: uint32
@@ -687,8 +702,8 @@ members:
 - name: current_activity_identifier
   data_type: uint64
   condition: tracev3_firehose_tracepoint_flags & 0x0001 != 0
-- name: private_strings_range
-  data_type: tracev3_firehose_tracepoint_string_range
+- name: private_data_range
+  data_type: tracev3_firehose_tracepoint_data_range
   condition: tracev3_firehose_tracepoint_flags & 0x0100 != 0
 - name: load_address_lower
   data_type: uint32

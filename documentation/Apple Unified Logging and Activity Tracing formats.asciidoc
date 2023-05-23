@@ -590,15 +590,15 @@ The firehose chunk (tracev3_chunk_firehose) is variable of size and consists of:
 | 30 | 2 | 0 | [yellow-background]*Unknown (Reserved)*
 | 32 | 2 | | Public data size (size_pub_data)
 | 34 | 2 | | Private data virtual offset +
-Contains 0x1000 if there is no private data
+Contains 4096 (0x1000) if there is no private data and `-(4096 - offset)` as offset relative to the end of the firehose chunk.
 | 36 | 2 | | [yellow-background]*Unknown*
 | 38 | 2 | | [yellow-background]*Unknown* +
 0x0300: persist
 | 40 | 8 | | Base continuous time for events in the firehose chunk
 4+|
-| 48 | public data size - 16 | | public data +
+| 48 | data size | | data +
 Contains one or more <<tracev3_firehose_tracepoint,Firehose tracepoints>>
-| ... | ... | Private strings
+| ... | ... | Private or remnant data
 |===
 
 [NOTE]
@@ -697,7 +697,7 @@ Note that appears to be only used by the "Activity" activity type, other activit
 | 0x0010 | | Has process identifier value (has_unique_pid)
 | 0x0020 | has_large_offset | Has large offset data
 | | |
-| 0x0100 | | Has private strings range
+| 0x0100 | | Has private data range
 | 0x0200 | has_other_aid | Has other activity identifier +
 Note that appears to be only used by the "Activity" activity type, other activity types use has_subsystem
 | 0x0200 | has_subsystem | Has sub system value
@@ -720,9 +720,9 @@ Note that appears to be only used by the "Activity" activity type, other activit
 | 0x000c | large_shared_cache | Format string is stored in a dsc file
 |===
 
-==== [[tracev3_firehose_tracepoint_strings_range]]Firehose tracepoint strings range
+==== [[tracev3_firehose_tracepoint_data_range]]Firehose tracepoint data range
 
-A firehose tracepoint strings range is 4 bytes of size and consists of:
+A firehose tracepoint data range is 4 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -776,7 +776,7 @@ This value has been seen to be used in combination with format strings like "%.1
 | 0x20 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x21 | | [yellow-background]*Unknown (private value)* +
-Contains a 32-bit value, formatted as "<private>"
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_private_data_range,Firehose tracepoint data item with private data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x22 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
@@ -802,10 +802,13 @@ Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Fire
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
 |===
 
+[NOTE]
+Private value types are formatted as "<private>".
+
 ===== [[tracev3_firehose_tracepoint_data_time_with_value_data_range]]Firehose tracepoint data item with value data range
 
-A firehose tracepoint data item with value data range is 6 bytes of size and consists
-of:
+A firehose tracepoint data item with value data range is 6 bytes of size
+and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -815,6 +818,22 @@ of:
 4+| _Data item data_
 | 2 | 2 | | Value data (range) offset +
 The offset is relative to the start of the values data in the <<tracev3_firehose_tracepoint_data_items,Firehose tracepoint data items>>
+| 4 | 2 | | Value data (range) size
+|===
+
+===== [[tracev3_firehose_tracepoint_data_time_with_private_data_range]]Firehose tracepoint data item with private data range
+
+A firehose tracepoint data item with private data range is 6 bytes of size
+and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Value type
+| 1 | 1 | 4 | Data item data size
+4+| _Data item data_
+| 2 | 2 | | Value data (range) offset +
+The offset is relative to the start of the private data in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 4 | 2 | | Value data (range) size
 |===
 
@@ -859,6 +878,10 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 | ... | ... | | 64-bit alignment padding
 |===
 
+[NOTE]
+Note that "has private data range flag (0x0100)" has been observed to be set
+but without any obvious changes to the activity firehose tracepoint structure.
+
 ==== [[tracev3_firehose_tracepoint_log]]Log firehose tracepoint
 
 A log firehose tracepoint is variable of size and consists of:
@@ -880,9 +903,9 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 4+| _Start of data_
 4+| _Has current activity identifier flag (0x0001) is set_
 | ... | 8 | | Current activity identifier
-4+| _Has private strings range flag (0x0100) is set_
-| ... | 4 | | <<tracev3_firehose_tracepoint_strings_range,Private strings range>> +
-Where the range offset is relative to start of the private strings in the <<tracev3_firehose_chunk,Firehose chunk>>
+4+| _Has private data range flag (0x0100) is set_
+| ... | 4 | | <<tracev3_firehose_tracepoint_data_range,Private data range>> +
+Where the range offset is a virtual private strings offset in the <<tracev3_firehose_chunk,Firehose chunk>>
 4+| _Common_
 | ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
@@ -926,9 +949,9 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 4+| _Start of data_
 4+| _Has current activity identifier flag (0x0001) is set_
 | ... | 8 | | Current activity identifier
-4+| _Has private strings range flag (0x0100) is set_
-| ... | 4 | | <<tracev3_firehose_tracepoint_strings_range,Private strings range>> +
-Where the range offset is relative to start of the private strings in the <<tracev3_firehose_chunk,Firehose chunk>>
+4+| _Has private data range flag (0x0100) is set_
+| ... | 4 | | <<tracev3_firehose_tracepoint_data_range,Private data range>> +
+Where the range offset is a virtual private strings offset in the <<tracev3_firehose_chunk,Firehose chunk>>
 4+| _Common_
 | ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
@@ -1494,7 +1517,7 @@ state is 8 bytes of size and consists of:
 Contains a boolean value where false if 0 or true otherwise
 |===
 
-[yellow-background]*TODO confirm location enabled status is the first value in the
+[yellow-background]*TODO: confirm location enabled status is the first value in the
 structure. Only seen data where both values are 0.*
 
 The value is formatted as:

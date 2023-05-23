@@ -117,6 +117,10 @@ class StringFormatter(object):
     Returns:
       str: formatted string.
     """
+    # Add place holders for missing values.
+    while len(values) < len(self._formatters):
+      values.append('<decode: missing data>')
+
     if self._format_string is None:
       # TODO: determine what the MacOS log tool shows.
       formatted_string = 'ERROR: missing format string\n'
@@ -1357,6 +1361,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('value_data_size', 'Value data size', '_FormatIntegerAsDecimal'),
       ('value_data', 'Value data', '_FormatDataInHexadecimal'),
       ('integer', 'Integer', '_FormatIntegerAsDecimal'),
+      ('private_string', 'Private string', '_FormatString'),
       ('string', 'String', '_FormatString'),
       ('uuid', 'UUID', '_FormatUUIDAsString')]
 
@@ -1397,7 +1402,7 @@ class TraceV3File(data_format.BinaryDataFile):
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_LOG = [
       ('current_activity_identifier', 'Current activity identifier',
        '_FormatIntegerAsHexadecimal8'),
-      ('private_strings_range', 'Private strings range', '_FormatStringsRange'),
+      ('private_data_range', 'Private data range', '_FormatDataRange'),
       ('load_address_lower', 'UUID entry load address (lower 32-bit)',
        '_FormatIntegerAsHexadecimal8'),
       ('large_offset_data', 'Large offset data',
@@ -1421,7 +1426,7 @@ class TraceV3File(data_format.BinaryDataFile):
   _DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST = [
       ('current_activity_identifier', 'Current activity identifier',
        '_FormatIntegerAsHexadecimal8'),
-      ('private_strings_range', 'Private strings range', '_FormatStringsRange'),
+      ('private_data_range', 'Private data range', '_FormatDataRange'),
       ('load_address_lower', 'UUID entry load address (lower 32-bit)',
        '_FormatIntegerAsHexadecimal8'),
       ('large_offset_data', 'Large offset data',
@@ -1801,7 +1806,7 @@ class TraceV3File(data_format.BinaryDataFile):
       lines.append('\tHas large offset data (0x0020)')
 
     if integer & 0x0100:
-      lines.append('\tHas private strings range (0x0100)')
+      lines.append('\tHas private data range (0x0100)')
     if integer & 0x0200:
       lines.append('\tHas sub system value (0x0200)')
     if integer & 0x0400:
@@ -1841,16 +1846,16 @@ class TraceV3File(data_format.BinaryDataFile):
     """
     return stream.decode('ascii')
 
-  def _FormatStringsRange(self, strings_range):
-    """Formats a strings range.
+  def _FormatDataRange(self, data_range):
+    """Formats a data range.
 
     Args:
-      strings_range (tracev3_firehose_tracepoint_strings_range): strings range.
+      data_range (tracev3_firehose_tracepoint_data_range): data range.
 
     Returns:
-      str: formatted strings range.
+      str: formatted data range.
     """
-    return f'offset: 0x{strings_range.offset:04x}, size: {strings_range.size:d}'
+    return f'offset: 0x{data_range.offset:04x}, size: {data_range.size:d}'
 
   def _GetCatalogSubSystemStringMap(self, catalog):
     """Retrieves a map of the catalog sub system strings and offsets.
@@ -2184,13 +2189,19 @@ class TraceV3File(data_format.BinaryDataFile):
     proc_id = (f'{firehose_header.proc_id_upper:d}@'
                f'{firehose_header.proc_id_lower:d}')
 
-    if firehose_header.private_data_virtual_offset < 4096:
-      private_data_size = 4096 - firehose_header.private_data_virtual_offset
+    private_data_virtual_offset = (
+        firehose_header.private_data_virtual_offset & 0x0fff)
+    if not private_data_virtual_offset:
+      private_data_size = 0
+      private_data = b''
+    else:
+      private_data_size = 4096 - private_data_virtual_offset
+      private_data = chunk_data[-private_data_size:]
       if self._debug:
-        self._DebugPrintData('Private data', chunk_data[-private_data_size:])
+        self._DebugPrintData('Private data', private_data)
 
     chunk_data_offset = 32
-    while chunk_data_offset < firehose_header.public_data_size - 16:
+    while chunk_data_offset < firehose_header.public_data_size:
       firehose_tracepoint = self._ReadFirehoseTracepointData(
           chunk_data[chunk_data_offset:], data_offset + chunk_data_offset)
 
@@ -2262,9 +2273,20 @@ class TraceV3File(data_format.BinaryDataFile):
         if data_items is None:
           values = []
         else:
+          private_data_range = getattr(
+              tracepoint_data_object, 'private_data_range', None)
+          if private_data_range is None:
+            private_data_offset = 0
+          else:
+            # TODO: error if private_data_virtual_offset >
+            # private_data_range.offset
+            private_data_offset = (
+                private_data_range.offset - private_data_virtual_offset)
+
           values = self._ReadFirehoseTracepointDataItems(
               firehose_tracepoint.data, data_offset + chunk_data_offset,
-              data_items, bytes_read, string_formatter)
+              data_items, bytes_read, private_data, private_data_offset,
+              string_formatter)
 
         if self._catalog:
           output_string = string_formatter.FormatString(values)
@@ -2279,8 +2301,13 @@ class TraceV3File(data_format.BinaryDataFile):
 
       chunk_data_offset += alignment
 
+    if private_data_size:
+      chunk_data_size -= private_data_size
+
     if self._debug and chunk_data_offset < chunk_data_size:
-      self._DebugPrintData('Trailing data', chunk_data[chunk_data_offset:])
+      self._DebugPrintData(
+          'Trailing firehose chunk data',
+          chunk_data[chunk_data_offset:chunk_data_size])
 
   def _ReadFirehoseTracepointData(self, tracepoint_data, data_offset):
     """Reads firehose tracepoint data.
@@ -2325,7 +2352,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the activity data cannot be read.
     """
-    supported_flags = 0x0001 | 0x000e | 0x0010 | 0x0020 | 0x0200
+    supported_flags = 0x0001 | 0x000e | 0x0010 | 0x0020 | 0x0100 | 0x0200
 
     if flags & ~supported_flags != 0:
       raise errors.ParseError(f'Unsupported flags: 0x{flags:04x}.')
@@ -2349,7 +2376,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
   def _ReadFirehoseTracepointDataItems(
       self, tracepoint_data, data_offset, data_items, values_data_offset,
-      string_formatter):
+      private_data, private_data_range_offset, string_formatter):
     """Reads firehose tracepoint data items.
 
     Args:
@@ -2357,8 +2384,11 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset (int): offset of the firehose tracepoint data relative to
           the start of the chunk set.
       data_items (list[tracev3_firehose_tracepoint_data_item]): data items.
-      values_data_offset (int): offset of the valuesdata relative to the start
+      values_data_offset (int): offset of the values data relative to the start
           of the firehose tracepoint data.
+      private_data (bytes): firehose private data.
+      private_data_range_offset (int): offset of the private data range
+          relative to the start of the private data.
       string_formatter (StringFormatter): string formatter.
 
     Returns:
@@ -2409,6 +2439,24 @@ class TraceV3File(data_format.BinaryDataFile):
         if self._debug:
           data_item.string = value
 
+      elif data_item.value_type == 0x21:
+        if data_item.value_data_size > 0:
+          # Note that the string data does not necessarily include
+          # an end-of-string character hence the cstring data_type_map is not
+          # used here.
+          value_data_offset = (
+              private_data_range_offset + data_item.value_data_offset)
+          string_data = private_data[
+              value_data_offset:value_data_offset + data_item.value_data_size]
+
+          try:
+            value = string_data.decode('utf-8').rstrip('\x00')
+          except UnicodeDecodeError:
+            pass
+
+        if self._debug:
+          data_item.private_string = value
+
       elif data_item.value_type in self._DATA_ITEM_BINARY_DATA_VALUE_TYPES:
         value_data_offset = values_data_offset + data_item.value_data_offset
         value = tracepoint_data[
@@ -2456,9 +2504,6 @@ class TraceV3File(data_format.BinaryDataFile):
       values.append(value)
 
       value_index += 1
-
-    while len(values) < string_formatter.number_of_formatters:
-      values.append('<decode: missing data>')
 
     return values
 
@@ -2637,7 +2682,8 @@ class TraceV3File(data_format.BinaryDataFile):
           oversize_chunk, self._DEBUG_INFO_OVERSIZE_CHUNK)
 
     if self._debug and context.byte_size < chunk_data_size:
-      self._DebugPrintData('Trailing data', chunk_data[context.byte_size:])
+      self._DebugPrintData(
+          'Trailing Oversize chunk data', chunk_data[context.byte_size:])
 
     return oversize_chunk
 
@@ -2669,7 +2715,8 @@ class TraceV3File(data_format.BinaryDataFile):
           simpledump_chunk, self._DEBUG_INFO_SIMPLEDUMP_CHUNK)
 
     if self._debug and context.byte_size < chunk_data_size:
-      self._DebugPrintData('Trailing data', chunk_data[context.byte_size:])
+      self._DebugPrintData(
+          'Trailing SimpleDump chunk data', chunk_data[context.byte_size:])
 
     return simpledump_chunk
 
@@ -2701,7 +2748,8 @@ class TraceV3File(data_format.BinaryDataFile):
           statedump_chunk, self._DEBUG_INFO_STATEDUMP_CHUNK)
 
     if self._debug and context.byte_size < chunk_data_size:
-      self._DebugPrintData('Trailing data', chunk_data[context.byte_size:])
+      self._DebugPrintData(
+          'Trailing StateDump chunk data', chunk_data[context.byte_size:])
 
     return statedump_chunk
 
