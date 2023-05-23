@@ -125,7 +125,7 @@ class StringFormatter(object):
     else:
       formatted_string = self._format_string
 
-    if formatted_string[-1] != '\n':
+    if not formatted_string or formatted_string[-1] != '\n':
       return f'{formatted_string:s}\n'
 
     return formatted_string
@@ -2232,7 +2232,7 @@ class TraceV3File(data_format.BinaryDataFile):
                 data_offset + chunk_data_offset))
 
       elif activity_type == self._ACTIVITY_TYPE_SIGNPOST:
-        if firehose_tracepoint.log_type not in (0x80, 0x81, 0x82, 0xc2):
+        if firehose_tracepoint.log_type not in (0x80, 0x81, 0x82, 0xc1, 0xc2):
           raise errors.ParseError(
               f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
 
@@ -2259,7 +2259,7 @@ class TraceV3File(data_format.BinaryDataFile):
           string_formatter.ParseFormatString(format_string)
 
         data_items = getattr(tracepoint_data_object, 'data_items', None)
-        if not data_items:
+        if data_items is None:
           values = []
         else:
           values = self._ReadFirehoseTracepointDataItems(
@@ -2362,7 +2362,7 @@ class TraceV3File(data_format.BinaryDataFile):
       string_formatter (StringFormatter): string formatter.
 
     Returns:
-      list[str]: string representations of the values.
+      list[str]: values formatted as strings.
 
     Raises:
       ParseError: if the data items cannot be read.

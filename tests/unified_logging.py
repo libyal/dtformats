@@ -144,6 +144,18 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
 
+    test_formatter.ParseFormatString('%{public}s')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
+    test_formatter.ParseFormatString('%{public}@')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._formatters, ['{0:s}'])
+    self.assertEqual(test_formatter._type_hints, [None])
+
     test_formatter.ParseFormatString('%@')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
@@ -151,12 +163,6 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._type_hints, [None])
 
     test_formatter.ParseFormatString('%.16P')
-    self.assertEqual(test_formatter._decoders, [[]])
-    self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
-    self.assertEqual(test_formatter._type_hints, [None])
-
-    test_formatter.ParseFormatString('%{public}s')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
     self.assertEqual(test_formatter._formatters, ['{0:s}'])
