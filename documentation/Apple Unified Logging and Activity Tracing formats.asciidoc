@@ -548,13 +548,13 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 |===
 | Offset | Size | Value | Description
 4+| _LZ4 compressed block header_
-| 0 | 4 | "bv41" | Signature
+| 0 | 4 | "bv41" | Start of LZ4 (compressed) block marker
 | 4 | 4 | | Uncompressed data size (in bytes)
-| 8 | 4 | | Block size (in bytes)
+| 8 | 4 | | LZ4 compressed data size (in bytes)
 4+| _LZ4 compressed block data_
 | 12 | ... | | LZ4 compressed data
 4+| _LZ4 compressed block footer_
-| ... | 4 | "bv4$" | | LZ4 end of compressed data marker
+| ... | 4 | "bv4$" | | End of LZ4 block marker
 |===
 
 ==== [[lz4_uncompressed_block]]LZ4 uncompressed block
@@ -562,13 +562,12 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "bv4-" | Signature
+| 0 | 4 | "bv4-" | Start of LZ4 (uncompressed) block marker
 | 4 | 4 | | Uncompressed data size (in bytes)
-| 8 | 4 | | Block size (in bytes)
 4+| _LZ4 uncompressed block data_
-| 12 | ... | | uncompressed data
+| 8 | ... | | Uncompressed data
 4+| _LZ4 compressed block footer_
-| ... | 4 | "bv4$" | | LZ4 end of compressed data marker
+| ... | 4 | "bv4$" | | End of LZ4 block marker
 |===
 
 === [[tracev3_firehose_chunk]]Firehose chunk
@@ -1084,9 +1083,9 @@ Other observerd value type decoders are:
 | "odtypes:mbr_details" | |
 | "odtypes:mbridtype" | |
 | "odtypes:nt_sid_t" | |
-| "sensitive" | |
-| "private" | | Private log argument
-| "public" | | Public log argument
+| "sensitive" | | Sensitive log argument, which is formatted as "<private>"
+| "private" | | Private log argument, which is formatted as "<private>"
+| "public" | | Public log argument, which has no additional formatting
 |===
 
 [NOTE]

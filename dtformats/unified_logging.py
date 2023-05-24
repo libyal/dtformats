@@ -2074,24 +2074,24 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(
           lz4_block_header, self._DEBUG_INFO_LZ4_BLOCK_HEADER)
 
-    end_of_compressed_data_offset = 12 + lz4_block_header.compressed_data_size
-
     if lz4_block_header.signature == b'bv41':
+      end_of_data_offset = 12 + lz4_block_header.compressed_data_size
       uncompressed_data = lz4.block.decompress(
-          chunk_data[12:end_of_compressed_data_offset],
+          chunk_data[12:end_of_data_offset],
           uncompressed_size=lz4_block_header.uncompressed_data_size)
 
     elif lz4_block_header.signature == b'bv4-':
-      uncompressed_data = chunk_data[12:end_of_compressed_data_offset]
+      end_of_data_offset = 8 + lz4_block_header.uncompressed_data_size
+      uncompressed_data = chunk_data[8:end_of_data_offset]
 
     else:
-      raise errors.ParseError('Unsupported start of compressed data marker')
+      raise errors.ParseError('Unsupported start of LZ4 block marker')
 
-    end_of_compressed_data_identifier = chunk_data[
-        end_of_compressed_data_offset:end_of_compressed_data_offset + 4]
+    end_of_lz4_block_marker = chunk_data[
+        end_of_data_offset:end_of_data_offset + 4]
 
-    if end_of_compressed_data_identifier != b'bv4$':
-      raise errors.ParseError('Unsupported end of compressed data marker')
+    if end_of_lz4_block_marker != b'bv4$':
+      raise errors.ParseError('Unsupported end of LZ4 block marker')
 
     data_type_map = self._GetDataTypeMap('tracev3_chunk_header')
 
