@@ -302,7 +302,15 @@ class LocationLocationManagerStateFormatStringDecoderTest(
     test_lib.BaseTestCase):
   """Location location manager state value format string decoder tests."""
 
-  _VALUE_DATA = bytes(bytearray([
+  _VALUE_DATA_V1 = bytes(bytearray([
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xbf, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x59, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f, 0x01, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00]))
+
+  _VALUE_DATA_V2 = bytes(bytearray([
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xbf, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x59, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f, 0x01, 0x00, 0x00, 0x00,
@@ -315,7 +323,24 @@ class LocationLocationManagerStateFormatStringDecoderTest(
     test_decoder = (
         unified_logging.LocationLocationManagerStateFormatStringDecoder())
 
-    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA_V1)
+    self.assertEqual(formatted_value, (
+        '{"previousAuthorizationStatusValid":false,"paused":false,'
+        '"requestingLocation":false,"desiredAccuracy":100,'
+        '"allowsBackgroundLocationUpdates":false,'
+        '"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,'
+        '"allowsLocationPrompts":true,"activityType":72057594037927937,'
+        '"pausesLocationUpdatesAutomatially":0,'
+        '"showsBackgroundLocationIndicator":false,"updatingLocation":false,'
+        '"requestingRanging":false,"updatingHeading":false,'
+        '"previousAuthorizationStatus":0,"allowsMapCorrection":false,'
+        '"allowsAlteredAccessoryLoctions":false,"updatingRanging":false,'
+        '"limitsPrecision":false,"headingFilter":1}'))
+
+    test_decoder = (
+        unified_logging.LocationLocationManagerStateFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA_V2)
     self.assertEqual(formatted_value, (
         '{"previousAuthorizationStatusValid":false,"paused":false,'
         '"requestingLocation":false,"updatingVehicleSpeed":false,'

@@ -768,7 +768,10 @@ Contains a 32-bit value, formatted as "<private>"
 | 0x02 | | [yellow-background]*Unknown (integer)* +
 Contains a 8-bit, 16-bit, 32-bit or 64-bit value
 3+|
-| 0x12 | | [yellow-background]*Unknown (format string precision)* +
+| 0x10 | | [yellow-background]*Unknown (integer format precision)* +
+This value has been seen to be used in combination with format strings like "%.0lld"
+3+|
+| 0x12 | | [yellow-background]*Unknown (string format precision)* +
 Contains a 32-bit value +
 This value has been seen to be used in combination with format strings like "%.16s" and "%.*s", where this value contains the number of characters of the string that should be printed.
 3+|

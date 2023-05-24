@@ -453,6 +453,9 @@ class LocationStructureFormatStringDecoder(
 
     for name, attribute_name in value_mappings:
       attribute_value = getattr(structure, attribute_name, None)
+      if attribute_value is None:
+        continue
+
       if isinstance(attribute_value, bool):
         if attribute_value:
           attribute_value = 'true'
@@ -2243,7 +2246,8 @@ class TraceV3File(data_format.BinaryDataFile):
                 data_offset + chunk_data_offset))
 
       elif activity_type == self._ACTIVITY_TYPE_SIGNPOST:
-        if firehose_tracepoint.log_type not in (0x80, 0x81, 0x82, 0xc1, 0xc2):
+        if firehose_tracepoint.log_type not in (
+            0x40, 0x41, 0x42, 0x80, 0x81, 0x82, 0xc0, 0xc1, 0xc2):
           raise errors.ParseError(
               f'Unsupported log type: 0x{firehose_tracepoint.log_type:02x}.')
 
@@ -2470,13 +2474,13 @@ class TraceV3File(data_format.BinaryDataFile):
             data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
 
         if data_item.value_type not in (
-            0x00, 0x01, 0x02, 0x12, 0x20, 0x21, 0x22, 0x25, 0x31, 0x32,
+            0x00, 0x01, 0x02, 0x10, 0x12, 0x20, 0x21, 0x22, 0x25, 0x31, 0x32,
             0x40, 0x41, 0x42, 0x72, 0xf2):
           raise errors.ParseError((
               f'Unsupported data item value type: '
               f'0x{data_item.value_type:02x}.'))
 
-      if data_item.value_type == 0x12:
+      if data_item.value_type in (0x10, 0x12):
         precision = value
         continue
 
