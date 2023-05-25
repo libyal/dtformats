@@ -1243,7 +1243,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
   _DATA_ITEM_BINARY_DATA_VALUE_TYPES = (0x32, 0xf2)
   _DATA_ITEM_INTEGER_VALUE_TYPES = (0x00, 0x02)
-  _DATA_ITEM_PRIVATE_VALUE_TYPES = (0x01, 0x21, 0x25, 0x31, 0x41)
+  _DATA_ITEM_PRIVATE_VALUE_TYPES = (
+      0x01, 0x21, 0x25, 0x31, 0x35, 0x41, 0x45)
   _DATA_ITEM_STRING_VALUE_TYPES = (0x20, 0x22, 0x40, 0x42)
 
   _DATA_ITEM_INTEGER_DATA_MAP_NAMES = {
@@ -2212,7 +2213,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
       activity_type = firehose_tracepoint.activity_type
       if activity_type not in (
-          self._ACTIVITY_TYPE_ACTIVITY, self._ACTIVITY_TYPE_TRACE,
+          0x00, self._ACTIVITY_TYPE_ACTIVITY, self._ACTIVITY_TYPE_TRACE,
           self._ACTIVITY_TYPE_LOG, self._ACTIVITY_TYPE_SIGNPOST,
           self._ACTIVITY_TYPE_LOSS):
         raise errors.ParseError(
@@ -2475,7 +2476,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
         if data_item.value_type not in (
             0x00, 0x01, 0x02, 0x10, 0x12, 0x20, 0x21, 0x22, 0x25, 0x31, 0x32,
-            0x40, 0x41, 0x42, 0x72, 0xf2):
+            0x35, 0x40, 0x41, 0x42, 0x45, 0x72, 0xf2):
           raise errors.ParseError((
               f'Unsupported data item value type: '
               f'0x{data_item.value_type:02x}.'))

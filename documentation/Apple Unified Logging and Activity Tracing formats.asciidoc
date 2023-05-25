@@ -644,6 +644,8 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
+| 0x00 | | [yellow-background]*Unknown (Empty or Unused?)*
+| | |
 | 0x02 | activity | Activity +
 See section: <<tracev3_firehose_tracepoint_activity,Activity firehose tracepoint>>
 | 0x03 | | Trace
@@ -761,7 +763,7 @@ Contains inline data or a value data range
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00 | | [yellow-background]*Unknown* +
+| 0x00 | | [yellow-background]*Unknown (floating-point value?)* +
 Contains a 32-bit or 64-bit value
 | 0x01 | | [yellow-background]*Unknown (private value)* +
 Contains a 32-bit value, formatted as "<private>"
@@ -791,7 +793,7 @@ Contains a 32-bit value, formatted as "<private>"
 | 0x32 | | [yellow-background]*Unknown (binary data)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
 3+|
-| 0x35 | | [yellow-background]*Unknown (private value)*
+| 0x35 | | [yellow-background]*Unknown (private value?)*
 3+|
 | 0x40 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
@@ -799,6 +801,8 @@ Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Fire
 Contains a 32-bit value, formatted as "<private>"
 | 0x42 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+3+|
+| 0x45 | | [yellow-background]*Unknown (private value?)*
 3+|
 | 0xf2 | | [yellow-background]*Unknown (binary data)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
