@@ -8,8 +8,14 @@ import sys
 
 from dfdatetime import cocoa_time as dfdatetime_cocoa_time
 
+from dtformats import file_system
 from dtformats import spotlight_storedb
 from dtformats import output_writers
+
+try:
+  from dtformats import dfvfs_helpers
+except ImportError:
+  dfvfs_helpers = None
 
 
 class TableView(object):
@@ -103,21 +109,34 @@ def Main():
       '-i', '--item', dest='item', type=int, action='store', default=None,
       metavar='FSID', help='file system identifier (FSID) of the item to show.')
 
+  if dfvfs_helpers:
+    dfvfs_helpers.AddDFVFSCLIArguments(argument_parser)
+
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='PATH',
       default=None, help='path of the Apple Spotlight store database file.')
 
   options = argument_parser.parse_args()
 
-  if not options.source:
-    print('Source file missing.')
-    print('')
-    argument_parser.print_help()
-    print('')
-    return False
-
   logging.basicConfig(
       level=logging.INFO, format='[%(levelname)s] %(message)s')
+
+  if not dfvfs_helpers:
+    if not options.source:
+      print('Source file missing.')
+      print('')
+      argument_parser.print_help()
+      print('')
+      return False
+
+    file_system_helper = file_system.NativeFileSystemHelper()
+
+  else:
+    file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
+    if not file_system_helper:
+      print('No supported file system found in storage media image.')
+      print('')
+      return False
 
   output_writer = output_writers.StdoutWriter()
 
@@ -129,7 +148,8 @@ def Main():
     return False
 
   spotlight_store_database = spotlight_storedb.AppleSpotlightStoreDatabaseFile(
-      debug=options.debug, output_writer=output_writer)
+      debug=options.debug, file_system_helper=file_system_helper,
+      output_writer=output_writer)
   spotlight_store_database.Open(options.source)
 
   if options.item is None:

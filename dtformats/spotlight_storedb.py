@@ -186,15 +186,17 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       ('compressed_data_size', 'Compressed data size',
        '_FormatIntegerAsDecimal')]
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a binary data file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(AppleSpotlightStoreDatabaseFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     self._map_values = []
     self._metadata_lists = {}
     self._metadata_localized_strings = {}
