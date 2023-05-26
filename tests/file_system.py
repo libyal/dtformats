@@ -13,6 +13,16 @@ from tests import test_lib
 class NativeFileSystemHelperTest(test_lib.BaseTestCase):
   """Python native system helper tests."""
 
+  def testBasenamePath(self):
+    """Tests the BasenamePath function."""
+    test_file_path = self._GetTestFilePath(['utmp-linux_libc6'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    test_helper = file_system.NativeFileSystemHelper()
+
+    basename = test_helper.BasenamePath(test_file_path)
+    self.assertEqual(basename, 'utmp-linux_libc6')
+
   def testCheckFileExistsByPath(self):
     """Tests the CheckFileExistsByPath function."""
     test_file_path = self._GetTestFilePath(['utmp-linux_libc6'])
@@ -22,6 +32,16 @@ class NativeFileSystemHelperTest(test_lib.BaseTestCase):
 
     result = test_helper.CheckFileExistsByPath(test_file_path)
     self.assertTrue(result)
+
+  def testDirnamePath(self):
+    """Tests the DirnamePath function."""
+    test_file_path = self._GetTestFilePath(['utmp-linux_libc6'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    test_helper = file_system.NativeFileSystemHelper()
+
+    dirname = test_helper.DirnamePath(test_file_path)
+    self.assertEqual(dirname, self._TEST_DATA_PATH)
 
   def testGetFileSizeByPath(self):
     """Tests the GetFileSizeByPath function."""

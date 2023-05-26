@@ -8,7 +8,16 @@ import os
 class FileSystemHelper(object):
   """File system helper interface."""
 
-  # TODO: add methods to abstract os.path.basename() and os.path.dirname()
+  @abc.abstractmethod
+  def BasenamePath(self, path):
+    """Determines the basename of the path.
+
+    Args:
+      path (str): path.
+
+    Returns:
+      str: basename of the path.
+    """
 
   @abc.abstractmethod
   def CheckFileExistsByPath(self, path):
@@ -19,6 +28,17 @@ class FileSystemHelper(object):
 
     Returns:
       bool: True if the file exists, False otherwise.
+    """
+
+  @abc.abstractmethod
+  def DirnamePath(self, path):
+    """Determines the directory name of the path.
+
+    Args:
+      path (str): path.
+  
+    Returns:
+      str: directory name of the path or None.
     """
 
   @abc.abstractmethod
@@ -69,6 +89,17 @@ class FileSystemHelper(object):
 class NativeFileSystemHelper(object):
   """Python native system helper."""
 
+  def BasenamePath(self, path):
+    """Determines the basename of the path.
+
+    Args:
+      path (str): path.
+
+    Returns:
+      str: basename of the path.
+    """
+    return os.path.basename(path)
+
   def CheckFileExistsByPath(self, path):
     """Checks if a specific file exists.
 
@@ -79,6 +110,17 @@ class NativeFileSystemHelper(object):
       bool: True if the file exists, False otherwise.
     """
     return os.path.exists(path)
+
+  def DirnamePath(self, path):
+    """Determines the directory name of the path.
+
+    Args:
+      path (str): path.
+  
+    Returns:
+      str: directory name of the path or None.
+    """
+    return os.path.dirname(path)
 
   def GetFileSizeByPath(self, path):
     """Retrieves the size of a specific file.

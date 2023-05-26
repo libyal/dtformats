@@ -25,6 +25,17 @@ class DFVFSFileSystemHelper(
     self._parent_path_spec = None
     self._mediator = mediator
 
+  def BasenamePath(self, path):
+    """Determines the basename of the path.
+
+    Args:
+      path (str): path.
+
+    Returns:
+      str: basename of the path.
+    """
+    return self._file_system.BasenamePath(path)
+
   def CheckFileExistsByPath(self, path):
     """Checks if a specific file exists.
 
@@ -39,6 +50,17 @@ class DFVFSFileSystemHelper(
         parent=self._parent_path_spec)
 
     return self._file_system.FileEntryExistsByPathSpec(path_spec)
+
+  def DirnamePath(self, path):
+    """Determines the directory name of the path.
+
+    Args:
+      path (str): path.
+  
+    Returns:
+      str: directory name of the path or None.
+    """
+    return self._file_system.DirnamePath(path)
 
   def GetFileSizeByPath(self, path):
     """Retrieves the size of a specific file.
