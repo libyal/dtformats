@@ -6,6 +6,8 @@ import argparse
 import logging
 import sys
 
+from dfdatetime import posix_time as dfdatetime_posix_time
+
 from dtformats import file_system
 from dtformats import output_writers
 from dtformats import unified_logging
@@ -132,6 +134,49 @@ def Main():
           f'0x{range_end_offset:08x} ({dsc_range.range_size:d})\n'))
       output_writer.WriteText(f'    path:\t{dsc_range.path:s}\n')
       output_writer.WriteText('\n')
+
+  elif file_signature == b'\x99\x88\x77\x66':
+    # TODO: implement.
+    pass
+
+  elif file_signature in (b'\xb0\xbb\x30\x00', b'Ts\x20\x00'):
+    for record in unified_logging_file.ReadRecords():
+      # TODO: implement.
+      _ = record
+
+  else:
+    # TODO: add JSON support
+    print('Timestamp\t\t\tThread\tType\tActivity\tPID\tTTL')
+
+    for log_entry in unified_logging_file.ReadLogEntries():
+      if log_entry.timestamp is None:
+        time_string = 'YYYY-MM-DD hh:ss:mm.######+####'
+      else:
+        date_time = dfdatetime_posix_time.PosixTimeInNanoseconds(
+            timestamp=log_entry.timestamp)
+        iso8601_string = date_time.CopyToDateTimeStringISO8601()
+        time_string = ''.join([
+            iso8601_string[:10], ' ', iso8601_string[11:26],
+            iso8601_string[29:32], iso8601_string[33:35]])
+
+      event_message_parts = []
+      # TODO: processImagePath basename
+      # TODO: senderImagePath basename
+      if log_entry.sub_system and log_entry.category:
+        event_message_parts.append(
+            f'[{log_entry.sub_system:s}:{log_entry.category:s}]')
+
+      event_message_parts.append(log_entry.event_message)
+      event_message = ' '.join(event_message_parts)
+
+      print((
+          f'{time_string:s}\t'
+          f'0x{log_entry.thread_identifier:x}\t'
+          f'{log_entry.event_type:s}\t'
+          f'0x{log_entry.activity_identifier:x}\t'
+          f'{log_entry.process_identifier:d}\t'
+          f'{log_entry.ttl:d}\t'
+          f'{event_message:s}'))
 
   unified_logging_file.Close()
 

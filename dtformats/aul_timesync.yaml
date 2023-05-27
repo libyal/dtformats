@@ -19,11 +19,25 @@ attributes:
   size: 2
   units: bytes
 ---
+name: int32
+type: integer
+attributes:
+  format: signed
+  size: 4
+  units: bytes
+---
 name: uint32
 type: integer
 attributes:
   format: unsigned
   size: 4
+  units: bytes
+---
+name: int64
+type: integer
+attributes:
+  format: signed
+  size: 8
   units: bytes
 ---
 name: uint64
@@ -60,9 +74,9 @@ members:
 - name: timebase_denominator
   data_type: uint32
 - name: timestamp
-  data_type: uint64
+  data_type: int64
 - name: time_zone_offset
-  data_type: uint32
+  data_type: int32
 - name: daylight_saving_flag
   data_type: uint32
 ---
@@ -84,8 +98,8 @@ members:
 - name: kernel_time
   data_type: uint64
 - name: timestamp
-  data_type: uint64
+  data_type: int64
 - name: time_zone_offset
-  data_type: uint32
+  data_type: int32
 - name: daylight_saving_flag
   data_type: uint32

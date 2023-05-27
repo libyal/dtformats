@@ -235,7 +235,13 @@ document:
 
 A tracev3 file consists of:
 
-* one or more chunks
+* header chunk
+* one or more:
+** catalog chunk
+** chunk sets related to the catalog chunk
+
+[NOTE]
+Note that a new catalog chunk overwrites the previous catalog.
 
 [cols="1,5",options="header"]
 |===
@@ -295,7 +301,7 @@ The header (chunk) is 224 bytes of size and consists of:
 | 16 | 4 | | Mach timebase numerator (first number in timebase # / #)
 | 20 | 4 | | Mach timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Start time +
-Contains a continous time
+Contains a continuous time
 | 32 | 4 | | [yellow-background]*Unknown time (related to starttime?)* +
 Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
 | 36 | 4 | | [yellow-background]*Unknown*
@@ -314,14 +320,14 @@ Contains a signed integer
 
 ==== [[tracev3_header_flags]]Header flags
 
-[yellow-background]*TODO confirm these values*
-
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000001 | 64bits |
-| 0x00000002 | is_boot |
+| 0x00000001 | 64bits | Is 64-bits
+| 0x00000002 | is_boot | [yellow-background]*Unknown (Is boot what?)*
 |===
+
+[yellow-background]*TODO what about non 64-bits version?*
 
 ==== [[header_continuous_time_sub_chunk]]Header continuous time sub chunk
 
@@ -499,9 +505,9 @@ The catalog sub chunk describes metadata for the chunk to follow and consists of
 | 8 | 8 | | End (latest) continuous time
 | 16 | 4 | | Uncompressed size of chunk
 | 20 | 4 | 0x100 | Compression algorithm used (0x100 = LZ4)
-| 24 | 4 | | Number of indexes (num_indexes)
+| 24 | 4 | | Number of indexes (num_indexes or procinfos)
 | 28 | 2 x Number of indexes | | Indexes (2 bytes each) pointing to process info entry
-| ... | 4 | | Number of string offsets (num_offsets)
+| ... | 4 | | Number of string offsets (num_offsets or subcats)
 | ... | 2 x Number of string offsets | | [yellow-background]*Unknown (offsets used as cache?)* +
 The offset is relative to the start of the catalog sub system strings
 | ... | ... | 0 | 64-bit alignment padding
@@ -591,8 +597,8 @@ The firehose chunk (tracev3_chunk_firehose) is variable of size and consists of:
 | 34 | 2 | | Private data virtual offset +
 Contains 4096 (0x1000) if there is no private data and `-(4096 - offset)` as offset relative to the end of the firehose chunk.
 | 36 | 2 | | [yellow-background]*Unknown*
-| 38 | 2 | | [yellow-background]*Unknown* +
-0x0300: persist
+| 38 | 1 | | Stream type
+| 39 | 1 | | [yellow-background]*Unknown3*
 | 40 | 8 | | Base continuous time for events in the firehose chunk
 4+|
 | 48 | data size | | data +
@@ -614,6 +620,28 @@ from 4096.
 This chunk is usually 64-bit aligned with padding, but at times it is not. It
 is unknown if there is a flag to control this behavior.
 
+=== Stream type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00 | persist |
+| 0x01 | special handling |
+| 0x02 | memory |
+| | |
+| 0x04 | signpost |
+|===
+
+=== Unknown3
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x01 | |
+| 0x02 | |
+| 0x03 | |
+|===
+
 === [[tracev3_firehose_tracepoint]]Firehose tracepoint
 
 A firehose tracepoint is variable of size and consists of:
@@ -621,8 +649,8 @@ A firehose tracepoint is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | Activity type +
-See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 0 | 1 | | Record type +
+See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
@@ -639,7 +667,7 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 | ... | ... | | 64-bit alignment padding
 |===
 
-==== [[tracev3_firehose_tracepoint_activity_type]]Firehose tracepoint activity type
+==== [[tracev3_firehose_tracepoint_record_type]]Firehose tracepoint record type
 
 [cols="1,1,5",options="header"]
 |===
@@ -648,7 +676,8 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 | | |
 | 0x02 | activity | Activity +
 See section: <<tracev3_firehose_tracepoint_activity,Activity firehose tracepoint>>
-| 0x03 | | Trace
+| 0x03 | trace | Trace +
+See section: <<tracev3_firehose_tracepoint_trace,Trace firehose tracepoint>>
 | 0x04 | log | Log +
 See section: <<tracev3_firehose_tracepoint_log,Log firehose tracepoint>>
 | | |
@@ -665,7 +694,7 @@ See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 | Value | Identifier | Description
 | 0x00 | default | Default
 | 0x01 | create | Create +
-Note that appears to be only used by the "Activity" activity type, other activity types use info
+Note that appears to be only used by the "Activity" record type, other record types use info
 | 0x01 | info | Info
 | 0x02 | | Debug
 | 0x03 | useraction | Useraction
@@ -673,8 +702,8 @@ Note that appears to be only used by the "Activity" activity type, other activit
 | 0x10 | error | Error
 | 0x11 | fault | Fault
 | | |
-| 0x40 | | Thread Signpost Event
-| 0x41 | | Thread Signpost Start
+| 0x40 | process, event | Thread Signpost Event
+| 0x41 | process, interval_begin | Thread Signpost Start
 | 0x42 | | Thread Signpost End
 | | |
 | 0x80 | | Process Signpost Event
@@ -700,13 +729,13 @@ Note that appears to be only used by the "Activity" activity type, other activit
 | | |
 | 0x0100 | | Has private data range
 | 0x0200 | has_other_aid | Has other activity identifier +
-Note that appears to be only used by the "Activity" activity type, other activity types use has_subsystem
-| 0x0200 | has_subsystem | Has sub system value
-| 0x0400 | | Has TTL value
+Note that appears to be only used by the "Activity" record type, other record types use has_subsystem
+| 0x0200 | has_subsystem | Has sub system
+| 0x0400 | has_rules | Has rules
 | 0x0800 | | Has data reference value
-| 0x1000 | | [yellow-background]*Unknown*
+| 0x1000 | has_backtrace | Has backtrace
 | | |
-| 0x8000 | | Has signpost name reference value
+| 0x8000 | has_name | Has name reference value
 |===
 
 ===== [[tracev3_firehose_tracepoint_format_string_type]]Firehose tracepoint format string type
@@ -778,34 +807,35 @@ Contains a 32-bit value +
 This value has been seen to be used in combination with format strings like "%.16s" and "%.*s", where this value contains the number of characters of the string that should be printed.
 3+|
 | 0x20 | | [yellow-background]*Unknown (string)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x21 | | [yellow-background]*Unknown (private value)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_private_data_range,Firehose tracepoint data item with private data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x22 | | [yellow-background]*Unknown (string)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
 | 0x25 | | [yellow-background]*Unknown (sensitive value)* +
 Contains a 32-bit value, formatted as "<private>"
 3+|
-| 0x30 | | [yellow-background]*Unknown (string)*
+| 0x30 | | [yellow-background]*Unknown (binary data)* +
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains binary data.
 | 0x31 | | [yellow-background]*Unknown (private value)* +
 Contains a 32-bit value, formatted as "<private>"
 | 0x32 | | [yellow-background]*Unknown (binary data)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains binary data.
 3+|
 | 0x35 | | [yellow-background]*Unknown (private value?)*
 3+|
 | 0x40 | | [yellow-background]*Unknown (string)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x41 | | [yellow-background]*Unknown (private value)* +
 Contains a 32-bit value, formatted as "<private>"
 | 0x42 | | [yellow-background]*Unknown (string)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
 | 0x45 | | [yellow-background]*Unknown (private value?)*
 3+|
 | 0xf2 | | [yellow-background]*Unknown (binary data)* +
-Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint string data item>> where the value data contains binary data.
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains binary data.
 |===
 
 [NOTE]
@@ -850,8 +880,8 @@ An activity firehose tracepoint is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | 0x02 | Activity type +
-See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 0 | 1 | 0x02 | Record type +
+See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
@@ -888,6 +918,31 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 Note that "has private data range flag (0x0100)" has been observed to be set
 but without any obvious changes to the activity firehose tracepoint structure.
 
+==== [[tracev3_firehose_tracepoint_trace]]Trace firehose tracepoint
+
+A trace firehose tracepoint is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 0x03 | Record type +
+See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
+| 1 | 1 | | Log type +
+See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+| 2 | 2 | | Flags +
+See section: <<tracev3_firehose_tracepoint_flags,Flags>>
+| 4 | 4 | | Format string location
+| 8 | 8 | | Thread identifier
+| 16 | 6 | | Continuous time delta +
+Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
+| 22 | 2 | | Data size
+4+| _Start of data_
+| ... | 4 | | Format string location
+| ... | 1 | | [yellow-background]*Unknown*
+4+| _End of data_
+| ... | ... | | 64-bit alignment padding
+|===
+
 ==== [[tracev3_firehose_tracepoint_log]]Log firehose tracepoint
 
 A log firehose tracepoint is variable of size and consists of:
@@ -895,8 +950,8 @@ A log firehose tracepoint is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | 0x04 | Activity type +
-See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 0 | 1 | 0x04 | Record type +
+See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
@@ -922,10 +977,10 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 16 | | uuidtext file identifier (or image uuid)
 4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
-4+| _Has sub system value flag (0x0200) is set_
-| ... | 2 | | Sub system value
-4+| _Has TTL value flag (0x0400) is set_
-| ... | 1 | | TTL value
+4+| _Has sub system flag (0x0200) is set_
+| ... | 2 | | Sub system index
+4+| _Has rules flag (0x0400) is set_
+| ... | 1 | | TTL
 4+| _Has data reference value flag (0x0800) is set_
 | ... | 2 | | Data reference value
 4+| _Common_
@@ -941,8 +996,8 @@ A signpost firehose tracepoint is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | 0x06 | Activity type +
-See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 0 | 1 | 0x06 | Record type +
+See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
@@ -968,17 +1023,16 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 16 | | uuidtext file identifier (or image uuid)
 4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
-4+| _Has sub system value flag (0x0200) is set_
-| ... | 2 | | Sub system value
+4+| _Has sub system flag (0x0200) is set_
+| ... | 2 | | Sub system index
 4+| _Common_
 | ... | 8 | | Signpost identifier
-4+| _Has TTL value flag (0x0400) is set_
-| ... | 1 | | TTL value
+4+| _Has rules flag (0x0400) is set_
+| ... | 1 | | TTL
 4+| _Has data reference value flag (0x0800) is set_
 | ... | 2 | | Data reference value
-4+| _Has signpost name reference value flag (0x8000) is set_
-| ... | 4 | | Signpost name reference value
-| ... | ... | | [yellow-background]*Unknown (data?)*
+4+| _Has name reference value flag (0x8000) is set_
+| ... | 4 | | Name reference value
 4+| _Common_
 | ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
 4+| _End of data_
@@ -992,8 +1046,8 @@ A loss firehose tracepoint is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | 0x07 | Activity type +
-See section: <<tracev3_firehose_tracepoint_activity_type,Activity type>>
+| 0 | 1 | 0x07 | Record type +
+See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | 0x00 | Flags +
@@ -1254,7 +1308,7 @@ The SimpleDump chunk is variable of size and consists of:
 | 29 | 1 | | Type
 | 29 | 2 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Timestamp +
-Contains a continous time
+Contains a continuous time
 | 40 | 8 | | Thread identifier
 | 48 | 8 | | Offset
 | 56 | 16 | | Sender identifier +
@@ -1282,7 +1336,9 @@ log raw-dump -f ${FILE}.tracev3
 
 A timesync database file consists of:
 
-* one or more timesync boot or sync records
+* one or more:
+** timesync boot record
+** timesync sync records related to the boot record
 
 [cols="1,5",options="header"]
 |===
@@ -1302,16 +1358,21 @@ The timesync boot record is 48 bytes of size and consists of:
 | 2 | 2 | 48 | Size of record
 | 4 | 4 | | [yellow-background]*Unknown*
 | 8 | 16 | | Boot identifier (boot UUID)
-| 24 | 4 | | timebase numerator (first number in timebase # / #)
-| 28 | 4 | | timebase denominator (second number in timebase # / #)
-| 32 | 8 | | Boot time +
+| 24 | 4 | | Timebase numerator (first number in timebase # / #)
+| 28 | 4 | | Timebase denominator (second number in timebase # / #)
+| 32 | 8 | | Timestamp (or boot time) +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
-| 40 | 4 | | Time zone offset in minutes
+| 40 | 4 | | Time zone offset in minutes +
+Contains a signed integer
 | 44 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
 
 [NOTE]
 Timestamp appears to be stored in UTC but the log tool shows the local time zone.
+
+[NOTE]
+Timebase numerator / Timebase denominator is the timebase, which contains the
+number of seconds per continuous time unit.
 
 ==== timesync sync record
 
@@ -1325,10 +1386,11 @@ The timesync sync record is 32 bytes of size and consists of:
 | 4 | 4 | | [yellow-background]*Unknown (flags?)* +
 Seen: 0 and 1
 | 8 | 8 | | Kernel time +
-Mach continuous timestamp
-| 16 | 8 | | Wall time +
+Contains a Mach continuous timestamp
+| 16 | 8 | | Timestamp (or wall time) +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
-| 24 | 4 | | Time zone offset in minutes
+| 24 | 4 | | Time zone offset in minutes +
+Contains a signed integer
 | 28 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
 
@@ -1751,6 +1813,45 @@ plutil -p /var/db/diagnostics/version.plist
   }
   "Version" => 7
 }
+....
+
+=== Output
+
+....
+log raw-dump -A test.logarchive
+....
+
+Output starts with *.tracev3 files under "Signpost" followed by
+"logdata.LiveData.tracev3", "Special", "Persist"
+
+=== JSON output
+
+`log show --style json`
+
+....
+[{
+  "bootUUID" : "01234567-89AB-CDEF-0123-4566789ABCDE",
+  "category" : "",
+  "processImageUUID" : "",
+  "eventType" : "timesyncEvent",
+  "threadID" : 0,
+  "timestamp" : "2023-04-23 12:57:26.000000+0200",
+  "activityIdentifier" : 0,
+  "senderProgramCounter" : 0,
+  "parentActivityIdentifier" : 0,
+  "machTimestamp" : 0,
+  "processID" : 0,
+  "subsystem" : "",
+  "timezoneName" : "",
+  "traceID" : 0,
+  "eventMessage" : "=== system boot: 01234567-89AB-CDEF-0123-4566789ABCDE",
+  "formatString" : "",
+  "processImagePath" : "",
+  "senderImageUUID" : "",
+  "senderImagePath" : ""
+},{
+...
+}]
 ....
 
 :numbered!:

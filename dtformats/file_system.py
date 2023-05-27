@@ -64,6 +64,17 @@ class FileSystemHelper(object):
     """
 
   @abc.abstractmethod
+  def ListDirectory(self, path):
+    """Lists the entries in a directory.
+
+    Args:
+      path (str): path of the directory.
+
+    Yields:
+      str: name of a directory entry.
+    """
+
+  @abc.abstractmethod
   def OpenFileByPath(self, path):
     """Opens a specific file.
 
@@ -82,7 +93,8 @@ class FileSystemHelper(object):
       path (str): path.
 
     Returns:
-      list[str]: path segments.
+      list[str]: path segments without the root path segment, which is
+          an empty string.
     """
 
 
@@ -146,6 +158,17 @@ class NativeFileSystemHelper(object):
     """
     return os.path.join(*path_segments)
 
+  def ListDirectory(self, path):
+    """Lists the entries in a directory.
+
+    Args:
+      path (str): path of the directory.
+
+    Yields:
+      str: name of a directory entry.
+    """
+    yield from os.listdir(path)
+
   def OpenFileByPath(self, path):
     """Opens a specific file.
 
@@ -164,8 +187,8 @@ class NativeFileSystemHelper(object):
       path (str): path.
 
     Returns:
-      list[str]: path segments.
+      list[str]: path segments without the root path segment, which is
+          an empty string.
     """
-    path_segments = os.path.abspath(path).split(os.path.sep)
-    path_segments[0] = os.path.sep
-    return path_segments
+    # Split the path with the path separator and remove empty path segments.
+    return list(filter(None, path.split(os.path.sep)))

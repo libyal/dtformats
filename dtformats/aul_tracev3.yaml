@@ -259,7 +259,7 @@ members:
   data_type: int32
 - name: daylight_savings_flag
   data_type: uint32
-- name: unknown_flags
+- name: flags
   data_type: uint32
 - name: continuous
   data_type: tracev3_continuous_time_sub_chunk
@@ -359,32 +359,32 @@ members:
   type: padding
   alignment_size: 8
 ---
-name: tracev3_catalog_subchunk
+name: tracev3_catalog_sub_chunk
 type: structure
-description: TraceV3 Catalog Sub Chunk block.
+description: TraceV3 catalog sub chunk.
 attributes:
   byte_order: little-endian
 members:
-- name: start
+- name: start_continuous_time
   data_type: uint64
-- name: end
+- name: end_continuous_time
   data_type: uint64
 - name: uncompressed_size
   data_type: uint32
 - name: compression_algorithm
   data_type: uint32
-- name: num_indexes
+- name: number_of_indexes
   data_type: uint32
 - name: indexes
   type: sequence
   element_data_type: uint16
-  number_of_elements: tracev3_catalog_subchunk.num_indexes
-- name: num_offsets
+  number_of_elements: tracev3_catalog_sub_chunk.number_of_indexes
+- name: number_of_offsets
   data_type: uint32
 - name: offsets
   type: sequence
   element_data_type: uint16
-  number_of_elements: tracev3_catalog_subchunk.num_offsets
+  number_of_elements: tracev3_catalog_sub_chunk.number_of_offsets
 - name: alignment_padding
   type: padding
   alignment_size: 8
@@ -419,15 +419,15 @@ members:
   type: sequence
   element_data_type: cstring
   elements_data_size: tracev3_catalog.process_information_entries_offset - tracev3_catalog.sub_system_strings_offset
-- name: process_information_entries
-  type: sequence
-  element_data_type: tracev3_catalog_process_information_entry
-  number_of_elements: tracev3_catalog.number_of_process_information_entries
-# TODO:
+# TODO: ensure size hint calculation is correct.
+# - name: process_information_entries
+#   type: sequence
+#   element_data_type: tracev3_catalog_process_information_entry
+#   number_of_elements: tracev3_catalog.number_of_process_information_entries
 # - name: catalog_sub_chunks
-#  type: sequence
-#  element_data_type: tracev3_catalog_sub_chunk
-#  number_of_elements: tracev3_catalog.number_of_sub_chunks
+#   type: sequence
+#   element_data_type: tracev3_catalog_sub_chunk
+#   number_of_elements: tracev3_catalog.number_of_sub_chunks
 ---
 name: tracev3_backtrace
 type: structure
@@ -478,8 +478,10 @@ members:
   data_type: uint16
 - name: unknown2
   data_type: uint16
+- name: stream_type
+  data_type: uint8
 - name: unknown3
-  data_type: uint16
+  data_type: uint8
 - name: base_continuous_time
   data_type: uint64
 ---
@@ -502,7 +504,7 @@ description: TraceV3 firehose tracepoint.
 attributes:
   byte_order: little-endian
 members:
-- name: activity_type
+- name: record_type
   data_type: uint8
 - name: log_type
   data_type: uint8
@@ -560,7 +562,7 @@ attributes:
 members:
 - name: value_type
   data_type: uint8
-  values: [0x20, 0x21, 0x22, 0x32, 0x40, 0x42, 0xf2]
+  values: [0x20, 0x21, 0x22, 0x30, 0x32, 0x40, 0x42, 0xf2]
 - name: data_size
   data_type: uint8
   value: 4
@@ -675,10 +677,10 @@ members:
 - name: large_shared_cache_data
   data_type: uint16
   condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
-- name: sub_system_value
+- name: sub_system_identifier
   data_type: uint16
   condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
-- name: ttl_value
+- name: ttl
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0400 != 0
 - name: data_reference_value
@@ -721,16 +723,16 @@ members:
   condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
 - name: signpost_identifier
   data_type: uint64
-- name: sub_system_value
+- name: sub_system_identifier
   data_type: uint16
   condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
-- name: ttl_value
+- name: ttl
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0400 != 0
 - name: data_reference_value
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0800 != 0
-- name: signpost_name_reference_value
+- name: name_reference_value
   data_type: uint32
   condition: tracev3_firehose_tracepoint_flags & 0x8000 != 0
 - name: unknown1
@@ -741,6 +743,17 @@ members:
   type: sequence
   element_data_type: tracev3_firehose_tracepoint_data_item
   number_of_elements: tracev3_firehose_tracepoint_signpost.number_of_data_items
+---
+name: tracev3_firehose_tracepoint_trace
+type: structure
+description: TraceV3 firehose tracepoint trace data.
+attributes:
+  byte_order: little-endian
+members:
+- name: load_address_lower
+  data_type: uint32
+- name: unknown1
+  data_type: uint8
 ---
 name: tracev3_oversize_chunk
 type: structure

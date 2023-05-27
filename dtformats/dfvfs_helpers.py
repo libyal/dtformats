@@ -92,6 +92,24 @@ class DFVFSFileSystemHelper(
     """
     return self._file_system.JoinPath(path_segments)
 
+  def ListDirectory(self, path):
+    """Lists the entries in a directory.
+
+    Args:
+      path (str): path of the directory.
+
+    Yields:
+      str: name of a directory entry.
+    """
+    path_spec = path_spec_factory.Factory.NewPathSpec(
+        self._file_system.type_indicator, location=path,
+        parent=self._parent_path_spec)
+
+    file_entry = self._file_system.GetFileEntryByPathSpec(path_spec)
+    if file_entry:
+      for sub_file_entry in file_entry.sub_file_entries:
+        yield sub_file_entry.name
+
   def OpenFileByPath(self, path):
     """Opens a specific file.
 
@@ -123,7 +141,8 @@ class DFVFSFileSystemHelper(
       path (str): path.
 
     Returns:
-      list[str]: path segments.
+      list[str]: path segments without the root path segment, which is
+          an empty string.
     """
     return self._file_system.SplitPath(path)
 
