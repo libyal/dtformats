@@ -298,16 +298,16 @@ The header (chunk) is 224 bytes of size and consists of:
 | 4 | 4 | 0x0011 | Chunk sub tag (subtag)
 | 8 | 8 | 208 | Chunk data size (length)
 4+| _Chunk data (tracev3_chunk_header)_
-| 16 | 4 | | Mach timebase numerator (first number in timebase # / #)
-| 20 | 4 | | Mach timebase denominator (second number in timebase # / #)
+| 16 | 4 | | Timebase numerator (first number in timebase # / #)
+| 20 | 4 | | Timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Start time +
-Contains a continuous time
-| 32 | 4 | | [yellow-background]*Unknown time (related to starttime?)* +
+Contains a Mach continuous timestamp
+| 32 | 4 | | [yellow-background]*Unknown (Start wall clock time)* +
 Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
 | 36 | 4 | | [yellow-background]*Unknown*
 | 40 | 4 | | [yellow-background]*Unknown*
-| 44 | 4 | | Timezone offset in minutes +
-Contains a signed integer
+| 44 | 4 | | Time zone offset in minutes +
+Contains a signed integer that contains the number of minutes relative from UTC, for example -60 represents UTC+1
 | 48 | 4 | | Daylight savings time (DST) flag +
 0 = daylight savings time is not active (no-DST) +
 1 = daylight savings time is active (DST)
@@ -327,7 +327,8 @@ Contains a signed integer
 | 0x00000002 | is_boot | [yellow-background]*Unknown (Is boot what?)*
 |===
 
-[yellow-background]*TODO what about non 64-bits version?*
+[NOTE]
+Note that files without the "64bits" header flag have not yet been observed.
 
 ==== [[header_continuous_time_sub_chunk]]Header continuous time sub chunk
 
@@ -341,7 +342,8 @@ The header continuous time sub chunk is 16 bytes of size and consist of:
 | 4 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
 4+| _The continuous time sub chunk data (tracev3_subchunk_continuous)_
-| 8 | 8 | | Continuous time (value data related to starttime?)
+| 8 | 8 | | Continuous time +
+Contains a Mach continuous timestamp
 |===
 
 ==== [[header_system_information_sub_chunk]]Header system information sub chunk
@@ -423,7 +425,7 @@ The offset is relative to the start of the catalog UUIDs
 | 24 | 2 | | Number of sub chunks
 | 26 | 6 | | [yellow-background]*Unknown (Reserved or Padding)*
 | 32 | 8 | | Earliest firehose timestamp +
-Contains continuous time
+Contains a Mach continuous timestamp
 | 40 | 16 x ... | | Catalog UUIDs +
 Contains an array of UUIDs stored in big-endian
 | ... | ... | | Catalog sub system strings +
@@ -501,8 +503,10 @@ The catalog sub chunk describes metadata for the chunk to follow and consists of
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | Start (earliest) continuous time
-| 8 | 8 | | End (latest) continuous time
+| 0 | 8 | | Start (earliest) time +
+Contains a Mach continuous timestamp
+| 8 | 8 | | End (latest) time +
+Contains a Mach continuous timestamp
 | 16 | 4 | | Uncompressed size of chunk
 | 20 | 4 | 0x100 | Compression algorithm used (0x100 = LZ4)
 | 24 | 4 | | Number of indexes (num_indexes or procinfos)
@@ -599,7 +603,8 @@ Contains 4096 (0x1000) if there is no private data and `-(4096 - offset)` as off
 | 36 | 2 | | [yellow-background]*Unknown*
 | 38 | 1 | | Stream type
 | 39 | 1 | | [yellow-background]*Unknown3*
-| 40 | 8 | | Base continuous time for events in the firehose chunk
+| 40 | 8 | | Base continuous time for events in the firehose chunk +
+Contains a Mach continuous timestamp
 4+|
 | 48 | data size | | data +
 Contains one or more <<tracev3_firehose_tracepoint,Firehose tracepoints>>
@@ -696,23 +701,26 @@ See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 | 0x01 | create | Create +
 Note that appears to be only used by the "Activity" record type, other record types use info
 | 0x01 | info | Info
-| 0x02 | | Debug
+| 0x02 | debug | Debug
 | 0x03 | useraction | Useraction
 | | |
 | 0x10 | error | Error
 | 0x11 | fault | Fault
 | | |
-| 0x40 | process, event | Thread Signpost Event
-| 0x41 | process, interval_begin | Thread Signpost Start
-| 0x42 | | Thread Signpost End
+3+| _Signpost thread scope (0x40)_
+| 0x40 | thread, event | Thread Signpost event
+| 0x41 | thread, interval_begin | Thread Signpost start
+| 0x42 | thread, interval_end | Thread Signpost end
 | | |
-| 0x80 | | Process Signpost Event
-| 0x81 | | Process Signpost Start
-| 0x82 | | Process Signpost End
+3+| _Signpost process scope (0x80)_
+| 0x80 | process, event | Process Signpost event
+| 0x81 | process, interval_begin | Process Signpost start
+| 0x82 | process, interval_end | Process Signpost end
 | | |
-| 0xc0 | | System Signpost Event
-| 0xc1 | | System Signpost Start
-| 0xc2 | | System Signpost End
+3+| _Signpost system scope (0xc0)_
+| 0xc0 | system, event | System Signpost event
+| 0xc1 | system, interval_begin | System Signpost start
+| 0xc2 | system, interval_end | System Signpost end
 |===
 
 [yellow-background]*Other values are marked as "Default"?*
@@ -792,11 +800,11 @@ Contains inline data or a value data range
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00 | | [yellow-background]*Unknown (floating-point value?)* +
+| 0x00 | | [yellow-background]*Unknown (integer or floating-point value)* +
 Contains a 32-bit or 64-bit value
 | 0x01 | | [yellow-background]*Unknown (private value)* +
 Contains a 32-bit value, formatted as "<private>"
-| 0x02 | | [yellow-background]*Unknown (integer)* +
+| 0x02 | | [yellow-background]*Unknown (integer or floating-point value)* +
 Contains a 8-bit, 16-bit, 32-bit or 64-bit value
 3+|
 | 0x10 | | [yellow-background]*Unknown (integer format precision)* +
@@ -918,6 +926,8 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 Note that "has private data range flag (0x0100)" has been observed to be set
 but without any obvious changes to the activity firehose tracepoint structure.
 
+[yellow-background]*TODO: determine meaning of MSB of UUID entry load address (lower 32-bit)*
+
 ==== [[tracev3_firehose_tracepoint_trace]]Trace firehose tracepoint
 
 A trace firehose tracepoint is variable of size and consists of:
@@ -978,7 +988,7 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
 4+| _Has sub system flag (0x0200) is set_
-| ... | 2 | | Sub system index
+| ... | 2 | | Sub system identifier
 4+| _Has rules flag (0x0400) is set_
 | ... | 1 | | TTL
 4+| _Has data reference value flag (0x0800) is set_
@@ -988,6 +998,8 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
+
+[yellow-background]*TODO: determine meaning of MSB of UUID entry load address (lower 32-bit)*
 
 ==== [[tracev3_firehose_tracepoint_singpost]]Signpost firehose tracepoint
 
@@ -1024,7 +1036,7 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _If format string type == 0x000c_
 | ... | 2 | | Large shared cache
 4+| _Has sub system flag (0x0200) is set_
-| ... | 2 | | Sub system index
+| ... | 2 | | Sub system identifier
 4+| _Common_
 | ... | 8 | | Signpost identifier
 4+| _Has rules flag (0x0400) is set_
@@ -1038,6 +1050,8 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
+
+[yellow-background]*TODO: determine meaning of MSB of UUID entry load address (lower 32-bit)*
 
 ==== [[tracev3_firehose_tracepoint_loss]]Loss firehose tracepoint
 
@@ -1135,6 +1149,7 @@ Other observerd value type decoders are:
 | "mdnsresponder:domain_name" | |
 | "mdnsresponder:ip_addr" | | Formatted as a <<mdnsresponder_ip_address,mDNSResponder IP address>>
 | "mdnsresponder:mac_addr" | | Formatted as a <<mdnsresponder_mac_address,mDNSResponder MAC address>>
+| "name=NAME" | | Name formatting argument, where NAME is the name of the value, which has no additional formatting
 | "network:in_addr" | | Formatted as an IPv4 address, for example "127.0.0.1"
 | "network:in6_addr" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
 | "network:sockaddr" | |
@@ -1144,9 +1159,14 @@ Other observerd value type decoders are:
 | "odtypes:mbr_details" | |
 | "odtypes:mbridtype" | |
 | "odtypes:nt_sid_t" | |
-| "sensitive" | | Sensitive log argument, which is formatted as "<private>"
-| "private" | | Private log argument, which is formatted as "<private>"
-| "public" | | Public log argument, which has no additional formatting
+| "sensitive" | | Sensitive formatting argument, which is formatted as "<private>"
+| "signpost.description:attribute" | | Formatted as a signpost description attribute, for example `__##__signpost.description#____#attribute#_##_#efilogin-helper##__##`
+| "signpost.description:begin_time" | | Formatted as a signpost description begin time, for example `__##__signpost.description#____#begin_time#_##_#2180300470618##__##`
+| "signpost.description:end_time" | | Formatted as a signpost description end time, for example `__##__signpost.description#____#end_time#_##_#1005756624719##__##`
+| "signpost.telemetry:number1" | | For example `__##__signpost.telemetry#____#number1#_##_#5.8203125##__##`
+| "signpost.telemetry:string1" | | For example `__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##`
+| "private" | | Private formatting argument, which is formatted as "<private>"
+| "public" | | Public formatting argument, which has no additional formatting
 |===
 
 [NOTE]
@@ -1238,7 +1258,8 @@ The oversize chunk is variable of size and consists of:
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | TTL
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
-| 32 | 8 | | Continuous time
+| 32 | 8 | | Timestamp +
+Contains a Mach continuous timestamp
 | 40 | 4 | | Data reference index
 | 44 | 2 | | Size of public data
 | 46 | 2 | | Size of private data
@@ -1265,16 +1286,17 @@ The StateDump chunk is variable of size and consists of:
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | TTL
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
-| 32 | 8 | | Continuous time
+| 32 | 8 | | Timestamp +
+Contains a Mach continuous timestamp
 | 40 | 8 | | Activity identifier
 | 48 | 16 | | [yellow-background]*Unknown identifier* +
 Contains a UUID stored in big-endian
 | 64 | 4 | | Data type
 | 68 | 4 | | Data size
 | 72 | 64 | | [yellow-background]*Unknown* +
-[yellow-background]*Oncly used when data type is 3?*
+[yellow-background]*Only used when data type is 3?*
 | 136 | 64 | | [yellow-background]*Unknown* +
-[yellow-background]*Oncly used when data type is 3?*
+[yellow-background]*Only used when data type is 3?*
 | 200 | 64 | | Name +
 Contains an UTF-8 formatted string with an end-of-string character
 | 264 | data size | | Data
@@ -1308,7 +1330,7 @@ The SimpleDump chunk is variable of size and consists of:
 | 29 | 1 | | Type
 | 29 | 2 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Timestamp +
-Contains a continuous time
+Contains a Mach continuous timestamp
 | 40 | 8 | | Thread identifier
 | 48 | 8 | | Offset
 | 56 | 16 | | Sender identifier +
@@ -1356,14 +1378,14 @@ The timesync boot record is 48 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 2 | "\xb0\xbb" | Signature
 | 2 | 2 | 48 | Size of record
-| 4 | 4 | | [yellow-background]*Unknown*
+| 4 | 4 | | [yellow-background]*Unknown (Seen: 0)*
 | 8 | 16 | | Boot identifier (boot UUID)
-| 24 | 4 | | Timebase numerator (first number in timebase # / #)
-| 28 | 4 | | Timebase denominator (second number in timebase # / #)
+| 24 | 4 | | (Mach) Timebase numerator (first number in timebase # / #)
+| 28 | 4 | | (Mach) Timebase denominator (second number in timebase # / #)
 | 32 | 8 | | Timestamp (or boot time) +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
 | 40 | 4 | | Time zone offset in minutes +
-Contains a signed integer
+Contains a signed integer that contains the number of minutes relative from UTC, for example -60 represents UTC+1
 | 44 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
 
@@ -1383,14 +1405,13 @@ The timesync sync record is 32 bytes of size and consists of:
 | Offset | Size | Value | Description
 | 0 | 2 | "Ts" | Signature
 | 2 | 2 | 32 | Size of record
-| 4 | 4 | | [yellow-background]*Unknown (flags?)* +
-Seen: 0 and 1
+| 4 | 4 | | [yellow-background]*Unknown (Seen: 0 and 1)*
 | 8 | 8 | | Kernel time +
 Contains a Mach continuous timestamp
 | 16 | 8 | | Timestamp (or wall time) +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
 | 24 | 4 | | Time zone offset in minutes +
-Contains a signed integer
+Contains a signed integer that contains the number of minutes relative from UTC, for example -60 represents UTC+1
 | 28 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
 
@@ -1492,10 +1513,9 @@ and consist of:
 | Offset | Size | Value | Description
 | 0 | 4 | | (dsc) text offset
 | 4 | 4 | | (dsc) text size
-| 8 | 16 | | Sender (process or library) identifier +
-Contains a UUID stored in big-endian +
-[yellow-background]*Does this reference to the uuidtext file?*
-| 24 | 4 | | Path offset +
+| 8 | 16 | | Image (process or library) identifier +
+Contains a UUID stored in big-endian
+| 24 | 4 | | Image (process or library) path offset +
 The offset is relative to the start of the file
 |===
 
@@ -1509,10 +1529,9 @@ and consist of:
 | Offset | Size | Value | Description
 | 0 | 8 | | (dsc) text offset
 | 8 | 4 | | (dsc) text size
-| 12 | 16 | | Sender (process or library) identifier +
-Contains a UUID stored in big-endian +
-[yellow-background]*Does this reference to the uuidtext file?*
-| 28 | 4 | | Path offset +
+| 12 | 16 | | Image (process or library) identifier +
+Contains a UUID stored in big-endian
+| 28 | 4 | | Image (process or library) path offset +
 The offset is relative to the start of the file
 |===
 
@@ -1566,7 +1585,7 @@ The UUID text (uuidtext) entry descriptor is 8 bytes of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | ... | | Path of sender process/library +
+| 0 | ... | | Image (process or library) path +
 Contains an UTF-8 formatted string with an end-of-string character
 |===
 
@@ -1826,7 +1845,7 @@ Output starts with *.tracev3 files under "Signpost" followed by
 
 === JSON output
 
-`log show --style json`
+`log show --style json --timezone UTC --backtrace --debug --info --loss --signpost --file *.tracev3`
 
 ....
 [{
@@ -1835,7 +1854,7 @@ Output starts with *.tracev3 files under "Signpost" followed by
   "processImageUUID" : "",
   "eventType" : "timesyncEvent",
   "threadID" : 0,
-  "timestamp" : "2023-04-23 12:57:26.000000+0200",
+  "timestamp" : "2023-04-23 10:57:26.000000+0000",
   "activityIdentifier" : 0,
   "senderProgramCounter" : 0,
   "parentActivityIdentifier" : 0,
@@ -1853,6 +1872,21 @@ Output starts with *.tracev3 files under "Signpost" followed by
 ...
 }]
 ....
+
+traceID consists of:
+
+....
+( fmt lower 32-bit << 32 ) | ( tp flags << 16 ) | ( tp log type << 8 ) | ( tp record type )
+....
+
+senderProgramCounter consists of:
+
+....
+( UUID entry load address (lower 12-bit) )
+....
+
+
+TODO: where does timesyncEvent originate from?
 
 :numbered!:
 [appendix]

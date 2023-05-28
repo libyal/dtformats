@@ -27,172 +27,231 @@ class StringFormatterTest(test_lib.BaseTestCase):
     test_formatter.ParseFormatString(None)
     self.assertEqual(test_formatter._decoders, [])
     self.assertIsNone(test_formatter._format_string)
-    self.assertEqual(test_formatter._formatters, [])
     self.assertEqual(test_formatter._type_hints, [])
+    self.assertEqual(test_formatter._value_formatters, [])
 
     test_formatter.ParseFormatString('text')
     self.assertEqual(test_formatter._decoders, [])
     self.assertEqual(test_formatter._format_string, 'text')
-    self.assertEqual(test_formatter._formatters, [])
     self.assertEqual(test_formatter._type_hints, [])
+    self.assertEqual(test_formatter._value_formatters, [])
 
     test_formatter.ParseFormatString('%%')
     self.assertEqual(test_formatter._decoders, [])
     self.assertEqual(test_formatter._format_string, '%')
-    self.assertEqual(test_formatter._formatters, [])
     self.assertEqual(test_formatter._type_hints, [])
+    self.assertEqual(test_formatter._value_formatters, [])
 
     test_formatter.ParseFormatString('%d')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:d}'])
     self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString('%3.3d')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:3d}'])
     self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:3d}'])
+
+    test_formatter.ParseFormatString((
+        '%{public,signpost.telemetry:number1,'
+        'name=SOSSignpostNameSOSCCEnsurePeerRegistration}d'))
+    self.assertEqual(test_formatter._decoders, [
+        ['signpost.telemetry:number1']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString('%D')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:d}'])
     self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString('%i')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:d}'])
     self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString('%o')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:o}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:o}'])
 
     test_formatter.ParseFormatString('%O')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:o}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:o}'])
 
     test_formatter.ParseFormatString('%p')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['0x{0:x}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['0x{0:x}'])
 
     test_formatter.ParseFormatString('%u')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:d}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
+
+    test_formatter.ParseFormatString(
+        '%{signpost.description:attribute,public}llu')
+    self.assertEqual(test_formatter._decoders, [
+        ['signpost.description:attribute']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString('%U')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:d}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString('%x')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:x}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:x}'])
 
     test_formatter.ParseFormatString('0x%lx')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '0x{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:x}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:x}'])
 
     test_formatter.ParseFormatString('0x%2.2x')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '0x{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:2x}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:2x}'])
 
     test_formatter.ParseFormatString('0x%02x')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '0x{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:02x}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:02x}'])
 
     test_formatter.ParseFormatString('%X')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:X}'])
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:X}'])
+
+    test_formatter.ParseFormatString('%e')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:e}'])
+
+    test_formatter.ParseFormatString('%E')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:E}'])
+
+    test_formatter.ParseFormatString('%f')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:f}'])
+
+    test_formatter.ParseFormatString('%.f')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:f}'])
+
+    test_formatter.ParseFormatString('%F')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:F}'])
+
+    test_formatter.ParseFormatString('%g')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:g}'])
+
+    test_formatter.ParseFormatString('%G')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:G}'])
 
     test_formatter.ParseFormatString('%s')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%-6s')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:>6s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:>6s}'])
 
     test_formatter.ParseFormatString('%.*s')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%{public}s')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%{public}@')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%@')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%.16P')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%{public,uuid_t}.16P')
     self.assertEqual(test_formatter._decoders, [['uuid_t']])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('"msg%{public}.0s"')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '"msg{0:s}"')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString('%{public, location:escape_only}s')
     self.assertEqual(test_formatter._decoders, [['location:escape_only']])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString(
         '%{private, mask.hash, mdnsresponder:ip_addr}.20P')
     self.assertEqual(test_formatter._decoders, [[
         'mask.hash', 'mdnsresponder:ip_addr']])
     self.assertEqual(test_formatter._format_string, '{0:s}')
-    self.assertEqual(test_formatter._formatters, ['{0:s}'])
     self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
     test_formatter.ParseFormatString((
         'Transform Manager cache hits: %d / %ld (%.2f%%). Size = %zu entries '
@@ -201,10 +260,23 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._format_string, (
         'Transform Manager cache hits: {0:s} / {1:s} ({2:s}%). Size = {3:s} '
         'entries (events), {4:s} transforms, {5:s} bytes'))
-    self.assertEqual(test_formatter._formatters, [
-        '{0:d}', '{0:d}', '{0:.2f}', '{0:d}', '{0:d}', '{0:d}'])
     self.assertEqual(test_formatter._type_hints, [
-        'signed', 'signed', None, 'unsigned', 'unsigned', 'unsigned'])
+        'signed', 'signed', 'floating-point', 'unsigned', 'unsigned',
+        'unsigned'])
+    self.assertEqual(test_formatter._value_formatters, [
+        '{0:d}', '{0:d}', '{0:.2f}', '{0:d}', '{0:d}', '{0:d}'])
+
+    test_formatter.ParseFormatString((
+        '#%08x [%s] resolveDNSRecords -> public addresses: [%ld]%{private}@, '
+        'favored servers: [%ld]%@, validityInterval %.f'))
+    self.assertEqual(test_formatter._decoders, [[], [], [], [], [], [], []])
+    self.assertEqual(test_formatter._format_string, (
+        '#{0:s} [{1:s}] resolveDNSRecords -> public addresses: [{2:s}]{3:s}, '
+        'favored servers: [{4:s}]{5:s}, validityInterval {6:s}'))
+    self.assertEqual(test_formatter._type_hints, [
+        'unsigned', None, 'signed', None, 'signed', None, 'floating-point'])
+    self.assertEqual(test_formatter._value_formatters, [
+        '{0:08x}', '{0:s}', '{0:d}', '{0:s}', '{0:d}', '{0:s}', '{0:f}'])
 
 
 class BooleanFormatStringDecoderTest(test_lib.BaseTestCase):
@@ -414,6 +486,79 @@ class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
         'counts: 1/0/0/0'))
 
 
+class SignpostDescriptionAttributeStringDecoderTest(test_lib.BaseTestCase):
+  """Signpost description attribute value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SignpostDescriptionAttributeStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(None)
+    self.assertEqual(formatted_value, (
+        '__##__signpost.description#____#attribute#_##_###__##'))
+
+    formatted_value = test_decoder.FormatValue('efilogin-helper')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.description#____#attribute#_##_#efilogin-helper##__##'))
+
+    formatted_value = test_decoder.FormatValue(50717, value_formatter='{0:d}')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.description#____#attribute#_##_#50717##__##'))
+
+
+class SignpostDescriptionBeginTimeStringDecoderTest(test_lib.BaseTestCase):
+  """Signpost description begin time value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SignpostDescriptionBeginTimeStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1005536557983)
+    self.assertEqual(formatted_value, (
+        '__##__signpost.description#____#begin_time#_##_#1005536557983##__##'))
+
+
+class SignpostDescriptionEndTimeStringDecoderTest(test_lib.BaseTestCase):
+  """Signpost description end time value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SignpostDescriptionEndTimeStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1005756624719)
+    self.assertEqual(formatted_value, (
+        '__##__signpost.description#____#end_time#_##_#1005756624719##__##'))
+
+
+class SignpostTelemetryNumber1StringDecoderTest(test_lib.BaseTestCase):
+  """Signpost telemetry number 1 value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SignpostTelemetryNumber1StringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1, value_formatter='{0:d}')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#number1#_##_#1##__##'))
+
+    formatted_value = test_decoder.FormatValue(
+        1.98046875, value_formatter='{0:.8f}')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#number1#_##_#1.98046875##__##'))
+
+
+class SignpostTelemetryString1StringDecoderTest(test_lib.BaseTestCase):
+  """Signpost telemetry string 1 value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SignpostTelemetryString1StringDecoder()
+
+    formatted_value = test_decoder.FormatValue('executeQueryBegin')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##'))
+
+
 class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
   """UUID value format string decoder tests."""
 
@@ -463,6 +608,25 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(file_header.number_of_ranges, 263)
     self.assertEqual(file_header.number_of_uuids, 200)
 
+  # TODO: add test for _ReadFormatString
+
+  def testReadImagePath(self):
+    """Tests the _ReadImagePath function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.DSCFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', 'dsc', 'dsc-version1'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    with open(test_file_path, 'rb') as file_object:
+      uuid_path = test_file._ReadImagePath(file_object, 3202606)
+
+    expected_uuid_path = (
+        '/System/Library/Extensions/AppleBCMWLANFirmware_Hashstore.kext/'
+        'AppleBCMWLANFirmware_Hashstore')
+    self.assertEqual(uuid_path, expected_uuid_path)
+
   def testReadRangeDescriptors(self):
     """Test the _ReadRangeDescriptors function."""
     output_writer = test_lib.TestOutputWriter()
@@ -493,23 +657,6 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(ranges[10].range_offset, 194710)
     self.assertEqual(ranges[10].range_size, 39755)
 
-  def testReadUUIDPath(self):
-    """Tests the _ReadUUIDPath function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.DSCFile(output_writer=output_writer)
-
-    test_file_path = self._GetTestFilePath([
-        'unified_logging', 'uuidtext', 'dsc', 'dsc-version1'])
-    self._SkipIfPathNotExists(test_file_path)
-
-    with open(test_file_path, 'rb') as file_object:
-      uuid_path = test_file._ReadUUIDPath(file_object, 3202606)
-
-    expected_uuid_path = (
-        '/System/Library/Extensions/AppleBCMWLANFirmware_Hashstore.kext/'
-        'AppleBCMWLANFirmware_Hashstore')
-    self.assertEqual(uuid_path, expected_uuid_path)
-
   def testReadUUIDDescriptors(self):
     """Test the _ReadUUIDDescriptors function."""
     output_writer = test_lib.TestOutputWriter()
@@ -527,7 +674,7 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(uuids[42].text_offset, 9191424)
     self.assertEqual(uuids[42].text_size, 223732)
     expected_path = '/System/Library/Extensions/AppleH8ADBE0.kext/AppleH8ADBE0'
-    self.assertEqual(uuids[42].path, expected_path)
+    self.assertEqual(uuids[42].image_path, expected_path)
 
     # Testing Version 2
     test_file_path = self._GetTestFilePath([
@@ -542,13 +689,14 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(uuids[197].text_size, 43736)
     expected_path = (
         '/System/Library/Extensions/AppleD2207PMU.kext/AppleD2207PMU')
-    self.assertEqual(uuids[197].path, expected_path)
+    self.assertEqual(uuids[197].image_path, expected_path)
+
+  # TODO: add test for GetImageValueAndFormatString
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.DSCFile(
-        debug=True, output_writer=output_writer)
+    test_file = unified_logging.DSCFile(output_writer=output_writer)
 
     # TODO: test of 8E21CAB1DCF936B49F85CF860E6F34EC currently failing.
     test_file_path = self._GetTestFilePath([
@@ -602,7 +750,7 @@ class TimesyncDatabaseFileTest(test_lib.BaseTestCase):
     """Tests the ReadFileObject method."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TimesyncDatabaseFile(
-        debug=True, output_writer=output_writer)
+        output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
         'unified_logging', 'timesync', '0000000000000002.timesync'])
@@ -958,7 +1106,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(oversize_chunk.ttl, 30)
     self.assertEqual(oversize_chunk.unknown1, 0)
     self.assertEqual(oversize_chunk.unknown2, 0)
-    self.assertEqual(oversize_chunk.continuous_time, 100657868900985)
+    self.assertEqual(oversize_chunk.timestamp, 100657868900985)
     self.assertEqual(oversize_chunk.data_reference_index, 82)
     self.assertEqual(oversize_chunk.public_data_size, 2046)
     self.assertEqual(oversize_chunk.private_data_size, 0)
@@ -1005,7 +1153,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(statedump_chunk.ttl, 14)
     self.assertEqual(statedump_chunk.unknown1, 0)
     self.assertEqual(statedump_chunk.unknown2, 0)
-    self.assertEqual(statedump_chunk.continuous_time, 100662123537283)
+    self.assertEqual(statedump_chunk.timestamp, 100662123537283)
     self.assertEqual(statedump_chunk.activity_identifier, 0x8000000000ead229)
     self.assertEqual(statedump_chunk.unknown3, uuid.UUID(
         '081b5e9e-59ea-39cd-83c9-eedb68a84076'))
@@ -1019,8 +1167,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.TraceV3File(
-        debug=True, output_writer=output_writer)
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
         'unified_logging', '0000000000000030.tracev3'])
@@ -1035,6 +1182,21 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
+  def testReadFileFooter(self):
+    """Tests the _ReadFileFooter function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    with open(test_file_path, 'rb') as file_object:
+      file_footer = test_file._ReadFileFooter(file_object, 0x00000010)
+
+    self.assertIsNotNone(file_footer)
+    self.assertEqual(file_footer.image_path, '/usr/libexec/lsd')
+
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
     output_writer = test_lib.TestOutputWriter()
@@ -1045,13 +1207,72 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     with open(test_file_path, 'rb') as file_object:
-      test_file._ReadFileHeader(file_object)
+      file_header = test_file._ReadFileHeader(file_object)
+
+    self.assertIsNotNone(file_header)
+    self.assertEqual(file_header.major_format_version, 2)
+    self.assertEqual(file_header.minor_format_version, 1)
+    self.assertEqual(file_header.number_of_entries, 0)
+
+  def testReadFormatString(self):
+    """Tests the _ReadFormatString function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', '00', '7EF56328D53A78B59CCCE3E3189F57'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    test_file.Open(test_file_path)
+
+    try:
+      format_string = test_file._ReadFormatString(
+          test_file._file_object, 0x00000018)
+    finally:
+      test_file.Close()
+
+    self.assertEqual(format_string, 'system.install.apple-software')
+
+  def testGetFormatString(self):
+    """Tests the GetFormatString function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', '00', '7EF56328D53A78B59CCCE3E3189F57'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    test_file.Open(test_file_path)
+
+    try:
+      format_string = test_file.GetFormatString(0x00005591)
+    finally:
+      test_file.Close()
+
+    self.assertEqual(format_string, 'system.install.apple-software')
+
+  def testGetImagePath(self):
+    """Tests the GetImagePath function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    test_file.Open(test_file_path)
+
+    try:
+      image_path = test_file.GetImagePath()
+    finally:
+      test_file.Close()
+
+    self.assertEqual(image_path, '/usr/libexec/lsd')
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
     output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.UUIDTextFile(
-        debug=True, output_writer=output_writer)
+    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
 
     test_file_path = self._GetTestFilePath([
         'unified_logging', 'uuidtext', '22', '0D3C2953A33917B333DD8366AC25F2'])

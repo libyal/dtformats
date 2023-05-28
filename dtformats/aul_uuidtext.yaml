@@ -71,7 +71,7 @@ description: UUIDtext file footer.
 attributes:
   byte_order: little-endian
 members:
-- name: library_path
+- name: image_path
   type: string
   encoding: utf8
   element_data_type: char

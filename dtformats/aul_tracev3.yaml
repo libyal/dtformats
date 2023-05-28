@@ -75,18 +75,6 @@ attributes:
   size: 8
   units: bytes
 ---
-name: float32
-type: floating-point
-attributes:
-  size: 4
-  units: bytes
----
-name: float64
-type: floating-point
-attributes:
-  size: 8
-  units: bytes
----
 name: cstring
 type: string
 encoding: utf8
@@ -138,6 +126,20 @@ type: integer
 attributes:
   byte_order: little-endian
   format: unsigned
+  size: 8
+  units: bytes
+---
+name: float32le
+type: floating-point
+attributes:
+  byte_order: little-endian
+  size: 4
+  units: bytes
+---
+name: float64le
+type: floating-point
+attributes:
+  byte_order: little-endian
   size: 8
   units: bytes
 ---
@@ -365,9 +367,9 @@ description: TraceV3 catalog sub chunk.
 attributes:
   byte_order: little-endian
 members:
-- name: start_continuous_time
+- name: start_time
   data_type: uint64
-- name: end_continuous_time
+- name: end_time
   data_type: uint64
 - name: uncompressed_size
   data_type: uint32
@@ -721,11 +723,11 @@ members:
 - name: large_shared_cache_data
   data_type: uint16
   condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
-- name: signpost_identifier
-  data_type: uint64
 - name: sub_system_identifier
   data_type: uint16
   condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
+- name: signpost_identifier
+  data_type: uint64
 - name: ttl
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0400 != 0
@@ -735,7 +737,7 @@ members:
 - name: name_reference_value
   data_type: uint32
   condition: tracev3_firehose_tracepoint_flags & 0x8000 != 0
-- name: unknown1
+- name: unknown2
   data_type: uint8
 - name: number_of_data_items
   data_type: uint8
@@ -771,7 +773,7 @@ members:
   data_type: uint8
 - name: unknown2
   data_type: uint16
-- name: continuous_time
+- name: timestamp
   data_type: uint64
 - name: data_reference_index
   data_type: uint32
@@ -845,7 +847,7 @@ members:
   data_type: uint8
 - name: unknown2
   data_type: uint16
-- name: continuous_time
+- name: timestamp
   data_type: uint64
 - name: activity_identifier
   data_type: uint64

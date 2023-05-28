@@ -91,7 +91,7 @@ members:
   data_type: uint32
 - name: text_size
   data_type: uint32
-- name: sender_identifier
+- name: image_identifier
   data_type: uuid_be
 - name: path_offset
   data_type: uint32
@@ -106,7 +106,7 @@ members:
   data_type: uint64
 - name: text_size
   data_type: uint32
-- name: sender_identifier
+- name: image_identifier
   data_type: uuid_be
 - name: path_offset
   data_type: uint32

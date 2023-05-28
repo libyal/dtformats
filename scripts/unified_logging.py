@@ -32,6 +32,11 @@ def Main():
       '-d', '--debug', dest='debug', action='store_true', default=False,
       help='enable debug output.')
 
+  argument_parser.add_argument(
+      '--format', dest='format', action='store', type=str,
+      choices=['json', 'text'], default='text', metavar='FORMAT',
+      help='output format.')
+
   if dfvfs_helpers:
     dfvfs_helpers.AddDFVFSCLIArguments(argument_parser)
 
@@ -44,7 +49,14 @@ def Main():
   logging.basicConfig(
       level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-  if not dfvfs_helpers:
+  if dfvfs_helpers and getattr(options, 'image', None):
+    file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
+    if not file_system_helper:
+      print('No supported file system found in storage media image.')
+      print('')
+      return False
+
+  else:
     if not options.source:
       print('Source file missing.')
       print('')
@@ -53,13 +65,6 @@ def Main():
       return False
 
     file_system_helper = file_system.NativeFileSystemHelper()
-
-  else:
-    file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
-    if not file_system_helper:
-      print('No supported file system found in storage media image.')
-      print('')
-      return False
 
   output_writer = output_writers.StdoutWriter()
 
@@ -118,13 +123,13 @@ def Main():
       output_writer.WriteText((
           f'    dsc text:\t0x{dsc_uuid.text_offset:08x} .. '
           f'0x{text_end_offset:08x} ({dsc_uuid.text_size:d})\n'))
-      output_writer.WriteText(f'    path:\t{dsc_uuid.path:s}\n')
+      output_writer.WriteText(f'    path:\t{dsc_uuid.image_path:s}\n')
       output_writer.WriteText('\n')
 
     for index, dsc_range in enumerate(unified_logging_file.ranges):
       output_writer.WriteText(f'Range {index:d}:\n')
 
-      uuid_string = str(dsc_range.uuid).upper()
+      uuid_string = str(dsc_range.image_identifier).upper()
       output_writer.WriteText(
           f'    uuid {dsc_range.uuid_index:d}:\t{uuid_string:s}\n')
 
@@ -132,7 +137,7 @@ def Main():
       output_writer.WriteText((
           f'    dsc range:\t0x{dsc_range.range_offset:08x} .. '
           f'0x{range_end_offset:08x} ({dsc_range.range_size:d})\n'))
-      output_writer.WriteText(f'    path:\t{dsc_range.path:s}\n')
+      output_writer.WriteText(f'    path:\t{dsc_range.image_path:s}\n')
       output_writer.WriteText('\n')
 
   elif file_signature == b'\x99\x88\x77\x66':
@@ -145,38 +150,139 @@ def Main():
       _ = record
 
   else:
-    # TODO: add JSON support
-    print('Timestamp\t\t\tThread\tType\tActivity\tPID\tTTL')
+    if options.format == 'json':
+      print('[{')
+    else:
+      print((
+          'Timestamp                       Thread     Type        '
+          'Activity             PID    TTL'))
 
-    for log_entry in unified_logging_file.ReadLogEntries():
+    for index, log_entry in enumerate(unified_logging_file.ReadLogEntries()):
+      if options.format == 'json' and index > 0:
+        print('},{')
+
       if log_entry.timestamp is None:
-        time_string = 'YYYY-MM-DD hh:ss:mm.######+####'
+        date_time_string = 'YYYY-MM-DD hh:ss:mm.######+####'
       else:
         date_time = dfdatetime_posix_time.PosixTimeInNanoseconds(
             timestamp=log_entry.timestamp)
         iso8601_string = date_time.CopyToDateTimeStringISO8601()
-        time_string = ''.join([
+        date_time_string = ''.join([
             iso8601_string[:10], ' ', iso8601_string[11:26],
             iso8601_string[29:32], iso8601_string[33:35]])
 
-      event_message_parts = []
-      # TODO: processImagePath basename
-      # TODO: senderImagePath basename
-      if log_entry.sub_system and log_entry.category:
-        event_message_parts.append(
-            f'[{log_entry.sub_system:s}:{log_entry.category:s}]')
+      if options.format == 'json':
+        boot_identifier = str(log_entry.boot_identifier).upper()
+        category = log_entry.category or ''
+        event_type = log_entry.event_type or ''
+        format_string = log_entry.format_string or ''
+        sub_system = log_entry.sub_system or ''
 
-      event_message_parts.append(log_entry.event_message)
-      event_message = ' '.join(event_message_parts)
+        process_image_identifier = ''
+        if log_entry.process_image_identifier:
+          process_image_identifier = str(
+              log_entry.process_image_identifier).upper()
 
-      print((
-          f'{time_string:s}\t'
-          f'0x{log_entry.thread_identifier:x}\t'
-          f'{log_entry.event_type:s}\t'
-          f'0x{log_entry.activity_identifier:x}\t'
-          f'{log_entry.process_identifier:d}\t'
-          f'{log_entry.ttl:d}\t'
-          f'{event_message:s}'))
+        process_image_path = log_entry.process_image_path or ''
+        process_image_path = process_image_path.replace('/', '\\/')
+
+        sender_image_identifier = ''
+        if log_entry.sender_image_identifier:
+          sender_image_identifier = str(
+              log_entry.sender_image_identifier).upper()
+
+        sender_image_path = log_entry.sender_image_path or ''
+        sender_image_path = sender_image_path.replace('/', '\\/')
+
+        # TODO: add
+        #   "signpostType" : "event",
+        #   "signpostName" : "FrameLifetime",
+
+        lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
+
+        if log_entry.signpost_identifier is None:
+          lines.append(f'  "eventMessage" : "{log_entry.event_message:s}",')
+
+        lines.append(f'  "eventType" : "{event_type:s}",')
+
+        if log_entry.signpost_identifier is not None:
+          signpost_scope = log_entry.signpost_scope or ''
+
+          lines.extend([
+              f'"signpostID" : {log_entry.signpost_identifier:d},',
+              f'"signpostScope" : {signpost_scope:s},'])
+
+        # TODO: implement source support.
+        lines.extend([
+            '  "source" : null,',
+            f'  "formatString" : "{format_string:s}",',
+            f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
+            f'  "subsystem" : "{sub_system:s}",',
+            f'  "category" : "{category:s}",',
+            f'  "threadID" : {log_entry.thread_identifier:d},',
+            f'  "senderImageUUID" : "{sender_image_identifier:s}",'])
+
+        if log_entry.signpost_identifier is not None:
+          signpost_type = log_entry.signpost_type or ''
+
+          lines.append(f'"signpostType" : {signpost_type:s},')
+
+        lines.extend([
+            # TODO: implement backtrace support
+            f'  "bootUUID" : "{boot_identifier:s}",',
+            f'  "processImagePath" : "{process_image_path:s}",',
+            f'  "timestamp" : "{date_time_string:s}",',
+            f'  "senderImagePath" : "{sender_image_path:s}"',
+            f'  "machTimestamp" : {log_entry.mach_timestamp:d},'])
+
+        if log_entry.signpost_identifier is not None:
+          lines.append(f'  "eventMessage" : "{log_entry.event_message:s}",')
+        else:
+          message_type = log_entry.message_type or ''
+
+          lines.append(f'  "messageType" : "{message_type:s}",')
+
+        lines.extend([
+            f'  "processImageUUID" : "{process_image_identifier:s}",',
+            f'  "processID" : {log_entry.process_identifier:d},',
+            # TODO: implement
+            '  "senderProgramCounter" : 0,',
+            # TODO: implement
+            '  "parentActivityIdentifier" : 0,',
+            '  "timezoneName" : "",',
+            ''])
+
+        print('\n'.join(lines))
+
+      else:
+        event_message_parts = []
+
+        if log_entry.process_image_path:
+          _, _, basename = log_entry.process_image_path.rpartition('/')
+          event_message_parts.append(f'{basename:s}:')
+
+        if log_entry.sender_image_path:
+          _, _, basename = log_entry.sender_image_path.rpartition('/')
+          event_message_parts.append(f'({basename:s})')
+
+        if log_entry.sub_system and log_entry.category:
+          event_message_parts.append(
+              f'[{log_entry.sub_system:s}:{log_entry.category:s}]')
+
+        event_message_parts.append(log_entry.event_message)
+        event_message = ' '.join(event_message_parts)
+
+        print((
+            f'{date_time_string:s}\t'
+            f'0x{log_entry.thread_identifier:<8x}\t'
+            f'{log_entry.event_type:11s}\t'
+            f'0x{log_entry.activity_identifier:<18x}\t'
+            f'{log_entry.process_identifier:<6d}\t'
+            f'{log_entry.ttl:<4d}\t'
+            f'{event_message:s}'))
+
+    if options.format == 'json':
+      print('}]')
 
   unified_logging_file.Close()
 

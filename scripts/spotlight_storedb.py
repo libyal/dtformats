@@ -121,7 +121,14 @@ def Main():
   logging.basicConfig(
       level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-  if not dfvfs_helpers:
+  if dfvfs_helpers and getattr(options, 'image', None):
+    file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
+    if not file_system_helper:
+      print('No supported file system found in storage media image.')
+      print('')
+      return False
+
+  else:
     if not options.source:
       print('Source file missing.')
       print('')
@@ -130,13 +137,6 @@ def Main():
       return False
 
     file_system_helper = file_system.NativeFileSystemHelper()
-
-  else:
-    file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
-    if not file_system_helper:
-      print('No supported file system found in storage media image.')
-      print('')
-      return False
 
   output_writer = output_writers.StdoutWriter()
 
