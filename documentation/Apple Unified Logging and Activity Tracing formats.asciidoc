@@ -1272,9 +1272,9 @@ Contains a UUID stored in big-endian
 | 64 | 4 | | Data type
 | 68 | 4 | | Data size
 | 72 | 64 | | [yellow-background]*Unknown* +
-[yellow-background]*Oncly used when data type is 3?*
+[yellow-background]*Only used when data type is 3?*
 | 136 | 64 | | [yellow-background]*Unknown* +
-[yellow-background]*Oncly used when data type is 3?*
+[yellow-background]*Only used when data type is 3?*
 | 200 | 64 | | Name +
 Contains an UTF-8 formatted string with an end-of-string character
 | 264 | data size | | Data
