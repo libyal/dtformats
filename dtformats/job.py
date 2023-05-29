@@ -37,62 +37,21 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
   """Windows Task Scheduler job (.job) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('job.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'job.debug.yaml', custom_format_callbacks={
+          'data_stream': '_FormatDataStream',
+          'date': '_FormatDate',
+          'interval_in_milliseconds': '_FormatIntegerAsIntervalInMilliseconds',
+          'interval_in_minutes': '_FormatIntegerAsIntervalInMinutes',
+          'product_version': '_FormatIntegerAsProductVersion',
+          'system_time': '_FormatSystemTime',
+          'time': '_FormatTime'})
 
   # TODO: add job signature
   # https://msdn.microsoft.com/en-us/library/cc248299.aspx
-
-  _DEBUG_INFO_FIXED_LENGTH_DATA_SECTION = [
-      ('signature', 'Signature', '_FormatIntegerAsProductVersion'),
-      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
-      ('job_identifier', 'Job identifier', '_FormatUUIDAsString'),
-      ('application_name_offset', 'Application name offset',
-       '_FormatIntegerAsHexadecimal4'),
-      ('triggers_offset', 'Triggers offset', '_FormatIntegerAsHexadecimal4'),
-      ('error_retry_count', 'Error retry count', '_FormatIntegerAsDecimal'),
-      ('error_retry_interval', 'Error retry interval',
-       '_FormatIntegerAsIntervalInMinutes'),
-      ('idle_deadline', 'Idle deadline', '_FormatIntegerAsIntervalInMinutes'),
-      ('idle_wait', 'Idle wait', '_FormatIntegerAsIntervalInMinutes'),
-      ('priority', 'Priority', '_FormatIntegerAsHexadecimal8'),
-      ('maximum_run_time', 'Maximum run time',
-       '_FormatIntegerAsIntervalInMilliseconds'),
-      ('exit_code', 'Exit code', '_FormatIntegerAsHexadecimal8'),
-      ('status', 'Status', '_FormatIntegerAsHexadecimal8'),
-      ('flags', 'Flags', '_FormatIntegerAsHexadecimal8'),
-      ('last_run_time', 'Last run time', '_FormatSystemTime')]
-
-  _DEBUG_INFO_TRIGGER = [
-      ('size', 'Size', '_FormatIntegerAsDecimal'),
-      ('reserved1', 'Reserved1', '_FormatIntegerAsHexadecimal4'),
-      ('start_date', 'Start date', '_FormatDate'),
-      ('end_date', 'End date', '_FormatDate'),
-      ('start_time', 'Start time', '_FormatTime'),
-      ('duration', 'Duration', '_FormatIntegerAsIntervalInMinutes'),
-      ('interval', 'Interval', '_FormatIntegerAsIntervalInMinutes'),
-      ('trigger_flags', 'Trigger flags', '_FormatIntegerAsHexadecimal8'),
-      ('trigger_type', 'Trigger type', '_FormatIntegerAsHexadecimal8'),
-      ('trigger_arg0', 'Trigger arg0', '_FormatIntegerAsHexadecimal4'),
-      ('trigger_arg1', 'Trigger arg1', '_FormatIntegerAsHexadecimal4'),
-      ('trigger_arg2', 'Trigger arg2', '_FormatIntegerAsHexadecimal4'),
-      ('trigger_padding', 'Trigger padding', '_FormatIntegerAsHexadecimal4'),
-      ('trigger_reserved2', 'Trigger reserved2',
-       '_FormatIntegerAsHexadecimal4'),
-      ('trigger_reserved3', 'Trigger reserved3',
-       '_FormatIntegerAsHexadecimal4')]
-
-  _DEBUG_INFO_VARIABLE_LENGTH_DATA_SECTION = [
-      ('running_instance_count', 'Running instance count',
-       '_FormatIntegerAsDecimal'),
-      ('application_name', 'Application name', '_FormatString'),
-      ('parameters', 'Parameters', '_FormatString'),
-      ('working_directory', 'Working directory', '_FormatString'),
-      ('author', 'Author', '_FormatString'),
-      ('comment', 'Comment', '_FormatString'),
-      ('user_data', 'User data', '_FormatDataStream'),
-      ('reserved_data', 'Reserved data', '_FormatDataStream'),
-      ('number_of_triggers', 'Number of triggers', '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Windows Task Scheduler job (.job) file.
@@ -221,8 +180,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     """
     data_section = self._ReadStructureObjectFromFileObject(
         file_object, 0, 'job_fixed_length_data_section',
-        'fixed-length data section',
-        self._DEBUG_INFO_FIXED_LENGTH_DATA_SECTION)
+        'fixed-length data section')
 
     self._task_configuration.error_retry_count = data_section.error_retry_count
     self._task_configuration.error_retry_interval = (
@@ -233,13 +191,14 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     file_offset = file_object.tell()
     data_section = self._ReadStructureObjectFromFileObject(
         file_object, file_offset, 'job_variable_length_data_section',
-        'variable-length data section',
-        self._DEBUG_INFO_VARIABLE_LENGTH_DATA_SECTION)
+        'variable-length data section')
 
     if self._debug:
-      # TODO: refactor into debug info
+      # TODO: refactor job_trigger debug info into
+      # job_variable_length_data_section debug info?
       for trigger in data_section.triggers.triggers_array:
-        self._DebugPrintStructureObject(trigger, self._DEBUG_INFO_TRIGGER)
+        debug_info = self._DEBUG_INFORMATION.get('job_trigger', None)
+        self._DebugPrintStructureObject(trigger, debug_info)
 
     self._task_configuration.application_name = (
         data_section.application_name.string)

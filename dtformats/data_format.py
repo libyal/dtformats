@@ -13,18 +13,31 @@ from dtfabric.runtime import fabric as dtfabric_fabric
 
 from dtformats import errors
 from dtformats import file_system
+from dtformats import yaml_definitions_file
 
 
 class BinaryDataFormat(object):
   """Binary data format."""
 
+  _DEBUG_FORMAT_CALLBACKS = {
+      'decimal': '_FormatIntegerAsDecimal',
+      'hexadecimal_2digits': '_FormatIntegerAsHexadecimal2',
+      'hexadecimal_4digits': '_FormatIntegerAsHexadecimal4',
+      'hexadecimal_8digits': '_FormatIntegerAsHexadecimal8',
+      'string': '_FormatString',
+      'uuid': '_FormatUUIDAsString'}
+
+  # The dtFormats debug information, which must be set by a subclass using the
+  # ReadDebugInformationFile class method.
+  _DEBUG_INFORMATION = None
+
+  # Preserve the absolute path value of __file__ in case it is changed at
+  # run-time.
+  _DEFINITION_FILES_PATH = os.path.dirname(__file__)
+
   # The dtFabric fabric, which must be set by a subclass using the
   # ReadDefinitionFile class method.
   _FABRIC = None
-
-  # Preserve the absolute path value of __file__ in case it is changed
-  # at run-time.
-  _DEFINITION_FILES_PATH = os.path.dirname(__file__)
 
   _HEXDUMP_CHARACTER_MAP = [
       '.' if byte < 0x20 or byte > 0x7e else chr(byte) for byte in range(256)]
@@ -670,7 +683,7 @@ class BinaryDataFormat(object):
 
   def _ReadStructureObjectFromFileObject(
       self, file_object, file_offset, data_type_map_name, description,
-      debug_info):
+      debug_info=None):
     """Reads a structure object from a file-like object.
 
     Args:
@@ -679,7 +692,7 @@ class BinaryDataFormat(object):
           of the file-like object.
       data_type_map_name (str): name of the data type map of the structure.
       description (str): description of the structure.
-      debug_info (list[tuple[str, str, int]]): debug information.
+      debug_info (Optional[list[tuple[str, str, int]]]): debug information.
 
     Returns:
       object: structure object.
@@ -695,9 +708,51 @@ class BinaryDataFormat(object):
         file_object, file_offset, data_type_map, description)
 
     if self._debug:
+      if not debug_info:
+        debug_info = self._DEBUG_INFORMATION.get(data_type_map_name, None)
+
       self._DebugPrintStructureObject(structure_object, debug_info)
 
     return structure_object
+
+  @classmethod
+  def ReadDebugInformationFile(cls, filename, custom_format_callbacks=None):
+    """Reads a dtFormats debug definition file.
+
+    Args:
+      filename (str): name of the dtFormats debug definition file.
+      custom_format_callbacks (dict[str, str]): custom format callbacks.
+
+    Returns:
+      dict[str, list[tuple[str, str, str]]]: debug information per data type
+          map.
+    """
+    if not filename:
+      return {}
+
+    debug_information_per_data_type_map = {}
+
+    debug_definitions_file = yaml_definitions_file.YAMLDebugDefinitionsFile()
+
+    custom_format_callbacks = custom_format_callbacks or {}
+
+    path = os.path.join(cls._DEFINITION_FILES_PATH, filename)
+    for debug_definition in debug_definitions_file.ReadFromFile(path):
+      debug_information = []
+      for attribute in debug_definition.attributes.values():
+        if attribute.format.startswith('custom:'):
+          callback = custom_format_callbacks.get(attribute.format[7:], None)
+        else:
+          callback = cls._DEBUG_FORMAT_CALLBACKS.get(attribute.format, None)
+
+        debug_information_tuple = (
+            attribute.name, attribute.description, callback)
+        debug_information.append(debug_information_tuple)
+
+      debug_information_per_data_type_map[debug_definition.data_type_map] = (
+          debug_information)
+
+    return debug_information_per_data_type_map
 
   @classmethod
   def ReadDefinitionFile(cls, filename):

@@ -1,0 +1,127 @@
+# dtFormats debug specification.
+---
+data_type_map: job_fixed_length_data_section
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:product_version
+- name: format_version
+  description: "Format version"
+  format: decimal
+- name: job_identifier
+  description: "Job identifier"
+  format: uuid
+- name: application_name_offset
+  description: "Application name offset"
+  format: hexadecimal_4digits
+- name: triggers_offset
+  description: "Triggers offset"
+  format: hexadecimal_4digits
+- name: error_retry_count
+  description: "Error retry count"
+  format: decimal
+- name: error_retry_interval
+  description: "Error retry interval"
+  format: custom:interval_in_minutes
+- name: idle_deadline
+  description: "Idle deadline"
+  format: custom:interval_in_minutes
+- name: idle_wait
+  description: "Idle wait"
+  format: custom:interval_in_minutes
+- name: priority
+  description: "Priority"
+  format: hexadecimal_8digits
+- name: maximum_run_time
+  description: "Maximum run time"
+  format: custom:interval_in_milliseconds
+- name: exit_code
+  description: "Exit code"
+  format: hexadecimal_8digits
+- name: status
+  description: "Status"
+  format: hexadecimal_8digits
+- name: flags
+  description: "Flags"
+  format: hexadecimal_8digits
+- name: last_run_time
+  description: "Last run time"
+  format: custom:system_time
+---
+data_type_map: job_variable_length_data_section
+attributes:
+- name: running_instance_count
+  description: "Running instance count"
+  format: decimal
+- name: application_name
+  description: "Application name"
+  format: string
+- name: parameters
+  description: "Parameters"
+  format: string
+- name: working_directory
+  description: "Working directory"
+  format: string
+- name: author
+  description: "Author"
+  format: string
+- name: comment
+  description: "Comment"
+  format: string
+- name: user_data
+  description: "User data"
+  format: custom:data_stream
+- name: reserved_data
+  description: "Reserved data"
+  format: custom:data_stream
+- name: number_of_triggers
+  description: "Number of triggers"
+  format: decimal
+---
+data_type_map: job_trigger
+attributes:
+- name: size
+  description: "Size"
+  format: decimal
+- name: reserved1
+  description: "Reserved1"
+  format: hexadecimal_4digits
+- name: start_date
+  description: "Start date"
+  format: custom:date
+- name: end_date
+  description: "End date"
+  format: custom:date
+- name: start_time
+  description: "Start time"
+  format: custom:time
+- name: duration
+  description: "Duration"
+  format: custom:interval_in_minutes
+- name: interval
+  description: "Interval"
+  format: custom:interval_in_minutes
+- name: trigger_flags
+  description: "Trigger flags"
+  format: hexadecimal_8digits
+- name: trigger_type
+  description: "Trigger type"
+  format: hexadecimal_8digits
+- name: trigger_arg0
+  description: "Trigger arg0"
+  format: hexadecimal_4digits
+- name: trigger_arg1
+  description: "Trigger arg1"
+  format: hexadecimal_4digits
+- name: trigger_arg2
+  description: "Trigger arg2"
+  format: hexadecimal_4digits
+- name: trigger_padding
+  description: "Trigger padding"
+  format: hexadecimal_4digits
+- name: trigger_reserved2
+  description: "Trigger reserved2"
+  format: hexadecimal_4digits
+- name: trigger_reserved3
+  description: "Trigger reserved3"
+  format: hexadecimal_4digits

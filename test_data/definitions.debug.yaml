@@ -1,0 +1,7 @@
+# dtFormats debug specification.
+---
+data_type_map: test_data_type_map
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
