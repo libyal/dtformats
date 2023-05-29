@@ -3,6 +3,7 @@
 """Script to parse Apple Unified Logging and Activity Tracing files."""
 
 import argparse
+import heapq
 import logging
 import sys
 
@@ -16,6 +17,46 @@ try:
   from dtformats import dfvfs_helpers
 except ImportError:
   dfvfs_helpers = None
+
+
+class LogEntriesHeap(object):
+  """Log entries heap."""
+
+  def __init__(self):
+    """Initializes a log entries heap."""
+    super(LogEntriesHeap, self).__init__()
+    self._heap = []
+
+  def PopLogEntries(self):
+    """Pops log entries from the heap.
+
+    Yields:
+      LogEntry: log entry.
+    """
+    log_entry = self.PopLogEntry()
+    while log_entry:
+      yield log_entry
+      log_entry = self.PopLogEntry()
+
+  def PopLogEntry(self):
+    """Pops a log entry from the heap.
+
+    Returns:
+      LogEntry: log entry.
+    """
+    try:
+      return heapq.heappop(self._heap)
+
+    except IndexError:
+      return None
+
+  def PushLogEntry(self, log_entry):
+    """Pushes a log entry onto the heap.
+
+    Args:
+      log_entry (LogEntry): log entry.
+    """
+    heapq.heappush(self._heap, log_entry)
 
 
 def Main():
@@ -150,6 +191,10 @@ def Main():
       _ = record
 
   else:
+    log_entries_heap = LogEntriesHeap()
+    for log_entry in unified_logging_file.ReadLogEntries():
+      log_entries_heap.PushLogEntry(log_entry)
+
     if options.format == 'json':
       print('[{')
     else:
@@ -157,7 +202,7 @@ def Main():
           'Timestamp                       Thread     Type        '
           'Activity             PID    TTL'))
 
-    for index, log_entry in enumerate(unified_logging_file.ReadLogEntries()):
+    for index, log_entry in enumerate(log_entries_heap.PopLogEntries()):
       if options.format == 'json' and index > 0:
         print('},{')
 
@@ -175,8 +220,15 @@ def Main():
         boot_identifier = str(log_entry.boot_identifier).upper()
         category = log_entry.category or ''
         event_type = log_entry.event_type or ''
-        format_string = log_entry.format_string or ''
         sub_system = log_entry.sub_system or ''
+
+        event_message = log_entry.event_message or ''
+        event_message = event_message.replace('"', '\\"')
+        event_message = event_message.replace('/', '\\/')
+
+        format_string = log_entry.format_string or ''
+        format_string = format_string.replace('"', '\\"')
+        format_string = format_string.replace('/', '\\/')
 
         process_image_identifier = ''
         if log_entry.process_image_identifier:
@@ -184,6 +236,7 @@ def Main():
               log_entry.process_image_identifier).upper()
 
         process_image_path = log_entry.process_image_path or ''
+        process_image_path = process_image_path.replace('"', '\\"')
         process_image_path = process_image_path.replace('/', '\\/')
 
         sender_image_identifier = ''
@@ -192,12 +245,14 @@ def Main():
               log_entry.sender_image_identifier).upper()
 
         sender_image_path = log_entry.sender_image_path or ''
+        sender_image_path = sender_image_path.replace('"', '\\"')
         sender_image_path = sender_image_path.replace('/', '\\/')
 
         lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
 
-        if log_entry.signpost_identifier is None:
-          lines.append(f'  "eventMessage" : "{log_entry.event_message:s}",')
+        if (log_entry.creator_activity_identifier is None and
+            log_entry.signpost_identifier is None):
+          lines.append(f'  "eventMessage" : "{event_message:s}",')
 
         lines.append(f'  "eventType" : "{event_type:s}",')
 
@@ -208,9 +263,11 @@ def Main():
               f'  "signpostID" : {log_entry.signpost_identifier:d},',
               f'  "signpostScope" : "{signpost_scope:s}",'])
 
-        # TODO: implement source support.
+        if log_entry.creator_activity_identifier is None:
+          # TODO: implement source support.
+          lines.append('  "source" : null,')
+
         lines.extend([
-            '  "source" : null,',
             f'  "formatString" : "{format_string:s}",',
             f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
             f'  "subsystem" : "{sub_system:s}",',
@@ -238,15 +295,20 @@ def Main():
             f'  "timestamp" : "{date_time_string:s}",',
             f'  "senderImagePath" : "{sender_image_path:s}",'])
 
-        if log_entry.signpost_identifier is not None:
+        if log_entry.creator_activity_identifier is not None:
+          lines.append((f'  "creatorActivityID" : '
+                        f'{log_entry.creator_activity_identifier:d},'))
+
+        elif log_entry.signpost_identifier is not None:
           signpost_name = log_entry.signpost_name or ''
 
           lines.append(f'  "signpostName" : "{signpost_name:s}",')
 
         lines.append(f'  "machTimestamp" : {log_entry.mach_timestamp:d},')
 
-        if log_entry.signpost_identifier is not None:
-          lines.append(f'  "eventMessage" : "{log_entry.event_message:s}",')
+        if (log_entry.creator_activity_identifier is not None or
+            log_entry.signpost_identifier is not None):
+          lines.append(f'  "eventMessage" : "{event_message:s}",')
         else:
           message_type = log_entry.message_type or ''
 
@@ -256,8 +318,8 @@ def Main():
             f'  "processImageUUID" : "{process_image_identifier:s}",',
             f'  "processID" : {log_entry.process_identifier:d},',
             f'  "senderProgramCounter" : {log_entry.sender_program_counter:d},',
-            # TODO: implement
-            '  "parentActivityIdentifier" : 0,',
+            (f'  "parentActivityIdentifier" : '
+             f'{log_entry.parent_activity_identifier:d},'),
             '  "timezoneName" : ""'])
 
         print('\n'.join(lines))

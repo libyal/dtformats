@@ -29,6 +29,7 @@ class DSCRange(object):
     range_offset (int): the offset of the range.
     range_sizes (int): the size of the range.
     text_offset (int): the offset of the text.
+    text_size (int): the size of the text.
     uuid_index (int): index of the dsc UUID.
   """
 
@@ -41,6 +42,7 @@ class DSCRange(object):
     self.range_offset = None
     self.range_size = None
     self.text_offset = None
+    self.text_size = None
     self.uuid_index = None
 
 
@@ -51,7 +53,7 @@ class DSCUUID(object):
     image_identifier (uuid.UUID): the image identifier.
     image_path (str): the image path.
     text_offset (int): the offset of the text.
-    text_sizes (int): the size of the text.
+    text_size (int): the size of the text.
   """
 
   def __init__(self):
@@ -70,6 +72,7 @@ class LogEntry(object):
     activity_identifier (int): activity identifier.
     boot_identifier (str): boot identifier (UUID).
     category (str): (sub system) category.
+    creator_activity_identifier (int): creator activity identifier.
     event_message (str): event message.
     event_type (str): event type.
     format_string (str): format string.
@@ -101,12 +104,13 @@ class LogEntry(object):
     self.activity_identifier = None
     self.boot_identifier = None
     self.category = None
+    self.creator_activity_identifier = None
     self.event_message = None
     self.event_type = None
     self.format_string = None
     self.mach_timestamp = None
     self.message_type = None
-    self.parent_activity_identifier = None
+    self.parent_activity_identifier = 0
     self.process_identifier = None
     self.process_image_identifier = None
     self.process_image_path = None
@@ -123,6 +127,20 @@ class LogEntry(object):
     self.time_zone_name = None
     self.trace_identifier = None
     self.ttl = None
+
+  # This method is necessary for heap sort.
+  def __lt__(self, other):
+    """Compares if the log entry is less than the other.
+
+    Events are compared by timestamp.
+
+    Args:
+      other (LogEntry): log entry to compare to.
+
+    Returns:
+      bool: True if the log entry is less than the other.
+    """
+    return self.timestamp < other.timestamp
 
 
 class StringFormatter(object):
@@ -1243,11 +1261,12 @@ class DSCFile(data_format.BinaryDataFile):
 
       yield dsc_uuid
 
-  def GetImageValuesAndString(self, format_string_reference):
+  def GetImageValuesAndString(self, string_reference, is_dynamic):
     """Retrieves image values and string.
 
     Args:
-      format_string_reference (int): reference of the string.
+      string_reference (int): reference of the string.
+      is_dynamic (bool): dynamic flag.
 
     Returns:
       tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
@@ -1257,18 +1276,28 @@ class DSCFile(data_format.BinaryDataFile):
       ParseError: if the string cannot be read.
     """
     for dsc_range in self.ranges:
-      if format_string_reference < dsc_range.range_offset:
+      if is_dynamic:
+        range_offset = dsc_range.text_offset
+        range_size = dsc_range.text_size
+      else:
+        range_offset = dsc_range.range_offset
+        range_size = dsc_range.range_size
+
+      if string_reference < range_offset:
         continue
 
-      relative_offset = format_string_reference - dsc_range.range_offset
-      if relative_offset <= dsc_range.range_size:
-        file_offset = dsc_range.data_offset + relative_offset
-        format_string = self._ReadString(self._file_object, file_offset)
+      relative_offset = string_reference - range_offset
+      if relative_offset <= range_size:
+        if is_dynamic:
+          format_string = '%s'
+        else:
+          file_offset = dsc_range.data_offset + relative_offset
+          format_string = self._ReadString(self._file_object, file_offset)
 
         return (dsc_range.image_identifier, dsc_range.text_offset,
                 dsc_range.image_path, format_string)
 
-    # TODO: if format_string_reference is invalid use:
+    # TODO: if string_reference is invalid use:
     # "<Invalid shared cache format string offset>"
 
     return None, None, None, None
@@ -1302,6 +1331,7 @@ class DSCFile(data_format.BinaryDataFile):
       dsc_range.image_identifier = dsc_uuid.image_identifier
       dsc_range.image_path = dsc_uuid.image_path
       dsc_range.text_offset = dsc_uuid.text_offset
+      dsc_range.text_size = dsc_uuid.text_size
 
 
 class TimesyncDatabaseFile(data_format.BinaryDataFile):
@@ -1434,9 +1464,9 @@ class TraceV3File(data_format.BinaryDataFile):
   _RECORD_TYPE_SIGNPOST = 0x06
   _RECORD_TYPE_LOSS = 0x07
 
-  # TODO: add "activityCreateEvent"
   # TODO: add "timesyncEvent"
   _EVENT_TYPE_DESCRIPTIONS = {
+      _RECORD_TYPE_ACTIVITY: 'activityCreateEvent',
       _RECORD_TYPE_LOG: 'logEvent',
       _RECORD_TYPE_SIGNPOST: 'signpostEvent'}
 
@@ -1516,6 +1546,8 @@ class TraceV3File(data_format.BinaryDataFile):
       0xc0: 'System Signpost Event',
       0xc1: 'System Signpost Start',
       0xc2: 'System Signpost End'}
+
+  _ACTIVITY_IDENTIFIER_BITMASK = (1 << 63) - 1
 
   _SIGNPOST_SCOPE_DESCRIPTIONS = {
       0x04: 'thread',
@@ -1722,7 +1754,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('timebase_denominator', 'Timebase denominator',
        '_FormatIntegerAsDecimal'),
       ('start_time', 'Start time', '_FormatIntegerAsDecimal'),
-      ('unknown_time', 'Unknown time', '_FormatIntegerAsPosixTime'),
+      ('timestamp', 'Unknown time', '_FormatIntegerAsPosixTime'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
       ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
       ('time_zone_offset', 'Time zone offset', '_FormatIntegerAsDecimal'),
@@ -1809,7 +1841,8 @@ class TraceV3File(data_format.BinaryDataFile):
       ('name', 'Name', '_FormatString'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
-  # TODO: add support for signpost.telemetry:string1
+  # TODO: add support for "odtypes:mbr_details"
+  # TODO: add support for "signpost.telemetry:number2"
 
   _FORMAT_STRING_DECODERS = {
       'bool': BooleanFormatStringDecoder(),
@@ -1848,6 +1881,8 @@ class TraceV3File(data_format.BinaryDataFile):
   _MAXIMUM_CACHED_FILES = 64
   _MAXIMUM_CACHED_FORMAT_STRINGS = 1024
 
+  _NANOSECONDS_PER_SECOND = 1000000000
+
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a tracev3 file.
 
@@ -1866,10 +1901,12 @@ class TraceV3File(data_format.BinaryDataFile):
     self._catalog_process_information_entries = {}
     self._catalog_strings_map = {}
     self._chunk_index = 0
-    self._timebase = 1
-    self._timesync_path = None
+    self._header_timebase = 1
+    self._header_timestamp = 0
     self._timesync_boot_record = None
+    self._timesync_path = None
     self._timesync_sync_records = []
+    self._timesync_timebase = 1
     self._uuidtext_path = None
 
   def _BuildCatalogProcessInformationEntries(self, catalog):
@@ -1920,8 +1957,12 @@ class TraceV3File(data_format.BinaryDataFile):
       string_reference (int): string reference.
 
     Returns:
-      int: string reference.
+      tuple[int, bool]: string reference and dynamic flag.
     """
+    is_dynamic = bool(string_reference & 0x80000000 != 0)
+    if is_dynamic:
+      string_reference &= 0x7fffffff
+
     large_offset_data = getattr(
         tracepoint_data_object, 'large_offset_data', None)
     large_shared_cache_data = getattr(
@@ -1946,7 +1987,7 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintValue('Calculated string reference', value_string)
       self._DebugPrintText('\n')
 
-    return string_reference
+    return string_reference, is_dynamic
 
   def _FormatArrayOfStrings(self, array_of_strings):
     """Formats an array of strings.
@@ -2221,17 +2262,14 @@ class TraceV3File(data_format.BinaryDataFile):
     if not strings_file_identifier:
       raise errors.ParseError('Missing strings file identifier.')
 
-    # TODO: move this into dsc and uuidtext file.
-    if string_reference & 0x80000000 != 0:
-      return None, None, None, '%s'
-
     uuid_string = strings_file_identifier.hex.upper()
 
-    string_reference = self._CalculateStringReference(
+    string_reference, is_dynamic = self._CalculateStringReference(
         tracepoint_data_object, string_reference)
 
     image_identifier = None
     image_path = None
+    image_text_offset = 0
     string = None
 
     strings_file_type = firehose_tracepoint.flags & 0x000e
@@ -2240,19 +2278,27 @@ class TraceV3File(data_format.BinaryDataFile):
       uuidtext_file = self._GetUUIDTextFile(uuid_string)
       if uuidtext_file:
         image_identifier = strings_file_identifier
+        # TODO: implement.
         image_text_offset = 0
         image_path = uuidtext_file.GetImagePath()
-        string = uuidtext_file.GetString(string_reference)
+        if is_dynamic:
+          string = '%s'
+        else:
+          string = uuidtext_file.GetString(string_reference)
 
     else:
       dsc_file = self._GetDSCFile(uuid_string)
       if dsc_file:
         image_identifier, image_text_offset, image_path, string = (
-            dsc_file.GetImageValuesAndString(string_reference))
+            dsc_file.GetImageValuesAndString(string_reference, is_dynamic))
 
     if self._debug and string:
       self._DebugPrintValue('Strings file identifier', strings_file_identifier)
       self._DebugPrintValue('Image identifier', image_identifier)
+
+      value_string, _ = self._FormatIntegerAsHexadecimal8(image_text_offset)
+      self._DebugPrintValue('Image text offset', value_string)
+
       self._DebugPrintValue('Image path', image_path)
       self._DebugPrintValue('String', string)
       self._DebugPrintText('\n')
@@ -2269,12 +2315,37 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       int: program counter.
     """
-    program_counter = getattr(
+    load_address = getattr(
         tracepoint_data_object, 'load_address_upper', None) or 0
-    program_counter <<= 32
-    program_counter |= tracepoint_data_object.load_address_lower
+    load_address <<= 32
+    load_address |= tracepoint_data_object.load_address_lower
 
-    return program_counter - image_text_offset
+    large_offset_data = getattr(
+        tracepoint_data_object, 'large_offset_data', None)
+    large_shared_cache_data = getattr(
+        tracepoint_data_object, 'large_shared_cache_data', None)
+
+    if large_shared_cache_data:
+      large_offset_data = tracepoint_data_object.large_shared_cache_data
+
+    if large_offset_data:
+      load_address |= large_offset_data << 31
+
+    program_counter = load_address - image_text_offset
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsHexadecimal8(load_address)
+      self._DebugPrintValue('Load address', value_string)
+
+      value_string, _ = self._FormatIntegerAsHexadecimal8(image_text_offset)
+      self._DebugPrintValue('Image text offset', value_string)
+
+      value_string, _ = self._FormatIntegerAsHexadecimal8(program_counter)
+      self._DebugPrintValue('Program counter', value_string)
+
+      self._DebugPrintText('\n')
+
+    return program_counter
 
   def _GetProcessImageValues(self, process_information_entry):
     """Retrieves the process image value.
@@ -2397,20 +2468,30 @@ class TraceV3File(data_format.BinaryDataFile):
 
     Returns:
       int: timestamp containing the number of nanoseconds since January 1, 1970
-          00:00:00.000000000 or None if not available.
+          00:00:00.000000000.
     """
     timesync_record = self._GetTimesyncRecord(continuous_time)
-    if not timesync_record:
-      return None
+    if timesync_record:
+      continuous_time -= timesync_record.kernel_time
+      timestamp = timesync_record.timestamp + (
+          continuous_time * self._timesync_timebase)
 
-    continuous_time -= timesync_record.kernel_time
-    timestamp = timesync_record.timestamp + (continuous_time * self._timebase)
+    elif self._timesync_boot_record:
+      timestamp = self._timesync_boot_record.timestamp + (
+          continuous_time * self._timesync_timebase)
+
+    else:
+      timestamp = self._header_timestamp + (
+          continuous_time * self._header_timebase)
 
     if self._debug:
       self._DebugPrintDecimalValue(description, continuous_time)
+
       self._DebugPrintDecimalValue('Timestamp', timestamp)
+
       date_time_string = self._FormatIntegerAsPosixTimeInNanoseconds(timestamp)
       self._DebugPrintValue('Date time', date_time_string)
+
       self._DebugPrintText('\n')
 
     return timestamp
@@ -2889,7 +2970,9 @@ class TraceV3File(data_format.BinaryDataFile):
               data_items, bytes_read, private_data, private_data_offset,
               string_formatter)
 
-        # continuous_time = getattr(tracepoint_data_object, 'timestamp', None)
+        activity_identifier = getattr(
+            tracepoint_data_object, 'current_activity_identifier', None) or 0
+
         continuous_time = firehose_tracepoint.continuous_time_lower | (
             firehose_tracepoint.continuous_time_upper << 32)
         continuous_time += firehose_header.base_continuous_time
@@ -2906,15 +2989,14 @@ class TraceV3File(data_format.BinaryDataFile):
             tracepoint_data_object, image_text_offset)
 
         log_entry = LogEntry()
-        log_entry.activity_identifier = getattr(
-            tracepoint_data_object, 'activity_identifier', None) or 0
+        log_entry.activity_identifier = (
+            activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
         log_entry.boot_identifier = self._boot_identifier
         log_entry.category = category
         log_entry.event_type = self._EVENT_TYPE_DESCRIPTIONS.get(
             firehose_tracepoint.record_type, None)
         log_entry.format_string = format_string
         log_entry.mach_timestamp = continuous_time
-        log_entry.parent_activity_identifier = 0
         log_entry.process_identifier = getattr(
             process_information_entry, 'process_identifier', None) or 0
         log_entry.process_image_identifier = process_image_identifier
@@ -2934,7 +3016,19 @@ class TraceV3File(data_format.BinaryDataFile):
           log_entry.message_type = self._LOG_TYPE_DESCRIPTIONS.get(
               firehose_tracepoint.log_type, None)
 
-        else:
+        if firehose_tracepoint.record_type == self._RECORD_TYPE_ACTIVITY:
+          activity_identifier = getattr(
+              tracepoint_data_object, 'new_activity_identifier', None) or 0
+          if activity_identifier is not None:
+            # Note that this activity identifier is not masked in the output.
+            log_entry.creator_activity_identifier = activity_identifier
+
+          activity_identifier = getattr(
+              tracepoint_data_object, 'other_activity_identifier', None) or 0
+          log_entry.parent_activity_identifier = (
+              activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+
+        elif firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
           name_string_reference = getattr(
               tracepoint_data_object, 'name_string_reference', None)
           if name_string_reference is None:
@@ -3505,8 +3599,9 @@ class TraceV3File(data_format.BinaryDataFile):
           self._timesync_boot_record = record
 
     if self._timesync_boot_record:
-      self._timebase = (self._timesync_boot_record.timebase_numerator //
-                        self._timesync_boot_record.timebase_denominator)
+      self._timesync_timebase = (
+          self._timesync_boot_record.timebase_numerator //
+          self._timesync_boot_record.timebase_denominator)
 
       self._timesync_sync_records = sorted(
           self._timesync_sync_records, key=lambda record: record.kernel_time)
@@ -3601,6 +3696,11 @@ class TraceV3File(data_format.BinaryDataFile):
     file_offset += alignment
 
     file_object.seek(file_offset, os.SEEK_SET)
+
+    self._header_timestamp = (
+        header_chunk.timestamp * self._NANOSECONDS_PER_SECOND)
+    self._header_timebase = (
+        header_chunk.timebase_numerator // header_chunk.timebase_denominator)
 
     self._ReadTimesyncRecords(self._boot_identifier)
 
@@ -3795,11 +3895,11 @@ class UUIDTextFile(data_format.BinaryDataFile):
 
     return format_string
 
-  def GetString(self, format_string_reference):
+  def GetString(self, string_reference):
     """Retrieves a string.
 
     Args:
-      format_string_reference (int): reference of the string.
+      string_reference (int): reference of the string.
 
     Returns:
       str: string or None if not available.
@@ -3808,15 +3908,15 @@ class UUIDTextFile(data_format.BinaryDataFile):
       ParseError: if the string cannot be read.
     """
     for file_offset, entry_descriptor in self._entry_descriptors:
-      if format_string_reference < entry_descriptor.offset:
+      if string_reference < entry_descriptor.offset:
         continue
 
-      relative_offset = format_string_reference - entry_descriptor.offset
+      relative_offset = string_reference - entry_descriptor.offset
       if relative_offset <= entry_descriptor.data_size:
         file_offset += relative_offset
         return self._ReadString(self._file_object, file_offset)
 
-    # TODO: if format_string_reference is invalid use:
+    # TODO: if string_reference is invalid use:
     # "<Invalid shared cache format string offset>"
 
     return None

@@ -302,8 +302,8 @@ The header (chunk) is 224 bytes of size and consists of:
 | 20 | 4 | | Timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Start time +
 Contains a Mach continuous timestamp
-| 32 | 4 | | [yellow-background]*Unknown (Start wall clock time)* +
-Contains number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
+| 32 | 4 | | Timestamp (or start wall clock time) +
+Signed integer that contains the number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
 | 36 | 4 | | [yellow-background]*Unknown*
 | 40 | 4 | | [yellow-background]*Unknown*
 | 44 | 4 | | Time zone offset in minutes +
@@ -733,10 +733,10 @@ Note that appears to be only used by the "Activity" record type, other record ty
 | Value | Identifier | Description
 | 0x0001 | has_current_aid | Has current activity identifier
 | 0x000e | | <<tracev3_firehose_tracepoint_strings_file_type,Strings file type>>
-| 0x0010 | | Has process identifier value (has_unique_pid)
+| 0x0010 | has_unique_pid | Has process identifier value
 | 0x0020 | has_large_offset | Has large offset data
 | | |
-| 0x0100 | | Has private data range
+| 0x0100 | has_private_data | Has private data range
 | 0x0200 | has_other_aid | Has other activity identifier +
 Note that appears to be only used by the "Activity" record type, other record types use has_subsystem
 | 0x0200 | has_subsystem | Has sub system
@@ -1092,7 +1092,12 @@ Strings (dsc) files.
 * ( large offset data << 31 ) | ( string reference & 0x7fffffff )
 * ( string reference & 0x7fffffff )
 
-[yellow-background]*TODO: determine meaning of MSB of string reference*
+[NOTE]
+The most-significant bit (MSB) of the string reference is a "dynamic" flag. If
+set (and the string reference <= 0xffffffff) the string is "%s". In a
+Shared-Cache Strings (dsc) file the corresponding image identifier and offset
+can be found comparing the remaining value of the string refence with the dsc
+text offset.
 
 ==== [[tracev3_firehose_tracepoint_format_string]]Firehose tracepoint format string
 
@@ -1140,11 +1145,11 @@ Other observerd value type decoders are:
 | "errno" | | Formatted as a system error, for example "[32: Broken pipe]"
 | "location:_CLClientManagerStateTrackerState" | | Formatted as a <<locationd_core_location_client_manager_state_tracker_state,locationd Core Location client manager (CLClientManager) state tracker state>>
 | "location:_CLLocationManagerStateTrackerState" | | Formatted as a <<locationd_core_location_location_manager_state_tracker_state,locationd Core Location location manager (CLLocationManager) state tracker state>>
-| "location:CLClientAuthorizationStatus" | |
-| "location:CLDaemonStatus_Type::Reachability" | |
-| "location:CLSubHarvesterIdentifier" | |
+| "location:CLClientAuthorizationStatus" | | Formatted as a <<locationd_core_location_client_authorization_status,locationd Core Location client authorization status>>
+| "location:CLDaemonStatus_Type::Reachability" | | Formatted as a <<locationd_core_location_daemon_reachability_status_types,locationd Core Location daemon reachability status types>>
+| "location:CLSubHarvesterIdentifier" | | Formatted as a <<locationd_core_location_sub_harvester_identifier,locationd Core Location sub harvester identifier>>
 | "location:escape_only" | |
-| "location:IOMessage" | |
+| "location:IOMessage" | | Formatted as a <<locationd_io_message,locationd IO message>>
 | "location:SqliteResult" | | Formatted as a <<locationd_sqlite_result,locationd SQLite result>>
 | "mask.hash" | | Formatted as a <<mask_hash,Mask hash>>
 | "mdns:acceptable" | |
@@ -1167,15 +1172,16 @@ Other observerd value type decoders are:
 | "network:sockaddr" | |
 | "network:tcp_flags" | |
 | "network:tcp_state" | |
-| "odtypes:ODError" | |
-| "odtypes:mbr_details" | |
-| "odtypes:mbridtype" | |
+| "odtypes:ODError" | | Formatted as a <<open_directory_error,Open Directory error>>
+| "odtypes:mbr_details" | | Formatted as a <<open_directory_membership_details,Open Directory membership details>>
+| "odtypes:mbridtype" | | Formatted as a <<open_directory_membership_identifier_types,Open Directory membership identifier types>>
 | "odtypes:nt_sid_t" | |
 | "sensitive" | | Sensitive formatting argument, which is formatted as "<private>"
 | "signpost.description:attribute" | | Formatted as a signpost description attribute, for example `__##__signpost.description#____#attribute#_##_#efilogin-helper##__##`
 | "signpost.description:begin_time" | | Formatted as a signpost description begin time, for example `__##__signpost.description#____#begin_time#_##_#2180300470618##__##`
 | "signpost.description:end_time" | | Formatted as a signpost description end time, for example `__##__signpost.description#____#end_time#_##_#1005756624719##__##`
 | "signpost.telemetry:number1" | | For example `__##__signpost.telemetry#____#number1#_##_#5.8203125##__##`
+| "signpost.telemetry:number2" | | For example `__##__signpost.telemetry#____#number2#_##_#6.05859375##__##`
 | "signpost.telemetry:string1" | | For example `__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##`
 | "private" | | Private formatting argument, which is formatted as "<private>"
 | "public" | | Public formatting argument, which has no additional formatting
@@ -1473,7 +1479,7 @@ The Shared-Cache Strings (dsc) file header is 16 bytes of size and consists of:
 [cols="1,5",options="header"]
 |===
 | OS version | Format version
-| macOS 10.12 (Sierra) | [yellow-background]*TODO*
+| macOS 10.12 (Sierra) | 1.0
 | macOS 10.13 (High Sierra) | 1.0
 | macOS 10.14 (Mojave) | 1.0
 | macOS 10.15 (Catalina) | 1.0
@@ -1606,6 +1612,34 @@ Contains an UTF-8 formatted string with an end-of-string character
 
 == Value type decoders
 
+=== [[locationd_core_location_client_authorization_status]]locationd Core Location client authorization status
+
+[yellow-background]*TODO describe*
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | Not Determined
+| 1 | | Restricted
+| 2 | | Denied
+| 3 | | Authorized Always
+| 4 | | Authorized When In Use
+|===
+
+=== [[locationd_core_location_daemon_reachability_status_types]]locationd Core Location daemon reachability status types
+
+[yellow-background]*TODO describe*
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | Reachability Unavailable
+| 1 | | Reachability Small
+| 2 | | Reachability Large
+| | |
+| 56 | | Reachability Unachievable
+|===
+
 === [[locationd_core_location_client_manager_state_tracker_state]]locationd Core Location client manager (CLClientManager) state tracker state
 
 The locationd Core Location client manager (CLClientManager) state tracker
@@ -1701,6 +1735,61 @@ The value is formatted as:
 ....
 {"previousAuthorizationStatusValid":false,"paused":false,"requestingLocation":false,"updatingVehicleSpeed":false,"desiredAccuracy":100,"allowsBackgroundLocationUpdates":false,"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,"allowsLocationPrompts":true,"activityType":0,"groundAltitudeEnabled":false,"pausesLocationUpdatesAutomatially":1,"fusionInfoEnabled":false,"isAuthorizedForWidgetUpdates":false,"updatingVehicleHeading":false,"batchingLocation":false,"showsBackgroundLocationIndicator":false,"updatingLocation":false,"requestingRanging":false,"updatingHeading":false,"previousAuthorizationStatus":0,"allowsMapCorrection":true,"matchInfoEnabled":false,"allowsAlteredAccessoryLoctions":false,"updatingRanging":false,"limitsPrecision":false,"courtesyPromptNeeded":false,"headingFilter":1}
 ....
+
+=== [[locationd_core_location_sub_harvester_identifier]]locationd Core Location sub harvester identifier
+
+[yellow-background]*TODO describe*
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | | Wifi
+| 2 | | Tracks
+| 3 | | Realtime
+| 4 | | App
+| 5 | | Pass
+| 6 | | Indoor
+| 7 | | Pressure
+| 8 | | Poi
+| 9 | | Trace
+| 10 | | Avenger
+| 11 | | Altimeter
+| 12 | | Ionosphere
+| 13 | | Unknown
+|===
+
+=== [[locationd_io_message]]locationd IO message
+
+[yellow-background]*TODO describe*
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 3758096400 | | ServiceIsTerminated
+| 3758096416 | | ServiceIsSuspended
+| 3758096432 | | ServiceIsResumed
+| 3758096640 | | ServiceIsRequestingClose
+| 3758096641 | | ServiceIsAttemptingOpen
+| 3758096656 | | ServiceWasClosed
+| 3758096672 | | ServiceBusyStateChange
+| 3758096680 | | ConsoleSecurityChange
+| 3758096688 | | ServicePropertyChange
+| 3758096896 | | CanDevicePowerOff
+| 3758096912 | | DeviceWillPowerOff
+| 3758096928 | | DeviceWillNotPowerOff
+| 3758096944 | | DeviceHasPoweredOn
+| 3758096976 | | SystemWillPowerOff
+| 3758096981 | | SystemPagingOff
+| 3758097008 | | CanSystemSleep
+| 3758097024 | | SystemWillSleep
+| 3758097040 | | SystemWillNotSleep
+| 3758097152 | | SystemHasPoweredOn
+| 3758097168 | | SystemWillRestart
+| 3758097184 | | SystemWillPowerOn
+| 3758097200 | | CopyClientID
+| 3758097216 | | SystemCapabilityChange
+| 3758097232 | | DeviceSignaledWakeup
+|===
 
 === [[locationd_sqlite_result]]locationd SQLite result
 
@@ -1818,6 +1907,138 @@ in combination with the "mask.hash" value type formatter.
 
 It is currently unknown how the value is formatted is has only been observed
 in combination with the "mask.hash" value type formatter.
+
+=== [[open_directory_error]]Open Directory error
+
+[yellow-background]*TODO describe*
+
+....
+https://developer.apple.com/documentation/opendirectory/odframeworkerrors?changes=__2&language=objc
+....
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | ODErrorSuccess
+| |
+| 2 | | Not Found
+| |
+| 1000 | | ODErrorSessionLocalOnlyDaemonInUse
+| 1001 | | ODErrorSessionNormalDaemonInUse
+| 1002 | | ODErrorSessionDaemonNotRunning
+| 1003 | | ODErrorSessionDaemonRefused
+| |
+| 1100 | | ODErrorSessionProxyCommunicationError
+| 1101 | | ODErrorSessionProxyVersionMismatch
+| 1102 | | ODErrorSessionProxyIPUnreachable
+| 1103 | | ODErrorSessionProxyUnknownHost
+| |
+| 2000 | | ODErrorNodeUnknownName
+| 2001 | | ODErrorNodeUnknownType
+| 2002 | | ODErrorNodeDisabled
+| |
+| 2100 | | ODErrorNodeConnectionFailed
+| |
+| 2200 | | ODErrorNodeUnknownHost
+| |
+| 3000 | | ODErrorQuerySynchronize
+| |
+| 3100 | | ODErrorQueryInvalidMatchType
+| 3101 | | ODErrorQueryUnsupportedMatchType
+| 3102 | | ODErrorQueryTimeout
+| |
+| 4000 | | ODErrorRecordReadOnlyNode
+| 4001 | | ODErrorRecordPermissionError
+| |
+| 4100 | | ODErrorRecordParameterError
+| 4101 | | ODErrorRecordInvalidType
+| 4102 | | ODErrorRecordAlreadyExists
+| 4103 | | ODErrorRecordTypeDisabled
+| 4104 | | ODErrorRecordNoLongerExists
+| |
+| 4200 | | ODErrorRecordAttributeUnknownType
+| 4201 | | ODErrorRecordAttributeNotFound
+| 4202 | | ODErrorRecordAttributeValueSchemaError
+| 4203 | | ODErrorRecordAttributeValueNotFound
+| |
+| 5000 | | ODErrorCredentialsInvalid
+| 5001 | | ODErrorCredentialsInvalidComputer
+| |
+| 5100 | | ODErrorCredentialsMethodNotSupported
+| 5101 | | ODErrorCredentialsNotAuthorized
+| 5102 | | ODErrorCredentialsParameterError
+| 5103 | | ODErrorCredentialsOperationFailed
+| |
+| 5200 | | ODErrorCredentialsServerUnreachable
+| 5201 | | ODErrorCredentialsServerNotFound
+| 5202 | | ODErrorCredentialsServerError
+| 5203 | | ODErrorCredentialsServerTimeout
+| 5204 | | ODErrorCredentialsContactPrimary
+| 5205 | | ODErrorCredentialsServerCommunicationError
+| |
+| 5300 | | ODErrorCredentialsAccountNotFound
+| 5301 | | ODErrorCredentialsAccountDisabled
+| 5302 | | ODErrorCredentialsAccountExpired
+| 5303 | | ODErrorCredentialsAccountInactive
+| 5304 | | ODErrorCredentialsAccountTemporarilyLocked
+| 5305 | | ODErrorCredentialsAccountLocked
+| |
+| 5400 | | ODErrorCredentialsPasswordExpired
+| 5401 | | ODErrorCredentialsPasswordChangeRequired
+| 5402 | | ODErrorCredentialsPasswordQualityFailed
+| 5403 | | ODErrorCredentialsPasswordTooShort
+| 5404 | | ODErrorCredentialsPasswordTooLong
+| 5405 | | ODErrorCredentialsPasswordNeedsLetter
+| 5406 | | ODErrorCredentialsPasswordNeedsDigit
+| 5407 | | ODErrorCredentialsPasswordChangeTooSoon
+| 5408 | | ODErrorCredentialsPasswordUnrecoverable
+| |
+| 5500 | | ODErrorCredentialsInvalidLogonHours
+| |
+| 6000 | | ODErrorPolicyUnsupported
+| 6001 | | ODErrorPolicyOutOfRange
+| |
+| 10000 | | ODErrorPluginOperationNotSupported
+| 10001 | | ODErrorPluginError
+| 10002 | | ODErrorDaemonError
+| 10003 | | ODErrorPluginOperationTimeout
+|===
+
+=== [[open_directory_membership_details]]Open Directory membership details
+
+[yellow-background]*TODO describe*
+
+The value is formatted as:
+
+....
+user: 501@/Local/Default
+....
+
+=== [[open_directory_membership_identifier_types]]Open Directory membership identifier types
+
+[yellow-background]*TODO describe*
+
+....
+/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/usr/include/membership.h
+....
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | UID
+| 1 | | GID
+| | |
+| 3 | | SID
+| 4 | | USERNAME
+| 5 | | GROUPNAME
+| 6 | | UUID
+| 7 | | GROUP NFS
+| 8 | | USER NFS
+| | |
+| 10 | | GSS EXPORT NAME
+| 11 | | X509 DN
+| 12 | | KERBEROS
+|===
 
 == Notes
 

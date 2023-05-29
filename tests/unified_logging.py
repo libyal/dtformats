@@ -901,30 +901,39 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0, large_shared_cache_data=0)
 
-    string_reference = test_file._CalculateStringReference(
+    string_reference, is_dynamic = test_file._CalculateStringReference(
         tracepoint_data_object, 0x00964b95)
     self.assertEqual(string_reference, 0x964b95)
+    self.assertFalse(is_dynamic)
+
+    string_reference, is_dynamic = test_file._CalculateStringReference(
+        tracepoint_data_object, 0x8000d8e2)
+    self.assertEqual(string_reference, 0xd8e2)
+    self.assertTrue(is_dynamic)
 
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0xff4b, large_shared_cache_data=0)
 
-    string_reference = test_file._CalculateStringReference(
+    string_reference, is_dynamic = test_file._CalculateStringReference(
         tracepoint_data_object, 0x28dd2b31)
     self.assertEqual(string_reference, 0x7fa5a8dd2b31)
+    self.assertFalse(is_dynamic)
 
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0x0001, large_shared_cache_data=0x0002)
 
-    string_reference = test_file._CalculateStringReference(
+    string_reference, is_dynamic = test_file._CalculateStringReference(
         tracepoint_data_object, 0x15a557c5)
     self.assertEqual(string_reference, 0x115a557c5)
+    self.assertFalse(is_dynamic)
 
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0x0001, large_shared_cache_data=0x0011)
 
-    string_reference = test_file._CalculateStringReference(
+    string_reference, is_dynamic = test_file._CalculateStringReference(
         tracepoint_data_object, 0x6c8fbbd0)
     self.assertEqual(string_reference, 0x8ec8fbbd0)
+    self.assertFalse(is_dynamic)
 
   # TODO: add tests for _FormatArrayOfStrings
   # TODO: add tests for _FormatArrayOfUUIDS
