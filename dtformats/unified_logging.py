@@ -23,11 +23,12 @@ class DSCRange(object):
   """Shared-Cache Strings (dsc) range.
 
   Attributes:
-    data_offset (int): offset of the format string data.
+    data_offset (int): offset of the string data.
     image_identifier (uuid.UUID): the image identifier.
     image_path (str): the image path.
     range_offset (int): the offset of the range.
     range_sizes (int): the size of the range.
+    text_offset (int): the offset of the text.
     uuid_index (int): index of the dsc UUID.
   """
 
@@ -39,6 +40,7 @@ class DSCRange(object):
     self.image_path = None
     self.range_offset = None
     self.range_size = None
+    self.text_offset = None
     self.uuid_index = None
 
 
@@ -81,6 +83,7 @@ class LogEntry(object):
     sender_image_path (str): path of the (sender) image.
     sender_program_counter (int): (sender) program counter.
     signpost_identifier (int): signpost identifier.
+    signpost_name (str): signpost name.
     signpost_scope (str): signpost scope.
     signpost_type (str): signpost type.
     sub_system (str): sub system.
@@ -111,6 +114,7 @@ class LogEntry(object):
     self.sender_image_path = None
     self.sender_program_counter = None
     self.signpost_identifier = None
+    self.signpost_name = None
     self.signpost_scope = None
     self.signpost_type = None
     self.sub_system = None
@@ -126,18 +130,19 @@ class StringFormatter(object):
 
   _OPERATOR_REGEX = re.compile(
       r'(%'
-      r'(?:\{([^\}]{1,128})\})?'        # Optional value type decoder.
-      r'([-+0 #]{0,5})'                 # Optional flags.
-      r'([0-9]+|[*])?'                  # Optional width.
-      r'(\.(?:|[0-9]+|[*]))?'           # Optional precision.
-      r'(?:h|hh|j|l|ll|L|t|q|z)?'       # Optional length modifier.
-      r'([@aAcCdDeEfFgGinoOpPsSuUxX])'  # Conversion specifier.
+      r'(?:\{([^\}]{1,128})\})?'         # Optional value type decoder.
+      r'([-+0 #]{0,5})'                  # Optional flags.
+      r'([0-9]+|[*])?'                   # Optional width.
+      r'(\.(?:|[0-9]+|[*]))?'            # Optional precision.
+      r'(?:h|hh|j|l|ll|L|t|q|z)?'        # Optional length modifier.
+      r'([@aAcCdDeEfFgGimnoOpPsSuUxX])'  # Conversion specifier.
       r'|%%)')
 
   _PYTHON_SPECIFIERS = {
       '@': 's',
       'D': 'd',
       'i': 'd',
+      'm': 'd',
       'O': 'o',
       'p': 'x',
       'P': 's',
@@ -156,6 +161,7 @@ class StringFormatter(object):
       'g': 'floating-point',
       'G': 'floating-point',
       'i': 'signed',
+      'm': 'signed',
       'o': 'unsigned',
       'O': 'unsigned',
       'p': 'unsigned',
@@ -192,14 +198,11 @@ class StringFormatter(object):
 
     if self._format_string is None:
       # TODO: determine what the MacOS log tool shows.
-      formatted_string = 'ERROR: missing format string\n'
+      formatted_string = 'ERROR: missing format string'
     elif self._value_formatters:
       formatted_string = self._format_string.format(*values)
     else:
       formatted_string = self._format_string
-
-    if not formatted_string or formatted_string[-1] != '\n':
-      return f'{formatted_string:s}\n'
 
     return formatted_string
 
@@ -290,6 +293,9 @@ class StringFormatter(object):
         decoder_names = [value for value in decoder_names if (
             value not in ('', 'private', 'public', 'sensitive') and
             value[:5] != 'name=')]
+
+        if specifier == 'm':
+          decoder_names.append('internal:m')
 
         width = width or ''
 
@@ -406,11 +412,30 @@ class ErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
     Returns:
       str: formatted error code value.
     """
+    # TODO: determine what the MacOS log tool shows when an error message is
+    # not defined.
+    return darwin.DARWIN_ERROR_CODES.get(
+        value, 'UNKNOWN: {0:d}'.format(value))
+
+
+class ExtendedErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
+  """Extended error code format string decoder."""
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats an error code value.
+
+    Args:
+      value (int): error code.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted error code value.
+    """
+    # TODO: determine what the MacOS log tool shows when an error message is
+    # not defined.
     error_message = darwin.DARWIN_ERROR_CODES.get(
         value, 'UNKNOWN: {0:d}'.format(value))
 
-    # TODO: determine what the MacOS log tool shows when an error message is
-    # not defined.
     return f'[{value:d}: {error_message:s}]'
 
 
@@ -832,7 +857,7 @@ class MDNSDNSHeaderFormatStringDecoder(
       value_formatter (Optional[str]): value formatter.
 
     Returns:
-      str: formatted location client manager state value.
+      str: formatted mDNS DNS header state value.
     """
     if len(value) != 12:
       # TODO: determine what the MacOS log tool shows.
@@ -855,7 +880,7 @@ class MDNSDNSHeaderFormatStringDecoder(
             f'{dns_header.number_of_additional_records:d}')
 
 
-class SignpostDescriptionAttributeStringDecoder(BaseFormatStringDecoder):
+class SignpostDescriptionAttributeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description attribute value format string decoder."""
 
   def FormatValue(self, value, value_formatter=None):
@@ -876,7 +901,7 @@ class SignpostDescriptionAttributeStringDecoder(BaseFormatStringDecoder):
     return f'__##__signpost.description#____#attribute#_##_#{value:s}##__##'
 
 
-class SignpostDescriptionBeginTimeStringDecoder(BaseFormatStringDecoder):
+class SignpostDescriptionBeginTimeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description begin time value format string decoder."""
 
   def FormatValue(self, value, value_formatter=None):
@@ -892,7 +917,7 @@ class SignpostDescriptionBeginTimeStringDecoder(BaseFormatStringDecoder):
     return f'__##__signpost.description#____#begin_time#_##_#{value:d}##__##'
 
 
-class SignpostDescriptionEndTimeStringDecoder(BaseFormatStringDecoder):
+class SignpostDescriptionEndTimeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description end time value format string decoder."""
 
   def FormatValue(self, value, value_formatter=None):
@@ -908,7 +933,7 @@ class SignpostDescriptionEndTimeStringDecoder(BaseFormatStringDecoder):
     return f'__##__signpost.description#____#end_time#_##_#{value:d}##__##'
 
 
-class SignpostTelemetryNumber1StringDecoder(BaseFormatStringDecoder):
+class SignpostTelemetryNumber1FormatStringDecoder(BaseFormatStringDecoder):
   """Signpost telemetry number 1 value format string decoder."""
 
   def FormatValue(self, value, value_formatter=None):
@@ -929,7 +954,7 @@ class SignpostTelemetryNumber1StringDecoder(BaseFormatStringDecoder):
     return f'__##__signpost.telemetry#____#number1#_##_#{value:s}##__##'
 
 
-class SignpostTelemetryString1StringDecoder(BaseFormatStringDecoder):
+class SignpostTelemetryString1FormatStringDecoder(BaseFormatStringDecoder):
   """Signpost telemetry string 1 value format string decoder."""
 
   def FormatValue(self, value, value_formatter=None):
@@ -1075,27 +1100,27 @@ class DSCFile(data_format.BinaryDataFile):
 
     return file_header
 
-  def _ReadFormatString(self, file_object, file_offset):
-    """Reads a format string.
+  def _ReadString(self, file_object, file_offset):
+    """Reads a string.
 
     Args:
       file_object (file): file-like object.
-      file_offset (int): offset of the format string data relative to the start
+      file_offset (int): offset of the string data relative to the start
           of the file.
 
     Returns:
-      str: format string.
+      str: string.
 
     Raises:
-      ParseError: if the format string cannot be read.
+      ParseError: if the string cannot be read.
     """
     data_type_map = self._GetDataTypeMap('cstring')
 
     format_string, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'format string')
+        file_object, file_offset, data_type_map, 'string')
 
     if self._debug:
-      self._DebugPrintValue('Format string', format_string)
+      self._DebugPrintValue('String', format_string)
 
     return format_string
 
@@ -1218,34 +1243,35 @@ class DSCFile(data_format.BinaryDataFile):
 
       yield dsc_uuid
 
-  def GetImageValueAndFormatString(self, format_string_location):
-    """Retrieves image values and format string.
+  def GetImageValuesAndString(self, format_string_reference):
+    """Retrieves image values and string.
 
     Args:
-      format_string_location (int): location of the format string.
+      format_string_reference (int): reference of the string.
 
     Returns:
-      tuple[uuid.UUID, str, str]: image identifier, image path and format
-          string or (None, None, None) if not available.
+      tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
+          image path and string or (None, None, None, None) if not available.
 
     Raises:
-      ParseError: if the format string cannot be read.
+      ParseError: if the string cannot be read.
     """
     for dsc_range in self.ranges:
-      if format_string_location < dsc_range.range_offset:
+      if format_string_reference < dsc_range.range_offset:
         continue
 
-      relative_offset = format_string_location - dsc_range.range_offset
+      relative_offset = format_string_reference - dsc_range.range_offset
       if relative_offset <= dsc_range.range_size:
         file_offset = dsc_range.data_offset + relative_offset
-        format_string = self._ReadFormatString(self._file_object, file_offset)
+        format_string = self._ReadString(self._file_object, file_offset)
 
-        return dsc_range.image_identifier, dsc_range.image_path, format_string
+        return (dsc_range.image_identifier, dsc_range.text_offset,
+                dsc_range.image_path, format_string)
 
-    # TODO: if format_string_location is invalid use:
+    # TODO: if format_string_reference is invalid use:
     # "<Invalid shared cache format string offset>"
 
-    return None, None, None
+    return None, None, None, None
 
   def ReadFileObject(self, file_object):
     """Reads a shared-cache strings (dsc) file-like object.
@@ -1275,6 +1301,7 @@ class DSCFile(data_format.BinaryDataFile):
 
       dsc_range.image_identifier = dsc_uuid.image_identifier
       dsc_range.image_path = dsc_uuid.image_path
+      dsc_range.text_offset = dsc_uuid.text_offset
 
 
 class TimesyncDatabaseFile(data_format.BinaryDataFile):
@@ -1470,6 +1497,9 @@ class TraceV3File(data_format.BinaryDataFile):
   _FLAG_HAS_LARGE_OFFSET = 0x0020
   _FLAG_HAS_PRIVATE_STRINGS_RANGE = 0x0100
 
+  _SUPPORTED_STRINGS_FILE_TYPES = (0x0002, 0x0004, 0x0008, 0x000a, 0x000c)
+  _UUIDTEXT_STRINGS_FILE_TYPES = (0x0002, 0x0008, 0x000a)
+
   _LOG_TYPE_DESCRIPTIONS = {
       0x00: 'Default',
       0x01: 'Info',
@@ -1574,7 +1604,7 @@ class TraceV3File(data_format.BinaryDataFile):
       ('record_type', 'Record type', '_FormatFirehoseTracepointRecordType'),
       ('log_type', 'Log type', '_FormatLogType'),
       ('flags', 'Flags', '_FormatFirehoseTracepointFlags'),
-      ('format_string_location', 'Format string location',
+      ('format_string_reference', 'Format string reference',
        '_FormatIntegerAsHexadecimal8'),
       ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
       ('continuous_time_lower', 'Continous time (lower 32-bit)',
@@ -1623,8 +1653,6 @@ class TraceV3File(data_format.BinaryDataFile):
       ('ttl', 'TTL', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
        '_FormatIntegerAsHexadecimal4'),
-      ('name_reference_value', 'Name reference value',
-       '_FormatIntegerAsHexadecimal8'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('number_of_data_items', 'Number of data items',
        '_FormatIntegerAsDecimal')]
@@ -1653,8 +1681,6 @@ class TraceV3File(data_format.BinaryDataFile):
       ('ttl', 'TTL', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
        '_FormatIntegerAsHexadecimal4'),
-      ('name_reference_value', 'Name reference value',
-       '_FormatIntegerAsHexadecimal8'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('number_of_data_items', 'Number of data items',
        '_FormatIntegerAsDecimal')]
@@ -1675,11 +1701,12 @@ class TraceV3File(data_format.BinaryDataFile):
        '_FormatIntegerAsHexadecimal4'),
       ('sub_system_identifier', 'Sub system identifier',
        '_FormatIntegerAsDecimal'),
-      ('signpost_identifier', 'Signpost identifier', '_FormatIntegerAsDecimal'),
+      ('signpost_identifier', 'Signpost identifier',
+       '_FormatIntegerAsHexadecimal8'),
       ('ttl', 'TTL', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
        '_FormatIntegerAsHexadecimal4'),
-      ('name_reference_value', 'Name reference value',
+      ('name_string_reference', 'Name string reference',
        '_FormatIntegerAsHexadecimal8'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('number_of_data_items', 'Number of data items',
@@ -1787,11 +1814,12 @@ class TraceV3File(data_format.BinaryDataFile):
   _FORMAT_STRING_DECODERS = {
       'bool': BooleanFormatStringDecoder(),
       'BOOL': YesNoFormatStringDecoder(),
-      'darwin.errno': ErrorCodeFormatStringDecoder(),
+      'darwin.errno': ExtendedErrorCodeFormatStringDecoder(),
       'darwin.mode': FileModeFormatStringDecoder(),
-      'errno': ErrorCodeFormatStringDecoder(),
+      'errno': ExtendedErrorCodeFormatStringDecoder(),
       'in_addr': IPv4FormatStringDecoder(),
       'in6_addr': IPv6FormatStringDecoder(),
+      'internal:m': ErrorCodeFormatStringDecoder(),
       'location:_CLClientManagerStateTrackerState': (
           LocationClientManagerStateFormatStringDecoder()),
       'location:_CLLocationManagerStateTrackerState': (
@@ -1803,13 +1831,15 @@ class TraceV3File(data_format.BinaryDataFile):
       'network:in6_addr': IPv6FormatStringDecoder(),
       'mask.hash': MaskHashFormatStringDecoder(),
       'signpost.description:attribute': (
-          SignpostDescriptionAttributeStringDecoder()),
+          SignpostDescriptionAttributeFormatStringDecoder()),
       'signpost.description:begin_time': (
-          SignpostDescriptionBeginTimeStringDecoder()),
+          SignpostDescriptionBeginTimeFormatStringDecoder()),
       'signpost.description:end_time': (
-          SignpostDescriptionEndTimeStringDecoder()),
-      'signpost.telemetry:number1': SignpostTelemetryNumber1StringDecoder(),
-      'signpost.telemetry:string1': SignpostTelemetryString1StringDecoder(),
+          SignpostDescriptionEndTimeFormatStringDecoder()),
+      'signpost.telemetry:number1': (
+          SignpostTelemetryNumber1FormatStringDecoder()),
+      'signpost.telemetry:string1': (
+          SignpostTelemetryString1FormatStringDecoder()),
       'time_t': DateTimeInSecondsFormatStringDecoder(),
       'uuid_t': UUIDFormatStringDecoder()}
 
@@ -1882,19 +1912,16 @@ class TraceV3File(data_format.BinaryDataFile):
       self._catalog_process_information_entries[proc_id] = (
           process_information_entry)
 
-  def _CalculateFormatFormatStringLocation(
-    self, firehose_tracepoint, tracepoint_data_object):
-    """Calculates the format string location.
+  def _CalculateStringReference(self, tracepoint_data_object, string_reference):
+    """Calculates the string reference.
 
     Args:
-      firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
       tracepoint_data_object (object): firehose tracepoint data object.
+      string_reference (int): string reference.
 
     Returns:
-      int: format string location.
+      int: string reference.
     """
-    format_string_location = firehose_tracepoint.format_string_location
-
     large_offset_data = getattr(
         tracepoint_data_object, 'large_offset_data', None)
     large_shared_cache_data = getattr(
@@ -1912,15 +1939,14 @@ class TraceV3File(data_format.BinaryDataFile):
       large_offset_data = tracepoint_data_object.large_shared_cache_data
 
     if large_offset_data:
-      format_string_location |= large_offset_data << 31
+      string_reference |= large_offset_data << 31
 
     if self._debug:
-      value_string, _ = self._FormatIntegerAsHexadecimal8(
-          format_string_location)
-      self._DebugPrintValue('Calculated format string location', value_string)
+      value_string, _ = self._FormatIntegerAsHexadecimal8(string_reference)
+      self._DebugPrintValue('Calculated string reference', value_string)
       self._DebugPrintText('\n')
 
-    return format_string_location
+    return string_reference
 
   def _FormatArrayOfStrings(self, array_of_strings):
     """Formats an array of strings.
@@ -2055,17 +2081,17 @@ class TraceV3File(data_format.BinaryDataFile):
     if integer & 0x0001:
       lines.append('\tHas current activity identfier (0x0001)')
 
-    format_string_type = integer & 0x000e
-    if format_string_type == 0x0002:
-      lines.append('\tFormat string in uuidtext file by proc_id (0x0002)')
-    elif format_string_type == 0x0004:
-      lines.append('\tFormat string in DSC file (0x0004)')
-    elif format_string_type == 0x0008:
-      lines.append('\tFormat string in uuidtext file by reference (0x0008)')
-    elif format_string_type == 0x000a:
-      lines.append('\tFormat string in uuidtext file by identifier (0x000a)')
-    elif format_string_type == 0x000c:
-      lines.append('\tFormat string in DSC file (0x000c)')
+    strings_file_type = integer & 0x000e
+    if strings_file_type == 0x0002:
+      lines.append('\tStrings in uuidtext file by proc_id (0x0002)')
+    elif strings_file_type == 0x0004:
+      lines.append('\tStrings in DSC file (0x0004)')
+    elif strings_file_type == 0x0008:
+      lines.append('\tStrings in uuidtext file by reference (0x0008)')
+    elif strings_file_type == 0x000a:
+      lines.append('\tStrings in uuidtext file by identifier (0x000a)')
+    elif strings_file_type == 0x000c:
+      lines.append('\tStrings in DSC file (0x000c)')
 
     if integer & 0x0010:
       lines.append('\tHas process identifier (PID) value (0x0010)')
@@ -2172,111 +2198,83 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return dsc_file
 
-  def _GetFormatStringIdentifier(
-      self, process_information_entry, firehose_tracepoint,
-      tracepoint_data_object):
-    """Retrieves a format string identifier.
+  def _GetImageValuesAndString(
+      self, strings_file_identifier, firehose_tracepoint,
+      tracepoint_data_object, string_reference):
+    """Retrieves image values and string.
 
     Args:
-      process_information_entry (tracev3_catalog_process_information_entry):
-          process information entry.
-      firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
-      tracepoint_data_object (object): firehose tracepoint data object.
-
-    Returns:
-      uuid.UUID: format string identifier or None if not available.
-    """
-    format_string_type = firehose_tracepoint.flags & 0x000e
-
-    uuid_value = None
-    if format_string_type == 0x0002:
-      uuid_value = process_information_entry.main_uuid
-
-    if format_string_type in (0x0004, 0x000c):
-      uuid_value = process_information_entry.dsc_uuid
-
-    if format_string_type == 0x0008:
-      load_address_upper = tracepoint_data_object.load_address_upper
-      load_address_lower = tracepoint_data_object.load_address_lower
-
-      for uuid_entry in process_information_entry.uuid_entries:
-        if (load_address_upper != uuid_entry.load_address_upper or
-            load_address_lower < uuid_entry.load_address_lower):
-          continue
-
-        if load_address_lower <= (
-            uuid_entry.load_address_lower + uuid_entry.size):
-          if self._catalog:
-            uuid_value = self._catalog.uuids[uuid_entry.uuid_index]
-          break
-
-    elif format_string_type == 0x000a:
-      uuid_value = tracepoint_data_object.uuidtext_file_identifier
-
-    return uuid_value
-
-  def _GetImageValueAndFormatString(
-      self, format_string_identifier, firehose_tracepoint,
-      tracepoint_data_object):
-    """Retrieves image value and format string.
-
-    Args:
-      format_string_identifier (uuid.UUID): identifier of the Shared-Cache
-          Strings (dsc) or uuidtext that contains the image path and format
+      strings_file_identifier (uuid.UUID): identifier of the Shared-Cache
+          Strings (dsc) or uuidtext file that contains the image path and
           string.
       firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
       tracepoint_data_object (object): firehose tracepoint data object.
+      string_reference (int): string reference.
 
     Returns:
-      tuple[uuid.UUID, str, str]: image identifier, image path and format
-          string or (None, None, None) if not available.
+      tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
+          image path and string or (None, None, None, None) if not available.
 
     Raises:
-      ParseError: if the image path or format string cannot be retrieved.
+      ParseError: if the image path or string cannot be retrieved.
     """
-    format_string_type = firehose_tracepoint.flags & 0x000e
-    if format_string_type not in (0x0002, 0x0004, 0x0008, 0x000a, 0x000c):
-      return None, None, None
+    if not strings_file_identifier:
+      raise errors.ParseError('Missing strings file identifier.')
 
     # TODO: move this into dsc and uuidtext file.
-    if firehose_tracepoint.format_string_location & 0x80000000 != 0:
-      return None, None, '%s'
+    if string_reference & 0x80000000 != 0:
+      return None, None, None, '%s'
 
-    if format_string_identifier:
-      uuid_string = format_string_identifier.hex.upper()
-    else:
-      uuid_string = None
+    uuid_string = strings_file_identifier.hex.upper()
 
-    format_string_location = self._CalculateFormatFormatStringLocation(
-        firehose_tracepoint, tracepoint_data_object)
+    string_reference = self._CalculateStringReference(
+        tracepoint_data_object, string_reference)
 
     image_identifier = None
     image_path = None
-    format_string = None
+    string = None
 
-    if format_string_type in (0x0002, 0x0008, 0x000a):
+    strings_file_type = firehose_tracepoint.flags & 0x000e
+
+    if strings_file_type in self._UUIDTEXT_STRINGS_FILE_TYPES:
       uuidtext_file = self._GetUUIDTextFile(uuid_string)
       if uuidtext_file:
-        image_identifier = format_string_identifier
+        image_identifier = strings_file_identifier
+        image_text_offset = 0
         image_path = uuidtext_file.GetImagePath()
-        format_string = uuidtext_file.GetFormatString(format_string_location)
+        string = uuidtext_file.GetString(string_reference)
 
     else:
       dsc_file = self._GetDSCFile(uuid_string)
       if dsc_file:
-        image_identifier, image_path, format_string = (
-            dsc_file.GetImageValueAndFormatString(
-                format_string_location))
+        image_identifier, image_text_offset, image_path, string = (
+            dsc_file.GetImageValuesAndString(string_reference))
 
-    if self._debug and format_string:
-      self._DebugPrintValue(
-          'Format string identifier', format_string_identifier)
+    if self._debug and string:
+      self._DebugPrintValue('Strings file identifier', strings_file_identifier)
       self._DebugPrintValue('Image identifier', image_identifier)
       self._DebugPrintValue('Image path', image_path)
-      self._DebugPrintValue('Format string', format_string)
+      self._DebugPrintValue('String', string)
       self._DebugPrintText('\n')
 
-    return image_identifier, image_path, format_string
+    return image_identifier, image_text_offset, image_path, string
+
+  def _GetProgramCounter(self, tracepoint_data_object, image_text_offset):
+    """Determines a trace identifier.
+
+    Args:
+      tracepoint_data_object (object): firehose tracepoint data object.
+      image_text_offset (int): image text offset.
+
+    Returns:
+      int: program counter.
+    """
+    program_counter = getattr(
+        tracepoint_data_object, 'load_address_upper', None) or 0
+    program_counter <<= 32
+    program_counter |= tracepoint_data_object.load_address_lower
+
+    return program_counter - image_text_offset
 
   def _GetProcessImageValues(self, process_information_entry):
     """Retrieves the process image value.
@@ -2306,25 +2304,56 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return image_identifier, image_path
 
-  def _GetTraceIdentifier(self, firehose_tracepoint):
-    """Determines a trace identifier.
+  def _GetStringsFileIdentifier(
+      self, process_information_entry, firehose_tracepoint,
+      tracepoint_data_object):
+    """Retrieves a strings file identifier.
 
     Args:
+      process_information_entry (tracev3_catalog_process_information_entry):
+          process information entry.
       firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
+      tracepoint_data_object (object): firehose tracepoint data object.
 
     Returns:
-      int: trace identifier.
+      uuid.UUID: strings file identifier or None if not available.
+
+    Raises:
+      ParseError: if the strings file type is not supported.
     """
-    trace_identifier = firehose_tracepoint.format_string_location << 32
-    trace_identifier |= firehose_tracepoint.flags << 16
-    trace_identifier |= firehose_tracepoint.log_type << 8
-    trace_identifier |= firehose_tracepoint.record_type
+    strings_file_type = firehose_tracepoint.flags & 0x000e
 
-    if self._debug:
-      self._DebugPrintDecimalValue('Trace identifier', trace_identifier)
-      self._DebugPrintText('\n')
+    if strings_file_type not in self._SUPPORTED_STRINGS_FILE_TYPES:
+      raise errors.ParseError(
+          f'Unsupported strings file type: 0x{strings_file_type:04x}')
 
-    return trace_identifier
+    strings_file_identifier = None
+
+    if strings_file_type == 0x0002:
+      strings_file_identifier = process_information_entry.main_uuid
+
+    if strings_file_type in (0x0004, 0x000c):
+      strings_file_identifier = process_information_entry.dsc_uuid
+
+    if strings_file_type == 0x0008:
+      load_address_upper = tracepoint_data_object.load_address_upper
+      load_address_lower = tracepoint_data_object.load_address_lower
+
+      for uuid_entry in process_information_entry.uuid_entries:
+        if (load_address_upper != uuid_entry.load_address_upper or
+            load_address_lower < uuid_entry.load_address_lower):
+          continue
+
+        if load_address_lower <= (
+            uuid_entry.load_address_lower + uuid_entry.size):
+          if self._catalog:
+            strings_file_identifier = self._catalog.uuids[uuid_entry.uuid_index]
+          break
+
+    elif strings_file_type == 0x000a:
+      strings_file_identifier = tracepoint_data_object.uuidtext_file_identifier
+
+    return strings_file_identifier
 
   def _GetSubSystemStrings(
       self, process_information_entry, sub_system_identifier):
@@ -2385,6 +2414,26 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintText('\n')
 
     return timestamp
+
+  def _GetTraceIdentifier(self, firehose_tracepoint):
+    """Determines a trace identifier.
+
+    Args:
+      firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
+
+    Returns:
+      int: trace identifier.
+    """
+    trace_identifier = firehose_tracepoint.format_string_reference << 32
+    trace_identifier |= firehose_tracepoint.flags << 16
+    trace_identifier |= firehose_tracepoint.log_type << 8
+    trace_identifier |= firehose_tracepoint.record_type
+
+    if self._debug:
+      self._DebugPrintDecimalValue('Trace identifier', trace_identifier)
+      self._DebugPrintText('\n')
+
+    return trace_identifier
 
   def _GetTimesyncRecord(self, continuous_time):
     """Retrieves a timesync record corresponding to the continuous time.
@@ -2808,14 +2857,15 @@ class TraceV3File(data_format.BinaryDataFile):
                 data_offset + chunk_data_offset))
 
       if tracepoint_data_object:
-        format_string_identifier = self._GetFormatStringIdentifier(
+        strings_file_identifier = self._GetStringsFileIdentifier(
             process_information_entry, firehose_tracepoint,
             tracepoint_data_object)
 
-        image_identifier, image_path, format_string = (
-            self._GetImageValueAndFormatString(
-                format_string_identifier, firehose_tracepoint,
-                tracepoint_data_object))
+        image_identifier, image_text_offset, image_path, format_string = (
+            self._GetImageValuesAndString(
+                strings_file_identifier, firehose_tracepoint,
+                tracepoint_data_object,
+                firehose_tracepoint.format_string_reference))
 
         string_formatter = StringFormatter()
         string_formatter.ParseFormatString(format_string)
@@ -2852,6 +2902,9 @@ class TraceV3File(data_format.BinaryDataFile):
         process_image_identifier, process_image_path = (
             self._GetProcessImageValues(process_information_entry))
 
+        program_counter = self._GetProgramCounter(
+            tracepoint_data_object, image_text_offset)
+
         log_entry = LogEntry()
         log_entry.activity_identifier = getattr(
             tracepoint_data_object, 'activity_identifier', None) or 0
@@ -2861,8 +2914,6 @@ class TraceV3File(data_format.BinaryDataFile):
             firehose_tracepoint.record_type, None)
         log_entry.format_string = format_string
         log_entry.mach_timestamp = continuous_time
-        log_entry.message_type = self._LOG_TYPE_DESCRIPTIONS.get(
-            firehose_tracepoint.log_type, None)
         log_entry.parent_activity_identifier = 0
         log_entry.process_identifier = getattr(
             process_information_entry, 'process_identifier', None) or 0
@@ -2870,13 +2921,7 @@ class TraceV3File(data_format.BinaryDataFile):
         log_entry.process_image_path = process_image_path
         log_entry.sender_image_identifier = image_identifier
         log_entry.sender_image_path = image_path
-        log_entry.sender_program_counter = None
-        log_entry.signpost_identifier = getattr(
-            tracepoint_data_object, 'signpost_identifier', None)
-        log_entry.signpost_scope = self._SIGNPOST_SCOPE_DESCRIPTIONS.get(
-            firehose_tracepoint.log_type >> 4, None)
-        log_entry.signpost_type = self._SIGNPOST_TYPE_DESCRIPTIONS.get(
-            firehose_tracepoint.log_type & 0x0f, None)
+        log_entry.sender_program_counter = program_counter or 0
         log_entry.sub_system = sub_system
         log_entry.thread_identifier = firehose_tracepoint.thread_identifier
         log_entry.timestamp = self._GetTimestamp(continuous_time)
@@ -2884,6 +2929,28 @@ class TraceV3File(data_format.BinaryDataFile):
         log_entry.trace_identifier = self._GetTraceIdentifier(
             firehose_tracepoint)
         log_entry.ttl = getattr(tracepoint_data_object, 'ttl', None) or 0
+
+        if firehose_tracepoint.record_type != self._RECORD_TYPE_SIGNPOST:
+          log_entry.message_type = self._LOG_TYPE_DESCRIPTIONS.get(
+              firehose_tracepoint.log_type, None)
+
+        else:
+          name_string_reference = getattr(
+              tracepoint_data_object, 'name_string_reference', None)
+          if name_string_reference is None:
+            name_string = None
+          else:
+            _, _, _, name_string = self._GetImageValuesAndString(
+                strings_file_identifier, firehose_tracepoint,
+                tracepoint_data_object, name_string_reference)
+
+          log_entry.signpost_identifier = getattr(
+              tracepoint_data_object, 'signpost_identifier', None)
+          log_entry.signpost_name = name_string
+          log_entry.signpost_scope = self._SIGNPOST_SCOPE_DESCRIPTIONS.get(
+              firehose_tracepoint.log_type >> 4, None)
+          log_entry.signpost_type = self._SIGNPOST_TYPE_DESCRIPTIONS.get(
+              firehose_tracepoint.log_type & 0x0f, None)
 
         if self._catalog:
           log_entry.event_message = string_formatter.FormatString(values)
@@ -2958,8 +3025,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e,
-        'tracev3_firehose_tracepoint_log_type': log_type})
+        'tracev3_firehose_tracepoint_log_type': log_type,
+        'tracev3_firehose_tracepoint_strings_file_type': flags & 0x000e})
 
     activity = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'activity',
@@ -3140,7 +3207,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_strings_file_type': flags & 0x000e})
 
     log = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'log', context=context)
@@ -3177,7 +3244,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_strings_file_type': flags & 0x000e})
 
     loss = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'loss', context=context)
@@ -3215,7 +3282,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_strings_file_type': flags & 0x000e})
 
     signpost = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'signpost',
@@ -3253,7 +3320,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     context = dtfabric_data_maps.DataTypeMapContext(values={
         'tracev3_firehose_tracepoint_flags': flags,
-        'tracev3_firehose_tracepoint_format_string_type': flags & 0x000e})
+        'tracev3_firehose_tracepoint_strings_file_type': flags & 0x000e})
 
     trace = self._ReadStructureFromByteStream(
         tracepoint_data, data_offset, data_type_map, 'trace', context=context)
@@ -3704,52 +3771,52 @@ class UUIDTextFile(data_format.BinaryDataFile):
 
     return file_header
 
-  def _ReadFormatString(self, file_object, file_offset):
-    """Reads a format string.
+  def _ReadString(self, file_object, file_offset):
+    """Reads a string.
 
     Args:
       file_object (file): file-like object.
-      file_offset (int): offset of the format string data relative to the start
+      file_offset (int): offset of the string data relative to the start
           of the file.
 
     Returns:
-      str: format string.
+      str: string.
 
     Raises:
-      ParseError: if the format string cannot be read.
+      ParseError: if the string cannot be read.
     """
     data_type_map = self._GetDataTypeMap('cstring')
 
     format_string, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'format string')
+        file_object, file_offset, data_type_map, 'string')
 
     if self._debug:
       self._DebugPrintValue('Format string', format_string)
 
     return format_string
 
-  def GetFormatString(self, format_string_location):
-    """Retrieves a format string.
+  def GetString(self, format_string_reference):
+    """Retrieves a string.
 
     Args:
-      format_string_location (int): location of the format string.
+      format_string_reference (int): reference of the string.
 
     Returns:
-      str: format string or None if not available.
+      str: string or None if not available.
 
     Raises:
-      ParseError: if the format string cannot be read.
+      ParseError: if the string cannot be read.
     """
     for file_offset, entry_descriptor in self._entry_descriptors:
-      if format_string_location < entry_descriptor.offset:
+      if format_string_reference < entry_descriptor.offset:
         continue
 
-      relative_offset = format_string_location - entry_descriptor.offset
+      relative_offset = format_string_reference - entry_descriptor.offset
       if relative_offset <= entry_descriptor.data_size:
         file_offset += relative_offset
-        return self._ReadFormatString(self._file_object, file_offset)
+        return self._ReadString(self._file_object, file_offset)
 
-    # TODO: if format_string_location is invalid use:
+    # TODO: if format_string_reference is invalid use:
     # "<Invalid shared cache format string offset>"
 
     return None

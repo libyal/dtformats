@@ -221,6 +221,12 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._type_hints, [None])
     self.assertEqual(test_formatter._value_formatters, ['{0:s}'])
 
+    test_formatter.ParseFormatString('%m')
+    self.assertEqual(test_formatter._decoders, [['internal:m']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
+
     test_formatter.ParseFormatString('%.16P')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
@@ -310,6 +316,17 @@ class ErrorCodeFormatStringDecoderTest(test_lib.BaseTestCase):
   def testFormatValue(self):
     """Tests the FormatValue function."""
     test_decoder = unified_logging.ErrorCodeFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(22)
+    self.assertEqual(formatted_value, 'Invalid argument')
+
+
+class ExtendedErrorCodeFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Extended error code format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.ExtendedErrorCodeFormatStringDecoder()
 
     formatted_value = test_decoder.FormatValue(2)
     self.assertEqual(formatted_value, '[2: No such file or directory]')
@@ -486,12 +503,14 @@ class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
         'counts: 1/0/0/0'))
 
 
-class SignpostDescriptionAttributeStringDecoderTest(test_lib.BaseTestCase):
+class SignpostDescriptionAttributeFormatStringDecoderTest(
+    test_lib.BaseTestCase):
   """Signpost description attribute value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostDescriptionAttributeStringDecoder()
+    test_decoder = (
+        unified_logging.SignpostDescriptionAttributeFormatStringDecoder())
 
     formatted_value = test_decoder.FormatValue(None)
     self.assertEqual(formatted_value, (
@@ -506,36 +525,39 @@ class SignpostDescriptionAttributeStringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.description#____#attribute#_##_#50717##__##'))
 
 
-class SignpostDescriptionBeginTimeStringDecoderTest(test_lib.BaseTestCase):
+class SignpostDescriptionBeginTimeFormatStringDecoderTest(
+    test_lib.BaseTestCase):
   """Signpost description begin time value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostDescriptionBeginTimeStringDecoder()
+    test_decoder = (
+        unified_logging.SignpostDescriptionBeginTimeFormatStringDecoder())
 
     formatted_value = test_decoder.FormatValue(1005536557983)
     self.assertEqual(formatted_value, (
         '__##__signpost.description#____#begin_time#_##_#1005536557983##__##'))
 
 
-class SignpostDescriptionEndTimeStringDecoderTest(test_lib.BaseTestCase):
+class SignpostDescriptionEndTimeFormatStringDecoderTest(test_lib.BaseTestCase):
   """Signpost description end time value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostDescriptionEndTimeStringDecoder()
+    test_decoder = (
+        unified_logging.SignpostDescriptionEndTimeFormatStringDecoder())
 
     formatted_value = test_decoder.FormatValue(1005756624719)
     self.assertEqual(formatted_value, (
         '__##__signpost.description#____#end_time#_##_#1005756624719##__##'))
 
 
-class SignpostTelemetryNumber1StringDecoderTest(test_lib.BaseTestCase):
+class SignpostTelemetryNumber1FormatStringDecoderTest(test_lib.BaseTestCase):
   """Signpost telemetry number 1 value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostTelemetryNumber1StringDecoder()
+    test_decoder = unified_logging.SignpostTelemetryNumber1FormatStringDecoder()
 
     formatted_value = test_decoder.FormatValue(1, value_formatter='{0:d}')
     self.assertEqual(formatted_value, (
@@ -547,12 +569,12 @@ class SignpostTelemetryNumber1StringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.telemetry#____#number1#_##_#1.98046875##__##'))
 
 
-class SignpostTelemetryString1StringDecoderTest(test_lib.BaseTestCase):
+class SignpostTelemetryString1FormatStringDecoderTest(test_lib.BaseTestCase):
   """Signpost telemetry string 1 value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostTelemetryString1StringDecoder()
+    test_decoder = unified_logging.SignpostTelemetryString1FormatStringDecoder()
 
     formatted_value = test_decoder.FormatValue('executeQueryBegin')
     self.assertEqual(formatted_value, (
@@ -608,7 +630,7 @@ class DSCFileTest(test_lib.BaseTestCase):
     self.assertEqual(file_header.number_of_ranges, 263)
     self.assertEqual(file_header.number_of_uuids, 200)
 
-  # TODO: add test for _ReadFormatString
+  # TODO: add test for _ReadString
 
   def testReadImagePath(self):
     """Tests the _ReadImagePath function."""
@@ -691,7 +713,7 @@ class DSCFileTest(test_lib.BaseTestCase):
         '/System/Library/Extensions/AppleD2207PMU.kext/AppleD2207PMU')
     self.assertEqual(uuids[197].image_path, expected_path)
 
-  # TODO: add test for GetImageValueAndFormatString
+  # TODO: add test for GetImageValuesAndString
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""
@@ -867,52 +889,42 @@ class TraceV3FileTest(test_lib.BaseTestCase):
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x09]))
 
-  def testCalculateFormatFormatStringLocation(self):
-    """Tests the _CalculateFormatFormatStringLocation function."""
+  def testCalculateStringReference(self):
+    """Tests the _CalculateStringReference function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    firehose_tracepoint_tuple = collections.namedtuple(
-        'firehose_tracepoint', ['flags', 'format_string_location'])
     tracepoint_data_object_tuple = collections.namedtuple(
         'tracepoint_data_object', [
             'large_offset_data', 'large_shared_cache_data'])
 
-    firehose_tracepoint = firehose_tracepoint_tuple(
-        flags=0x0002, format_string_location=0x00964b95)
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0, large_shared_cache_data=0)
 
-    format_string_location = test_file._CalculateFormatFormatStringLocation(
-        firehose_tracepoint, tracepoint_data_object)
-    self.assertEqual(format_string_location, 0x964b95)
+    string_reference = test_file._CalculateStringReference(
+        tracepoint_data_object, 0x00964b95)
+    self.assertEqual(string_reference, 0x964b95)
 
-    firehose_tracepoint = firehose_tracepoint_tuple(
-        flags=0x0002, format_string_location=0x28dd2b31)
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0xff4b, large_shared_cache_data=0)
 
-    format_string_location = test_file._CalculateFormatFormatStringLocation(
-        firehose_tracepoint, tracepoint_data_object)
-    self.assertEqual(format_string_location, 0x7fa5a8dd2b31)
+    string_reference = test_file._CalculateStringReference(
+        tracepoint_data_object, 0x28dd2b31)
+    self.assertEqual(string_reference, 0x7fa5a8dd2b31)
 
-    firehose_tracepoint = firehose_tracepoint_tuple(
-        flags=0x000c, format_string_location=0x15a557c5)
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0x0001, large_shared_cache_data=0x0002)
 
-    format_string_location = test_file._CalculateFormatFormatStringLocation(
-        firehose_tracepoint, tracepoint_data_object)
-    self.assertEqual(format_string_location, 0x115a557c5)
+    string_reference = test_file._CalculateStringReference(
+        tracepoint_data_object, 0x15a557c5)
+    self.assertEqual(string_reference, 0x115a557c5)
 
-    firehose_tracepoint = firehose_tracepoint_tuple(
-        flags=0x000c, format_string_location=0x6c8fbbd0)
     tracepoint_data_object = tracepoint_data_object_tuple(
         large_offset_data=0x0001, large_shared_cache_data=0x0011)
 
-    format_string_location = test_file._CalculateFormatFormatStringLocation(
-        firehose_tracepoint, tracepoint_data_object)
-    self.assertEqual(format_string_location, 0x8ec8fbbd0)
+    string_reference = test_file._CalculateStringReference(
+        tracepoint_data_object, 0x6c8fbbd0)
+    self.assertEqual(string_reference, 0x8ec8fbbd0)
 
   # TODO: add tests for _FormatArrayOfStrings
   # TODO: add tests for _FormatArrayOfUUIDS
@@ -1214,8 +1226,8 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
     self.assertEqual(file_header.minor_format_version, 1)
     self.assertEqual(file_header.number_of_entries, 0)
 
-  def testReadFormatString(self):
-    """Tests the _ReadFormatString function."""
+  def testReadString(self):
+    """Tests the _ReadString function."""
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
 
@@ -1226,30 +1238,11 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
     test_file.Open(test_file_path)
 
     try:
-      format_string = test_file._ReadFormatString(
-          test_file._file_object, 0x00000018)
+      string = test_file._ReadString(test_file._file_object, 0x00000018)
     finally:
       test_file.Close()
 
-    self.assertEqual(format_string, 'system.install.apple-software')
-
-  def testGetFormatString(self):
-    """Tests the GetFormatString function."""
-    output_writer = test_lib.TestOutputWriter()
-    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
-
-    test_file_path = self._GetTestFilePath([
-        'unified_logging', 'uuidtext', '00', '7EF56328D53A78B59CCCE3E3189F57'])
-    self._SkipIfPathNotExists(test_file_path)
-
-    test_file.Open(test_file_path)
-
-    try:
-      format_string = test_file.GetFormatString(0x00005591)
-    finally:
-      test_file.Close()
-
-    self.assertEqual(format_string, 'system.install.apple-software')
+    self.assertEqual(string, 'system.install.apple-software')
 
   def testGetImagePath(self):
     """Tests the GetImagePath function."""
@@ -1268,6 +1261,24 @@ class UUIDTextFileTest(test_lib.BaseTestCase):
       test_file.Close()
 
     self.assertEqual(image_path, '/usr/libexec/lsd')
+
+  def testGetString(self):
+    """Tests the GetString function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.UUIDTextFile(output_writer=output_writer)
+
+    test_file_path = self._GetTestFilePath([
+        'unified_logging', 'uuidtext', '00', '7EF56328D53A78B59CCCE3E3189F57'])
+    self._SkipIfPathNotExists(test_file_path)
+
+    test_file.Open(test_file_path)
+
+    try:
+      string = test_file.GetString(0x00005591)
+    finally:
+      test_file.Close()
+
+    self.assertEqual(string, 'system.install.apple-software')
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""

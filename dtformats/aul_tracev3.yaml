@@ -512,7 +512,7 @@ members:
   data_type: uint8
 - name: flags
   data_type: uint16
-- name: format_string_location
+- name: format_string_reference
   data_type: uint32
 - name: thread_identifier
   data_type: uint64
@@ -617,13 +617,13 @@ members:
   condition: tracev3_firehose_tracepoint_flags & 0x0020 != 0
 - name: load_address_upper
   data_type: uint16
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x0008
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x0008
 - name: uuidtext_file_identifier
   data_type: uuid_be
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x000a
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x000a
 - name: large_shared_cache_data
   data_type: uint16
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x000c
 ---
 name: tracev3_firehose_tracepoint_activity_data_items
 type: structure
@@ -672,13 +672,13 @@ members:
   condition: tracev3_firehose_tracepoint_flags & 0x0020 != 0
 - name: load_address_upper
   data_type: uint16
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x0008
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x0008
 - name: uuidtext_file_identifier
   data_type: uuid_be
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x000a
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x000a
 - name: large_shared_cache_data
   data_type: uint16
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x000c
 - name: sub_system_identifier
   data_type: uint16
   condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
@@ -716,13 +716,13 @@ members:
   condition: tracev3_firehose_tracepoint_flags & 0x0020 != 0
 - name: load_address_upper
   data_type: uint16
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x0008
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x0008
 - name: uuidtext_file_identifier
   data_type: uuid_be
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x000a
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x000a
 - name: large_shared_cache_data
   data_type: uint16
-  condition: tracev3_firehose_tracepoint_format_string_type == 0x000c
+  condition: tracev3_firehose_tracepoint_strings_file_type == 0x000c
 - name: sub_system_identifier
   data_type: uint16
   condition: tracev3_firehose_tracepoint_flags & 0x0200 != 0
@@ -734,7 +734,7 @@ members:
 - name: data_reference_value
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0800 != 0
-- name: name_reference_value
+- name: name_string_reference
   data_type: uint32
   condition: tracev3_firehose_tracepoint_flags & 0x8000 != 0
 - name: unknown2

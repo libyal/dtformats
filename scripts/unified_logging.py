@@ -194,10 +194,6 @@ def Main():
         sender_image_path = log_entry.sender_image_path or ''
         sender_image_path = sender_image_path.replace('/', '\\/')
 
-        # TODO: add
-        #   "signpostType" : "event",
-        #   "signpostName" : "FrameLifetime",
-
         lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
 
         if log_entry.signpost_identifier is None:
@@ -209,8 +205,8 @@ def Main():
           signpost_scope = log_entry.signpost_scope or ''
 
           lines.extend([
-              f'"signpostID" : {log_entry.signpost_identifier:d},',
-              f'"signpostScope" : {signpost_scope:s},'])
+              f'  "signpostID" : {log_entry.signpost_identifier:d},',
+              f'  "signpostScope" : "{signpost_scope:s}",'])
 
         # TODO: implement source support.
         lines.extend([
@@ -225,15 +221,29 @@ def Main():
         if log_entry.signpost_identifier is not None:
           signpost_type = log_entry.signpost_type or ''
 
-          lines.append(f'"signpostType" : {signpost_type:s},')
+          lines.append(f'  "signpostType" : "{signpost_type:s}",')
 
+        # TODO: improve backtrace support.
         lines.extend([
-            # TODO: implement backtrace support
+            '  "backtrace" : {',
+            '    "frames" : [',
+            '      {',
+            f'        "imageOffset" : {log_entry.sender_program_counter:d},',
+            f'        "imageUUID" : "{sender_image_identifier:s}"',
+            '      }',
+            '    ]',
+            '  },',
             f'  "bootUUID" : "{boot_identifier:s}",',
             f'  "processImagePath" : "{process_image_path:s}",',
             f'  "timestamp" : "{date_time_string:s}",',
-            f'  "senderImagePath" : "{sender_image_path:s}"',
-            f'  "machTimestamp" : {log_entry.mach_timestamp:d},'])
+            f'  "senderImagePath" : "{sender_image_path:s}",'])
+
+        if log_entry.signpost_identifier is not None:
+          signpost_name = log_entry.signpost_name or ''
+
+          lines.append(f'  "signpostName" : "{signpost_name:s}",')
+
+        lines.append(f'  "machTimestamp" : {log_entry.mach_timestamp:d},')
 
         if log_entry.signpost_identifier is not None:
           lines.append(f'  "eventMessage" : "{log_entry.event_message:s}",')
@@ -245,12 +255,10 @@ def Main():
         lines.extend([
             f'  "processImageUUID" : "{process_image_identifier:s}",',
             f'  "processID" : {log_entry.process_identifier:d},',
-            # TODO: implement
-            '  "senderProgramCounter" : 0,',
+            f'  "senderProgramCounter" : {log_entry.sender_program_counter:d},',
             # TODO: implement
             '  "parentActivityIdentifier" : 0,',
-            '  "timezoneName" : "",',
-            ''])
+            '  "timezoneName" : ""'])
 
         print('\n'.join(lines))
 

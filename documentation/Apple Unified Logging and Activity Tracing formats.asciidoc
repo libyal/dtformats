@@ -660,7 +660,8 @@ See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
-| 4 | 4 | | Format string location
+| 4 | 4 | | Format string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
@@ -731,7 +732,7 @@ Note that appears to be only used by the "Activity" record type, other record ty
 |===
 | Value | Identifier | Description
 | 0x0001 | has_current_aid | Has current activity identifier
-| 0x000e | | <<tracev3_firehose_tracepoint_format_string_type,Format string type>>
+| 0x000e | | <<tracev3_firehose_tracepoint_strings_file_type,Strings file type>>
 | 0x0010 | | Has process identifier value (has_unique_pid)
 | 0x0020 | has_large_offset | Has large offset data
 | | |
@@ -746,16 +747,16 @@ Note that appears to be only used by the "Activity" record type, other record ty
 | 0x8000 | has_name | Has name reference value
 |===
 
-===== [[tracev3_firehose_tracepoint_format_string_type]]Firehose tracepoint format string type
+===== [[tracev3_firehose_tracepoint_strings_file_type]]Firehose tracepoint strings file type
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x0002 | main_exe | Format string is stored in an uuidtext file by proc_id
-| 0x0004 | shared_cache | Format string is stored in a dsc file
-| 0x0008 | absolute | Format string is stored in an uuidtext file by reference
-| 0x000a | uuid_relative | Format string is stored in an uuidtext file by identifier
-| 0x000c | large_shared_cache | Format string is stored in a dsc file
+| 0x0002 | main_exe | Strings are stored in an uuidtext file by proc_id
+| 0x0004 | shared_cache | Strings are stored in a Shared-Cache Strings (dsc) file
+| 0x0008 | absolute | Strings are stored in an uuidtext file by reference
+| 0x000a | uuid_relative | Strings are stored in an uuidtext file by identifier
+| 0x000c | large_shared_cache | Strings are stored in a Shared-Cache Strings (dsc) file
 |===
 
 ==== [[tracev3_firehose_tracepoint_data_range]]Firehose tracepoint data range
@@ -894,7 +895,8 @@ See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
-| 4 | 4 | | Format string location
+| 4 | 4 | | Format string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
@@ -912,12 +914,12 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 | ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
 | 0 | 2 | | Large offset data
-4+| _If format string type == 0x0008_
+4+| _If strings file type == 0x0008_
 | ... | 2 | | UUID entry load address (upper 16-bit)
-4+| _If format string type == 0x000a_
+4+| _If strings file type == 0x000a_
 | ... | 16 | | uuidtext file identifier (or image uuid)
-4+| _If format string type == 0x000c_
-| ... | 2 | | Large shared cache
+4+| _If strings file type == 0x000c_
+| ... | 2 | | Large shared cache data
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
@@ -925,8 +927,6 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 [NOTE]
 Note that "has private data range flag (0x0100)" has been observed to be set
 but without any obvious changes to the activity firehose tracepoint structure.
-
-[yellow-background]*TODO: determine meaning of MSB of UUID entry load address (lower 32-bit)*
 
 ==== [[tracev3_firehose_tracepoint_trace]]Trace firehose tracepoint
 
@@ -941,13 +941,14 @@ See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
-| 4 | 4 | | Format string location
+| 4 | 4 | | Format string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
 | 22 | 2 | | Data size
 4+| _Start of data_
-| ... | 4 | | Format string location
+| ... | 4 | | UUID entry load address (lower 32-bit)
 | ... | 1 | | [yellow-background]*Unknown*
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
@@ -966,7 +967,8 @@ See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
-| 4 | 4 | | Format string location
+| 4 | 4 | | Format string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
@@ -981,12 +983,12 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
 | 0 | 2 | | Large offset data
-4+| _If format string type == 0x0008_
+4+| _If strings file type == 0x0008_
 | ... | 2 | | UUID entry load address (upper 16-bit)
-4+| _If format string type == 0x000a_
+4+| _If strings file type == 0x000a_
 | ... | 16 | | uuidtext file identifier (or image uuid)
-4+| _If format string type == 0x000c_
-| ... | 2 | | Large shared cache
+4+| _If strings file type == 0x000c_
+| ... | 2 | | Large shared cache data
 4+| _Has sub system flag (0x0200) is set_
 | ... | 2 | | Sub system identifier
 4+| _Has rules flag (0x0400) is set_
@@ -998,8 +1000,6 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
-
-[yellow-background]*TODO: determine meaning of MSB of UUID entry load address (lower 32-bit)*
 
 ==== [[tracev3_firehose_tracepoint_singpost]]Signpost firehose tracepoint
 
@@ -1014,7 +1014,8 @@ See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
-| 4 | 4 | | Format string location
+| 4 | 4 | | Format string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
@@ -1029,12 +1030,12 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 4 | | UUID entry load address (lower 32-bit)
 4+| _Has large offset flag (0x0020) is set_
 | 0 | 2 | | Large offset data
-4+| _If format string type == 0x0008_
+4+| _If strings file type == 0x0008_
 | ... | 2 | | UUID entry load address (upper 16-bit)
-4+| _If format string type == 0x000a_
+4+| _If strings file type == 0x000a_
 | ... | 16 | | uuidtext file identifier (or image uuid)
-4+| _If format string type == 0x000c_
-| ... | 2 | | Large shared cache
+4+| _If strings file type == 0x000c_
+| ... | 2 | | Large shared cache data
 4+| _Has sub system flag (0x0200) is set_
 | ... | 2 | | Sub system identifier
 4+| _Common_
@@ -1044,14 +1045,13 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _Has data reference value flag (0x0800) is set_
 | ... | 2 | | Data reference value
 4+| _Has name reference value flag (0x8000) is set_
-| ... | 4 | | Name reference value
+| ... | 4 | | Name string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 4+| _Common_
 | ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
-
-[yellow-background]*TODO: determine meaning of MSB of UUID entry load address (lower 32-bit)*
 
 ==== [[tracev3_firehose_tracepoint_loss]]Loss firehose tracepoint
 
@@ -1066,7 +1066,8 @@ See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
 | 2 | 2 | 0x00 | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
-| 4 | 4 | | Format string location
+| 4 | 4 | | Format string reference (lower 32-bit) +
+See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | 8 | 8 | | Thread identifier
 | 16 | 6 | | Continuous time delta +
 Contains the delta relative to the base continuous time in the <<tracev3_firehose_chunk,Firehose chunk>>
@@ -1081,6 +1082,17 @@ Contains the number of messages lost
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
+
+==== [[tracev3_firehose_tracepoint_string_reference]]Firehose tracepoint string reference
+
+A string reference is used to look up strings in the uuidtext or Shared-Cache
+Strings (dsc) files.
+
+* ( large shared cache data << 31 ) | ( string reference & 0x7fffffff )
+* ( large offset data << 31 ) | ( string reference & 0x7fffffff )
+* ( string reference & 0x7fffffff )
+
+[yellow-background]*TODO: determine meaning of MSB of string reference*
 
 ==== [[tracev3_firehose_tracepoint_format_string]]Firehose tracepoint format string
 
@@ -1229,6 +1241,7 @@ The types are defined as:
 | "g" | | Floating-point value
 | "G" | | Floating-point value
 | "i" | | Signed decimal integer value
+| "m" | | Signed decimal integer value representing a system error (errno), formatted as "No route to host"
 | "n" | |
 | "o" | | Octal integer value
 | "O" | | Long octal integer value, equivalent to "lo"
@@ -1511,7 +1524,8 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | (dsc) text offset
+| 0 | 4 | | (dsc) text offset +
+Contains the base image offset (or base sender program counter)
 | 4 | 4 | | (dsc) text size
 | 8 | 16 | | Image (process or library) identifier +
 Contains a UUID stored in big-endian
@@ -1527,7 +1541,8 @@ and consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 8 | | (dsc) text offset
+| 0 | 8 | | (dsc) text offset +
+Contains the base image offset (or base sender program counter)
 | 8 | 4 | | (dsc) text size
 | 12 | 16 | | Image (process or library) identifier +
 Contains a UUID stored in big-endian
