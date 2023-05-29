@@ -13,12 +13,27 @@ class CupsIppFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
+  _DATE_TIME_VALUE_DATA = bytes(bytearray([
+      0x07, 0xe6, 0x07, 0x07, 0x00, 0x12, 0x1a, 0x00, 0x2b, 0x00, 0x00]))
+
   # TODO: test _FormatIntegerAsTagValue function
 
   # TODO: test _ReadAttribute function
   # TODO: test _ReadAttributesGroup function
   # TODO: test _ReadBooleanValue function
-  # TODO: test _ReadDateTimeValue function
+
+  def testReadDateTimeValue(self):
+    """Tests the _ReadDateTimeValue function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = cups_ipp.CupsIppFile(output_writer=output_writer)
+
+    date_time = test_file._ReadDateTimeValue(self._DATE_TIME_VALUE_DATA, 0)
+
+    self.assertIsNotNone(date_time)
+    iso8601_string = date_time.CopyToDateTimeStringISO8601()
+
+    self.assertEqual(iso8601_string, '2022-07-07T00:18:26.0+00:00')
+
   # TODO: test _ReadIntegerValue function
 
   def testReadHeader(self):

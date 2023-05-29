@@ -28,6 +28,8 @@ class CupsIppFile(data_format.BinaryDataFile):
       _DELIMITER_TAG_PRINTER_ATTRIBUTES,
       _DELIMITER_TAG_UNSUPPORTED_ATTRIBUTES])
 
+  _TAG_VALUE_NONE = 0x13
+
   _TAG_VALUE_INTEGER = 0x21
   _TAG_VALUE_BOOLEAN = 0x22
   _TAG_VALUE_ENUM = 0x23
@@ -254,7 +256,7 @@ class CupsIppFile(data_format.BinaryDataFile):
       dfdatetime.RFC2579DateTime: RFC2579 date-time stored in the value.
 
     Raises:
-      ParseError: when the datetime value cannot be read.
+      ParseError: when the date-time value cannot be read.
     """
     data_type_map = self._GetDataTypeMap('cups_ipp_datetime_value')
 
@@ -263,12 +265,13 @@ class CupsIppFile(data_format.BinaryDataFile):
           byte_stream, file_offset, data_type_map, 'date-time value')
     except (ValueError, errors.ParseError) as exception:
       raise errors.ParseError(
-          f'Unable to parse datetime value with error: {exception!s}')
+          f'Unable to parse date-time value with error: {exception!s}')
 
+    direction_from_utc = chr(value.direction_from_utc)
     rfc2579_date_time_tuple = (
-        value.year, value.month, value.day,
+        value.year, value.month, value.day_of_month,
         value.hours, value.minutes, value.seconds, value.deciseconds,
-        value.direction_from_utc, value.hours_from_utc, value.minutes_from_utc)
+        direction_from_utc, value.hours_from_utc, value.minutes_from_utc)
     return dfdatetime_rfc2579_date_time.RFC2579DateTime(
         rfc2579_date_time_tuple=rfc2579_date_time_tuple)
 
