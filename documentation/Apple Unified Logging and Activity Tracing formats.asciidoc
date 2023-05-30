@@ -1175,7 +1175,7 @@ Other observerd value type decoders are:
 | "odtypes:ODError" | | Formatted as a <<open_directory_error,Open Directory error>>
 | "odtypes:mbr_details" | | Formatted as a <<open_directory_membership_details,Open Directory membership details>>
 | "odtypes:mbridtype" | | Formatted as a <<open_directory_membership_identifier_types,Open Directory membership identifier types>>
-| "odtypes:nt_sid_t" | |
+| "odtypes:nt_sid_t" | | Formatted as a <<open_directory_windows_nt_sid,Open Directory Windows NT Security Identifier (SID)>>
 | "sensitive" | | Sensitive formatting argument, which is formatted as "<private>"
 | "signpost.description:attribute" | | Formatted as a signpost description attribute, for example `__##__signpost.description#____#attribute#_##_#efilogin-helper##__##`
 | "signpost.description:begin_time" | | Formatted as a signpost description begin time, for example `__##__signpost.description#____#begin_time#_##_#2180300470618##__##`
@@ -2006,12 +2006,52 @@ https://developer.apple.com/documentation/opendirectory/odframeworkerrors?change
 
 === [[open_directory_membership_details]]Open Directory membership details
 
-[yellow-background]*TODO describe*
+The Open Directory membership details is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Type indicator
+| 1 | ... | | Membership data
+| ... | ... | | Domain +
+Contains an UTF-8 encoded string with end-of-string character
+|===
+
+Where membership data is type indicator dependent:
+
+[cols="1,5",options="header"]
+|===
+| Type indicator | Membership data
+| 0x23 | user identifier (UID)
+Contains a 32-bit integer
+| 0x24 | Username +
+Contains an UTF-8 encoded string with end-of-string character
+| |
+| 0x44 | Group name +
+Contains an UTF-8 encoded string with end-of-string character
+| |
+| 0xa0 | Username +
+Contains an UTF-8 encoded string with end-of-string character
+| |
+| 0xa3 | user identifier (UID)
+Contains a 32-bit integer
+| 0xa4 | Username +
+Contains an UTF-8 encoded string with end-of-string character
+| |
+| 0xc3 | group identifier (GID)
+Contains a 32-bit integer
+|===
 
 The value is formatted as:
 
 ....
 user: 501@/Local/Default
+....
+
+or
+
+....
+group: wheel@/Local/Default
 ....
 
 === [[open_directory_membership_identifier_types]]Open Directory membership identifier types
@@ -2039,6 +2079,10 @@ user: 501@/Local/Default
 | 11 | | X509 DN
 | 12 | | KERBEROS
 |===
+
+=== [[open_directory_windows_nt_sid]]Open Directory Windows NT Security Identifier (SID)
+
+See: https://github.com/libyal/libfwnt/blob/main/documentation/Security%20Descriptor.asciidoc[[LIBFWNT\]]
 
 == Notes
 

@@ -223,12 +223,21 @@ def Main():
         sub_system = log_entry.sub_system or ''
 
         event_message = log_entry.event_message or ''
+        event_message = event_message.rstrip()
         event_message = event_message.replace('"', '\\"')
         event_message = event_message.replace('/', '\\/')
+        event_message = event_message.replace('\n', '\\n')
+        event_message = event_message.replace('\t', '\\t')
 
-        format_string = log_entry.format_string or ''
-        format_string = format_string.replace('"', '\\"')
-        format_string = format_string.replace('/', '\\/')
+        if log_entry.creator_activity_identifier is not None:
+          # The format string for an activityCreateEvent is empty.
+          format_string = ''
+        else:
+          format_string = log_entry.format_string or ''
+          format_string = format_string.replace('"', '\\"')
+          format_string = format_string.replace('/', '\\/')
+          format_string = format_string.replace('\n', '\\n')
+          format_string = format_string.replace('\t', '\\t')
 
         process_image_identifier = ''
         if log_entry.process_image_identifier:

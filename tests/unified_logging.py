@@ -503,6 +503,30 @@ class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
         'counts: 1/0/0/0'))
 
 
+class OpenDirectoryMembershipDetailsFormatStringDecoderTest(
+    test_lib.BaseTestCase):
+  """Open Directory membership details format string decoder tests."""
+
+  _VALUE_DATA1 = bytes(bytearray([
+      0x23, 0x58, 0x00, 0x00, 0x00, 0x2f, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x2f,
+      0x44, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x00]))
+
+  _VALUE_DATA2 = bytes(bytearray([
+      0x44, 0x77, 0x68, 0x65, 0x65, 0x6c, 0x00, 0x2f, 0x4c, 0x6f, 0x63, 0x61,
+      0x6c, 0x2f, 0x44, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.OpenDirectoryMembershipDetailsFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA1)
+    self.assertEqual(formatted_value, 'user: 88@/Local/Default')
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA2)
+    self.assertEqual(formatted_value, 'group: wheel@/Local/Default')
+
+
 class SignpostDescriptionAttributeFormatStringDecoderTest(
     test_lib.BaseTestCase):
   """Signpost description attribute value format string decoder tests."""
@@ -591,6 +615,23 @@ class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
     formatted_value = test_decoder.FormatValue(
         b'\x1d\x1f\xd3\xfb\xe9\xa6Fj\xb72\x7f\xb6\x98a\x02\xb2')
     self.assertEqual(formatted_value, '1D1FD3FB-E9A6-466A-B732-7FB6986102B2')
+
+
+class WindowsNTSecurityIdentifierFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Open Directory membership details format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x01, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x15, 0x00, 0x00, 0x00,
+      0x16, 0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00,
+      0x19, 0x00, 0x00, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.WindowsNTSecurityIdentifierFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, 'S-1-5-21-22-23-24-25')
 
 
 class YesNoFormatStringDecoderTest(test_lib.BaseTestCase):
