@@ -110,7 +110,7 @@ class LogEntry(object):
     self.format_string = None
     self.mach_timestamp = None
     self.message_type = None
-    self.parent_activity_identifier = 0
+    self.parent_activity_identifier = None
     self.process_identifier = None
     self.process_image_identifier = None
     self.process_image_path = None
@@ -215,8 +215,7 @@ class StringFormatter(object):
       values.append('<decode: missing data>')
 
     if self._format_string is None:
-      # TODO: determine what the MacOS log tool shows.
-      formatted_string = 'ERROR: missing format string'
+      formatted_string = ''
     elif self._value_formatters:
       formatted_string = self._format_string.format(*values)
     else:
@@ -1015,12 +1014,39 @@ class SignpostTelemetryNumber1FormatStringDecoder(BaseFormatStringDecoder):
     Returns:
       str: formatted Signpost telemetry number 1 value.
     """
+    if isinstance(value, float):
+      value_formatter = '{0:.8f}'
+
     if value is None:
       value = ''
     elif not isinstance(value, str):
       value = value_formatter.format(value)
 
     return f'__##__signpost.telemetry#____#number1#_##_#{value:s}##__##'
+
+
+class SignpostTelemetryNumber2FormatStringDecoder(BaseFormatStringDecoder):
+  """Signpost telemetry number 2 value format string decoder."""
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a Signpost telemetry number 2 value.
+
+    Args:
+      value (object): Signpost telemetry number 2 value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted Signpost telemetry number 2 value.
+    """
+    if isinstance(value, float):
+      value_formatter = '{0:.8f}'
+
+    if value is None:
+      value = ''
+    elif not isinstance(value, str):
+      value = value_formatter.format(value)
+
+    return f'__##__signpost.telemetry#____#number2#_##_#{value:s}##__##'
 
 
 class SignpostTelemetryString1FormatStringDecoder(BaseFormatStringDecoder):
@@ -1962,6 +1988,8 @@ class TraceV3File(data_format.BinaryDataFile):
           SignpostDescriptionEndTimeFormatStringDecoder()),
       'signpost.telemetry:number1': (
           SignpostTelemetryNumber1FormatStringDecoder()),
+      'signpost.telemetry:number2': (
+          SignpostTelemetryNumber2FormatStringDecoder()),
       'signpost.telemetry:string1': (
           SignpostTelemetryString1FormatStringDecoder()),
       'time_t': DateTimeInSecondsFormatStringDecoder(),
@@ -1994,6 +2022,7 @@ class TraceV3File(data_format.BinaryDataFile):
     self._chunk_index = 0
     self._header_timebase = 1
     self._header_timestamp = 0
+    self._parent_per_activity_identifier = {}
     self._timesync_boot_record = None
     self._timesync_path = None
     self._timesync_sync_records = []
@@ -3078,29 +3107,39 @@ class TraceV3File(data_format.BinaryDataFile):
               firehose_tracepoint.log_type, None)
 
         if firehose_tracepoint.record_type == self._RECORD_TYPE_ACTIVITY:
-          activity_identifier = getattr(
+          new_activity_identifier = getattr(
               tracepoint_data_object, 'new_activity_identifier', None) or 0
-        else:
-          activity_identifier = getattr(
-              tracepoint_data_object, 'current_activity_identifier', None) or 0
+          log_entry.activity_identifier = (
+              new_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
 
-        log_entry.activity_identifier = (
-            activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
-
-        if firehose_tracepoint.record_type == self._RECORD_TYPE_ACTIVITY:
-          activity_identifier = getattr(
-              tracepoint_data_object, 'current_activity_identifier', None) or 0
-          if activity_identifier is not None:
+          current_activity_identifier = getattr(
+              tracepoint_data_object, 'current_activity_identifier', None)
+          if current_activity_identifier is not None:
             # Note that the creator activity identifier is not masked in
             # the output.
-            log_entry.creator_activity_identifier = activity_identifier
+            log_entry.creator_activity_identifier = current_activity_identifier
 
-          activity_identifier = getattr(
+          other_activity_identifier = getattr(
               tracepoint_data_object, 'other_activity_identifier', None) or 0
           log_entry.parent_activity_identifier = (
-              activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+              other_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
 
-        elif firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
+          if new_activity_identifier:
+            self._parent_per_activity_identifier[new_activity_identifier] = (
+                other_activity_identifier)
+
+        else:
+          current_activity_identifier = getattr(
+              tracepoint_data_object, 'current_activity_identifier', None) or 0
+          log_entry.activity_identifier = (
+              current_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+
+          other_activity_identifier = self._parent_per_activity_identifier.get(
+              current_activity_identifier, 0)
+          log_entry.parent_activity_identifier = (
+              other_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+
+        if firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
           name_string_reference = getattr(
               tracepoint_data_object, 'name_string_reference', None)
           if name_string_reference is None:
@@ -3336,8 +3375,11 @@ class TraceV3File(data_format.BinaryDataFile):
         # TODO: determine how binary data is formatted
         value = f'\'{value!s}\''
 
-      else:
+      elif value_formatter:
         value = value_formatter.format(value)
+
+      else:
+        value = '<decode: missing format string>'
 
       precision = None
 

@@ -57,8 +57,7 @@ class StringFormatterTest(test_lib.BaseTestCase):
     test_formatter.ParseFormatString((
         '%{public,signpost.telemetry:number1,'
         'name=SOSSignpostNameSOSCCEnsurePeerRegistration}d'))
-    self.assertEqual(test_formatter._decoders, [
-        ['signpost.telemetry:number1']])
+    self.assertEqual(test_formatter._decoders, [['signpost.telemetry:number1']])
     self.assertEqual(test_formatter._format_string, '{0:s}')
     self.assertEqual(test_formatter._type_hints, ['signed'])
     self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
@@ -166,6 +165,12 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._format_string, '{0:s}')
     self.assertEqual(test_formatter._type_hints, ['floating-point'])
     self.assertEqual(test_formatter._value_formatters, ['{0:f}'])
+
+    test_formatter.ParseFormatString('%{signpost.telemetry:number2,public}.2f')
+    self.assertEqual(test_formatter._decoders, [['signpost.telemetry:number2']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['floating-point'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:.2f}'])
 
     test_formatter.ParseFormatString('%F')
     self.assertEqual(test_formatter._decoders, [[]])
@@ -583,14 +588,31 @@ class SignpostTelemetryNumber1FormatStringDecoderTest(test_lib.BaseTestCase):
     """Tests the FormatValue function."""
     test_decoder = unified_logging.SignpostTelemetryNumber1FormatStringDecoder()
 
-    formatted_value = test_decoder.FormatValue(1, value_formatter='{0:d}')
+    formatted_value = test_decoder.FormatValue(9, value_formatter='{0:d}')
     self.assertEqual(formatted_value, (
-        '__##__signpost.telemetry#____#number1#_##_#1##__##'))
+        '__##__signpost.telemetry#____#number1#_##_#9##__##'))
 
     formatted_value = test_decoder.FormatValue(
-        1.98046875, value_formatter='{0:.8f}')
+        5.8359375, value_formatter='{0:.2f}')
     self.assertEqual(formatted_value, (
-        '__##__signpost.telemetry#____#number1#_##_#1.98046875##__##'))
+        '__##__signpost.telemetry#____#number1#_##_#5.83593750##__##'))
+
+
+class SignpostTelemetryNumber2FormatStringDecoderTest(test_lib.BaseTestCase):
+  """Signpost telemetry number 2 value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SignpostTelemetryNumber2FormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(9, value_formatter='{0:d}')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#number2#_##_#9##__##'))
+
+    formatted_value = test_decoder.FormatValue(
+        6.05859375, value_formatter='{0:.2f}')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#number2#_##_#6.05859375##__##'))
 
 
 class SignpostTelemetryString1FormatStringDecoderTest(test_lib.BaseTestCase):
