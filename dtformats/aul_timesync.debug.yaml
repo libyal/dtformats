@@ -1,0 +1,55 @@
+# dtFormats debug specification.
+---
+data_type_map: timesync_boot_record
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: record_size
+  description: "Record size"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: boot_identifier
+  description: "Boot identifier"
+  format: uuid
+- name: timebase_numerator
+  description: "Timebase numerator"
+  format: decimal
+- name: timebase_denominator
+  description: "Timebase denominator"
+  format: decimal
+- name: timestamp
+  description: "Timestamp"
+  format: custom:timestamp
+- name: time_zone_offset
+  description: "Time zone offset"
+  format: decimal
+- name: daylight_saving_flag
+  description: "Daylight saving flag"
+  format: decimal
+---
+data_type_map: timesync_sync_record
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: record_size
+  description: "Record size"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: kernel_time
+  description: "Kernel time"
+  format: decimal
+- name: timestamp
+  description: "Timestamp"
+  format: custom:timestamp
+- name: time_zone_offset
+  description: "Time zone offset"
+  format: decimal
+- name: daylight_saving_flag
+  description: "Daylight saving flag"
+  format: decimal

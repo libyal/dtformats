@@ -1465,35 +1465,16 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
   """Timesync database file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_timesync.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'aul_timesync.debug.yaml', custom_format_callbacks={
+          'signature': '_FormatStreamAsSignature',
+          'timestamp': '_FormatIntegerAsPosixTimeInNanoseconds'})
 
   _BOOT_RECORD_SIGNATURE = b'\xb0\xbb'
   _SYNC_RECORD_SIGNATURE = b'Ts'
-
-  _DEBUG_INFO_BOOT_RECORD = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
-      ('boot_identifier', 'Boot identifier', '_FormatUUIDAsString'),
-      ('timebase_numerator', 'Timebase numerator',
-       '_FormatIntegerAsHexadecimal'),
-      ('timebase_denominator', 'Timebase denominator',
-       '_FormatIntegerAsHexadecimal'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
-      ('time_zone_offset', 'Time zone offset', '_FormatIntegerAsDecimal'),
-      ('daylight_saving_flag', 'Daylight saving flag',
-       '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_SYNC_RECORD = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal'),
-      ('kernel_time', 'Kernel Time', '_FormatIntegerAsDecimal'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTimeInNanoseconds'),
-      ('time_zone_offset', 'Time zone offset', '_FormatIntegerAsDecimal'),
-      ('daylight_saving_flag', 'Daylight saving flag',
-       '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a timesync database file.
@@ -1530,12 +1511,12 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
     if signature == self._BOOT_RECORD_SIGNATURE:
       data_type_map = self._boot_record_data_type_map
       description = 'boot record'
-      debug_info = self._DEBUG_INFO_BOOT_RECORD
+      debug_info = self._DEBUG_INFORMATION.get('timesync_boot_record', None)
 
     elif signature == self._SYNC_RECORD_SIGNATURE:
       data_type_map = self._sync_record_data_type_map
       description = 'sync record'
-      debug_info = self._DEBUG_INFO_SYNC_RECORD
+      debug_info = self._DEBUG_INFORMATION.get('timesync_sync_record', None)
 
     else:
       signature = repr(signature)
