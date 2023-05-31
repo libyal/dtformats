@@ -948,6 +948,35 @@ class OpenDirectoryMembershipDetailsFormatStringDecoder(
             f'{membership_details.domain:s}')
 
 
+class OpenDirectoryMembershipTypeFormatStringDecoder(BaseFormatStringDecoder):
+  """Open Directory membership type format string decoder."""
+
+  _TYPES = {
+      0: 'UID',
+      1: 'GID',
+      3: 'SID',
+      4: 'USERNAME',
+      5: 'GROUPNAME',
+      6: 'UUID',
+      7: 'GROUP NFS',
+      8: 'USER NFS',
+      10: 'GSS EXPORT NAME',
+      11: 'X509 DN',
+      12: 'KERBEROS'}
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats an Open Directory membership type value.
+
+    Args:
+      value (int): Open Directory membership type value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted Open Directory membership type value.
+    """
+    return self._TYPES.get(value, 'UNKNOWN: {0:d}'.format(value))
+
+
 class SignpostDescriptionAttributeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description attribute value format string decoder."""
 
@@ -1015,7 +1044,7 @@ class SignpostTelemetryNumber1FormatStringDecoder(BaseFormatStringDecoder):
       str: formatted Signpost telemetry number 1 value.
     """
     if isinstance(value, float):
-      value_formatter = '{0:.8f}'
+      value_formatter = '{0:.9g}'
 
     if value is None:
       value = ''
@@ -1039,7 +1068,7 @@ class SignpostTelemetryNumber2FormatStringDecoder(BaseFormatStringDecoder):
       str: formatted Signpost telemetry number 2 value.
     """
     if isinstance(value, float):
-      value_formatter = '{0:.8f}'
+      value_formatter = '{0:.9g}'
 
     if value is None:
       value = ''
@@ -1955,9 +1984,6 @@ class TraceV3File(data_format.BinaryDataFile):
       ('name', 'Name', '_FormatString'),
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
-  # TODO: add support for "odtypes:mbr_details"
-  # TODO: add support for "signpost.telemetry:number2"
-
   _FORMAT_STRING_DECODERS = {
       'bool': BooleanFormatStringDecoder(),
       'BOOL': YesNoFormatStringDecoder(),
@@ -1979,6 +2005,7 @@ class TraceV3File(data_format.BinaryDataFile):
       'mask.hash': MaskHashFormatStringDecoder(),
       'odtypes:mbr_details': (
           OpenDirectoryMembershipDetailsFormatStringDecoder()),
+      'odtypes:mbridtype': OpenDirectoryMembershipTypeFormatStringDecoder(),
       'odtypes:nt_sid_t': WindowsNTSecurityIdentifierFormatStringDecoder(),
       'signpost.description:attribute': (
           SignpostDescriptionAttributeFormatStringDecoder()),

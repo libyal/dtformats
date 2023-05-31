@@ -1174,14 +1174,14 @@ Other observerd value type decoders are:
 | "network:tcp_state" | |
 | "odtypes:ODError" | | Formatted as a <<open_directory_error,Open Directory error>>
 | "odtypes:mbr_details" | | Formatted as a <<open_directory_membership_details,Open Directory membership details>>
-| "odtypes:mbridtype" | | Formatted as a <<open_directory_membership_identifier_types,Open Directory membership identifier types>>
+| "odtypes:mbridtype" | | Formatted as a <<open_directory_membership_identifier_type,Open Directory membership identifier type>>
 | "odtypes:nt_sid_t" | | Formatted as a <<open_directory_windows_nt_sid,Open Directory Windows NT Security Identifier (SID)>>
 | "sensitive" | | Sensitive formatting argument, which is formatted as "<private>"
 | "signpost.description:attribute" | | Formatted as a signpost description attribute, for example `__##__signpost.description#____#attribute#_##_#efilogin-helper##__##`
 | "signpost.description:begin_time" | | Formatted as a signpost description begin time, for example `__##__signpost.description#____#begin_time#_##_#2180300470618##__##`
 | "signpost.description:end_time" | | Formatted as a signpost description end time, for example `__##__signpost.description#____#end_time#_##_#1005756624719##__##`
-| "signpost.telemetry:number1" | | For example `__##__signpost.telemetry#____#number1#_##_#5.88671875##__##`, where a avalue can be an integer or floating-point which is formatted as "%.8f"
-| "signpost.telemetry:number2" | | For example `__##__signpost.telemetry#____#number2#_##_#6.05859375##__##`, where a avalue can be an integer or floating-point and which is formatted as "%.8f"
+| "signpost.telemetry:number1" | | For example `__##__signpost.telemetry#____#number1#_##_#5.88671875##__##`, where a avalue can be an integer or floating-point which is formatted as (at least) "%.9g"
+| "signpost.telemetry:number2" | | For example `__##__signpost.telemetry#____#number2#_##_#6.05859375##__##`, where a avalue can be an integer or floating-point and which is formatted as (at least) "%.9g"
 | "signpost.telemetry:string1" | | For example `__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##`
 | "private" | | Private formatting argument, which is formatted as "<private>"
 | "public" | | Public formatting argument, which has no additional formatting
@@ -2054,7 +2054,7 @@ or
 group: wheel@/Local/Default
 ....
 
-=== [[open_directory_membership_identifier_types]]Open Directory membership identifier types
+=== [[open_directory_membership_identifier_type]]Open Directory membership identifier type
 
 [yellow-background]*TODO describe*
 

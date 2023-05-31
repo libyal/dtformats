@@ -532,6 +532,18 @@ class OpenDirectoryMembershipDetailsFormatStringDecoderTest(
     self.assertEqual(formatted_value, 'group: wheel@/Local/Default')
 
 
+class OpenDirectoryMembershipTypeFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Open Directory membership type format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.OpenDirectoryMembershipTypeFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(6)
+    self.assertEqual(formatted_value, 'UUID')
+
+
 class SignpostDescriptionAttributeFormatStringDecoderTest(
     test_lib.BaseTestCase):
   """Signpost description attribute value format string decoder tests."""
@@ -593,9 +605,14 @@ class SignpostTelemetryNumber1FormatStringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.telemetry#____#number1#_##_#9##__##'))
 
     formatted_value = test_decoder.FormatValue(
-        5.8359375, value_formatter='{0:.2f}')
+        5.88671875, value_formatter='{0:.2f}')
     self.assertEqual(formatted_value, (
-        '__##__signpost.telemetry#____#number1#_##_#5.83593750##__##'))
+        '__##__signpost.telemetry#____#number1#_##_#5.88671875##__##'))
+
+    formatted_value = test_decoder.FormatValue(
+        5.859375, value_formatter='{0:.2f}')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#number1#_##_#5.859375##__##'))
 
 
 class SignpostTelemetryNumber2FormatStringDecoderTest(test_lib.BaseTestCase):
