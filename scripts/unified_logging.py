@@ -156,9 +156,9 @@ def Main():
     for index, dsc_uuid in enumerate(unified_logging_file.uuids):
       output_writer.WriteText(f'uuid {index:d}:\n')
 
-      sender_identifier_string = str(dsc_uuid.sender_identifier).upper()
+      image_identifier_string = str(dsc_uuid.image_identifier).upper()
       output_writer.WriteText(
-          f'    uuid {index:d}:\t{sender_identifier_string:s}\n')
+          f'    uuid {index:d}:\t{image_identifier_string:s}\n')
 
       text_end_offset = dsc_uuid.text_offset + dsc_uuid.text_size
       output_writer.WriteText((

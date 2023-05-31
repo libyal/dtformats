@@ -1,0 +1,49 @@
+# dtFormats debug specification.
+---
+data_type_map: dsc_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: number_of_ranges
+  description: "Number of ranges"
+  format: decimal
+- name: number_of_uuids
+  description: "Number of UUIDs"
+  format: decimal
+---
+data_type_map: dsc_range_descriptor
+attributes:
+- name: data_offset
+  description: "Data offset"
+  format: hexadecimal_8digits
+- name: range_offset
+  description: "Range offset"
+  format: hexadecimal_8digits
+- name: range_size
+  description: "Range size"
+  format: decimal
+- name: uuid_descriptor_index
+  description: "UUID descriptor index"
+  format: decimal
+---
+data_type_map: dsc_uuid_descriptor
+attributes:
+- name: text_offset
+  description: "Text offset"
+  format: hexadecimal_8digits
+- name: text_size
+  description: "Text size"
+  format: decimal
+- name: image_identifier
+  description: "Image identifier"
+  format: uuid
+- name: path_offset
+  description: "Path offset"
+  format: hexadecimal_8digits

@@ -1176,30 +1176,14 @@ class DSCFile(data_format.BinaryDataFile):
   """
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_dsc.yaml')
 
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('major_format_version', 'Major format version',
-       '_FormatIntegerAsDecimal'),
-      ('minor_format_version', 'Minor format version',
-       '_FormatIntegerAsDecimal'),
-      ('number_of_ranges', 'Number of ranges', '_FormatIntegerAsDecimal'),
-      ('number_of_uuids', 'Number of UUIDs', '_FormatIntegerAsDecimal')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'aul_dsc.debug.yaml', custom_format_callbacks={
+          'signature': '_FormatStreamAsSignature'})
 
-  _DEBUG_INFO_RANGE_DESCRIPTOR = [
-      ('data_offset', 'Data offset', '_FormatIntegerAsHexadecimal8'),
-      ('range_offset', 'Range offset', '_FormatIntegerAsHexadecimal8'),
-      ('range_size', 'Range size', '_FormatIntegerAsDecimal'),
-      ('uuid_descriptor_index', 'UUID descriptor index',
-       '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_UUID_DESCRIPTOR = [
-      ('text_offset', 'Text offset', '_FormatIntegerAsHexadecimal8'),
-      ('text_size', 'Text size', '_FormatIntegerAsDecimal'),
-      ('image_identifier', 'Image identifier', '_FormatUUIDAsString'),
-      ('path_offset', 'Path offset', '_FormatIntegerAsHexadecimal8')]
+  _SUPPORTED_FORMAT_VERSIONS = ((1, 0), (2, 0))
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a shared-cache strings (dsc) file.
@@ -1244,15 +1228,15 @@ class DSCFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('dsc_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.signature != b'hcsd':
       raise errors.ParseError('Unsupported signature.')
 
     format_version = (
         file_header.major_format_version, file_header.minor_format_version)
-    if format_version not in [(1, 0), (2, 0)]:
+    if format_version not in self._SUPPORTED_FORMAT_VERSIONS:
       format_version_string = '.'.join([
           f'{file_header.major_format_version:d}',
           f'{file_header.minor_format_version:d}'])
@@ -1345,8 +1329,8 @@ class DSCFile(data_format.BinaryDataFile):
       file_offset += record_size
 
       if self._debug:
-        self._DebugPrintStructureObject(
-            range_descriptor, self._DEBUG_INFO_RANGE_DESCRIPTOR)
+        debug_info = self._DEBUG_INFORMATION.get('dsc_range_descriptor', None)
+        self._DebugPrintStructureObject(range_descriptor, debug_info)
 
       dsc_range = DSCRange()
       dsc_range.data_offset = range_descriptor.data_offset
@@ -1391,8 +1375,8 @@ class DSCFile(data_format.BinaryDataFile):
       file_offset += record_size
 
       if self._debug:
-        self._DebugPrintStructureObject(
-            uuid_descriptor, self._DEBUG_INFO_UUID_DESCRIPTOR)
+        debug_info = self._DEBUG_INFORMATION.get('dsc_uuid_descriptor', None)
+        self._DebugPrintStructureObject(uuid_descriptor, debug_info)
 
       dsc_uuid = DSCUUID()
       dsc_uuid.image_identifier = uuid_descriptor.image_identifier
