@@ -1571,8 +1571,11 @@ class TraceV3File(data_format.BinaryDataFile):
           'array_of_catalog_sub_system_entries': (
               '_FormatArrayOfCatalogSubSystemEntries'),
           'array_of_catalog_uuid_entries': '_FormatArrayOfCatalogUUIDEntries',
+          'array_of_chunk_tag': '_FormatChunkTag',
+          'array_of_decimals': '_FormatArrayOfIntegersAsDecimals',
           'array_of_strings': '_FormatArrayOfStrings',
-          'array_of_uuids': '_FormatArrayOfUUIDS'})
+          'array_of_uuids': '_FormatArrayOfUUIDS',
+          'stream_type': '_FormatFirehoseStreamType'})
 
   _RECORD_TYPE_ACTIVITY = 0x02
   _RECORD_TYPE_TRACE = 0x03
@@ -1674,37 +1677,6 @@ class TraceV3File(data_format.BinaryDataFile):
       0x00: 'event',
       0x01: 'begin',
       0x02: 'end'}
-
-  _DEBUG_INFO_CATALOG_SUB_CHUNK = [
-      ('start_time', 'Start time', '_FormatIntegerAsDecimal'),
-      ('end_time', 'End time', '_FormatIntegerAsDecimal'),
-      ('uncompressed_size', 'Uncompressed size', '_FormatIntegerAsDecimal'),
-      ('compression_algorithm', 'Compression algorithm',
-       '_FormatIntegerAsDecimal'),
-      ('number_of_indexes', 'Number of indexes', '_FormatIntegerAsDecimal'),
-      ('indexes', 'Indexes', '_FormatArrayOfIntegersAsDecimals'),
-      ('number_of_offsets', 'Number of offsets', '_FormatIntegerAsDecimal'),
-      ('offsets', 'Offsets', '_FormatArrayOfIntegersAsDecimals')]
-
-  _DEBUG_INFO_CHUNK_HEADER = [
-      ('chunk_tag', 'Chunk tag', '_FormatChunkTag'),
-      ('chunk_sub_tag', 'Chunk sub tag', '_FormatIntegerAsHexadecimal8'),
-      ('chunk_data_size', 'Chunk data size', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_FIREHOSE_HEADER = [
-      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
-      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
-      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
-      ('collapsed', 'Collapsed', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
-      ('public_data_size', 'Public data size', '_FormatIntegerAsDecimal'),
-      ('private_data_virtual_offset', 'Private data virtual offset',
-       '_FormatIntegerAsHexadecimal4'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('stream_type', 'Stream type', '_FormatFirehoseStreamType'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal2'),
-      ('base_continuous_time', 'Base continuous time',
-       '_FormatIntegerAsDecimal')]
 
   _DEBUG_INFO_FIREHOSE_TRACEPOINT = [
       ('record_type', 'Record type', '_FormatFirehoseTracepointRecordType'),
@@ -2029,8 +2001,9 @@ class TraceV3File(data_format.BinaryDataFile):
       self._catalog_process_information_entries[proc_id] = (
           process_information_entry)
 
-  def _CalculateStringReference(self, tracepoint_data_object, string_reference):
-    """Calculates the string reference.
+  def _CalculateFormatStringReference(
+      self, tracepoint_data_object, string_reference):
+    """Calculates the format string reference.
 
     Args:
       tracepoint_data_object (object): firehose tracepoint data object.
@@ -2064,7 +2037,36 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if self._debug:
       value_string, _ = self._FormatIntegerAsHexadecimal8(string_reference)
-      self._DebugPrintValue('Calculated string reference', value_string)
+      self._DebugPrintValue('Calculated format string reference', value_string)
+      self._DebugPrintText('\n')
+
+    return string_reference, is_dynamic
+
+  def _CalculateNameStringReference(self, tracepoint_data_object):
+    """Calculates the name string reference.
+
+    Args:
+      tracepoint_data_object (object): firehose tracepoint data object.
+
+    Returns:
+      tuple[int, bool]: string reference and dynamic flag.
+    """
+    string_reference = getattr(
+        tracepoint_data_object, 'name_string_reference_lower', None) or 0
+    is_dynamic = bool(string_reference & 0x80000000 != 0)
+
+    if is_dynamic:
+      string_reference &= 0x7fffffff
+
+    large_offset_data = getattr(
+        tracepoint_data_object, 'name_string_reference_upper', None)
+
+    if large_offset_data:
+      string_reference |= large_offset_data << 31
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsHexadecimal8(string_reference)
+      self._DebugPrintValue('Calculated name string reference', value_string)
       self._DebugPrintText('\n')
 
     return string_reference, is_dynamic
@@ -2321,7 +2323,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
   def _GetImageValuesAndString(
       self, process_information_entry, firehose_tracepoint,
-      tracepoint_data_object, string_reference):
+      tracepoint_data_object, string_reference, is_dynamic):
     """Retrieves image values and string.
 
     Args:
@@ -2330,6 +2332,7 @@ class TraceV3File(data_format.BinaryDataFile):
       firehose_tracepoint (tracev3_firehose_tracepoint): firehose tracepoint.
       tracepoint_data_object (object): firehose tracepoint data object.
       string_reference (int): string reference.
+      is_dynamic (bool): dynamic flag.
 
     Returns:
       tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
@@ -2378,9 +2381,6 @@ class TraceV3File(data_format.BinaryDataFile):
       raise errors.ParseError('Missing strings file identifier.')
 
     uuid_string = strings_file_identifier.hex.upper()
-
-    string_reference, is_dynamic = self._CalculateStringReference(
-        tracepoint_data_object, string_reference)
 
     image_identifier = None
     image_path = None
@@ -2746,7 +2746,8 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset += bytes_read
 
       if self._debug:
-        debug_info = self._DEBUG_INFO_CATALOG_SUB_CHUNK
+        debug_info = self._DEBUG_INFORMATION.get(
+            'tracev3_catalog_sub_chunk', None)
         self._DebugPrintStructureObject(catalog_sub_chunk, debug_info)
         self._GetTimestamp(
             catalog_sub_chunk.start_time, description='Start time')
@@ -2774,7 +2775,7 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'chunk header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFO_CHUNK_HEADER
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_chunk_header', None)
       self._DebugPrintStructureObject(chunk_header, debug_info)
 
     return chunk_header
@@ -2842,7 +2843,7 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset += 16
 
       if self._debug:
-        debug_info = self._DEBUG_INFO_CHUNK_HEADER
+        debug_info = self._DEBUG_INFORMATION.get('tracev3_chunk_header', None)
         self._DebugPrintStructureObject(chunkset_chunk_header, debug_info)
 
       data_end_offset = data_offset + chunkset_chunk_header.chunk_data_size
@@ -2899,7 +2900,7 @@ class TraceV3File(data_format.BinaryDataFile):
         chunk_data, data_offset, data_type_map, 'firehose header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFO_FIREHOSE_HEADER
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_firehose_header', None)
       self._DebugPrintStructureObject(firehose_header, debug_info)
       self._GetTimestamp(
           firehose_header.base_continuous_time,
@@ -2998,11 +2999,13 @@ class TraceV3File(data_format.BinaryDataFile):
                 data_offset + chunk_data_offset))
 
       if tracepoint_data_object:
+        string_reference, is_dynamic = self._CalculateFormatStringReference(
+            tracepoint_data_object, firehose_tracepoint.format_string_reference)
+
         image_identifier, image_text_offset, image_path, format_string = (
             self._GetImageValuesAndString(
                 process_information_entry, firehose_tracepoint,
-                tracepoint_data_object,
-                firehose_tracepoint.format_string_reference))
+                tracepoint_data_object, string_reference, is_dynamic))
 
         string_formatter = StringFormatter()
         string_formatter.ParseFormatString(format_string)
@@ -3100,17 +3103,15 @@ class TraceV3File(data_format.BinaryDataFile):
               other_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
 
         if firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
-          name_string_reference = getattr(
-              tracepoint_data_object, 'name_string_reference_upper', None) or 0
-          name_string_reference <<= 32
-          name_string_reference |= getattr(
-              tracepoint_data_object, 'name_string_reference_lower', None) or 0
+          name_string_reference, is_dynamic = (
+              self._CalculateNameStringReference(tracepoint_data_object))
+
           if not name_string_reference:
             name_string = None
           else:
             _, _, _, name_string = self._GetImageValuesAndString(
                 process_information_entry, firehose_tracepoint,
-                tracepoint_data_object, name_string_reference)
+                tracepoint_data_object, name_string_reference, is_dynamic)
 
           log_entry.signpost_identifier = getattr(
               tracepoint_data_object, 'signpost_identifier', None)

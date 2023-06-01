@@ -1084,16 +1084,23 @@ Contains the number of messages lost
 A string reference is used to look up strings in the uuidtext or Shared-Cache
 Strings (dsc) files.
 
-* ( large shared cache data << 31 ) | ( string reference & 0x7fffffff )
-* ( large offset data << 31 ) | ( string reference & 0x7fffffff )
-* ( string reference & 0x7fffffff )
-
 [NOTE]
-The most-significant bit (MSB) of the string reference is a "dynamic" flag. If
-set (and the string reference <= 0xffffffff) the string is "%s". In a
-Shared-Cache Strings (dsc) file the corresponding image identifier and offset
-can be found comparing the remaining value of the string refence with the dsc
-text offset.
+The most-significant bit (MSB) of the string reference lower 32-bit is
+a "dynamic" flag. If set (and the string reference <= 0xffffffff) the string
+is "%s". In a Shared-Cache Strings (dsc) file the corresponding image
+identifier and offset can be found comparing the remaining value of the string
+referrence with the dsc text offset.
+
+To calculate a format string reference:
+
+* ( large shared cache data << 31 ) | ( format string reference lower 32-bit & 0x7fffffff )
+* ( large offset data << 31 ) | ( format string reference lower 32-bit & 0x7fffffff )
+* ( format string reference lower 32-bit & 0x7fffffff )
+
+To calculate a name string reference:
+
+* ( name string reference upper 16-bit << 31 ) | ( name string reference lower 32-bit & 0x7fffffff )
+* ( name string reference lower 32-bit & 0x7fffffff )
 
 ==== [[tracev3_firehose_tracepoint_format_string]]Firehose tracepoint format string
 

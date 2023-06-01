@@ -83,3 +83,78 @@ attributes:
 - name: alignment_padding
   description: "Alignment padding"
   format: binary_data
+---
+data_type_map: tracev3_catalog_sub_chunk
+attributes:
+- name: start_time
+  description: "Start time"
+  format: decimal
+- name: end_time
+  description: "End time"
+  format: decimal
+- name: uncompressed_size
+  description: "Uncompressed size"
+  format: decimal
+- name: compression_algorithm
+  description: "Compression algorithm"
+  format: decimal
+- name: number_of_indexes
+  description: "Number of indexes"
+  format: decimal
+- name: indexes
+  description: "Indexes"
+  format: custom:array_of_decimals
+- name: number_of_offsets
+  description: "Number of offsets"
+  format: decimal
+- name: offsets
+  description: "Offsets"
+  format: custom:array_of_decimals
+---
+data_type_map: tracev3_chunk_header
+attributes:
+- name: chunk_tag
+  description: "Chunk tag"
+  format: custom:chunk_tag
+- name: chunk_sub_tag
+  description: "Chunk sub tag"
+  format: hexadecimal_8digits
+- name: chunk_data_size
+  description: "Chunk data size"
+  format: decimal
+---
+data_type_map: tracev3_firehose_header
+attributes:
+- name: proc_id_upper
+  description: "proc_id (upper 64-bit)"
+  format: decimal
+- name: proc_id_lower
+  description: "proc_id (lower 32-bit)"
+  format: decimal
+- name: ttl
+  description: "Time to live (TTL)"
+  format: decimal
+- name: collapsed
+  description: "Collapsed"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_4digits
+- name: public_data_size
+  description: "Public data size"
+  format: decimal
+- name: private_data_virtual_offset
+  description: "Private data virtual offset"
+  format: hexadecimal_4digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_4digits
+- name: stream_type
+  description: "Stream type"
+  format: custom:stream_type
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_2digits
+- name: base_continuous_time
+  description: "Base continuous time"
+  format: decimal
