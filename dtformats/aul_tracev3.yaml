@@ -734,10 +734,13 @@ members:
 - name: data_reference_value
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0800 != 0
-- name: name_string_reference
+- name: name_string_reference_lower
   data_type: uint32
   condition: tracev3_firehose_tracepoint_flags & 0x8000 != 0
-- name: unknown2
+- name: name_string_reference_upper
+  data_type: uint16
+  condition: tracev3_firehose_tracepoint_flags & 0x8020 == 0x8020
+- name: unknown1
   data_type: uint8
 - name: number_of_data_items
   data_type: uint8

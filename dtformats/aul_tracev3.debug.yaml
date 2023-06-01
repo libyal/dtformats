@@ -1,0 +1,85 @@
+# dtFormats debug specification.
+---
+data_type_map: tracev3_catalog
+attributes:
+- name: sub_system_strings_offset
+  description: "Sub system strings offset"
+  format: hexadecimal_8digits
+- name: process_information_entries_offset
+  description: "Process information entries offset"
+  format: hexadecimal_8digits
+- name: number_of_process_information_entries
+  description: "Number of process information entries"
+  format: decimal
+- name: number_of_sub_chunks
+  description: "Number of sub chunks"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: binary_data
+- name: earliest_firehose_timestamp
+  description: "Earliest firehose timestamp"
+  format: decimal
+- name: uuids
+  description: "UUIDs"
+  format: custom:array_of_uuids
+- name: sub_system_strings
+  description: "Sub system strings"
+  format: custom:array_of_strings
+---
+data_type_map: tracev3_catalog_process_information_entry
+attributes:
+- name: entry_index
+  description: "Entry index"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_4digits
+- name: main_uuid_index
+  description: "Main UUID index"
+  format: decimal
+- name: main_uuid
+  description: "Main UUID"
+  format: uuid
+- name: dsc_uuid_index
+  description: "Shared-Cache Strings (dsc) UUID index"
+  format: decimal
+- name: dsc_uuid
+  description: "Shared-Cache Strings (dsc) UUID"
+  format: uuid
+- name: proc_id_upper
+  description: "proc_id (upper 64-bit)"
+  format: decimal
+- name: proc_id_lower
+  description: "proc_id (lower 32-bit)"
+  format: decimal
+- name: process_identifier
+  description: "Process identifier (PID)"
+  format: decimal
+- name: effective_user_identifier
+  description: "Effective user identifier (euid)"
+  format: decimal
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_4digits
+- name: number_of_uuid_entries
+  description: "Number of UUID information entries"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_4digits
+- name: uuid_entries
+  description: "UUID entries"
+  format: custom:array_of_catalog_uuid_entries
+- name: number_of_sub_system_entries
+  description: "Number of sub system entries"
+  format: decimal
+- name: unknown4
+  description: "Unknown4"
+  format: hexadecimal_4digits
+- name: sub_system_entries
+  description: "Sub system entries"
+  format: custom:array_of_catalog_sub_system_entries
+- name: alignment_padding
+  description: "Alignment padding"
+  format: binary_data

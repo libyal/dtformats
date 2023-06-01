@@ -668,7 +668,6 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 | 22 | 2 | | Data size
 4+| _Start of data_
 | 24 | ... | | Data which contents depends on the flags
-| ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
@@ -770,20 +769,7 @@ A firehose tracepoint data range is 4 bytes of size and consists of:
 | 2 | 2 | | Range size
 |===
 
-==== [[tracev3_firehose_tracepoint_data_items]]Firehose tracepoint data items
-
-Firehose tracepoint data items are variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | [yellow-background]*Unknown*
-| 1 | 1 | | Number of data items
-| 2 | ... | | Data items
-| ... | ... | | Values data
-|===
-
-===== Firehose tracepoint data item
+==== [[tracev3_firehose_tracepoint_data_item]]Firehose tracepoint data item
 
 A firehose tracepoint data item is variable of size and consists of:
 
@@ -862,7 +848,7 @@ and consists of:
 | 1 | 1 | 4 | Data item data size
 4+| _Data item data_
 | 2 | 2 | | Value data (range) offset +
-The offset is relative to the start of the values data in the <<tracev3_firehose_tracepoint_data_items,Firehose tracepoint data items>>
+The offset is relative to the start of the values data
 | 4 | 2 | | Value data (range) size
 |===
 
@@ -996,7 +982,11 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _Has data reference value flag (0x0800) is set_
 | ... | 2 | | Data reference value
 4+| _Common_
-| ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
+| ... | 1 | | [yellow-background]*Unknown*
+| ... | 1 | | Number of data items
+| ... | ... | | Data items +
+See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
+| ... | ... | | Values data
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
@@ -1047,8 +1037,14 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _Has name reference value flag (0x8000) is set_
 | ... | 4 | | Name string reference (lower 32-bit) +
 See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
+4+| _Has name reference value flag (0x8000) and Has large offset flag (0x0020) are set_
+| ... | 2 | | Name string reference (upper 16-bit)
 4+| _Common_
-| ... | ... | | <<tracev3_firehose_tracepoint_data_items,Data items>>
+| ... | 1 | | [yellow-background]*Unknown*
+| ... | 1 | | Number of data items
+| ... | ... | | Data items +
+See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
+| ... | ... | | Values data
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===

@@ -1,0 +1,25 @@
+# dtFormats debug specification.
+---
+data_type_map: uuidtext_file_footer
+attributes:
+- name: image_path
+  description: "Image path"
+  format: string
+---
+data_type_map: uuidtext_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: number_of_entries
+  description: "Number of entries"
+  format: decimal
+- name: entry_descriptors
+  description: "Entry descriptors"
+  format: custom:array_of_entry_descriptors

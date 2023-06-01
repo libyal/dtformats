@@ -20,6 +20,7 @@ class BinaryDataFormat(object):
   """Binary data format."""
 
   _DEBUG_FORMAT_CALLBACKS = {
+      'binary_data': '_FormatDataInHexadecimal',
       'decimal': '_FormatIntegerAsDecimal',
       'hexadecimal_2digits': '_FormatIntegerAsHexadecimal2',
       'hexadecimal_4digits': '_FormatIntegerAsHexadecimal4',

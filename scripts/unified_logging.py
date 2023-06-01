@@ -228,6 +228,8 @@ def Main():
         event_message = event_message.replace('/', '\\/')
         event_message = event_message.replace('\n', '\\n')
         event_message = event_message.replace('\t', '\\t')
+        if len(event_message) > 1166:
+          event_message = ''.join([event_message[:1166], '<…>'])
 
         if log_entry.creator_activity_identifier is not None:
           # The format string for an activityCreateEvent is empty.

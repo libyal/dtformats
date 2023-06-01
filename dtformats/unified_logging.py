@@ -1397,7 +1397,7 @@ class DSCFile(data_format.BinaryDataFile):
 
     Returns:
       tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
-          image path and string or (None, None, None, None) if not available.
+          image path and string or (None, 0, None, None) if not available.
 
     Raises:
       ParseError: if the string cannot be read.
@@ -1427,7 +1427,7 @@ class DSCFile(data_format.BinaryDataFile):
     # TODO: if string_reference is invalid use:
     # "<Invalid shared cache format string offset>"
 
-    return None, None, None, None
+    return None, 0, None, None
 
   def ReadFileObject(self, file_object):
     """Reads a shared-cache strings (dsc) file-like object.
@@ -1563,8 +1563,16 @@ class TraceV3File(data_format.BinaryDataFile):
   """Apple Unified Logging and Activity Tracing (tracev3) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_tracev3.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'aul_tracev3.debug.yaml', custom_format_callbacks={
+          'array_of_catalog_sub_system_entries': (
+              '_FormatArrayOfCatalogSubSystemEntries'),
+          'array_of_catalog_uuid_entries': '_FormatArrayOfCatalogUUIDEntries',
+          'array_of_strings': '_FormatArrayOfStrings',
+          'array_of_uuids': '_FormatArrayOfUUIDS'})
 
   _RECORD_TYPE_ACTIVITY = 0x02
   _RECORD_TYPE_TRACE = 0x03
@@ -1666,48 +1674,6 @@ class TraceV3File(data_format.BinaryDataFile):
       0x00: 'event',
       0x01: 'begin',
       0x02: 'end'}
-
-  _DEBUG_INFO_CATALOG = [
-      ('sub_system_strings_offset', 'Sub system strings offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('process_information_entries_offset',
-       'Process information entries offset', '_FormatIntegerAsHexadecimal8'),
-      ('number_of_process_information_entries',
-       'Number of process information entries', '_FormatIntegerAsDecimal'),
-      ('sub_chunks_offset', 'Sub chunks offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('number_of_sub_chunks', 'Number of sub chunks',
-       '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatDataInHexadecimal'),
-      ('earliest_firehose_timestamp', 'Earliest firehose timestamp',
-       '_FormatIntegerAsDecimal'),
-      ('uuids', 'UUIDs', '_FormatArrayOfUUIDS'),
-      ('sub_system_strings', 'Sub system strings', '_FormatArrayOfStrings')]
-
-  _DEBUG_INFO_CATALOG_PROCESS_INFORMATION_ENTRY = [
-      ('entry_index', 'Entry index', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
-      ('main_uuid_index', 'Main UUID index', '_FormatIntegerAsDecimal'),
-      ('main_uuid', 'Main UUID', '_FormatUUIDAsString'),
-      ('dsc_uuid_index', 'DSC UUID index', '_FormatIntegerAsDecimal'),
-      ('dsc_uuid', 'DSC UUID', '_FormatUUIDAsString'),
-      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
-      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
-      ('process_identifier', 'Process identifier (PID)',
-       '_FormatIntegerAsDecimal'),
-      ('effective_user_identifier', 'Effective user identifier (euid)',
-       '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('number_of_uuid_entries', 'Number of UUID information entries',
-       '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal4'),
-      ('uuid_entries', 'UUID entries', '_FormatArrayOfCatalogUUIDEntries'),
-      ('number_of_sub_system_entries', 'Number of sub system entries',
-       '_FormatIntegerAsDecimal'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal4'),
-      ('sub_system_entries', 'Sub system entries',
-       '_FormatArrayOfCatalogSubSystemEntries'),
-      ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal')]
 
   _DEBUG_INFO_CATALOG_SUB_CHUNK = [
       ('start_time', 'Start time', '_FormatIntegerAsDecimal'),
@@ -1846,8 +1812,10 @@ class TraceV3File(data_format.BinaryDataFile):
       ('ttl', 'TTL', '_FormatIntegerAsDecimal'),
       ('data_reference_value', 'Data reference value',
        '_FormatIntegerAsHexadecimal4'),
-      ('name_string_reference', 'Name string reference',
+      ('name_string_reference_lower', 'Name string reference (lower 32-bit)',
        '_FormatIntegerAsHexadecimal8'),
+      ('name_string_reference_upper', 'Name string reference (upper 16-bit)',
+       '_FormatIntegerAsHexadecimal4'),
       ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
       ('number_of_data_items', 'Number of data items',
        '_FormatIntegerAsDecimal')]
@@ -2740,7 +2708,8 @@ class TraceV3File(data_format.BinaryDataFile):
     file_offset += bytes_read
 
     if self._debug:
-      self._DebugPrintStructureObject(catalog, self._DEBUG_INFO_CATALOG)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_catalog', None)
+      self._DebugPrintStructureObject(catalog, debug_info)
       self._GetTimestamp(
           catalog.earliest_firehose_timestamp,
           description='Earliest firehose timestamp')
@@ -2756,9 +2725,9 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset += bytes_read
 
       if self._debug:
-        self._DebugPrintStructureObject(
-            process_information_entry,
-            self._DEBUG_INFO_CATALOG_PROCESS_INFORMATION_ENTRY)
+        debug_info = self._DEBUG_INFORMATION.get(
+           'tracev3_catalog_process_information_entry', None)
+        self._DebugPrintStructureObject(process_information_entry, debug_info)
 
       catalog.process_information_entries.append(process_information_entry)
 
@@ -2777,8 +2746,8 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset += bytes_read
 
       if self._debug:
-        self._DebugPrintStructureObject(
-            catalog_sub_chunk, self._DEBUG_INFO_CATALOG_SUB_CHUNK)
+        debug_info = self._DEBUG_INFO_CATALOG_SUB_CHUNK
+        self._DebugPrintStructureObject(catalog_sub_chunk, debug_info)
         self._GetTimestamp(
             catalog_sub_chunk.start_time, description='Start time')
         self._GetTimestamp(catalog_sub_chunk.end_time, description='End time')
@@ -2805,8 +2774,8 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'chunk header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          chunk_header, self._DEBUG_INFO_CHUNK_HEADER)
+      debug_info = self._DEBUG_INFO_CHUNK_HEADER
+      self._DebugPrintStructureObject(chunk_header, debug_info)
 
     return chunk_header
 
@@ -2833,8 +2802,8 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'LZ4 block header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          lz4_block_header, self._DEBUG_INFO_LZ4_BLOCK_HEADER)
+      debug_info = self._DEBUG_INFO_LZ4_BLOCK_HEADER
+      self._DebugPrintStructureObject(lz4_block_header, debug_info)
 
     if lz4_block_header.signature == b'bv41':
       end_of_data_offset = 12 + lz4_block_header.compressed_data_size
@@ -2873,8 +2842,8 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset += 16
 
       if self._debug:
-        self._DebugPrintStructureObject(
-            chunkset_chunk_header, self._DEBUG_INFO_CHUNK_HEADER)
+        debug_info = self._DEBUG_INFO_CHUNK_HEADER
+        self._DebugPrintStructureObject(chunkset_chunk_header, debug_info)
 
       data_end_offset = data_offset + chunkset_chunk_header.chunk_data_size
       chunkset_chunk_data = uncompressed_data[data_offset:data_end_offset]
@@ -2930,8 +2899,8 @@ class TraceV3File(data_format.BinaryDataFile):
         chunk_data, data_offset, data_type_map, 'firehose header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          firehose_header, self._DEBUG_INFO_FIREHOSE_HEADER)
+      debug_info = self._DEBUG_INFO_FIREHOSE_HEADER
+      self._DebugPrintStructureObject(firehose_header, debug_info)
       self._GetTimestamp(
           firehose_header.base_continuous_time,
           description='Base continuous time')
@@ -3105,11 +3074,10 @@ class TraceV3File(data_format.BinaryDataFile):
               new_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
 
           current_activity_identifier = getattr(
-              tracepoint_data_object, 'current_activity_identifier', None)
-          if current_activity_identifier is not None:
-            # Note that the creator activity identifier is not masked in
-            # the output.
-            log_entry.creator_activity_identifier = current_activity_identifier
+              tracepoint_data_object, 'current_activity_identifier', None) or 0
+          # Note that the creator activity identifier is not masked in
+          # the output.
+          log_entry.creator_activity_identifier = current_activity_identifier
 
           other_activity_identifier = getattr(
               tracepoint_data_object, 'other_activity_identifier', None) or 0
@@ -3133,8 +3101,11 @@ class TraceV3File(data_format.BinaryDataFile):
 
         if firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
           name_string_reference = getattr(
-              tracepoint_data_object, 'name_string_reference', None)
-          if name_string_reference is None:
+              tracepoint_data_object, 'name_string_reference_upper', None) or 0
+          name_string_reference <<= 32
+          name_string_reference |= getattr(
+              tracepoint_data_object, 'name_string_reference_lower', None) or 0
+          if not name_string_reference:
             name_string = None
           else:
             _, _, _, name_string = self._GetImageValuesAndString(
@@ -3190,8 +3161,8 @@ class TraceV3File(data_format.BinaryDataFile):
         tracepoint_data, data_offset, data_type_map, 'firehose tracepoint')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          firehose_tracepoint, self._DEBUG_INFO_FIREHOSE_TRACEPOINT)
+      debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT
+      self._DebugPrintStructureObject(firehose_tracepoint, debug_info)
 
     return firehose_tracepoint
 
@@ -3230,8 +3201,8 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          activity, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY)
+      debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT_ACTIVITY
+      self._DebugPrintStructureObject(activity, debug_info)
 
     return activity, context.byte_size
 
@@ -3330,8 +3301,8 @@ class TraceV3File(data_format.BinaryDataFile):
           data_item.value_data = value
 
       if self._debug:
-        self._DebugPrintStructureObject(
-            data_item, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM)
+        debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT_DATA_ITEM
+        self._DebugPrintStructureObject(data_item, debug_info)
 
         if data_item.value_type not in (
             0x00, 0x01, 0x02, 0x10, 0x12, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31,
@@ -3413,8 +3384,8 @@ class TraceV3File(data_format.BinaryDataFile):
         tracepoint_data, data_offset, data_type_map, 'log', context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          log, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_LOG)
+      debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT_LOG
+      self._DebugPrintStructureObject(log, debug_info)
 
     return log, context.byte_size
 
@@ -3450,8 +3421,8 @@ class TraceV3File(data_format.BinaryDataFile):
         tracepoint_data, data_offset, data_type_map, 'loss', context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          loss, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_LOSS)
+      debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT_LOSS
+      self._DebugPrintStructureObject(loss, debug_info)
 
     return loss, context.byte_size
 
@@ -3489,8 +3460,8 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          signpost, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST)
+      debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT_SIGNPOST
+      self._DebugPrintStructureObject(signpost, debug_info)
 
     return signpost, context.byte_size
 
@@ -3526,8 +3497,8 @@ class TraceV3File(data_format.BinaryDataFile):
         tracepoint_data, data_offset, data_type_map, 'trace', context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          trace, self._DEBUG_INFO_FIREHOSE_TRACEPOINT_TRACE)
+      debug_info = self._DEBUG_INFO_FIREHOSE_TRACEPOINT_TRACE
+      self._DebugPrintStructureObject(trace, debug_info)
 
     return trace, context.byte_size
 
@@ -3550,18 +3521,21 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'header chunk')
 
     if self._debug:
+      debug_info = self._DEBUG_INFO_HEADER
+      self._DebugPrintStructureObject(header_chunk, debug_info)
+
+      debug_info = self._DEBUG_INFO_HEADER_CONTINOUS_TIME_SUB_CHUNK
+      self._DebugPrintStructureObject(header_chunk.continuous, debug_info)
+
+      debug_info = self._DEBUG_INFO_HEADER_SYSTEM_INFORMATION_SUB_CHUNK
       self._DebugPrintStructureObject(
-          header_chunk, self._DEBUG_INFO_HEADER)
-      self._DebugPrintStructureObject(
-          header_chunk.continuous,
-          self._DEBUG_INFO_HEADER_CONTINOUS_TIME_SUB_CHUNK)
-      self._DebugPrintStructureObject(
-          header_chunk.system_information,
-          self._DEBUG_INFO_HEADER_SYSTEM_INFORMATION_SUB_CHUNK)
-      self._DebugPrintStructureObject(
-          header_chunk.generation, self._DEBUG_INFO_HEADER_GENERATION_SUB_CHUNK)
-      self._DebugPrintStructureObject(
-          header_chunk.time_zone, self._DEBUG_INFO_HEADER_TIME_ZONE_SUB_CHUNK)
+          header_chunk.system_information, debug_info)
+
+      debug_info = self._DEBUG_INFO_HEADER_GENERATION_SUB_CHUNK
+      self._DebugPrintStructureObject(header_chunk.generation, debug_info)
+
+      debug_info = self._DEBUG_INFO_HEADER_TIME_ZONE_SUB_CHUNK
+      self._DebugPrintStructureObject(header_chunk.time_zone, debug_info)
 
     if header_chunk.flags & 0x0001 == 0:
       raise errors.ParseError(
@@ -3595,8 +3569,8 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          oversize_chunk, self._DEBUG_INFO_OVERSIZE_CHUNK)
+      debug_info = self._DEBUG_INFO_OVERSIZE_CHUNK
+      self._DebugPrintStructureObject(oversize_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
       self._DebugPrintData(
@@ -3628,8 +3602,8 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          simpledump_chunk, self._DEBUG_INFO_SIMPLEDUMP_CHUNK)
+      debug_info = self._DEBUG_INFO_SIMPLEDUMP_CHUNK
+      self._DebugPrintStructureObject(simpledump_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
       self._DebugPrintData(
@@ -3661,8 +3635,8 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          statedump_chunk, self._DEBUG_INFO_STATEDUMP_CHUNK)
+      debug_info = self._DEBUG_INFO_STATEDUMP_CHUNK
+      self._DebugPrintStructureObject(statedump_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
       self._DebugPrintData(
@@ -3861,21 +3835,13 @@ class UUIDTextFile(data_format.BinaryDataFile):
   """Apple Unified Logging and Activity Tracing (uuidtext) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('aul_uuidtext.yaml')
 
-  _DEBUG_INFO_FILE_FOOTER = [
-      ('image_path', 'Image path', '_FormatString')]
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('major_format_version', 'Major format version',
-       '_FormatIntegerAsDecimal'),
-      ('minor_format_version', 'Minor format version',
-       '_FormatIntegerAsDecimal'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('entry_descriptors', 'Entry descriptors',
-       '_FormatArrayOfEntryDescriptors')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'aul_uuidtext.debug.yaml', custom_format_callbacks={
+          'array_of_entry_descriptors': '_FormatArrayOfEntryDescriptors',
+          'signature': '_FormatStreamAsSignature'})
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes an uuidtext file.
@@ -3940,8 +3906,8 @@ class UUIDTextFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          file_footer, self._DEBUG_INFO_FILE_FOOTER)
+      debug_info = self._DEBUG_INFORMATION.get('uuidtext_file_footer', None)
+      self._DebugPrintStructureObject(file_footer, debug_info)
 
     return file_footer
 
@@ -3963,8 +3929,8 @@ class UUIDTextFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('uuidtext_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     format_version = (
         file_header.major_format_version, file_header.minor_format_version)
