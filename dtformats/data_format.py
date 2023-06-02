@@ -22,6 +22,7 @@ class BinaryDataFormat(object):
   _DEBUG_FORMAT_CALLBACKS = {
       'binary_data': '_FormatDataInHexadecimal',
       'decimal': '_FormatIntegerAsDecimal',
+      'floating_point': '_FormatFloatingPoint',
       'hexadecimal_2digits': '_FormatIntegerAsHexadecimal2',
       'hexadecimal_4digits': '_FormatIntegerAsHexadecimal4',
       'hexadecimal_8digits': '_FormatIntegerAsHexadecimal8',

@@ -298,11 +298,11 @@ The header (chunk) is 224 bytes of size and consists of:
 | 4 | 4 | 0x0011 | Chunk sub tag (subtag)
 | 8 | 8 | 208 | Chunk data size (length)
 4+| _Chunk data (tracev3_chunk_header)_
-| 16 | 4 | | Timebase numerator (first number in timebase # / #)
-| 20 | 4 | | Timebase denominator (second number in timebase # / #)
+| 16 | 4 | | (Mach) Timebase numerator (first number in timebase # / #)
+| 20 | 4 | | (Mach) Timebase denominator (second number in timebase # / #)
 | 24 | 8 | | Start time +
 Contains a Mach continuous timestamp
-| 32 | 4 | | Timestamp (or start wall clock time) +
+| 32 | 4 | | Timestamp (or wall clock time) +
 Signed integer that contains the number of seconds since January 1, 1970 00:00:00 UTC (POSIX epoch), disregarding leap seconds
 | 36 | 4 | | [yellow-background]*Unknown*
 | 40 | 4 | | [yellow-background]*Unknown*
@@ -317,6 +317,17 @@ Contains a signed integer that contains the number of minutes relative from UTC,
 | 136 | 32 | | <<header_generation_sub_chunk,Header generation sub chunk>>
 | 168 | 56 | | <<header_time_zone_sub_chunk,Header time zone sub chunk>>
 |===
+
+[NOTE]
+Timebase numerator / Timebase denominator is the timebase, which contains the
+number of seconds per continuous time unit.
+
+[NOTE]
+The start time contains the Mach continuous time representation of the POSIX
+timestamp (or wall clock time).
+
+[NOTE]
+Timestamp appears to be stored in UTC but the log tool shows the local time zone.
 
 ==== [[tracev3_header_flags]]Header flags
 
@@ -868,6 +879,23 @@ The offset is relative to the start of the private data in the <<tracev3_firehos
 | 4 | 2 | | Value data (range) size
 |===
 
+==== [[tracev3_firehose_tracepoint_backtrace_data]]Firehose tracepoint backtrace data
+
+Firehose tracepoint backtrace data is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | [yellow-background]*Unknown (Seen: 0x01)*
+| 2 | 1 | | [yellow-background]*Unknown (Seen: 0x12)*
+| 3 | 1 | | Number of (image) identifiers
+| 4 | 1 | | Number of frames
+| 5 | 1 | | [yellow-background]*Unknown*
+| 6 | number of identifiers | | Array of image identifiers (UUIDs)
+| ... | number of frames | | Array of image offsets
+| ... | number of frames | | Array of image identifier indexes
+|===
+
 ==== [[tracev3_firehose_tracepoint_activity]]Activity firehose tracepoint
 
 An activity firehose tracepoint is variable of size and consists of:
@@ -984,8 +1012,12 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 4+| _Common_
 | ... | 1 | | [yellow-background]*Unknown*
 | ... | 1 | | Number of data items
-| ... | ... | | Data items +
+| ... | number of data items | | Array of data items +
 See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
+4+| _Has backtrace flag (0x1000) is set_
+| ... | ... | | Backtrace data +
+See section: <<tracev3_firehose_tracepoint_backtrace_data,Backtrace data>>
+4+| _Common_
 | ... | ... | | Values data
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
@@ -1042,7 +1074,7 @@ See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 4+| _Common_
 | ... | 1 | | [yellow-background]*Unknown*
 | ... | 1 | | Number of data items
-| ... | ... | | Data items +
+| ... | number of data items | | Array of data items +
 See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
 | ... | ... | | Values data
 4+| _End of data_
@@ -1412,11 +1444,11 @@ Contains a signed integer that contains the number of minutes relative from UTC,
 |===
 
 [NOTE]
-Timestamp appears to be stored in UTC but the log tool shows the local time zone.
-
-[NOTE]
 Timebase numerator / Timebase denominator is the timebase, which contains the
 number of seconds per continuous time unit.
+
+[NOTE]
+Timestamp appears to be stored in UTC but the log tool shows the local time zone.
 
 ==== timesync sync record
 
@@ -1430,12 +1462,16 @@ The timesync sync record is 32 bytes of size and consists of:
 | 4 | 4 | | [yellow-background]*Unknown (Seen: 0 and 1)*
 | 8 | 8 | | Kernel time +
 Contains a Mach continuous timestamp
-| 16 | 8 | | Timestamp (or wall time) +
+| 16 | 8 | | Timestamp (or wall clock time) +
 Signed integer that contains the number of nanoseconds since January 1, 1970 00:00:00 UTC or 0 if not set
 | 24 | 4 | | Time zone offset in minutes +
 Contains a signed integer that contains the number of minutes relative from UTC, for example -60 represents UTC+1
 | 28 | 4 | | Daylight savings (DST) flag (0 = no DST, 1 = DST)
 |===
+
+[NOTE]
+The kernel time contains the Mach continuous time representation of the POSIX
+timestamp (or wall clock time).
 
 [NOTE]
 Timestamp appears to be stored in UTC but the log tool shows the local time zone.

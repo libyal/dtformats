@@ -158,3 +158,330 @@ attributes:
 - name: base_continuous_time
   description: "Base continuous time"
   format: decimal
+---
+data_type_map: tracev3_firehose_tracepoint
+attributes:
+- name: record_type
+  description: "Record type"
+  format: custom:record_type
+- name: log_type
+  description: "Log type"
+  format: custom:log_type
+- name: flags
+  description: "Flags"
+  format: custom:tracepoint_flags
+- name: format_string_reference
+  description: "Format string reference"
+  format: hexadecimal_8digits
+- name: thread_identifier
+  description: "Thread identifier"
+  format: decimal
+- name: continuous_time_lower
+  description: "Continous time (lower 32-bit)"
+  format: decimal
+- name: continuous_time_upper
+  description: "Continous time (upper 16-bit)"
+  format: decimal
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: data
+  description: "Data"
+  format: binary_data
+- name: alignment_padding
+  description: "Alignment padding"
+  format: binary_data
+---
+data_type_map: tracev3_firehose_tracepoint_activity
+attributes:
+- name: current_activity_identifier
+  description: "Current activity identifier"
+  format: hexadecimal_8digits
+- name: process_identifier
+  description: "Process identifier (PID)"
+  format: decimal
+- name: other_activity_identifier
+  description: "Other activity identifier"
+  format: hexadecimal_8digits
+- name: new_activity_identifier
+  description: "New activity identifier"
+  format: hexadecimal_8digits
+- name: load_address_lower
+  description: "UUID entry load address (lower 32-bit)"
+  format: hexadecimal_8digits
+- name: large_offset_data
+  description: "Large offset data"
+  format: hexadecimal_4digits
+- name: load_address_upper
+  description: "UUID entry load address (upper 16-bit)"
+  format: hexadecimal_4digits
+- name: uuidtext_file_identifier
+  description: "UUIDText file identifier"
+  format: uuid
+- name: large_shared_cache_data
+  description: "Large shared cache data"
+  format: hexadecimal_4digits
+---
+data_type_map: tracev3_firehose_tracepoint_backtrace_data
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_2digits
+- name: number_of_identifiers
+  description: "Number of identifiers"
+  format: decimal
+- name: number_of_frames
+  description: "Number of frames"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_2digits
+- name: uuids
+  description: "Identifiers"
+  format: custom:array_of_uuids
+- name: offsets
+  description: "Offsets"
+  format: custom:array_of_decimals
+- name: indexes
+  description: "Indexes"
+  format: custom:array_of_decimals
+---
+data_type_map: tracev3_firehose_tracepoint_data_item
+attributes:
+- name: value_type
+  description: "Value type"
+  format: custom:value_type
+- name: data_size
+  description: "Data item data size"
+  format: decimal
+- name: data
+  description: "Data item data"
+  format: binary_data
+- name: value_data_offset
+  description: "Value data offset"
+  format: hexadecimal_4digits
+- name: value_data_size
+  description: "Value data size"
+  format: decimal
+- name: floating_point
+  description: "Floating point value"
+  format: floating_point
+- name: integer
+  description: "Integer value"
+  format: decimal
+- name: private_string
+  description: "Private string value"
+  format: string
+- name: string
+  description: "String value"
+  format: string
+- name: uuid
+  description: "UUID value"
+  format: uuid
+- name: value_data
+  description: "Value data"
+  format: binary_data
+---
+data_type_map: tracev3_firehose_tracepoint_log
+attributes:
+- name: current_activity_identifier
+  description: "Current activity identifier"
+  format: hexadecimal_8digits
+- name: private_data_range
+  description: "Private data range"
+  format: custom:data_rang
+- name: load_address_lower
+  description: "UUID entry load address (lower 32-bit)"
+  format: hexadecimal_8digits
+- name: large_offset_data
+  description: "Large offset data"
+  format: hexadecimal_4digits
+- name: load_address_upper
+  description: "UUID entry load address (upper 16-bit)"
+  format: hexadecimal_4digits
+- name: uuidtext_file_identifier
+  description: "UUIDText file identifier"
+  format: uuid
+- name: large_shared_cache_data
+  description: "Large shared cache data"
+  format: hexadecimal_4digits
+- name: sub_system_identifier
+  description: "Sub system identifier"
+  format: decimal
+- name: ttl
+  description: "Time to live (TTL)"
+  format: decimal
+- name: data_reference_value
+  description: "Data reference value"
+  format: hexadecimal_4digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+- name: number_of_data_items
+  description: "Number of data items"
+  format: decimal
+---
+data_type_map: tracev3_firehose_tracepoint_loss
+attributes:
+- name: start_time
+  description: "Start time"
+  format: decimal
+- name: end_time
+  description: "End time"
+  format: decimal
+- name: number_of_messages
+  description: "Number of messages"
+  format: decimal
+---
+data_type_map: tracev3_firehose_tracepoint_signpost
+attributes:
+- name: current_activity_identifier
+  description: "Current activity identifier"
+  format: hexadecimal_8digits
+- name: private_data_range
+  description: "Private data range"
+  format: custom:data_rang
+- name: load_address_lower
+  description: "UUID entry load address (lower 32-bit)"
+  format: hexadecimal_8digits
+- name: large_offset_data
+  description: "Large offset data"
+  format: hexadecimal_4digits
+- name: load_address_upper
+  description: "UUID entry load address (upper 16-bit)"
+  format: hexadecimal_4digits
+- name: uuidtext_file_identifier
+  description: "UUIDText file identifier"
+  format: uuid
+- name: large_shared_cache_data
+  description: "Large shared cache data"
+  format: hexadecimal_4digits
+- name: sub_system_identifier
+  description: "Sub system identifier"
+  format: decimal
+- name: signpost_identifier
+  description: "Signpost identifier"
+  format: hexadecimal_8digits
+- name: ttl
+  description: "Time to live (TTL)"
+  format: decimal
+- name: data_reference_value
+  description: "Data reference value"
+  format: hexadecimal_4digits
+- name: name_string_reference_lower
+  description: "Name string reference (lower 32-bit)"
+  format: hexadecimal_8digits
+- name: name_string_reference_upper
+  description: "Name string reference (upper 16-bit)"
+  format: hexadecimal_4digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+- name: number_of_data_items
+  description: "Number of data items"
+  format: decimal
+---
+data_type_map: tracev3_firehose_tracepoint_trace
+attributes:
+- name: load_address_lower
+  description: "UUID entry load address (lower 32-bit)"
+  format: hexadecimal_8digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+---
+data_type_map: tracev3_header_chunk
+attributes:
+- name: timebase_numerator
+  description: "Timebase numerator"
+  format: decimal
+- name: timebase_denominator
+  description: "Timebase denominator"
+  format: decimal
+- name: start_time
+  description: "Start time"
+  format: decimal
+- name: timestamp
+  description: "Timestamp"
+  format: custom:posix_time
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_2digits
+- name: time_zone_offset
+  description: "Time zone offset"
+  format: decimal
+- name: daylight_savings_flag
+  description: "Daylight savings flag"
+  format: decimal
+- name: flags
+  description: "Flags"
+  format: hexadecimal_4digits
+---
+data_type_map: tracev3_continuous_time_sub_chunk
+attributes:
+- name: sub_chunk_tag
+  description: "Sub chunk tag"
+  format: hexadecimal_4digits
+- name: sub_chunk_data_size
+  description: "Sub chunk data size"
+  format: decimal
+- name: continuous_time
+  description: "Continuous time"
+  format: decimal
+---
+data_type_map: tracev3_header_system_information_sub_chunk
+attributes:
+- name: sub_chunk_tag
+  description: "Sub chunk tag"
+  format: hexadecimal_4digits
+- name: sub_chunk_data_size
+  description: "Sub chunk data size"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_4digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_4digits
+- name: build_version
+  description: "Build version"
+  format: string
+- name: hardware_model
+  description: "Hardware model"
+  format: string
+---
+data_type_map: tracev3_header_generation_sub_chunk
+attributes:
+- name: sub_chunk_tag
+  description: "Sub chunk tag"
+  format: hexadecimal_4digits
+- name: sub_chunk_data_size
+  description: "Sub chunk data size"
+  format: decimal
+- name: boot_identifier
+  description: "Boot identifier"
+  format: uuid
+- name: logd_process_identifier
+  description: "logd process identifier (PID)"
+  format: decimal
+- name: logd_exit_status
+  description: "logd exit status"
+  format: decimal
+---
+data_type_map: tracev3_header_time_zone_sub_chunk
+attributes:
+- name: sub_chunk_tag
+  description: "Sub chunk tag"
+  format: hexadecimal_4digits
+- name: sub_chunk_data_size
+  description: "Sub chunk data size"
+  format: decimal
+- name: path
+  description: "Path"
+  format: string

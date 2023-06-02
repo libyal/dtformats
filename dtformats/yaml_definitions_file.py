@@ -72,6 +72,7 @@ class YAMLDebugDefinitionsFile(object):
   _SUPPORTED_FORMATS = frozenset([
       'binary_data',
       'decimal',
+      'floating_point',
       'hexadecimal',
       'hexadecimal_2digits',
       'hexadecimal_4digits',

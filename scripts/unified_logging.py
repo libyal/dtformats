@@ -224,12 +224,13 @@ def Main():
 
         event_message = log_entry.event_message or ''
         event_message = event_message.rstrip()
+        if len(event_message) >= 1089:
+          event_message = ''.join([event_message[:1090], '<…>'])
+
         event_message = event_message.replace('"', '\\"')
         event_message = event_message.replace('/', '\\/')
         event_message = event_message.replace('\n', '\\n')
         event_message = event_message.replace('\t', '\\t')
-        if len(event_message) > 1166:
-          event_message = ''.join([event_message[:1166], '<…>'])
 
         if log_entry.creator_activity_identifier is not None:
           # The format string for an activityCreateEvent is empty.
@@ -291,13 +292,24 @@ def Main():
 
           lines.append(f'  "signpostType" : "{signpost_type:s}",')
 
-        # TODO: improve backtrace support.
         lines.extend([
             '  "backtrace" : {',
             '    "frames" : [',
-            '      {',
-            f'        "imageOffset" : {log_entry.sender_program_counter:d},',
-            f'        "imageUUID" : "{sender_image_identifier:s}"',
+            '      {'])
+
+        for index, backtrace_frame in enumerate(log_entry.backtrace_frames):
+          if index > 0:
+            lines.extend([
+                '      },',
+                '      {'])
+
+          image_identifier = str(backtrace_frame.image_identifier).upper()
+
+          lines.extend([
+              f'        "imageOffset" : {backtrace_frame.image_offset:d},',
+              f'        "imageUUID" : "{image_identifier:s}"'])
+
+        lines.extend([
             '      }',
             '    ]',
             '  },',

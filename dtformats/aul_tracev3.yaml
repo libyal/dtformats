@@ -431,33 +431,6 @@ members:
 #   element_data_type: tracev3_catalog_sub_chunk
 #   number_of_elements: tracev3_catalog.number_of_sub_chunks
 ---
-name: tracev3_backtrace
-type: structure
-description: TraceV3 backtrace chunk.
-attributes:
-  byte_order: little-endian
-members:
-- name: unknown1
-  data_type: uint16
-- name: unknown2
-  data_type: uint8
-- name: number_uuids
-  data_type: uint8
-- name: number_offsets
-  data_type: uint16
-- name: uuids
-  type: sequence
-  element_data_type: uuid_be
-  number_of_elements: tracev3_backtrace.number_uuids
-- name: offsets
-  type: sequence
-  element_data_type: uint32
-  number_of_elements: tracev3_backtrace.number_offsets
-- name: indices
-  type: sequence
-  element_data_type: uint8
-  number_of_elements: tracev3_backtrace.number_offsets
----
 name: tracev3_firehose_header
 type: structure
 description: TraceV3 firehose header.
@@ -529,6 +502,35 @@ members:
 - name: alignment_padding
   type: padding
   alignment_size: 8
+---
+name: tracev3_firehose_tracepoint_backtrace_data
+type: structure
+description: TraceV3 firehose tracepoint backtrace data
+attributes:
+  byte_order: little-endian
+members:
+- name: unknown1
+  data_type: uint16
+- name: unknown2
+  data_type: uint8
+- name: number_of_identifiers
+  data_type: uint8
+- name: number_of_frames
+  data_type: uint8
+- name: unknown3
+  data_type: uint8
+- name: identifiers
+  type: sequence
+  element_data_type: uuid_be
+  number_of_elements: tracev3_firehose_tracepoint_backtrace_data.number_of_identifiers
+- name: offsets
+  type: sequence
+  element_data_type: uint32
+  number_of_elements: tracev3_firehose_tracepoint_backtrace_data.number_of_frames
+- name: indexes
+  type: sequence
+  element_data_type: uint8
+  number_of_elements: tracev3_firehose_tracepoint_backtrace_data.number_of_frames
 ---
 name: tracev3_firehose_tracepoint_data_item_base
 type: structure
@@ -624,21 +626,6 @@ members:
 - name: large_shared_cache_data
   data_type: uint16
   condition: tracev3_firehose_tracepoint_strings_file_type == 0x000c
----
-name: tracev3_firehose_tracepoint_activity_data_items
-type: structure
-description: TraceV3 firehose tracepoint activity data.
-attributes:
-  byte_order: little-endian
-members:
-- name: unknown1
-  data_type: uint8
-- name: number_of_data_items
-  data_type: uint8
-- name: data_items
-  type: sequence
-  element_data_type: tracev3_firehose_tracepoint_data_item
-  number_of_elements: tracev3_firehose_tracepoint_log.number_of_data_items
 ---
 name: tracev3_firehose_tracepoint_loss
 type: structure
