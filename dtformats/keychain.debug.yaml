@@ -1,0 +1,100 @@
+# dtFormats debug specification.
+---
+data_type_map: keychain_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: tables_array_offset
+  description: "Tables array offset"
+  format: hexadecimal_8digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+---
+data_type_map: keychain_record_header
+attributes:
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: record_index
+  description: "Record index"
+  format: decimal
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: key_data_size
+  description: "Key data size"
+  format: decimal
+- name: unknown4
+  description: "Unknown4"
+  format: hexadecimal_8digits
+---
+data_type_map: keychain_tables_array
+attributes:
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: number_of_tables
+  description: "Number of tables"
+  format: decimal
+- name: table_offsets
+  description: "Table offsets"
+  format: custom:table_offsets
+---
+data_type_map: keychain_table_header
+attributes:
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: record_type
+  description: "Record type"
+  format: custom:record_type
+- name: number_of_records
+  description: "Number of records"
+  format: decimal
+- name: record_array_offset
+  description: "Record array offset"
+  format: hexadecimal_8digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: number_of_record_offsets
+  description: "Number of records offsets"
+  format: decimal
+- name: record_offsets
+  description: "Records offsets"
+  format: custom:record_offsets
+---
+data_type_map: keychain_record_schema_indexes
+attributes:
+- name: relation_identifier
+  description: "Relation identifier"
+  format: hexadecimal_8digits
+- name: index_identifier
+  description: "Index identifier"
+  format: hexadecimal_8digits
+- name: attribute_identifier
+  description: "Attribute identifier"
+  format: hexadecimal_8digits
+- name: index_type
+  description: "Index type"
+  format: hexadecimal_8digits
+- name: index_data_location
+  description: "Index data location"
+  format: hexadecimal_8digits

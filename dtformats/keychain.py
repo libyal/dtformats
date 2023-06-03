@@ -49,8 +49,15 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
   """MacOS keychain database file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('keychain.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'keychain.debug.yaml', custom_format_callbacks={
+          'record_offsets': '_FormatRecordOffsets',
+          'record_type': '_FormatIntegerAsRecordType',
+          'signature': '_FormatStreamAsSignature',
+          'table_offsets': '_FormatTableOffsets'})
 
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO = 0x00000000
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INDEXES = 0x00000001
@@ -97,52 +104,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       2: '_ReadAttributeValueInteger',
       5: '_ReadAttributeValueDateTime',
       6: '_ReadAttributeValueBinaryData'}
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('major_format_version', 'Major format version',
-       '_FormatIntegerAsDecimal'),
-      ('minor_format_version', 'Minor format version',
-       '_FormatIntegerAsDecimal'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('tables_array_offset', 'Tables array offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_RECORD_HEADER = [
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('record_index', 'Record index', '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('key_data_size', 'Key data size', '_FormatIntegerAsDecimal'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_TABLES_ARRAY = [
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('number_of_tables', 'Number of tables', '_FormatIntegerAsDecimal'),
-      ('table_offsets', 'Table offsets', '_FormatTableOffsets')]
-
-  _DEBUG_INFO_TABLE_HEADER = [
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('record_type', 'Record type', '_FormatIntegerAsRecordType'),
-      ('number_of_records', 'Number of records', '_FormatIntegerAsDecimal'),
-      ('record_array_offset', 'Record array offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('number_of_record_offsets', 'Number of record offsets',
-       '_FormatIntegerAsDecimal'),
-      ('record_offsets', 'Record offsets', '_FormatRecordOffsets')]
-
-  _DEBUG_INFO_SCHEMA_INDEXES_RECORD_VALUES = [
-      ('relation_identifier', 'Relation identifier',
-       '_FormatIntegerAsHexadecimal8'),
-      ('index_identifier', 'Index identifier', '_FormatIntegerAsHexadecimal8'),
-      ('attribute_identifier', 'Attribute identifier',
-       '_FormatIntegerAsHexadecimal8'),
-      ('index_type', 'Index type', '_FormatIntegerAsHexadecimal8'),
-      ('index_data_location', 'Index data location',
-       '_FormatIntegerAsHexadecimal8')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a MacOS keychain database file.
@@ -395,7 +356,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
 
@@ -545,8 +507,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, record_header_offset, data_type_map, 'record header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          record_header, self._DEBUG_INFO_RECORD_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_record_header', None)
+      self._DebugPrintStructureObject(record_header, debug_info)
 
     return record_header
 
@@ -699,8 +661,9 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         'schema indexes record values')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          record_values, self._DEBUG_INFO_SCHEMA_INDEXES_RECORD_VALUES)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'keychain_record_schema_indexes', None)
+      self._DebugPrintStructureObject(record_values, debug_info)
 
     if self._debug:
       file_offset = file_object.tell()
@@ -856,8 +819,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, table_header_offset, data_type_map, 'table header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          table_header, self._DEBUG_INFO_TABLE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_table_header', None)
+      self._DebugPrintStructureObject(table_header, debug_info)
 
     return table_header
 
@@ -884,8 +847,8 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, tables_array_offset, data_type_map, 'tables array')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          tables_array, self._DEBUG_INFO_TABLES_ARRAY)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_tables_array', None)
+      self._DebugPrintStructureObject(tables_array, debug_info)
 
     tables = collections.OrderedDict()
     for table_offset in tables_array.table_offsets:
