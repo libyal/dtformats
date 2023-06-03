@@ -51,6 +51,7 @@ in the section entitled "GNU Free Documentation License".
 | 0.0.7 | J.B. Metz | August 2022 | Additional changes based on format analysis.
 | 0.0.8 | Fry | November 2022 | Additional changes based on format analysis.
 | 0.0.9 | J.B. Metz | May 2023 | Additional changes based on format analysis.
+| 0.0.10 | J.B. Metz | June 2023 | Additional changes based on format analysis.
 |===
 
 :numbered:
@@ -1014,14 +1015,20 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 1 | | Number of data items
 | ... | number of data items | | Array of data items +
 See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
+4+| _Values data_
 4+| _Has backtrace flag (0x1000) is set_
 | ... | ... | | Backtrace data +
 See section: <<tracev3_firehose_tracepoint_backtrace_data,Backtrace data>>
 4+| _Common_
-| ... | ... | | Values data
+| ... | ... | | Data items values data
+4+| _End of values data_
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
+
+[NOTE]
+The backtrace data is stored as part of the values data. Value data offsets
+of data items are relative from the start of the values data.
 
 ==== [[tracev3_firehose_tracepoint_singpost]]Signpost firehose tracepoint
 
@@ -1076,7 +1083,9 @@ See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
 | ... | 1 | | Number of data items
 | ... | number of data items | | Array of data items +
 See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
-| ... | ... | | Values data
+4+| _Values data_
+| ... | ... | | Data items values data
+4+| _End of values data_
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
@@ -1133,6 +1142,39 @@ To calculate a name string reference:
 
 * ( name string reference upper 16-bit << 31 ) | ( name string reference lower 32-bit & 0x7fffffff )
 * ( name string reference lower 32-bit & 0x7fffffff )
+
+===== Invalid shared cache code pointer offset
+
+....
+tp 2872 + 117:      log info (has_current_aid, has_large_offset, large_shared_cache, has_subsystem)
+    thread:         00000000000009ba
+    time:           +42.683s
+    walltime:       1659846550 - 2022-08-07 06:29:10 (Sunday)
+    cur_aid:        8000000000001652
+    location:       pc:0x8008ecf707e9 fmt:0x1117a0720
+    image uuid:     CC386FB1-8C26-3CB7-8329-CC63095FCA7D
+    format:         START %{public}@
+    error:          ~~> <Invalid shared cache code pointer offset>
+    subsystem:      21 com.apple.reminderkit.utility
+
+Format string reference                                                 : 0x117a0720
+UUID entry load address (lower 32-bit)                                  : 0xecf707e9
+Large offset data                                                       : 0x8008
+Large shared cache data                                                 : 0x0002
+
+Calculated format string reference                                      : 0x1117a0720
+Strings file identifier                                                 : cc386fb1-8c26-3cb7-8329-cc63095fca7d
+Image identifier                                                        : cc386fb1-8c26-3cb7-8329-cc63095fca7d
+Load address                                                            : 0x8008ecf707e9
+....
+
+Observed behavior:
+
+* Large shared cache data is used to calculate format string
+* Image identifier = strings file identifier (value from Shared-Cache Strings (dsc) is not used)
+* Image path is not set
+* Image text offset is set to 0
+* Load address = ( Large offset data << 32 ) | UUID entry load address (lower 32-bit)
 
 ==== [[tracev3_firehose_tracepoint_format_string]]Firehose tracepoint format string
 
@@ -1202,6 +1244,7 @@ Other observerd value type decoders are:
 | "mdnsresponder:ip_addr" | | Formatted as a <<mdnsresponder_ip_address,mDNSResponder IP address>>
 | "mdnsresponder:mac_addr" | | Formatted as a <<mdnsresponder_mac_address,mDNSResponder MAC address>>
 | "name=NAME" | | Name formatting argument, where NAME is the name of the value, which has no additional formatting
+| "Name:NAME" | | [yellow-background]*Unknown, see notes below*
 | "network:in_addr" | | Formatted as an IPv4 address, for example "127.0.0.1"
 | "network:in6_addr" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
 | "network:sockaddr" | |
@@ -1217,7 +1260,9 @@ Other observerd value type decoders are:
 | "signpost.description:end_time" | | Formatted as a signpost description end time, for example `__##__signpost.description#____#end_time#_##_#1005756624719##__##`
 | "signpost.telemetry:number1" | | For example `__##__signpost.telemetry#____#number1#_##_#5.88671875##__##`, where a avalue can be an integer or floating-point which is formatted as (at least) "%.9g"
 | "signpost.telemetry:number2" | | For example `__##__signpost.telemetry#____#number2#_##_#6.05859375##__##`, where a avalue can be an integer or floating-point and which is formatted as (at least) "%.9g"
+| "signpost.telemetry:number3" | | For example `__##__signpost.telemetry#____#number3#_##_#6.05859375##__##`, where a avalue can be an integer or floating-point and which is formatted as (at least) "%.9g"
 | "signpost.telemetry:string1" | | For example `__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##`
+| "signpost.telemetry:string2" | | For example `__##__signpost.telemetry#____#string2#_##_#executeQueryBegin##__##`
 | "private" | | Private formatting argument, which is formatted as "<private>"
 | "public" | | Public formatting argument, which has no additional formatting
 |===
@@ -1295,6 +1340,22 @@ The types are defined as:
 | "x" | | Hexadecimal interger value, formatter in lower case
 | "X" | | Hexadecimal interger value, formatter in upper case
 |===
+
+===== Notes
+
+For format string:
+
+....
+ enableTelemetry=YES ResultCount=%{public, signpost.telemetry:number1, Name:ResultCount}ld DataSize=%{public, signpost.telemetry:number2, Name:DataSize}ld
+....
+
+Seen:
+
+....
+ enableTelemetry=YES ResultCount=0 DataSize=256
+....
+
+Is "Name:NAME" used for some kind of formatting override?
 
 === Oversize chunk
 

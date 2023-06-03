@@ -379,6 +379,10 @@ class StringFormatter(object):
 
     self._format_string = ''.join(segments)
 
+    if not self._value_formatters:
+      self._format_string = self._format_string.replace('{{', '{')
+      self._format_string = self._format_string.replace('}}', '}')
+
 
 class BaseFormatStringDecoder(object):
   """Format string decoder interface."""
@@ -804,8 +808,13 @@ class MaskHashFormatStringDecoder(BaseFormatStringDecoder):
     Returns:
       str: formatted value as a mask hash.
     """
-    base64_string = base64.b64encode(value).decode('ascii')
-    return f'<mask.hash: \'{base64_string:s}\'>'
+    if not value:
+      value_string = '(null)'
+    else:
+      base64_string = base64.b64encode(value).decode('ascii')
+      value_string = f'\'{base64_string:s}\''
+
+    return f'<mask.hash: {value_string:s}>'
 
 
 class MDNSDNSHeaderFormatStringDecoder(
@@ -1047,18 +1056,27 @@ class SignpostDescriptionEndTimeFormatStringDecoder(BaseFormatStringDecoder):
     return f'__##__signpost.description#____#end_time#_##_#{value:d}##__##'
 
 
-class SignpostTelemetryNumber1FormatStringDecoder(BaseFormatStringDecoder):
-  """Signpost telemetry number 1 value format string decoder."""
+class SignpostTelemetryNumberFormatStringDecoder(BaseFormatStringDecoder):
+  """Signpost telemetry number value format string decoder."""
 
-  def FormatValue(self, value, value_formatter=None):
-    """Formats a Signpost telemetry number 1 value.
+  def __init__(self, number=1):
+    """Initializes a Signpost telemetry number value format string decoder.
 
     Args:
-      value (object): Signpost telemetry number 1 value.
+      number (Optional[int]): Signpost telemetry number.
+    """
+    super(SignpostTelemetryNumberFormatStringDecoder, self).__init__()
+    self._number = number
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a Signpost telemetry number value.
+
+    Args:
+      value (object): Signpost telemetry number value.
       value_formatter (Optional[str]): value formatter.
 
     Returns:
-      str: formatted Signpost telemetry number 1 value.
+      str: formatted Signpost telemetry number value.
     """
     if isinstance(value, float):
       value_formatter = '{0:.9g}'
@@ -1068,47 +1086,34 @@ class SignpostTelemetryNumber1FormatStringDecoder(BaseFormatStringDecoder):
     elif not isinstance(value, str):
       value = value_formatter.format(value)
 
-    return f'__##__signpost.telemetry#____#number1#_##_#{value:s}##__##'
+    return (f'__##__signpost.telemetry#____#number{self._number}'
+            f'#_##_#{value:s}##__##')
 
 
-class SignpostTelemetryNumber2FormatStringDecoder(BaseFormatStringDecoder):
-  """Signpost telemetry number 2 value format string decoder."""
+class SignpostTelemetryStringFormatStringDecoder(BaseFormatStringDecoder):
+  """Signpost telemetry string value format string decoder."""
 
-  def FormatValue(self, value, value_formatter=None):
-    """Formats a Signpost telemetry number 2 value.
+  def __init__(self, number=1):
+    """Initializes a Signpost telemetry string value format string decoder.
 
     Args:
-      value (object): Signpost telemetry number 2 value.
+      number (Optional[int]): Signpost telemetry number.
+    """
+    super(SignpostTelemetryStringFormatStringDecoder, self).__init__()
+    self._number = number
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a Signpost telemetry string value.
+
+    Args:
+      value (str): Signpost telemetry string value.
       value_formatter (Optional[str]): value formatter.
 
     Returns:
-      str: formatted Signpost telemetry number 2 value.
+      str: formatted Signpost telemetry string value.
     """
-    if isinstance(value, float):
-      value_formatter = '{0:.9g}'
-
-    if value is None:
-      value = ''
-    elif not isinstance(value, str):
-      value = value_formatter.format(value)
-
-    return f'__##__signpost.telemetry#____#number2#_##_#{value:s}##__##'
-
-
-class SignpostTelemetryString1FormatStringDecoder(BaseFormatStringDecoder):
-  """Signpost telemetry string 1 value format string decoder."""
-
-  def FormatValue(self, value, value_formatter=None):
-    """Formats a Signpost telemetry string 1 value.
-
-    Args:
-      value (str): Signpost telemetry string 1 value.
-      value_formatter (Optional[str]): value formatter.
-
-    Returns:
-      str: formatted Signpost telemetry string 1 value.
-    """
-    return f'__##__signpost.telemetry#____#string1#_##_#{value:s}##__##'
+    return (f'__##__signpost.telemetry#____#string{self._number}'
+            f'#_##_#{value:s}##__##')
 
 
 class UUIDFormatStringDecoder(BaseFormatStringDecoder):
@@ -1784,11 +1789,15 @@ class TraceV3File(data_format.BinaryDataFile):
       'signpost.description:end_time': (
           SignpostDescriptionEndTimeFormatStringDecoder()),
       'signpost.telemetry:number1': (
-          SignpostTelemetryNumber1FormatStringDecoder()),
+          SignpostTelemetryNumberFormatStringDecoder(number=1)),
       'signpost.telemetry:number2': (
-          SignpostTelemetryNumber2FormatStringDecoder()),
+          SignpostTelemetryNumberFormatStringDecoder(number=2)),
+      'signpost.telemetry:number3': (
+          SignpostTelemetryNumberFormatStringDecoder(number=3)),
       'signpost.telemetry:string1': (
-          SignpostTelemetryString1FormatStringDecoder()),
+          SignpostTelemetryStringFormatStringDecoder(number=1)),
+      'signpost.telemetry:string2': (
+          SignpostTelemetryStringFormatStringDecoder(number=2)),
       'time_t': DateTimeInSecondsFormatStringDecoder(),
       'uuid_t': UUIDFormatStringDecoder()}
 
@@ -1819,7 +1828,6 @@ class TraceV3File(data_format.BinaryDataFile):
     self._chunk_index = 0
     self._header_timebase = 1
     self._header_timestamp = 0
-    self._parent_per_activity_identifier = {}
     self._timesync_boot_record = None
     self._timesync_path = None
     self._timesync_sync_records = []
@@ -1887,17 +1895,9 @@ class TraceV3File(data_format.BinaryDataFile):
         tracepoint_data_object, 'large_shared_cache_data', None)
 
     if large_shared_cache_data:
-      if self._debug:
-        calculated_large_offset_data = large_shared_cache_data >> 1
-        if large_offset_data != calculated_large_offset_data:
-          self._DebugPrintText((
-              f'Large offset data mismatch stored: ('
-              f'0x{large_offset_data:04x}, calculated: '
-              f'0x{calculated_large_offset_data:04x})\n'))
+      string_reference |= large_shared_cache_data << 31
 
-      large_offset_data = tracepoint_data_object.large_shared_cache_data
-
-    if large_offset_data:
+    elif large_offset_data:
       string_reference |= large_offset_data << 31
 
     if self._debug:
@@ -1935,6 +1935,52 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintText('\n')
 
     return string_reference, is_dynamic
+
+  def _CalculateProgramCounter(self, tracepoint_data_object, image_text_offset):
+    """Calculates the program counter.
+
+    Args:
+      tracepoint_data_object (object): firehose tracepoint data object.
+      image_text_offset (int): image text offset.
+
+    Returns:
+      int: program counter.
+    """
+    load_address = getattr(
+        tracepoint_data_object, 'load_address_upper', None) or 0
+    load_address <<= 32
+    load_address |= tracepoint_data_object.load_address_lower
+
+    large_offset_data = getattr(
+        tracepoint_data_object, 'large_offset_data', None)
+    large_shared_cache_data = getattr(
+        tracepoint_data_object, 'large_shared_cache_data', None)
+
+    if large_shared_cache_data:
+      calculated_large_offset_data = large_shared_cache_data >> 1
+      if large_offset_data != calculated_large_offset_data:
+        load_address |= large_offset_data << 32
+      else:
+        load_address |= large_shared_cache_data << 31
+
+    elif large_offset_data:
+      load_address |= large_offset_data << 31
+
+    program_counter = load_address - image_text_offset
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsHexadecimal8(load_address)
+      self._DebugPrintValue('Load address', value_string)
+
+      value_string, _ = self._FormatIntegerAsHexadecimal8(image_text_offset)
+      self._DebugPrintValue('Image text offset', value_string)
+
+      value_string, _ = self._FormatIntegerAsHexadecimal8(program_counter)
+      self._DebugPrintValue('Program counter', value_string)
+
+      self._DebugPrintText('\n')
+
+    return program_counter
 
   def _FormatArrayOfStrings(self, array_of_strings):
     """Formats an array of strings.
@@ -2267,6 +2313,25 @@ class TraceV3File(data_format.BinaryDataFile):
         image_identifier, image_text_offset, image_path, string = (
             dsc_file.GetImageValuesAndString(string_reference, is_dynamic))
 
+    large_offset_data = getattr(
+        tracepoint_data_object, 'large_offset_data', None)
+    large_shared_cache_data = getattr(
+        tracepoint_data_object, 'large_shared_cache_data', None)
+
+    if large_offset_data and large_shared_cache_data:
+      calculated_large_offset_data = large_shared_cache_data >> 1
+      if large_offset_data != calculated_large_offset_data:
+        if self._debug:
+          # "<Invalid shared cache code pointer offset>"
+          self._DebugPrintText((
+              f'Large offset data mismatch stored: ('
+              f'0x{large_offset_data:04x}, calculated: '
+              f'0x{calculated_large_offset_data:04x})\n'))
+
+        image_identifier = strings_file_identifier
+        image_text_offset = 0
+        image_path = ''
+
     if self._debug:
       self._DebugPrintValue('Strings file identifier', strings_file_identifier)
       self._DebugPrintValue('Image identifier', image_identifier or '')
@@ -2279,48 +2344,6 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintText('\n')
 
     return image_identifier, image_text_offset, image_path, string
-
-  def _GetProgramCounter(self, tracepoint_data_object, image_text_offset):
-    """Determines a trace identifier.
-
-    Args:
-      tracepoint_data_object (object): firehose tracepoint data object.
-      image_text_offset (int): image text offset.
-
-    Returns:
-      int: program counter.
-    """
-    load_address = getattr(
-        tracepoint_data_object, 'load_address_upper', None) or 0
-    load_address <<= 32
-    load_address |= tracepoint_data_object.load_address_lower
-
-    large_offset_data = getattr(
-        tracepoint_data_object, 'large_offset_data', None)
-    large_shared_cache_data = getattr(
-        tracepoint_data_object, 'large_shared_cache_data', None)
-
-    if large_shared_cache_data:
-      large_offset_data = tracepoint_data_object.large_shared_cache_data
-
-    if large_offset_data:
-      load_address |= large_offset_data << 31
-
-    program_counter = load_address - image_text_offset
-
-    if self._debug:
-      value_string, _ = self._FormatIntegerAsHexadecimal8(load_address)
-      self._DebugPrintValue('Load address', value_string)
-
-      value_string, _ = self._FormatIntegerAsHexadecimal8(image_text_offset)
-      self._DebugPrintValue('Image text offset', value_string)
-
-      value_string, _ = self._FormatIntegerAsHexadecimal8(program_counter)
-      self._DebugPrintValue('Program counter', value_string)
-
-      self._DebugPrintText('\n')
-
-    return program_counter
 
   def _GetProcessImageValues(self, process_information_entry):
     """Retrieves the process image value.
@@ -2753,8 +2776,7 @@ class TraceV3File(data_format.BinaryDataFile):
           relative to the start of the chunk set.
 
     Returns:
-      tuple[list[BacktraceFrame], int]: backtrace frames and number of bytes
-          read.
+      list[BacktraceFrame]: backtrace frames.
 
     Raises:
       ParseError: if the backtrace data cannot be read.
@@ -2762,11 +2784,8 @@ class TraceV3File(data_format.BinaryDataFile):
     data_type_map = self._GetDataTypeMap(
         'tracev3_firehose_tracepoint_backtrace_data')
 
-    context = dtfabric_data_maps.DataTypeMapContext()
-
     backtrace_data = self._ReadStructureFromByteStream(
-        backtrace_data, data_offset, data_type_map, 'backtrace data',
-        context=context)
+        backtrace_data, data_offset, data_type_map, 'backtrace data')
 
     if self._debug:
       debug_info = self._DEBUG_INFORMATION.get(
@@ -2789,7 +2808,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
       backtrace_frames.append(backtrace_frame)
 
-    return backtrace_frames, context.byte_size
+    return backtrace_frames
 
   def _ReadFirehoseChunkData(self, chunk_data, chunk_data_size, data_offset):
     """Reads firehose chunk data.
@@ -2917,11 +2936,9 @@ class TraceV3File(data_format.BinaryDataFile):
         if firehose_tracepoint.flags & 0x1000 == 0:
           backtrace_frames = []
         else:
-          backtrace_frames, bytes_read = self._ReadBacktraceData(
+          backtrace_frames = self._ReadBacktraceData(
               firehose_tracepoint.data[values_data_offset:],
               tracepoint_data_offset + values_data_offset)
-
-          values_data_offset += bytes_read
 
         string_reference, is_dynamic = self._CalculateFormatStringReference(
             tracepoint_data_object, firehose_tracepoint.format_string_reference)
@@ -2966,7 +2983,7 @@ class TraceV3File(data_format.BinaryDataFile):
         process_image_identifier, process_image_path = (
             self._GetProcessImageValues(process_information_entry))
 
-        program_counter = self._GetProgramCounter(
+        program_counter = self._CalculateProgramCounter(
             tracepoint_data_object, image_text_offset)
 
         if not backtrace_frames:
@@ -3020,20 +3037,11 @@ class TraceV3File(data_format.BinaryDataFile):
           log_entry.parent_activity_identifier = (
               other_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
 
-          if new_activity_identifier:
-            self._parent_per_activity_identifier[new_activity_identifier] = (
-                other_activity_identifier)
-
         else:
           current_activity_identifier = getattr(
               tracepoint_data_object, 'current_activity_identifier', None) or 0
           log_entry.activity_identifier = (
               current_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
-
-          other_activity_identifier = self._parent_per_activity_identifier.get(
-              current_activity_identifier, 0)
-          log_entry.parent_activity_identifier = (
-              other_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
 
         if firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
           name_string_reference, is_dynamic = (

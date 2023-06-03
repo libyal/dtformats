@@ -491,6 +491,9 @@ class MaskHashFormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, (
         '<mask.hash: \'HR/T++mmRmq3Mn+2mGECsg==\'>'))
 
+    formatted_value = test_decoder.FormatValue(b'')
+    self.assertEqual(formatted_value, '<mask.hash: (null)>')
+
 
 class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
   """mDNS DNS header format string decoder tests."""
@@ -593,12 +596,12 @@ class SignpostDescriptionEndTimeFormatStringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.description#____#end_time#_##_#1005756624719##__##'))
 
 
-class SignpostTelemetryNumber1FormatStringDecoderTest(test_lib.BaseTestCase):
-  """Signpost telemetry number 1 value format string decoder tests."""
+class SignpostTelemetryNumberFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Signpost telemetry number value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostTelemetryNumber1FormatStringDecoder()
+    test_decoder = unified_logging.SignpostTelemetryNumberFormatStringDecoder()
 
     formatted_value = test_decoder.FormatValue(9, value_formatter='{0:d}')
     self.assertEqual(formatted_value, (
@@ -614,13 +617,8 @@ class SignpostTelemetryNumber1FormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, (
         '__##__signpost.telemetry#____#number1#_##_#5.859375##__##'))
 
-
-class SignpostTelemetryNumber2FormatStringDecoderTest(test_lib.BaseTestCase):
-  """Signpost telemetry number 2 value format string decoder tests."""
-
-  def testFormatValue(self):
-    """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostTelemetryNumber2FormatStringDecoder()
+    test_decoder = unified_logging.SignpostTelemetryNumberFormatStringDecoder(
+        number=2)
 
     formatted_value = test_decoder.FormatValue(9, value_formatter='{0:d}')
     self.assertEqual(formatted_value, (
@@ -632,16 +630,23 @@ class SignpostTelemetryNumber2FormatStringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.telemetry#____#number2#_##_#6.05859375##__##'))
 
 
-class SignpostTelemetryString1FormatStringDecoderTest(test_lib.BaseTestCase):
-  """Signpost telemetry string 1 value format string decoder tests."""
+class SignpostTelemetryStringFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Signpost telemetry string value format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SignpostTelemetryString1FormatStringDecoder()
+    test_decoder = unified_logging.SignpostTelemetryStringFormatStringDecoder()
 
     formatted_value = test_decoder.FormatValue('executeQueryBegin')
     self.assertEqual(formatted_value, (
         '__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##'))
+
+    test_decoder = unified_logging.SignpostTelemetryStringFormatStringDecoder(
+        number=2)
+
+    formatted_value = test_decoder.FormatValue('executeQueryBegin')
+    self.assertEqual(formatted_value, (
+        '__##__signpost.telemetry#____#string2#_##_#executeQueryBegin##__##'))
 
 
 class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
@@ -1030,7 +1035,62 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(string_reference, 0x8ec8fbbd0)
     self.assertFalse(is_dynamic)
 
-  # TODO: add tests for _CalculateNameStringReference
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0x8008, large_shared_cache_data=0x0002)
+
+    string_reference, is_dynamic = test_file._CalculateFormatStringReference(
+        tracepoint_data_object, 0x117a0720)
+    self.assertEqual(string_reference, 0x1117a0720)
+    self.assertFalse(is_dynamic)
+
+  def testCalculateNameStringReference(self):
+    """Tests the _CalculateNameStringReference function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    tracepoint_data_object_tuple = collections.namedtuple(
+        'tracepoint_data_object', [
+            'name_string_reference_lower', 'name_string_reference_upper'])
+
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        name_string_reference_lower=0x05f327b0,
+        name_string_reference_upper=0x0002)
+
+    string_reference, is_dynamic = test_file._CalculateNameStringReference(
+        tracepoint_data_object)
+    self.assertEqual(string_reference, 0x105f327b0)
+    self.assertFalse(is_dynamic)
+
+    # TODO: improve tests
+
+  def testCalculateProgramCounter(self):
+    """Tests the _CalculateProgramCounter function."""
+    output_writer = test_lib.TestOutputWriter()
+    test_file = unified_logging.TraceV3File(output_writer=output_writer)
+
+    tracepoint_data_object_tuple = collections.namedtuple(
+        'tracepoint_data_object', [
+            'large_offset_data', 'large_shared_cache_data',
+            'load_address_lower', 'load_address_upper'])
+
+    # TODO: improve tests
+
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0x0001, large_shared_cache_data=0x0002,
+        load_address_lower=0x05dfebdb, load_address_upper=0)
+
+    program_counter = test_file._CalculateProgramCounter(
+        tracepoint_data_object, 0x105de1000)
+    self.assertEqual(program_counter, 0x0001dbdb)
+
+    tracepoint_data_object = tracepoint_data_object_tuple(
+        large_offset_data=0x8008, large_shared_cache_data=0x0002,
+        load_address_lower=0xecf707e9, load_address_upper=0)
+
+    program_counter = test_file._CalculateProgramCounter(
+        tracepoint_data_object, 0)
+    self.assertEqual(program_counter, 0x8008ecf707e9)
+
   # TODO: add tests for _FormatArrayOfStrings
   # TODO: add tests for _FormatArrayOfUUIDS
   # TODO: add tests for _FormatStreamAsSignature
@@ -1082,11 +1142,10 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    backtrace_frames, bytes_read = test_file._ReadBacktraceData(
+    backtrace_frames = test_file._ReadBacktraceData(
         self._FIREHOSE_TRACEPOINT_BACKTRACE_DATA, 0)
 
     self.assertEqual(len(backtrace_frames), 15)
-    self.assertEqual(bytes_read, 145)
 
     self.assertEqual(backtrace_frames[0].image_identifier, uuid.UUID(
         '4be71104-3c12-38bd-b2f8-2c1ed6a3fd8d'))

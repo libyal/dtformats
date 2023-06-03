@@ -202,6 +202,7 @@ def Main():
           'Timestamp                       Thread     Type        '
           'Activity             PID    TTL'))
 
+    parent_per_activity_identifier = {}
     for index, log_entry in enumerate(log_entries_heap.PopLogEntries()):
       if options.format == 'json' and index > 0:
         print('},{')
@@ -224,11 +225,12 @@ def Main():
 
         event_message = log_entry.event_message or ''
         event_message = event_message.rstrip()
-        if len(event_message) >= 1089:
-          event_message = ''.join([event_message[:1090], '<…>'])
+        if len(event_message) >= 1085:
+          event_message = ''.join([event_message[:1087], '<…>'])
 
-        event_message = event_message.replace('"', '\\"')
+        event_message = event_message.replace('\\', '\\\\')
         event_message = event_message.replace('/', '\\/')
+        event_message = event_message.replace('"', '\\"')
         event_message = event_message.replace('\n', '\\n')
         event_message = event_message.replace('\t', '\\t')
 
@@ -237,8 +239,9 @@ def Main():
           format_string = ''
         else:
           format_string = log_entry.format_string or ''
-          format_string = format_string.replace('"', '\\"')
+          format_string = format_string.replace('\\', '\\\\')
           format_string = format_string.replace('/', '\\/')
+          format_string = format_string.replace('"', '\\"')
           format_string = format_string.replace('\n', '\\n')
           format_string = format_string.replace('\t', '\\t')
 
@@ -248,8 +251,9 @@ def Main():
               log_entry.process_image_identifier).upper()
 
         process_image_path = log_entry.process_image_path or ''
-        process_image_path = process_image_path.replace('"', '\\"')
+        process_image_path = process_image_path.replace('\\', '\\\\')
         process_image_path = process_image_path.replace('/', '\\/')
+        process_image_path = process_image_path.replace('"', '\\"')
 
         sender_image_identifier = ''
         if log_entry.sender_image_identifier:
@@ -319,6 +323,9 @@ def Main():
             f'  "senderImagePath" : "{sender_image_path:s}",'])
 
         if log_entry.creator_activity_identifier is not None:
+          parent_per_activity_identifier[log_entry.activity_identifier] = (
+              log_entry.creator_activity_identifier)
+
           lines.append((f'  "creatorActivityID" : '
                         f'{log_entry.creator_activity_identifier:d},'))
 
@@ -337,12 +344,17 @@ def Main():
 
           lines.append(f'  "messageType" : "{message_type:s}",')
 
+        if log_entry.parent_activity_identifier:
+          parent_activity_identifier = log_entry.parent_activity_identifier
+        else:
+          parent_activity_identifier = parent_per_activity_identifier.get(
+              log_entry.activity_identifier, None) or 0
+
         lines.extend([
             f'  "processImageUUID" : "{process_image_identifier:s}",',
             f'  "processID" : {log_entry.process_identifier:d},',
             f'  "senderProgramCounter" : {log_entry.sender_program_counter:d},',
-            (f'  "parentActivityIdentifier" : '
-             f'{log_entry.parent_activity_identifier:d},'),
+            f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
             '  "timezoneName" : ""'])
 
         print('\n'.join(lines))
