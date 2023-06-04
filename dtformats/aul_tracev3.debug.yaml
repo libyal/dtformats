@@ -123,6 +123,42 @@ attributes:
   description: "Chunk data size"
   format: decimal
 ---
+data_type_map: tracev3_data_item
+attributes:
+- name: value_type
+  description: "Value type"
+  format: custom:value_type
+- name: data_size
+  description: "Data item data size"
+  format: decimal
+- name: data
+  description: "Data item data"
+  format: binary_data
+- name: value_data_offset
+  description: "Value data offset"
+  format: hexadecimal_4digits
+- name: value_data_size
+  description: "Value data size"
+  format: decimal
+- name: floating_point
+  description: "Floating point value"
+  format: floating_point
+- name: integer
+  description: "Integer value"
+  format: decimal
+- name: private_string
+  description: "Private string value"
+  format: string
+- name: string
+  description: "String value"
+  format: string
+- name: uuid
+  description: "UUID value"
+  format: uuid
+- name: value_data
+  description: "Value data"
+  format: binary_data
+---
 data_type_map: tracev3_firehose_header
 attributes:
 - name: proc_id_upper
@@ -249,42 +285,6 @@ attributes:
   description: "Indexes"
   format: custom:array_of_decimals
 ---
-data_type_map: tracev3_firehose_tracepoint_data_item
-attributes:
-- name: value_type
-  description: "Value type"
-  format: custom:value_type
-- name: data_size
-  description: "Data item data size"
-  format: decimal
-- name: data
-  description: "Data item data"
-  format: binary_data
-- name: value_data_offset
-  description: "Value data offset"
-  format: hexadecimal_4digits
-- name: value_data_size
-  description: "Value data size"
-  format: decimal
-- name: floating_point
-  description: "Floating point value"
-  format: floating_point
-- name: integer
-  description: "Integer value"
-  format: decimal
-- name: private_string
-  description: "Private string value"
-  format: string
-- name: string
-  description: "String value"
-  format: string
-- name: uuid
-  description: "UUID value"
-  format: uuid
-- name: value_data
-  description: "Value data"
-  format: binary_data
----
 data_type_map: tracev3_firehose_tracepoint_log
 attributes:
 - name: current_activity_identifier
@@ -314,8 +314,8 @@ attributes:
 - name: ttl
   description: "Time to live (TTL)"
   format: decimal
-- name: data_reference_value
-  description: "Data reference value"
+- name: data_reference
+  description: "Data reference"
   format: hexadecimal_4digits
 - name: unknown1
   description: "Unknown1"
@@ -368,8 +368,8 @@ attributes:
 - name: ttl
   description: "Time to live (TTL)"
   format: decimal
-- name: data_reference_value
-  description: "Data reference value"
+- name: data_reference
+  description: "Data reference"
   format: hexadecimal_4digits
 - name: name_string_reference_lower
   description: "Name string reference (lower 32-bit)"
@@ -423,7 +423,7 @@ attributes:
   description: "Flags"
   format: custom:header_flags
 ---
-data_type_map: tracev3_continuous_time_sub_chunk
+data_type_map: tracev3_header_continuous_time_sub_chunk
 attributes:
 - name: sub_chunk_tag
   description: "Sub chunk tag"
@@ -485,3 +485,39 @@ attributes:
 - name: path
   description: "Path"
   format: string
+---
+data_type_map: tracev3_oversize_chunk
+attributes:
+- name: proc_id_upper
+  description: "proc_id (upper 64-bit)"
+  format: decimal
+- name: proc_id_lower
+  description: "proc_id (lower 32-bit)"
+  format: decimal
+- name: ttl
+  description: "Time to live (TTL)"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_4digits
+- name: continuous_time
+  description: "Continous time"
+  format: decimal
+- name: data_reference
+  description: "Data reference"
+  format: hexadecimal_8digits
+- name: public_data_size
+  description: "Public data size"
+  format: decimal
+- name: private_data_size
+  description: "Private data size"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_2digits
+- name: number_of_data_items
+  description: "Number of data items"
+  format: decimal

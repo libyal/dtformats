@@ -48,6 +48,12 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._type_hints, [])
     self.assertEqual(test_formatter._value_formatters, [])
 
+    test_formatter.ParseFormatString('%c')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, [None])
+    self.assertEqual(test_formatter._value_formatters, ['{0:c}'])
+
     test_formatter.ParseFormatString('%d')
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
@@ -129,6 +135,12 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._format_string, '{0:s}')
     self.assertEqual(test_formatter._type_hints, ['unsigned'])
     self.assertEqual(test_formatter._value_formatters, ['{0:x}'])
+
+    test_formatter.ParseFormatString('%#llx')
+    self.assertEqual(test_formatter._decoders, [['internal:#x']])
+    self.assertEqual(test_formatter._format_string, '{0:s}')
+    self.assertEqual(test_formatter._type_hints, ['unsigned'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:#x}'])
 
     test_formatter.ParseFormatString('0x%lx')
     self.assertEqual(test_formatter._decoders, [[]])
@@ -300,6 +312,21 @@ class StringFormatterTest(test_lib.BaseTestCase):
         'unsigned', None, 'signed', None, 'signed', None, 'floating-point'])
     self.assertEqual(test_formatter._value_formatters, [
         '{0:08x}', '{0:s}', '{0:d}', '{0:s}', '{0:d}', '{0:s}', '{0:f}'])
+
+
+class AlternativeHexadecimalFormFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Alternative hexadecimal form value format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.AlternativeHexadecimalFormFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(0)
+    self.assertEqual(formatted_value, '0')
+
+    formatted_value = test_decoder.FormatValue(1)
+    self.assertEqual(formatted_value, '0x1')
 
 
 class BooleanFormatStringDecoderTest(test_lib.BaseTestCase):
@@ -564,6 +591,17 @@ class MDNSProtocolFormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, 'UDP')
 
 
+class MDNSReasonFormatStringDecoder(test_lib.BaseTestCase):
+  """mDNS reason decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.MDNSReasonFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(3)
+    self.assertEqual(formatted_value, 'query-suppressed')
+
+
 class MDNSResourceRecordTypeFormatStringDecoderTest(test_lib.BaseTestCase):
   """mDNS resource record type decoder tests."""
 
@@ -724,19 +762,30 @@ class SignpostTelemetryStringFormatStringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.telemetry#____#string2#_##_#executeQueryBegin##__##'))
 
 
-class SocketAdressFormatStringDecoderTest(test_lib.BaseTestCase):
+class SocketAddressFormatStringDecoderTest(test_lib.BaseTestCase):
   """Socket address value format string decoder tests."""
 
   _VALUE_DATA1 = bytes(bytearray([
       0x10, 0x02, 0x00, 0x00, 0x17, 0x32, 0x62, 0x82, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00]))
 
+  _VALUE_DATA2 = bytes(bytearray([
+      0x1c, 0x1e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00]))
+
   def testFormatValue(self):
     """Tests the FormatValue function."""
-    test_decoder = unified_logging.SocketAdressFormatStringDecoder()
+    test_decoder = unified_logging.SocketAddressFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(b'')
+    self.assertEqual(formatted_value, '<NULL>')
 
     formatted_value = test_decoder.FormatValue(self._VALUE_DATA1)
     self.assertEqual(formatted_value, '23.50.98.130')
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA2)
+    self.assertEqual(formatted_value, '::')
 
 
 class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
@@ -1211,7 +1260,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
 
     with open(test_file_path, 'rb') as file_object:
       chunk_header = test_file._ReadChunkHeader(file_object, 0x000001a8)
-      test_file._ReadChunkSet(file_object, 0x000001b8, chunk_header)
+      test_file._ReadChunkSet(file_object, 0x000001b8, chunk_header, {})
 
   def testReadBacktraceData(self):
     """Tests the _ReadBacktraceData function."""
@@ -1233,7 +1282,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
     test_file._ReadFirehoseChunkData(
-        self._FIREHOSE_CHUNK_DATA, len(self._FIREHOSE_CHUNK_DATA), 0)
+        self._FIREHOSE_CHUNK_DATA, len(self._FIREHOSE_CHUNK_DATA), 0, {})
 
   def testReadFirehoseTracepointActivityData(self):
     """Tests the _ReadFirehoseTracepointActivityData function."""
@@ -1371,12 +1420,14 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(oversize_chunk.proc_id_upper, 449241)
     self.assertEqual(oversize_chunk.proc_id_lower, 1345727)
     self.assertEqual(oversize_chunk.ttl, 30)
-    self.assertEqual(oversize_chunk.unknown1, 0)
-    self.assertEqual(oversize_chunk.unknown2, 0)
-    self.assertEqual(oversize_chunk.timestamp, 100657868900985)
-    self.assertEqual(oversize_chunk.data_reference_index, 82)
+    self.assertEqual(oversize_chunk.unknown1, 0x00)
+    self.assertEqual(oversize_chunk.unknown2, 0x0000)
+    self.assertEqual(oversize_chunk.continuous_time, 100657868900985)
+    self.assertEqual(oversize_chunk.data_reference, 82)
     self.assertEqual(oversize_chunk.public_data_size, 2046)
     self.assertEqual(oversize_chunk.private_data_size, 0)
+    self.assertEqual(oversize_chunk.unknown3, 0x22)
+    self.assertEqual(oversize_chunk.number_of_data_items, 1)
 
   def testReadSimpleDumpChunkData(self):
     """Tests the _ReadSimpleDumpChunkData function."""

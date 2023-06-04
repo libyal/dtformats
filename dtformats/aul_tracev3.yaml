@@ -161,7 +161,7 @@ members:
 - name: chunk_data_size
   data_type: uint64
 ---
-name: tracev3_continuous_time_sub_chunk
+name: tracev3_header_continuous_time_sub_chunk
 type: structure
 description: TraceV3 header continuous time sub chunk
 attributes:
@@ -264,7 +264,7 @@ members:
 - name: flags
   data_type: uint32
 - name: continuous
-  data_type: tracev3_continuous_time_sub_chunk
+  data_type: tracev3_header_continuous_time_sub_chunk
 - name: system_information
   data_type: tracev3_header_system_information_sub_chunk
 - name: generation
@@ -431,6 +431,57 @@ members:
 #   element_data_type: tracev3_catalog_sub_chunk
 #   number_of_elements: tracev3_catalog.number_of_sub_chunks
 ---
+name: tracev3_data_item_base
+type: structure
+description: TraceV3 data item
+attributes:
+  byte_order: little-endian
+members:
+- name: value_type
+  data_type: uint8
+- name: data_size
+  data_type: uint8
+---
+name: tracev3_data_item_with_inline_data
+type: structure
+description: TraceV3 data item with inline data
+attributes:
+  byte_order: little-endian
+members:
+- name: value_type
+  data_type: uint8
+- name: data_size
+  data_type: uint8
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: tracev3_data_item_with_inline_data.data_size
+---
+name: tracev3_firehose_tracepoint_data_time_with_value_data_range
+type: structure
+description: TraceV3 data item with value data range
+attributes:
+  byte_order: little-endian
+members:
+- name: value_type
+  data_type: uint8
+  values: [0x20, 0x21, 0x22, 0x30, 0x32, 0x40, 0x42, 0xf2]
+- name: data_size
+  data_type: uint8
+  value: 4
+- name: value_data_offset
+  data_type: uint16
+- name: value_data_size
+  data_type: uint16
+---
+name: tracev3_data_item
+type: structure-group
+base: tracev3_data_item_base
+identifier: value_type
+default: tracev3_data_item_with_inline_data
+members:
+- tracev3_firehose_tracepoint_data_time_with_value_data_range
+---
 name: tracev3_firehose_header
 type: structure
 description: TraceV3 firehose header.
@@ -532,57 +583,6 @@ members:
   element_data_type: uint8
   number_of_elements: tracev3_firehose_tracepoint_backtrace_data.number_of_frames
 ---
-name: tracev3_firehose_tracepoint_data_item_base
-type: structure
-description: TraceV3 firehose tracepoint data item
-attributes:
-  byte_order: little-endian
-members:
-- name: value_type
-  data_type: uint8
-- name: data_size
-  data_type: uint8
----
-name: tracev3_firehose_tracepoint_data_item_with_inline_data
-type: structure
-description: TraceV3 firehose tracepoint data item with inline data
-attributes:
-  byte_order: little-endian
-members:
-- name: value_type
-  data_type: uint8
-- name: data_size
-  data_type: uint8
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: tracev3_firehose_tracepoint_data_item_with_inline_data.data_size
----
-name: tracev3_firehose_tracepoint_data_time_with_value_data_range
-type: structure
-description: TraceV3 firehose tracepoint data item with value data range
-attributes:
-  byte_order: little-endian
-members:
-- name: value_type
-  data_type: uint8
-  values: [0x20, 0x21, 0x22, 0x30, 0x32, 0x40, 0x42, 0xf2]
-- name: data_size
-  data_type: uint8
-  value: 4
-- name: value_data_offset
-  data_type: uint16
-- name: value_data_size
-  data_type: uint16
----
-name: tracev3_firehose_tracepoint_data_item
-type: structure-group
-base: tracev3_firehose_tracepoint_data_item_base
-identifier: value_type
-default: tracev3_firehose_tracepoint_data_item_with_inline_data
-members:
-- tracev3_firehose_tracepoint_data_time_with_value_data_range
----
 name: tracev3_firehose_tracepoint_data_range
 type: structure
 description: TraceV3 firehose tracepoint string range
@@ -672,7 +672,7 @@ members:
 - name: ttl
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0400 != 0
-- name: data_reference_value
+- name: data_reference
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0800 != 0
 - name: unknown1
@@ -681,7 +681,7 @@ members:
   data_type: uint8
 - name: data_items
   type: sequence
-  element_data_type: tracev3_firehose_tracepoint_data_item
+  element_data_type: tracev3_data_item
   number_of_elements: tracev3_firehose_tracepoint_log.number_of_data_items
 ---
 name: tracev3_firehose_tracepoint_signpost
@@ -718,7 +718,7 @@ members:
 - name: ttl
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0400 != 0
-- name: data_reference_value
+- name: data_reference
   data_type: uint8
   condition: tracev3_firehose_tracepoint_flags & 0x0800 != 0
 - name: name_string_reference_lower
@@ -733,7 +733,7 @@ members:
   data_type: uint8
 - name: data_items
   type: sequence
-  element_data_type: tracev3_firehose_tracepoint_data_item
+  element_data_type: tracev3_data_item
   number_of_elements: tracev3_firehose_tracepoint_signpost.number_of_data_items
 ---
 name: tracev3_firehose_tracepoint_trace
@@ -763,18 +763,22 @@ members:
   data_type: uint8
 - name: unknown2
   data_type: uint16
-- name: timestamp
+- name: continuous_time
   data_type: uint64
-- name: data_reference_index
+- name: data_reference
   data_type: uint32
 - name: public_data_size
   data_type: uint16
 - name: private_data_size
   data_type: uint16
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: tracev3_oversize_chunk.public_data_size + tracev3_oversize_chunk.private_data_size
+- name: unknown3
+  data_type: uint8
+- name: number_of_data_items
+  data_type: uint8
+- name: data_items
+  type: sequence
+  element_data_type: tracev3_data_item
+  number_of_elements: tracev3_oversize_chunk.number_of_data_items
 ---
 name: tracev3_simpledump_chunk
 type: structure

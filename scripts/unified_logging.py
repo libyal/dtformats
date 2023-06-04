@@ -417,7 +417,7 @@ def Main():
             f'{event_message:s}'))
 
     if options.format == 'json':
-      print('}]')
+      print('}]', end='')
 
   unified_logging_file.Close()
 

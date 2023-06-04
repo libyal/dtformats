@@ -620,7 +620,7 @@ Contains a Mach continuous timestamp
 4+|
 | 48 | data size | | data +
 Contains one or more <<tracev3_firehose_tracepoint,Firehose tracepoints>>
-| ... | ... | Private or remnant data
+| ... | ... | | Private or remnant data
 |===
 
 [NOTE]
@@ -752,10 +752,10 @@ Note that appears to be only used by the "Activity" record type, other record ty
 Note that appears to be only used by the "Activity" record type, other record types use has_subsystem
 | 0x0200 | has_subsystem | Has sub system
 | 0x0400 | has_rules | Has rules
-| 0x0800 | | Has data reference value
+| 0x0800 | | Has data reference
 | 0x1000 | has_backtrace | Has backtrace
 | | |
-| 0x8000 | has_name | Has name reference value
+| 0x8000 | has_name | Has name string reference
 |===
 
 ===== [[tracev3_firehose_tracepoint_strings_file_type]]Firehose tracepoint strings file type
@@ -1008,8 +1008,8 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 2 | | Sub system identifier
 4+| _Has rules flag (0x0400) is set_
 | ... | 1 | | TTL
-4+| _Has data reference value flag (0x0800) is set_
-| ... | 2 | | Data reference value
+4+| _Has data reference flag (0x0800) is set_
+| ... | 2 | | (Oversize) data reference
 4+| _Common_
 | ... | 1 | | [yellow-background]*Unknown*
 | ... | 1 | | Number of data items
@@ -1071,12 +1071,12 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 8 | | Signpost identifier
 4+| _Has rules flag (0x0400) is set_
 | ... | 1 | | TTL
-4+| _Has data reference value flag (0x0800) is set_
-| ... | 2 | | Data reference value
-4+| _Has name reference value flag (0x8000) is set_
+4+| _Has data reference flag (0x0800) is set_
+| ... | 2 | | (Oversize) data reference
+4+| _Has name string reference flag (0x8000) is set_
 | ... | 4 | | Name string reference (lower 32-bit) +
 See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
-4+| _Has name reference value flag (0x8000) and Has large offset flag (0x0020) are set_
+4+| _Has name string reference flag (0x8000) and Has large offset flag (0x0020) are set_
 | ... | 2 | | Name string reference (upper 16-bit)
 4+| _Common_
 | ... | 1 | | [yellow-background]*Unknown*
@@ -1263,8 +1263,8 @@ Other observerd value type decoders are:
 | "mdns:dns.counts" | | Formatted as a <<mdns_dns_counters,mDNS DNS countters>>
 | "mdns:dns.idflags" | | Formatted as a <<mdns_dns_identifier_and_flags,mDNS DNS identifier and flags>>
 | "mdns:dnshdr" | | Formatted as a <<mdns_dns_header,mDNS DNS header>>
-| "mdns:gaiopts" | |
-| "mdns:nreason" | |
+| "mdns:gaiopts" | | Formatted as a <<mdns_getaddrinfo_options,mDNS getaddrinfo options>>
+| "mdns:nreason" | | Formatted as a <<mdns_reason,mDNS reason>>
 | "mdns:protocol" | | Formatted as a <<mdns_protocol,mDNS protocol>>
 | "mdns:rd.svcb" | |
 | "mdns:rrtype" | | Formatted as a <<mdns_resource_record_type,mDNS resource record (RR) type>>
@@ -1306,7 +1306,7 @@ The flags are defined as:
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| "#" | | Value should be converted to an "alternate form"
+| "#" | | Value should be converted to an "alternate form". Note that "%#x" is formatted as "0x%x" with the exception of "0".
 | "0" | | Value should be padded with 0
 | "-" | | Value should be right-justified instead of left-justified
 | " " | | Value should be padded with space
@@ -1391,7 +1391,10 @@ Is "Name:NAME" used for some kind of formatting override?
 
 === Oversize chunk
 
-The oversize chunk is variable of size and consists of:
+Oversize chunks contain data that is too large to fit into a single log entry,
+hence it is stored seperately and referenced by firehose tracepoints.
+
+The Oversize chunk is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1407,15 +1410,19 @@ The oversize chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Timestamp +
 Contains a Mach continuous timestamp
-| 40 | 4 | | Data reference index
-| 44 | 2 | | Size of public data
+| 40 | 4 | | Data reference
+| 44 | 2 | | Size of public data +
+Contains the size of the data items and values data
 | 46 | 2 | | Size of private data
-| 48 | Public data size + Private data size | | Data
+4+| _Public data_
+| 48 | 1 | | [yellow-background]*Unknown*
+| 49 | 1 | | Number of data items
+| 50 | number of data items | | Array of data items +
+See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
+| ... | ... | | Data items values data
+4+| _End of public data_
+| ... | ... | | Private data
 |===
-
-Oversize chunks contain data that is too large to fit into a single log record,
-hence it is stored in a seperate record here and referenced (by log entries in
-firehose).
 
 === StateDump chunk
 
@@ -2082,6 +2089,18 @@ The value is formatted as:
 id: 0x4BBB (19387), flags: 0x0100 (Q/Query, RD, NoError)
 ....
 
+=== [[mdns_getaddrinfo_options]]mDNS getaddrinfo options
+
+[yellow-background]*TODO describe flags*
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0004 | | in-app-browser
+| 0x0008 | | use-failover
+| 0x0010 | | prohibit-encrypted-dns
+|===
+
 === [[mdns_protocol]]mDNS protocol
 
 The mDNS protocol value is 4 bytes of size and consists of:
@@ -2113,6 +2132,41 @@ UDP
 | | |
 | 4 | | HTTPS
 |===
+
+=== [[mdns_reason]]mDNS reason
+
+The mDNS reason value is 4 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | mDNS reason value
+|===
+
+The value is formatted as:
+
+....
+%s
+....
+
+Where %s contains one of the following descriptions based on the value for
+example:
+
+....
+query-suppressed
+....
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | | no-data
+| 2 | | nxdomain
+| 3 | | query-suppressed
+| 4 | | no-dns-service
+| 5 | | server error
+|===
+
+[yellow-background]*TODO check values 2, 4 and 5*
 
 === [[mdns_resource_record_type]]mDNS resource record (RR) type
 

@@ -65,6 +65,33 @@ class DSCUUID(object):
     self.text_size = None
 
 
+class ImageValues(object):
+  """Image values.
+
+  Attributes:
+    identifier (uuid.UUID): the identifier.
+    path (str): the path.
+    string (str): the string.
+    text_offset (int): the offset of the text.
+  """
+
+  def __init__(
+      self, identifier=None, path=None, string=None, text_offset=None):
+    """Initializes image values.
+
+    Args:
+      identifier (Optional[uuid.UUID]): the identifier.
+      path (Optional[str]): the path.
+      string (Optional[str]): the string.
+      text_offset (Optional[int]): the offset of the text.
+    """
+    super(ImageValues, self).__init__()
+    self.identifier = identifier
+    self.path = path
+    self.string = string
+    self.text_offset = text_offset
+
+
 class BacktraceFrame(object):
   """Backtrace frame.
 
@@ -326,8 +353,6 @@ class StringFormatter(object):
       if literal == '%%':
         literal = '%'
       elif specifier:
-        flags = flags.replace('-', '>')
-
         decoder = decoder or ''
         decoder_names = [value.strip() for value in decoder.split(',')]
 
@@ -337,6 +362,10 @@ class StringFormatter(object):
 
         if specifier == 'm':
           decoder_names.append('internal:m')
+        elif specifier == 'x' and flags == '#':
+          decoder_names.append('internal:#x')
+
+        flags = flags.replace('-', '>')
 
         width = width or ''
 
@@ -409,6 +438,27 @@ class BaseFormatStringDecoder(object):
     """
 
 
+class AlternativeHexadecimalFormFormatStringDecoder(BaseFormatStringDecoder):
+  """Alternative hexadecimal form format string decoder."""
+
+  VALUE_IN_BYTES = False
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats an integer value in alternative hexadecimal form.
+
+    Args:
+      value (int): integer value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted integer value formatted in alternative hexadecimal form.
+    """
+    if value:
+      return f'{value:#x}'
+
+    return f'{value:x}'
+
+
 class BooleanFormatStringDecoder(BaseFormatStringDecoder):
   """Boolean value format string decoder."""
 
@@ -418,7 +468,8 @@ class BooleanFormatStringDecoder(BaseFormatStringDecoder):
     """Initializes a boolean value format string decoder.
 
     Args:
-      number (Optional[int]): Signpost telemetry number.
+      false_value (Optional[str]): value that represents False.
+      true_value (Optional[str]): value that represents True.
     """
     super(BooleanFormatStringDecoder, self).__init__()
     self._false_value = false_value
@@ -1043,6 +1094,31 @@ class MDNSProtocolFormatStringDecoder(BaseFormatStringDecoder):
     return self._PROTOCOLS.get(value, 'UNKNOWN: {0:d}'.format(value))
 
 
+class MDNSReasonFormatStringDecoder(BaseFormatStringDecoder):
+  """mDNS reason format string decoder."""
+
+  VALUE_IN_BYTES = False
+
+  _REASONS = {
+      1: 'no-data',
+      2: 'nxdomain',
+      3: 'query-suppressed',
+      4: 'no-dns-service',
+      5: 'server error'}
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a mDNS reason value.
+
+    Args:
+      value (int): mDNS reason value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted mDNS reason value.
+    """
+    return self._REASONS.get(value, 'UNKNOWN: {0:d}'.format(value))
+
+
 class MDNSResourceRecordTypeFormatStringDecoder(BaseFormatStringDecoder):
   """mDNS resource record type format string decoder."""
 
@@ -1399,7 +1475,7 @@ class SignpostTelemetryStringFormatStringDecoder(BaseFormatStringDecoder):
             f'#_##_#{value:s}##__##')
 
 
-class SocketAdressFormatStringDecoder(BaseFormatStringDecoder):
+class SocketAddressFormatStringDecoder(BaseFormatStringDecoder):
   """Socker address value format string decoder."""
 
   def FormatValue(self, value, value_formatter=None):
@@ -1413,6 +1489,9 @@ class SocketAdressFormatStringDecoder(BaseFormatStringDecoder):
       str: formatted socket address value.
     """
     value_size = len(value)
+    if value_size == 0:
+      return '<NULL>'
+
     if value_size >= 2:
       address_family = value[1]
       if address_family == 2 and value_size == 16:
@@ -1424,8 +1503,14 @@ class SocketAdressFormatStringDecoder(BaseFormatStringDecoder):
         # Note that socket.inet_ntop() is not supported on Windows.
         octet_pairs = zip(ipv6_address[0::2], ipv6_address[1::2])
         octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
-        # TODO: determine if ":0000" should be omitted from the string.
-        return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
+        string_segments = [
+            f'{octet_pair:04x}' if octet_pair else ''
+            for octet_pair in octet_pairs]
+        ip_string = ':'.join(string_segments)
+        # TODO: find a more elegant solution.
+        if ip_string == ':::::::':
+          ip_string = '::'
+        return ip_string
 
     # TODO: determine what the MacOS log tool shows.
     return 'ERROR: unsupported value'
@@ -1708,19 +1793,18 @@ class DSCFile(data_format.BinaryDataFile):
 
       yield dsc_uuid
 
-  def GetImageValuesAndString(self, string_reference, is_dynamic):
-    """Retrieves image values and string.
+  def GetImageValues(self, string_reference, is_dynamic):
+    """Retrieves image values.
 
     Args:
       string_reference (int): reference of the string.
       is_dynamic (bool): dynamic flag.
 
     Returns:
-      tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
-          image path and string or (None, 0, None, None) if not available.
+      ImageValues: image value or None if not available.
 
     Raises:
-      ParseError: if the string cannot be read.
+      ParseError: if the image values string cannot be read.
     """
     for dsc_range in self.ranges:
       if is_dynamic:
@@ -1736,18 +1820,19 @@ class DSCFile(data_format.BinaryDataFile):
       relative_offset = string_reference - range_offset
       if relative_offset <= range_size:
         if is_dynamic:
-          format_string = '%s'
+          string = '%s'
         else:
           file_offset = dsc_range.data_offset + relative_offset
-          format_string = self._ReadString(self._file_object, file_offset)
+          string = self._ReadString(self._file_object, file_offset)
 
-        return (dsc_range.image_identifier, dsc_range.text_offset,
-                dsc_range.image_path, format_string)
+        return ImageValues(
+            identifier=dsc_range.image_identifier, path=dsc_range.image_path,
+            string=string, text_offset=dsc_range.text_offset)
 
     # TODO: if string_reference is invalid use:
     # "<Invalid shared cache format string offset>"
 
-    return None, 0, None, None
+    return None
 
   def ReadFileObject(self, file_object):
     """Reads a shared-cache strings (dsc) file-like object.
@@ -1895,6 +1980,7 @@ class TraceV3File(data_format.BinaryDataFile):
           'array_of_decimals': '_FormatArrayOfIntegersAsDecimals',
           'array_of_strings': '_FormatArrayOfStrings',
           'array_of_uuids': '_FormatArrayOfUUIDS',
+          'chunk_tag': '_FormatChunkTag',
           'data_range': '_FormatDataRange',
           'header_flags': '_FormatHeaderFlags',
           'log_type': '_FormatFirehoseTracepointLogType',
@@ -2009,17 +2095,6 @@ class TraceV3File(data_format.BinaryDataFile):
       ('compressed_data_size', 'Compressed data size',
        '_FormatIntegerAsDecimal')]
 
-  _DEBUG_INFO_OVERSIZE_CHUNK = [
-      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
-      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
-      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
-      ('data_reference_index', 'Data reference index',
-       '_FormatIntegerAsDecimal'),
-      ('data_size', 'Data Size', '_FormatIntegerAsDecimal')]
-
   _DEBUG_INFO_SIMPLEDUMP_CHUNK = [
       ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
       ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
@@ -2066,6 +2141,7 @@ class TraceV3File(data_format.BinaryDataFile):
       'in_addr': IPv4FormatStringDecoder(),
       'in6_addr': IPv6FormatStringDecoder(),
       'internal:m': ErrorCodeFormatStringDecoder(),
+      'internal:#x': AlternativeHexadecimalFormFormatStringDecoder(),
       'location:_CLClientManagerStateTrackerState': (
           LocationClientManagerStateFormatStringDecoder()),
       'location:_CLLocationManagerStateTrackerState': (
@@ -2080,12 +2156,13 @@ class TraceV3File(data_format.BinaryDataFile):
       'mdns:dns.idflags': MDNSDNSIdentifierAndFlagsFormatStringDecoder(),
       'mdns:dnshdr': MDNSDNSHeaderFormatStringDecoder(),
       'mdns:protocol': MDNSProtocolFormatStringDecoder(),
+      'mdns:nreason': MDNSReasonFormatStringDecoder(),
       'mdns:rrtype': MDNSResourceRecordTypeFormatStringDecoder(),
       'mdns:yesno': BooleanFormatStringDecoder(
           false_value='no', true_value='yes'),
       'network:in_addr': IPv4FormatStringDecoder(),
       'network:in6_addr': IPv6FormatStringDecoder(),
-      'network:sockaddr': SocketAdressFormatStringDecoder(),
+      'network:sockaddr': SocketAddressFormatStringDecoder(),
       'mask.hash': MaskHashFormatStringDecoder(),
       'odtypes:mbr_details': (
           OpenDirectoryMembershipDetailsFormatStringDecoder()),
@@ -2108,7 +2185,7 @@ class TraceV3File(data_format.BinaryDataFile):
           SignpostTelemetryStringFormatStringDecoder(number=1)),
       'signpost.telemetry:string2': (
           SignpostTelemetryStringFormatStringDecoder(number=2)),
-      'sockaddr': SocketAdressFormatStringDecoder(),
+      'sockaddr': SocketAddressFormatStringDecoder(),
       'time_t': DateTimeInSecondsFormatStringDecoder(),
       'uuid_t': UUIDFormatStringDecoder()}
 
@@ -2566,10 +2643,10 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return dsc_file
 
-  def _GetImageValuesAndString(
+  def _GetImageValues(
       self, process_information_entry, firehose_tracepoint,
       tracepoint_data_object, string_reference, is_dynamic):
-    """Retrieves image values and string.
+    """Retrieves image values.
 
     Args:
       process_information_entry (tracev3_catalog_process_information_entry):
@@ -2580,11 +2657,10 @@ class TraceV3File(data_format.BinaryDataFile):
       is_dynamic (bool): dynamic flag.
 
     Returns:
-      tuple[uuid.UUID, int, str, str]: image identifier, image text offset,
-          image path and string or (None, None, None, None) if not available.
+      ImageValues: image values.
 
     Raises:
-      ParseError: if the image path or string cannot be retrieved.
+      ParseError: if the image values cannot be retrieved.
     """
     strings_file_type = firehose_tracepoint.flags & 0x000e
 
@@ -2630,28 +2706,28 @@ class TraceV3File(data_format.BinaryDataFile):
     large_offset_data = getattr(
         tracepoint_data_object, 'large_offset_data', None) or 0
 
-    image_identifier = None
-    image_path = None
-    string = None
-
     if strings_file_type in self._UUIDTEXT_STRINGS_FILE_TYPES:
+      image_values = ImageValues(
+          identifier=strings_file_identifier, text_offset=image_text_offset)
+
       uuidtext_file = self._GetUUIDTextFile(uuid_string)
       if uuidtext_file:
-        image_identifier = strings_file_identifier
-        image_path = uuidtext_file.GetImagePath()
+        image_values.path = uuidtext_file.GetImagePath()
         if is_dynamic:
-          string = '%s'
+          image_values.string = '%s'
         else:
-          string = uuidtext_file.GetString(string_reference)
-          if string is None:
+          image_values.string = uuidtext_file.GetString(string_reference)
+          if image_values.string is None:
             # ~~> Invalid bounds INTEGER for UUID
-            image_text_offset = large_offset_data << 31
+            image_values.text_offset = large_offset_data << 31
 
     else:
       dsc_file = self._GetDSCFile(uuid_string)
       if dsc_file:
-        image_identifier, image_text_offset, image_path, string = (
-            dsc_file.GetImageValuesAndString(string_reference, is_dynamic))
+        image_values = dsc_file.GetImageValues(string_reference, is_dynamic)
+      else:
+        image_values = ImageValues(
+            identifier=strings_file_identifier, text_offset=image_text_offset)
 
       large_shared_cache_data = getattr(
           tracepoint_data_object, 'large_shared_cache_data', None)
@@ -2666,22 +2742,23 @@ class TraceV3File(data_format.BinaryDataFile):
                 f'0x{large_offset_data:04x}, calculated: '
                 f'0x{calculated_large_offset_data:04x})\n'))
 
-          image_identifier = strings_file_identifier
-          image_text_offset = 0
-          image_path = ''
+          image_values.identifier = strings_file_identifier
+          image_values.text_offset = 0
+          image_values.path = ''
 
     if self._debug:
       self._DebugPrintValue('Strings file identifier', strings_file_identifier)
-      self._DebugPrintValue('Image identifier', image_identifier or '')
+      self._DebugPrintValue('Image identifier', image_values.identifier or '')
 
-      value_string, _ = self._FormatIntegerAsHexadecimal8(image_text_offset)
+      value_string, _ = self._FormatIntegerAsHexadecimal8(
+          image_values.text_offset or 0)
       self._DebugPrintValue('Image text offset', value_string)
 
-      self._DebugPrintValue('Image path', image_path or '')
-      self._DebugPrintValue('String', string or '')
+      self._DebugPrintValue('Image path', image_values.path or '')
+      self._DebugPrintValue('String', image_values.string or '')
       self._DebugPrintText('\n')
 
-    return image_identifier, image_text_offset, image_path, string
+    return image_values
 
   def _GetProcessImageValues(self, process_information_entry):
     """Retrieves the process image value.
@@ -3002,7 +3079,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return chunk_header
 
-  def _ReadChunkSet(self, file_object, file_offset, chunk_header):
+  def _ReadChunkSet(
+        self, file_object, file_offset, chunk_header, oversize_chunks):
     """Reads a chunk set.
 
     Args:
@@ -3010,6 +3088,8 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset (int): offset of the chunk set data relative to the start
           of the file.
       chunk_header (tracev3_chunk_header): the chunk header of the chunk set.
+      oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
+          reference.
 
     Yields:
       LogEntry: a log entry.
@@ -3070,18 +3150,17 @@ class TraceV3File(data_format.BinaryDataFile):
 
       data_end_offset = data_offset + chunkset_chunk_header.chunk_data_size
       chunkset_chunk_data = uncompressed_data[data_offset:data_end_offset]
-      if self._debug:
-        self._DebugPrintData('Chunk data', chunkset_chunk_data)
 
       if chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_FIREHOSE:
         yield from self._ReadFirehoseChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
-            data_offset)
+            data_offset, oversize_chunks)
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_OVERSIZE:
-        self._ReadOversizeChunkData(
+        oversize_chunk = self._ReadOversizeChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
             data_offset)
+        oversize_chunks[oversize_chunk.data_reference] = oversize_chunk
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_STATEDUMP:
         self._ReadStateDumpChunkData(
@@ -3092,6 +3171,9 @@ class TraceV3File(data_format.BinaryDataFile):
         self._ReadSimpleDumpChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
             data_offset)
+
+      elif self._debug:
+        self._DebugPrintData('Chunk data', chunkset_chunk_data)
 
       data_offset = data_end_offset
 
@@ -3144,7 +3226,156 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return backtrace_frames
 
-  def _ReadFirehoseChunkData(self, chunk_data, chunk_data_size, data_offset):
+  def _ReadDataItems(
+      self, data_items, values_data, private_data, private_data_range_offset,
+      string_formatter):
+    """Reads data items.
+
+    Args:
+      data_items (list[tracev3_data_item]): data items.
+      values_data (bytes): (public) values data.
+      private_data (bytes): firehose private data.
+      private_data_range_offset (int): offset of the private data range
+          relative to the start of the private data.
+      string_formatter (StringFormatter): string formatter.
+
+    Returns:
+      list[str]: values formatted as strings.
+
+    Raises:
+      ParseError: if the data items cannot be read.
+    """
+    values = []
+
+    value_index = 0
+    precision = None
+
+    for data_item in data_items:
+      value_data = None
+      value = None
+
+      if data_item.value_type in self._DATA_ITEM_NUMERIC_VALUE_TYPES:
+        type_hint = string_formatter.GetTypeHintByIndex(value_index)
+        data_type_map_name = self._DATA_ITEM_NUMERIC_DATA_MAP_NAMES.get(
+            type_hint or 'unsigned', {}).get(data_item.data_size, None)
+
+        if data_type_map_name:
+          data_type_map = self._GetDataTypeMap(data_type_map_name)
+
+          # TODO: calculate data offset for debugging purposes.
+
+          value_data = data_item.data
+          value = self._ReadStructureFromByteStream(
+              value_data, 0, data_type_map, data_type_map_name)
+
+          if self._debug:
+            if type_hint == 'floating-point':
+              data_item.floating_point = value
+            else:
+              data_item.integer = value
+
+      elif data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
+        if data_item.value_data_size > 0:
+          # Note that the string data does not necessarily include
+          # an end-of-string character hence the cstring data_type_map is not
+          # used here.
+          value_data_offset = data_item.value_data_offset
+          value_data = values_data[
+              value_data_offset:value_data_offset + data_item.value_data_size]
+
+          try:
+            value = value_data.decode('utf-8').rstrip('\x00')
+          except UnicodeDecodeError:
+            pass
+
+        if self._debug:
+          data_item.string = value
+
+      elif data_item.value_type == 0x21:
+        if data_item.value_data_size > 0:
+          # Note that the string data does not necessarily include
+          # an end-of-string character hence the cstring data_type_map is not
+          # used here.
+          value_data_offset = (
+              private_data_range_offset + data_item.value_data_offset)
+          value_data = private_data[
+              value_data_offset:value_data_offset + data_item.value_data_size]
+
+          try:
+            value = value_data.decode('utf-8').rstrip('\x00')
+          except UnicodeDecodeError:
+            pass
+
+        if self._debug:
+          data_item.private_string = value
+
+      elif data_item.value_type in self._DATA_ITEM_BINARY_DATA_VALUE_TYPES:
+        value_data_offset = data_item.value_data_offset
+        value_data = values_data[
+            value_data_offset:value_data_offset + data_item.value_data_size]
+        value = value_data
+
+        if self._debug:
+          data_item.value_data = value_data
+
+      if self._debug:
+        debug_info = self._DEBUG_INFORMATION.get('tracev3_data_item', None)
+        self._DebugPrintStructureObject(data_item, debug_info)
+
+        if data_item.value_type not in (
+            0x00, 0x01, 0x02, 0x10, 0x12, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31,
+            0x32, 0x35, 0x40, 0x41, 0x42, 0x45, 0x72, 0xf2):
+          raise errors.ParseError((
+              f'Unsupported data item value type: '
+              f'0x{data_item.value_type:02x}.'))
+
+      if data_item.value_type in (0x10, 0x12):
+        precision = value
+        continue
+
+      value_formatter = string_formatter.GetValueFormatter(
+          value_index, precision=precision)
+
+      decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
+      if data_item.value_type in self._DATA_ITEM_PRIVATE_VALUE_TYPES:
+        if value is None:
+          value = '<private>'
+
+      elif decoder_names:
+        decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_names[0], None)
+        if not decoder_class:
+          value = f'<decode: unsupported decoder: {decoder_names[0]:s}>'
+        elif decoder_class.VALUE_IN_BYTES:
+          value = decoder_class.FormatValue(
+              value_data, value_formatter=value_formatter)
+        else:
+          value = decoder_class.FormatValue(
+              value, value_formatter=value_formatter)
+
+      elif data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
+        if value is None:
+          value = '(null)'
+
+      elif isinstance(value, bytes):
+        # TODO: determine how binary data is formatted
+        value = f'\'{value!s}\''
+
+      elif value_formatter:
+        value = value_formatter.format(value)
+
+      else:
+        value = '<decode: missing format string>'
+
+      precision = None
+
+      values.append(value)
+
+      value_index += 1
+
+    return values
+
+  def _ReadFirehoseChunkData(
+      self, chunk_data, chunk_data_size, data_offset, oversize_chunks):
     """Reads firehose chunk data.
 
     Args:
@@ -3152,6 +3383,8 @@ class TraceV3File(data_format.BinaryDataFile):
       chunk_data_size (int): size of the firehose chunk data.
       data_offset (int): offset of the firehose chunk relative to the start
           of the chunk set.
+      oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
+          reference.
 
     Yields:
       LogEntry: a log entry.
@@ -3277,18 +3510,29 @@ class TraceV3File(data_format.BinaryDataFile):
         string_reference, is_dynamic = self._CalculateFormatStringReference(
             tracepoint_data_object, firehose_tracepoint.format_string_reference)
 
-        image_identifier, image_text_offset, image_path, format_string = (
-            self._GetImageValuesAndString(
-                process_information_entry, firehose_tracepoint,
-                tracepoint_data_object, string_reference, is_dynamic))
+        image_values = self._GetImageValues(
+            process_information_entry, firehose_tracepoint,
+            tracepoint_data_object, string_reference, is_dynamic)
 
         string_formatter = StringFormatter()
-        string_formatter.ParseFormatString(format_string)
+        string_formatter.ParseFormatString(image_values.string)
 
-        data_items = getattr(tracepoint_data_object, 'data_items', None)
-        if data_items is None:
-          values = []
+        data_reference = getattr(tracepoint_data_object, 'data_reference', None)
+        if not data_reference:
+          data_items = getattr(tracepoint_data_object, 'data_items', None)
+          values_data = firehose_tracepoint.data[values_data_offset:]
         else:
+          oversize_chunk = oversize_chunks.get(data_reference, None)
+          if not oversize_chunk:
+            raise errors.ParseError((
+                f'Missing Oversize chunk for data reference: '
+                f'0x{data_reference:08x}'))
+
+          data_items = oversize_chunk.data_items
+          values_data = oversize_chunk.values_data
+
+        values = []
+        if data_items:
           private_data_range = getattr(
               tracepoint_data_object, 'private_data_range', None)
           if private_data_range is None:
@@ -3300,10 +3544,9 @@ class TraceV3File(data_format.BinaryDataFile):
                 private_data_range.offset - private_data_virtual_offset)
 
           # TODO: calculate item data offset for debugging purposes.
-          values = self._ReadFirehoseTracepointDataItems(
-              firehose_tracepoint.data, data_offset + chunk_data_offset,
-              data_items, values_data_offset, private_data,
-              private_data_offset, string_formatter)
+          values = self._ReadDataItems(
+              data_items, values_data, private_data, private_data_offset,
+              string_formatter)
 
         continuous_time = firehose_tracepoint.continuous_time_lower | (
             firehose_tracepoint.continuous_time_upper << 32)
@@ -3318,11 +3561,11 @@ class TraceV3File(data_format.BinaryDataFile):
             self._GetProcessImageValues(process_information_entry))
 
         program_counter = self._CalculateProgramCounter(
-            tracepoint_data_object, image_text_offset)
+            tracepoint_data_object, image_values.text_offset)
 
         if not backtrace_frames:
           backtrace_frame = BacktraceFrame()
-          backtrace_frame.image_identifier = image_identifier
+          backtrace_frame.image_identifier = image_values.identifier
           backtrace_frame.image_offset = program_counter or 0
 
           backtrace_frames.append(backtrace_frame)
@@ -3333,14 +3576,14 @@ class TraceV3File(data_format.BinaryDataFile):
         log_entry.category = category
         log_entry.event_type = self._EVENT_TYPE_DESCRIPTIONS.get(
             firehose_tracepoint.record_type, None)
-        log_entry.format_string = format_string
+        log_entry.format_string = image_values.string
         log_entry.mach_timestamp = continuous_time
         log_entry.process_identifier = getattr(
             process_information_entry, 'process_identifier', None) or 0
         log_entry.process_image_identifier = process_image_identifier
         log_entry.process_image_path = process_image_path
-        log_entry.sender_image_identifier = image_identifier
-        log_entry.sender_image_path = image_path
+        log_entry.sender_image_identifier = image_values.identifier
+        log_entry.sender_image_path = image_values.path
         log_entry.sender_program_counter = program_counter or 0
         log_entry.sub_system = sub_system
         log_entry.thread_identifier = firehose_tracepoint.thread_identifier
@@ -3384,9 +3627,10 @@ class TraceV3File(data_format.BinaryDataFile):
           if not name_string_reference:
             name_string = None
           else:
-            _, _, _, name_string = self._GetImageValuesAndString(
+            name_image_values = self._GetImageValues(
                 process_information_entry, firehose_tracepoint,
                 tracepoint_data_object, name_string_reference, is_dynamic)
+            name_string = name_image_values.string
 
           log_entry.signpost_identifier = getattr(
               tracepoint_data_object, 'signpost_identifier', None)
@@ -3483,160 +3727,6 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(activity, debug_info)
 
     return activity, context.byte_size
-
-  def _ReadFirehoseTracepointDataItems(
-      self, tracepoint_data, data_offset, data_items, values_data_offset,
-      private_data, private_data_range_offset, string_formatter):
-    """Reads firehose tracepoint data items.
-
-    Args:
-      tracepoint_data (bytes): firehose tracepoint data.
-      data_offset (int): offset of the firehose tracepoint data relative to
-          the start of the chunk set.
-      data_items (list[tracev3_firehose_tracepoint_data_item]): data items.
-      values_data_offset (int): offset of the values data relative to the start
-          of the firehose tracepoint data.
-      private_data (bytes): firehose private data.
-      private_data_range_offset (int): offset of the private data range
-          relative to the start of the private data.
-      string_formatter (StringFormatter): string formatter.
-
-    Returns:
-      list[str]: values formatted as strings.
-
-    Raises:
-      ParseError: if the data items cannot be read.
-    """
-    values = []
-
-    value_index = 0
-    precision = None
-
-    for data_item in data_items:
-      value_data = None
-      value = None
-
-      if data_item.value_type in self._DATA_ITEM_NUMERIC_VALUE_TYPES:
-        type_hint = string_formatter.GetTypeHintByIndex(value_index)
-        data_type_map_name = self._DATA_ITEM_NUMERIC_DATA_MAP_NAMES.get(
-            type_hint or 'unsigned', {}).get(data_item.data_size, None)
-
-        if data_type_map_name:
-          data_type_map = self._GetDataTypeMap(data_type_map_name)
-
-          # TODO: calculate data offset for debugging purposes.
-          _ = data_offset
-
-          value_data = data_item.data
-          value = self._ReadStructureFromByteStream(
-              value_data, 0, data_type_map, data_type_map_name)
-
-          if self._debug:
-            if type_hint == 'floating-point':
-              data_item.floating_point = value
-            else:
-              data_item.integer = value
-
-      elif data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
-        if data_item.value_data_size > 0:
-          # Note that the string data does not necessarily include
-          # an end-of-string character hence the cstring data_type_map is not
-          # used here.
-          value_data_offset = values_data_offset + data_item.value_data_offset
-          value_data = tracepoint_data[
-              value_data_offset:value_data_offset + data_item.value_data_size]
-
-          try:
-            value = value_data.decode('utf-8').rstrip('\x00')
-          except UnicodeDecodeError:
-            pass
-
-        if self._debug:
-          data_item.string = value
-
-      elif data_item.value_type == 0x21:
-        if data_item.value_data_size > 0:
-          # Note that the string data does not necessarily include
-          # an end-of-string character hence the cstring data_type_map is not
-          # used here.
-          value_data_offset = (
-              private_data_range_offset + data_item.value_data_offset)
-          value_data = private_data[
-              value_data_offset:value_data_offset + data_item.value_data_size]
-
-          try:
-            value = value_data.decode('utf-8').rstrip('\x00')
-          except UnicodeDecodeError:
-            pass
-
-        if self._debug:
-          data_item.private_string = value
-
-      elif data_item.value_type in self._DATA_ITEM_BINARY_DATA_VALUE_TYPES:
-        value_data_offset = values_data_offset + data_item.value_data_offset
-        value_data = tracepoint_data[
-            value_data_offset:value_data_offset + data_item.value_data_size]
-        value = value_data
-
-        if self._debug:
-          data_item.value_data = value_data
-
-      if self._debug:
-        debug_info = self._DEBUG_INFORMATION.get(
-            'tracev3_firehose_tracepoint_data_item', None)
-        self._DebugPrintStructureObject(data_item, debug_info)
-
-        if data_item.value_type not in (
-            0x00, 0x01, 0x02, 0x10, 0x12, 0x20, 0x21, 0x22, 0x25, 0x30, 0x31,
-            0x32, 0x35, 0x40, 0x41, 0x42, 0x45, 0x72, 0xf2):
-          raise errors.ParseError((
-              f'Unsupported data item value type: '
-              f'0x{data_item.value_type:02x}.'))
-
-      if data_item.value_type in (0x10, 0x12):
-        precision = value
-        continue
-
-      value_formatter = string_formatter.GetValueFormatter(
-          value_index, precision=precision)
-
-      decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
-      if data_item.value_type in self._DATA_ITEM_PRIVATE_VALUE_TYPES:
-        if value is None:
-          value = '<private>'
-
-      elif decoder_names:
-        decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_names[0], None)
-        if not decoder_class:
-          value = f'<decode: unsupported decoder: {decoder_names[0]:s}>'
-        elif decoder_class.VALUE_IN_BYTES:
-          value = decoder_class.FormatValue(
-              value_data, value_formatter=value_formatter)
-        else:
-          value = decoder_class.FormatValue(
-              value, value_formatter=value_formatter)
-
-      elif data_item.value_type in self._DATA_ITEM_STRING_VALUE_TYPES:
-        if value is None:
-          value = '(null)'
-
-      elif isinstance(value, bytes):
-        # TODO: determine how binary data is formatted
-        value = f'\'{value!s}\''
-
-      elif value_formatter:
-        value = value_formatter.format(value)
-
-      else:
-        value = '<decode: missing format string>'
-
-      precision = None
-
-      values.append(value)
-
-      value_index += 1
-
-    return values
 
   def _ReadFirehoseTracepointLogData(self, flags, tracepoint_data, data_offset):
     """Reads firehose tracepoint log data.
@@ -3815,7 +3905,7 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(header_chunk, debug_info)
 
       debug_info = self._DEBUG_INFORMATION.get(
-          'tracev3_continuous_time_sub_chunk', None)
+          'tracev3_header_continuous_time_sub_chunk', None)
       self._DebugPrintStructureObject(header_chunk.continuous, debug_info)
 
       debug_info = self._DEBUG_INFORMATION.get(
@@ -3863,12 +3953,20 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFO_OVERSIZE_CHUNK
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_oversize_chunk', None)
       self._DebugPrintStructureObject(oversize_chunk, debug_info)
 
-    if self._debug and context.byte_size < chunk_data_size:
+    if oversize_chunk.private_data_size:
+      raise errors.ParseError(
+          'Oversize chunk with private data is currently unsupported')
+
+    data_size = 48 + (
+        oversize_chunk.public_data_size + oversize_chunk.private_data_size)
+    oversize_chunk.values_data = chunk_data[context.byte_size:data_size]
+
+    if self._debug and data_size < chunk_data_size:
       self._DebugPrintData(
-          'Trailing Oversize chunk data', chunk_data[context.byte_size:])
+          'Trailing Oversize chunk data', chunk_data[data_size:])
 
     return oversize_chunk
 
@@ -4137,6 +4235,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
     file_offset = self._file_object.tell()
 
+    oversize_chunks = {}
+
     while file_offset < self._file_size:
       if self._debug:
         self._DebugPrintText(f'Chunk: {self._chunk_index:d}\n')
@@ -4149,10 +4249,11 @@ class TraceV3File(data_format.BinaryDataFile):
         self._catalog = self._ReadCatalog(
             self._file_object, file_offset, chunk_header.chunk_data_size)
         self._BuildCatalogProcessInformationEntries(self._catalog)
+        oversize_chunks = {}
 
       elif chunk_header.chunk_tag == self._CHUNK_TAG_CHUNK_SET:
         yield from self._ReadChunkSet(
-            self._file_object, file_offset, chunk_header)
+            self._file_object, file_offset, chunk_header, oversize_chunks)
 
       else:
         raise errors.ParseError(
