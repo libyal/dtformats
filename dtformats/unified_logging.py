@@ -163,6 +163,15 @@ class LogEntry(object):
 class StringFormatter(object):
   """String formatter."""
 
+  _DECODERS_TO_IGNORE = (
+      '',
+      'private',
+      'public',
+      'sensitive',
+      'xcode:size-in-bytes')
+
+  _ESCAPE_REGEX = re.compile(r'([{}])')
+
   _OPERATOR_REGEX = re.compile(
       r'(%'
       r'(?:\{([^\}]{1,128})\})?'         # Optional value type decoder.
@@ -310,9 +319,8 @@ class StringFormatter(object):
 
       match_start, match_end = match.span()
       if match_start > last_match_end:
-        string_segment = format_string[last_match_end:match_start]
-        string_segment = string_segment.replace('{', '{{')
-        string_segment = string_segment.replace('}', '}}')
+        string_segment = self._ESCAPE_REGEX.sub(
+            r'\1\1', format_string[last_match_end:match_start])
         segments.append(string_segment)
 
       if literal == '%%':
@@ -325,8 +333,7 @@ class StringFormatter(object):
 
         # Remove private, public and sensitive value type decoders.
         decoder_names = [value for value in decoder_names if (
-            value not in ('', 'private', 'public', 'sensitive') and
-            value[:5] != 'name=')]
+            value not in self._DECODERS_TO_IGNORE and value[:5] != 'name=')]
 
         if specifier == 'm':
           decoder_names.append('internal:m')
@@ -372,9 +379,8 @@ class StringFormatter(object):
 
     string_size = len(format_string)
     if string_size > last_match_end:
-      string_segment = format_string[last_match_end:string_size]
-      string_segment = string_segment.replace('{', '{{')
-      string_segment = string_segment.replace('}', '}}')
+      string_segment = self._ESCAPE_REGEX.sub(
+          r'\1\1', format_string[last_match_end:string_size])
       segments.append(string_segment)
 
     self._format_string = ''.join(segments)
@@ -386,6 +392,9 @@ class StringFormatter(object):
 
 class BaseFormatStringDecoder(object):
   """Format string decoder interface."""
+
+  # True if the value should be bytes.
+  VALUE_IN_BYTES = True
 
   @abc.abstractmethod
   def FormatValue(self, value, value_formatter=None):
@@ -403,6 +412,18 @@ class BaseFormatStringDecoder(object):
 class BooleanFormatStringDecoder(BaseFormatStringDecoder):
   """Boolean value format string decoder."""
 
+  VALUE_IN_BYTES = False
+
+  def __init__(self, false_value='false', true_value='true'):
+    """Initializes a boolean value format string decoder.
+
+    Args:
+      number (Optional[int]): Signpost telemetry number.
+    """
+    super(BooleanFormatStringDecoder, self).__init__()
+    self._false_value = false_value
+    self._true_value = true_value
+
   def FormatValue(self, value, value_formatter=None):
     """Formats a boolean value.
 
@@ -414,13 +435,15 @@ class BooleanFormatStringDecoder(BaseFormatStringDecoder):
       str: formatted boolean value.
     """
     if value:
-      return 'true'
+      return self._true_value
 
-    return 'false'
+    return self._false_value
 
 
 class DateTimeInSecondsFormatStringDecoder(BaseFormatStringDecoder):
   """Date and time value in seconds format string decoder."""
+
+  VALUE_IN_BYTES = False
 
   def FormatValue(self, value, value_formatter=None):
     """Formats a date and time value in seconds.
@@ -440,6 +463,8 @@ class DateTimeInSecondsFormatStringDecoder(BaseFormatStringDecoder):
 class ErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
   """Error code format string decoder."""
 
+  VALUE_IN_BYTES = False
+
   def FormatValue(self, value, value_formatter=None):
     """Formats an error code value.
 
@@ -458,6 +483,8 @@ class ErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
 
 class ExtendedErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
   """Extended error code format string decoder."""
+
+  VALUE_IN_BYTES = False
 
   def FormatValue(self, value, value_formatter=None):
     """Formats an error code value.
@@ -479,6 +506,8 @@ class ExtendedErrorCodeFormatStringDecoder(BaseFormatStringDecoder):
 
 class FileModeFormatStringDecoder(BaseFormatStringDecoder):
   """File mode format string decoder."""
+
+  VALUE_IN_BYTES = False
 
   _FILE_TYPES = {
       0x1000: 'p',
@@ -539,11 +568,11 @@ class IPv4FormatStringDecoder(BaseFormatStringDecoder):
     Returns:
       str: formatted IPv4 value.
     """
-    if len(value) != 4:
-      # TODO: determine what the MacOS log tool shows.
-      return 'ERROR: unsupported value'
+    if len(value) == 4:
+      return '.'.join([f'{octet:d}' for octet in value])
 
-    return '.'.join([f'{octet:d}' for octet in value])
+    # TODO: determine what the MacOS log tool shows.
+    return 'ERROR: unsupported value'
 
 
 class IPv6FormatStringDecoder(BaseFormatStringDecoder):
@@ -559,18 +588,18 @@ class IPv6FormatStringDecoder(BaseFormatStringDecoder):
     Returns:
       str: formatted IPv6 value.
     """
-    if len(value) != 16:
-      # TODO: determine what the MacOS log tool shows.
-      return 'ERROR: unsupported value'
+    if len(value) == 16:
+      # Note that socket.inet_ntop() is not supported on Windows.
+      octet_pairs = zip(value[0::2], value[1::2])
+      octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
+      # TODO: determine if ":0000" should be omitted from the string.
+      return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
 
-    # Note that socket.inet_ntop() is not supported on Windows.
-    octet_pairs = zip(value[0::2], value[1::2])
-    octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
-    # TODO: determine if ":0000" should be omitted from the string.
-    return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
+    # TODO: determine what the MacOS log tool shows.
+    return 'ERROR: unsupported value'
 
 
-class LocationStructureFormatStringDecoder(
+class BaseLocationStructureFormatStringDecoder(
     BaseFormatStringDecoder, data_format.BinaryDataFormat):
   """Shared functionality for location structure format string decoders."""
 
@@ -614,7 +643,7 @@ class LocationStructureFormatStringDecoder(
 
 
 class LocationClientManagerStateFormatStringDecoder(
-    LocationStructureFormatStringDecoder):
+    BaseLocationStructureFormatStringDecoder):
   """Location client manager state format string decoder."""
 
   # Using a class constant significantly speeds up the time required to load
@@ -649,7 +678,7 @@ class LocationClientManagerStateFormatStringDecoder(
 
 
 class LocationLocationManagerStateFormatStringDecoder(
-    LocationStructureFormatStringDecoder):
+    BaseLocationStructureFormatStringDecoder):
   """Location location manager state format string decoder."""
 
   # Using a class constant significantly speeds up the time required to load
@@ -719,6 +748,8 @@ class LocationLocationManagerStateFormatStringDecoder(
 
 class LocationEscapeOnlyFormatStringDecoder(BaseFormatStringDecoder):
   """Location escape only format string decoder."""
+
+  VALUE_IN_BYTES = False
 
   def FormatValue(self, value, value_formatter=None):
     """Formats a location value.
@@ -817,9 +848,11 @@ class MaskHashFormatStringDecoder(BaseFormatStringDecoder):
     return f'<mask.hash: {value_string:s}>'
 
 
-class MDNSDNSHeaderFormatStringDecoder(
+class BaseMDNSDNSStructureFormatStringDecoder(
     BaseFormatStringDecoder, data_format.BinaryDataFormat):
-  """mDNS DNS header format string decoder."""
+  """Shared functionality for mDNS DNS structure format string decoders."""
+
+  # pylint: disable=abstract-method
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric definition file.
@@ -892,15 +925,48 @@ class MDNSDNSHeaderFormatStringDecoder(
     return (f'{query_or_response:s}/{operation_name:s}, {flag_names:s}, '
             f'{reponse_code:s}')
 
+
+class MDNSDNSCountersFormatStringDecoder(
+    BaseMDNSDNSStructureFormatStringDecoder):
+  """mDNS DNS counters format string decoder."""
+
   def FormatValue(self, value, value_formatter=None):
-    """Formats a mDNS DNS header state value.
+    """Formats a mDNS DNS counters value.
 
     Args:
-      value (bytes): mDNS DNS header state value.
+      value (bytes): mDNS DNS counters value.
       value_formatter (Optional[str]): value formatter.
 
     Returns:
-      str: formatted mDNS DNS header state value.
+      str: formatted mDNS DNS counters value.
+    """
+    if len(value) != 8:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    data_type_map = self._GetDataTypeMap('mdsn_dns_counters')
+
+    dns_counters = self._ReadStructureFromByteStream(
+        value, 0, data_type_map, 'DNS counters')
+
+    return (f'{dns_counters.number_of_questions:d}/'
+            f'{dns_counters.number_of_answers:d}/'
+            f'{dns_counters.number_of_authority_records:d}/'
+            f'{dns_counters.number_of_additional_records:d}')
+
+
+class MDNSDNSHeaderFormatStringDecoder(BaseMDNSDNSStructureFormatStringDecoder):
+  """mDNS DNS header format string decoder."""
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a mDNS DNS header value.
+
+    Args:
+      value (bytes): mDNS DNS header value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted mDNS DNS header value.
     """
     if len(value) != 12:
       # TODO: determine what the MacOS log tool shows.
@@ -913,14 +979,219 @@ class MDNSDNSHeaderFormatStringDecoder(
 
     formatted_flags = self._FormatFlags(dns_header.flags)
 
-    return (f'id: 0x{dns_header.identifier:04x} '
+    return (f'id: 0x{dns_header.identifier:04X} '
             f'({dns_header.identifier:d}), '
-            f'flags: 0x{dns_header.flags:04x} '
+            f'flags: 0x{dns_header.flags:04X} '
             f'({formatted_flags:s}), counts: '
             f'{dns_header.number_of_questions:d}/'
             f'{dns_header.number_of_answers:d}/'
             f'{dns_header.number_of_authority_records:d}/'
             f'{dns_header.number_of_additional_records:d}')
+
+
+class MDNSDNSIdentifierAndFlagsFormatStringDecoder(
+    BaseMDNSDNSStructureFormatStringDecoder):
+  """mDNS DNS identifier and flags string decoder."""
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a mDNS DNS identifier and flags value.
+
+    Args:
+      value (bytes): mDNS DNS identifier and flags value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted mDNS DNS identifier and flags value.
+    """
+    if len(value) != 8:
+      # TODO: determine what the MacOS log tool shows.
+      return 'ERROR: unsupported value'
+
+    data_type_map = self._GetDataTypeMap('mdsn_dns_identifier_and_flags')
+
+    dns_identifier_and_flags = self._ReadStructureFromByteStream(
+        value, 0, data_type_map, 'DNS identifier and flags')
+
+    formatted_flags = self._FormatFlags(dns_identifier_and_flags.flags)
+
+    return (f'id: 0x{dns_identifier_and_flags.identifier:04X} '
+            f'({dns_identifier_and_flags.identifier:d}), '
+            f'flags: 0x{dns_identifier_and_flags.flags:04X} '
+            f'({formatted_flags:s})')
+
+
+class MDNSProtocolFormatStringDecoder(BaseFormatStringDecoder):
+  """mDNS protocol format string decoder."""
+
+  VALUE_IN_BYTES = False
+
+  _PROTOCOLS = {
+      1: 'UDP',
+      2: 'TCP',
+      4: 'HTTPS'}
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a mDNS protocol value.
+
+    Args:
+      value (int): mDNS protocol value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted mDNS protocol value.
+    """
+    return self._PROTOCOLS.get(value, 'UNKNOWN: {0:d}'.format(value))
+
+
+class MDNSResourceRecordTypeFormatStringDecoder(BaseFormatStringDecoder):
+  """mDNS resource record type format string decoder."""
+
+  VALUE_IN_BYTES = False
+
+  _RECORD_TYPES = {
+      1: 'A',
+      2: 'NS',
+      5: 'CNAME',
+      6: 'SOA',
+      12: 'PTR',
+      13: 'HINFO',
+      15: 'MX',
+      16: 'TXT',
+      17: 'RP',
+      18: 'AFSDB',
+      24: 'SIG',
+      25: 'KEY',
+      28: 'AAAA',
+      29: 'LOC',
+      33: 'SRV',
+      35: 'NAPTR',
+      36: 'KX',
+      37: 'CERT',
+      39: 'DNAME',
+      42: 'APL',
+      43: 'DS',
+      44: 'SSHFP',
+      45: 'IPSECKEY',
+      46: 'RRSIG',
+      47: 'NSEC',
+      48: 'DNSKEY',
+      49: 'DHCID',
+      50: 'NSEC3',
+      51: 'NSEC3PARAM',
+      52: 'TLSA',
+      53: 'SMIMEA',
+      55: 'HIP',
+      59: 'CDS',
+      60: 'CDNSKEY',
+      61: 'OPENPGPKEY',
+      62: 'CSYNC',
+      63: 'ZONEMD',
+      64: 'SVCB',
+      65: 'HTTPS',
+      108: 'EUI48',
+      109: 'EUI64',
+      249: 'TKEY',
+      250: 'TSIG',
+      256: 'URI',
+      257: 'CAA',
+      32768: 'TA',
+      32769: 'DLV'}
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a mDNS resource record type value.
+
+    Args:
+      value (int): mDNS resource record type value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted mDNS resource record type value.
+    """
+    return self._RECORD_TYPES.get(value, 'UNKNOWN: {0:d}'.format(value))
+
+
+class OpenDirectoryErrorFormatStringDecoder(BaseFormatStringDecoder):
+  """Open Directory error format string decoder."""
+
+  VALUE_IN_BYTES = False
+
+  _ERROR_CODES = {
+      0: 'ODNoError',
+      2: 'Not Found',
+      1000: 'ODErrorSessionLocalOnlyDaemonInUse',
+      1001: 'ODErrorSessionNormalDaemonInUse',
+      1002: 'ODErrorSessionDaemonNotRunning',
+      1003: 'ODErrorSessionDaemonRefused',
+      1100: 'ODErrorSessionProxyCommunicationError',
+      1101: 'ODErrorSessionProxyVersionMismatch',
+      1102: 'ODErrorSessionProxyIPUnreachable',
+      1103: 'ODErrorSessionProxyUnknownHost',
+      2000: 'ODErrorNodeUnknownName',
+      2001: 'ODErrorNodeUnknownType',
+      2002: 'ODErrorNodeDisabled',
+      2100: 'ODErrorNodeConnectionFailed',
+      2200: 'ODErrorNodeUnknownHost',
+      3000: 'ODErrorQuerySynchronize',
+      3100: 'ODErrorQueryInvalidMatchType',
+      3101: 'ODErrorQueryUnsupportedMatchType',
+      3102: 'ODErrorQueryTimeout',
+      4000: 'ODErrorRecordReadOnlyNode',
+      4001: 'ODErrorRecordPermissionError',
+      4100: 'ODErrorRecordParameterError',
+      4101: 'ODErrorRecordInvalidType',
+      4102: 'ODErrorRecordAlreadyExists',
+      4103: 'ODErrorRecordTypeDisabled',
+      4104: 'ODErrorRecordNoLongerExists',
+      4200: 'ODErrorRecordAttributeUnknownType',
+      4201: 'ODErrorRecordAttributeNotFound',
+      4202: 'ODErrorRecordAttributeValueSchemaError',
+      4203: 'ODErrorRecordAttributeValueNotFound',
+      5000: 'ODErrorCredentialsInvalid',
+      5001: 'ODErrorCredentialsInvalidComputer',
+      5100: 'ODErrorCredentialsMethodNotSupported',
+      5101: 'ODErrorCredentialsNotAuthorized',
+      5102: 'ODErrorCredentialsParameterError',
+      5103: 'ODErrorCredentialsOperationFailed',
+      5200: 'ODErrorCredentialsServerUnreachable',
+      5201: 'ODErrorCredentialsServerNotFound',
+      5202: 'ODErrorCredentialsServerError',
+      5203: 'ODErrorCredentialsServerTimeout',
+      5204: 'ODErrorCredentialsContactPrimary',
+      5205: 'ODErrorCredentialsServerCommunicationError',
+      5300: 'ODErrorCredentialsAccountNotFound',
+      5301: 'ODErrorCredentialsAccountDisabled',
+      5302: 'ODErrorCredentialsAccountExpired',
+      5303: 'ODErrorCredentialsAccountInactive',
+      5304: 'ODErrorCredentialsAccountTemporarilyLocked',
+      5305: 'ODErrorCredentialsAccountLocked',
+      5400: 'ODErrorCredentialsPasswordExpired',
+      5401: 'ODErrorCredentialsPasswordChangeRequired',
+      5402: 'ODErrorCredentialsPasswordQualityFailed',
+      5403: 'ODErrorCredentialsPasswordTooShort',
+      5404: 'ODErrorCredentialsPasswordTooLong',
+      5405: 'ODErrorCredentialsPasswordNeedsLetter',
+      5406: 'ODErrorCredentialsPasswordNeedsDigit',
+      5407: 'ODErrorCredentialsPasswordChangeTooSoon',
+      5408: 'ODErrorCredentialsPasswordUnrecoverable',
+      5500: 'ODErrorCredentialsInvalidLogonHours',
+      6000: 'ODErrorPolicyUnsupported',
+      6001: 'ODErrorPolicyOutOfRange',
+      10000: 'ODErrorPluginOperationNotSupported',
+      10001: 'ODErrorPluginError',
+      10002: 'ODErrorDaemonError',
+      10003: 'ODErrorPluginOperationTimeout'}
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats an Open Directory error value.
+
+    Args:
+      value (int): Open Directory error value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted Open Directory error value.
+    """
+    return self._ERROR_CODES.get(value, 'UNKNOWN: {0:d}'.format(value))
 
 
 class OpenDirectoryMembershipDetailsFormatStringDecoder(
@@ -977,11 +1248,13 @@ class OpenDirectoryMembershipDetailsFormatStringDecoder(
 class OpenDirectoryMembershipTypeFormatStringDecoder(BaseFormatStringDecoder):
   """Open Directory membership type format string decoder."""
 
+  VALUE_IN_BYTES = False
+
   _TYPES = {
       0: 'UID',
       1: 'GID',
       3: 'SID',
-      4: 'USERNAME',
+      4: 'Username',
       5: 'GROUPNAME',
       6: 'UUID',
       7: 'GROUP NFS',
@@ -1006,6 +1279,8 @@ class OpenDirectoryMembershipTypeFormatStringDecoder(BaseFormatStringDecoder):
 class SignpostDescriptionAttributeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description attribute value format string decoder."""
 
+  VALUE_IN_BYTES = False
+
   def FormatValue(self, value, value_formatter=None):
     """Formats a Signpost description attribute value.
 
@@ -1027,6 +1302,8 @@ class SignpostDescriptionAttributeFormatStringDecoder(BaseFormatStringDecoder):
 class SignpostDescriptionBeginTimeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description begin time value format string decoder."""
 
+  VALUE_IN_BYTES = False
+
   def FormatValue(self, value, value_formatter=None):
     """Formats a Signpost description begin time value.
 
@@ -1043,6 +1320,8 @@ class SignpostDescriptionBeginTimeFormatStringDecoder(BaseFormatStringDecoder):
 class SignpostDescriptionEndTimeFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost description end time value format string decoder."""
 
+  VALUE_IN_BYTES = False
+
   def FormatValue(self, value, value_formatter=None):
     """Formats a Signpost description end time value.
 
@@ -1058,6 +1337,8 @@ class SignpostDescriptionEndTimeFormatStringDecoder(BaseFormatStringDecoder):
 
 class SignpostTelemetryNumberFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost telemetry number value format string decoder."""
+
+  VALUE_IN_BYTES = False
 
   def __init__(self, number=1):
     """Initializes a Signpost telemetry number value format string decoder.
@@ -1093,6 +1374,8 @@ class SignpostTelemetryNumberFormatStringDecoder(BaseFormatStringDecoder):
 class SignpostTelemetryStringFormatStringDecoder(BaseFormatStringDecoder):
   """Signpost telemetry string value format string decoder."""
 
+  VALUE_IN_BYTES = False
+
   def __init__(self, number=1):
     """Initializes a Signpost telemetry string value format string decoder.
 
@@ -1116,8 +1399,42 @@ class SignpostTelemetryStringFormatStringDecoder(BaseFormatStringDecoder):
             f'#_##_#{value:s}##__##')
 
 
+class SocketAdressFormatStringDecoder(BaseFormatStringDecoder):
+  """Socker address value format string decoder."""
+
+  def FormatValue(self, value, value_formatter=None):
+    """Formats a socket address value.
+
+    Args:
+      value (bytes): socket address value.
+      value_formatter (Optional[str]): value formatter.
+
+    Returns:
+      str: formatted socket address value.
+    """
+    value_size = len(value)
+    if value_size >= 2:
+      address_family = value[1]
+      if address_family == 2 and value_size == 16:
+        ipv4_address = value[4:8]
+        return '.'.join([f'{octet:d}' for octet in ipv4_address])
+
+      if address_family == 30 and value_size == 28:
+        ipv6_address = value[8:24]
+        # Note that socket.inet_ntop() is not supported on Windows.
+        octet_pairs = zip(ipv6_address[0::2], ipv6_address[1::2])
+        octet_pairs = [octet1 << 8 | octet2 for octet1, octet2 in octet_pairs]
+        # TODO: determine if ":0000" should be omitted from the string.
+        return ':'.join([f'{octet_pair:04x}' for octet_pair in octet_pairs])
+
+    # TODO: determine what the MacOS log tool shows.
+    return 'ERROR: unsupported value'
+
+
 class UUIDFormatStringDecoder(BaseFormatStringDecoder):
   """UUID value format string decoder."""
+
+  VALUE_IN_BYTES = False
 
   def FormatValue(self, value, value_formatter=None):
     """Formats an UUID value.
@@ -1131,25 +1448,6 @@ class UUIDFormatStringDecoder(BaseFormatStringDecoder):
     """
     uuid_value = uuid.UUID(bytes=value)
     return f'{uuid_value!s}'.upper()
-
-
-class YesNoFormatStringDecoder(BaseFormatStringDecoder):
-  """Yes/No value format string decoder."""
-
-  def FormatValue(self, value, value_formatter=None):
-    """Formats a yes/no value.
-
-    Args:
-      value (int): yes/no value.
-      value_formatter (Optional[str]): value formatter.
-
-    Returns:
-      str: formatted yes/no value.
-    """
-    if value:
-      return 'YES'
-
-    return 'NO'
 
 
 class WindowsNTSecurityIdentifierFormatStringDecoder(
@@ -1598,6 +1896,7 @@ class TraceV3File(data_format.BinaryDataFile):
           'array_of_strings': '_FormatArrayOfStrings',
           'array_of_uuids': '_FormatArrayOfUUIDS',
           'data_range': '_FormatDataRange',
+          'header_flags': '_FormatHeaderFlags',
           'log_type': '_FormatFirehoseTracepointLogType',
           'posix_time': '_FormatIntegerAsPosixTime',
           'record_type': '_FormatFirehoseTracepointRecordType',
@@ -1611,7 +1910,6 @@ class TraceV3File(data_format.BinaryDataFile):
   _RECORD_TYPE_SIGNPOST = 0x06
   _RECORD_TYPE_LOSS = 0x07
 
-  # TODO: add "timesyncEvent"
   _EVENT_TYPE_DESCRIPTIONS = {
       _RECORD_TYPE_ACTIVITY: 'activityCreateEvent',
       _RECORD_TYPE_LOG: 'logEvent',
@@ -1694,8 +1992,6 @@ class TraceV3File(data_format.BinaryDataFile):
       0xc1: 'System Signpost Start',
       0xc2: 'System Signpost End'}
 
-  _ACTIVITY_IDENTIFIER_BITMASK = (1 << 63) - 1
-
   _SIGNPOST_SCOPE_DESCRIPTIONS = {
       0x04: 'thread',
       0x08: 'process',
@@ -1760,8 +2056,10 @@ class TraceV3File(data_format.BinaryDataFile):
       ('data', 'Data', '_FormatDataInHexadecimal')]
 
   _FORMAT_STRING_DECODERS = {
-      'bool': BooleanFormatStringDecoder(),
-      'BOOL': YesNoFormatStringDecoder(),
+      'bool': BooleanFormatStringDecoder(
+          false_value='false', true_value='true'),
+      'BOOL': BooleanFormatStringDecoder(
+          false_value='NO', true_value='YES'),
       'darwin.errno': ExtendedErrorCodeFormatStringDecoder(),
       'darwin.mode': FileModeFormatStringDecoder(),
       'errno': ExtendedErrorCodeFormatStringDecoder(),
@@ -1774,14 +2072,26 @@ class TraceV3File(data_format.BinaryDataFile):
           LocationLocationManagerStateFormatStringDecoder()),
       'location:escape_only': LocationEscapeOnlyFormatStringDecoder(),
       'location:SqliteResult': LocationSQLiteResultFormatStringDecoder(),
+      'mdns:acceptable': BooleanFormatStringDecoder(
+          false_value='unacceptable', true_value='acceptable'),
+      'mdns:addrmv': BooleanFormatStringDecoder(
+          false_value='rmv', true_value='add'),
+      'mdns:dns.counts': MDNSDNSCountersFormatStringDecoder(),
+      'mdns:dns.idflags': MDNSDNSIdentifierAndFlagsFormatStringDecoder(),
       'mdns:dnshdr': MDNSDNSHeaderFormatStringDecoder(),
+      'mdns:protocol': MDNSProtocolFormatStringDecoder(),
+      'mdns:rrtype': MDNSResourceRecordTypeFormatStringDecoder(),
+      'mdns:yesno': BooleanFormatStringDecoder(
+          false_value='no', true_value='yes'),
       'network:in_addr': IPv4FormatStringDecoder(),
       'network:in6_addr': IPv6FormatStringDecoder(),
+      'network:sockaddr': SocketAdressFormatStringDecoder(),
       'mask.hash': MaskHashFormatStringDecoder(),
       'odtypes:mbr_details': (
           OpenDirectoryMembershipDetailsFormatStringDecoder()),
       'odtypes:mbridtype': OpenDirectoryMembershipTypeFormatStringDecoder(),
       'odtypes:nt_sid_t': WindowsNTSecurityIdentifierFormatStringDecoder(),
+      'odtypes:ODError': OpenDirectoryErrorFormatStringDecoder(),
       'signpost.description:attribute': (
           SignpostDescriptionAttributeFormatStringDecoder()),
       'signpost.description:begin_time': (
@@ -1798,6 +2108,7 @@ class TraceV3File(data_format.BinaryDataFile):
           SignpostTelemetryStringFormatStringDecoder(number=1)),
       'signpost.telemetry:string2': (
           SignpostTelemetryStringFormatStringDecoder(number=2)),
+      'sockaddr': SocketAdressFormatStringDecoder(),
       'time_t': DateTimeInSecondsFormatStringDecoder(),
       'uuid_t': UUIDFormatStringDecoder()}
 
@@ -1807,6 +2118,8 @@ class TraceV3File(data_format.BinaryDataFile):
   _MAXIMUM_CACHED_FORMAT_STRINGS = 1024
 
   _NANOSECONDS_PER_SECOND = 1000000000
+
+  ACTIVITY_IDENTIFIER_BITMASK = (1 << 63) - 1
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a tracev3 file.
@@ -1828,6 +2141,7 @@ class TraceV3File(data_format.BinaryDataFile):
     self._chunk_index = 0
     self._header_timebase = 1
     self._header_timestamp = 0
+    self._sorted_timesync_sync_records = []
     self._timesync_boot_record = None
     self._timesync_path = None
     self._timesync_sync_records = []
@@ -1853,17 +2167,17 @@ class TraceV3File(data_format.BinaryDataFile):
         process_information_entry.dsc_uuid = catalog.uuids[
             process_information_entry.dsc_uuid_index]
 
-      for sub_system_entry in process_information_entry.sub_system_entries:
-        sub_system = self._catalog_strings_map.get(
-            sub_system_entry.sub_system_offset, None)
-        category = self._catalog_strings_map.get(
-            sub_system_entry.category_offset, None)
-        if self._debug:
+      if self._debug:
+        for sub_system_entry in process_information_entry.sub_system_entries:
+          sub_system = self._catalog_strings_map.get(
+              sub_system_entry.sub_system_offset, None)
+          category = self._catalog_strings_map.get(
+              sub_system_entry.category_offset, None)
+
           self._DebugPrintText((
               f'Identifier: {sub_system_entry.identifier:d}, '
               f'Sub system: {sub_system:s}, Category: {category:s}\n'))
 
-      if self._debug:
         self._DebugPrintText('\n')
 
       proc_id = (f'{process_information_entry.proc_id_upper:d}@'
@@ -2180,6 +2494,26 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return f'0x{integer:02x}'
 
+  def _FormatHeaderFlags(self, integer):
+    """Formats header flags.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      tuple[str, bool]: integer formatted as header flags and False to indicate
+          there should be no new line after value description.
+    """
+    lines = [f'0x{integer:04x}']
+
+    if integer & 0x0001:
+      lines.append('\t(64bits)')
+    if integer & 0x0002:
+      lines.append('\t(is_boot)')
+
+    lines.extend(['', ''])
+    return '\n'.join(lines), False
+
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
 
@@ -2293,6 +2627,9 @@ class TraceV3File(data_format.BinaryDataFile):
 
     uuid_string = strings_file_identifier.hex.upper()
 
+    large_offset_data = getattr(
+        tracepoint_data_object, 'large_offset_data', None) or 0
+
     image_identifier = None
     image_path = None
     string = None
@@ -2306,6 +2643,9 @@ class TraceV3File(data_format.BinaryDataFile):
           string = '%s'
         else:
           string = uuidtext_file.GetString(string_reference)
+          if string is None:
+            # ~~> Invalid bounds INTEGER for UUID
+            image_text_offset = large_offset_data << 31
 
     else:
       dsc_file = self._GetDSCFile(uuid_string)
@@ -2313,24 +2653,22 @@ class TraceV3File(data_format.BinaryDataFile):
         image_identifier, image_text_offset, image_path, string = (
             dsc_file.GetImageValuesAndString(string_reference, is_dynamic))
 
-    large_offset_data = getattr(
-        tracepoint_data_object, 'large_offset_data', None)
-    large_shared_cache_data = getattr(
-        tracepoint_data_object, 'large_shared_cache_data', None)
+      large_shared_cache_data = getattr(
+          tracepoint_data_object, 'large_shared_cache_data', None)
 
-    if large_offset_data and large_shared_cache_data:
-      calculated_large_offset_data = large_shared_cache_data >> 1
-      if large_offset_data != calculated_large_offset_data:
-        if self._debug:
-          # "<Invalid shared cache code pointer offset>"
-          self._DebugPrintText((
-              f'Large offset data mismatch stored: ('
-              f'0x{large_offset_data:04x}, calculated: '
-              f'0x{calculated_large_offset_data:04x})\n'))
+      if large_offset_data and large_shared_cache_data:
+        calculated_large_offset_data = large_shared_cache_data >> 1
+        if large_offset_data != calculated_large_offset_data:
+          if self._debug:
+            # "<Invalid shared cache code pointer offset>"
+            self._DebugPrintText((
+                f'Large offset data mismatch stored: ('
+                f'0x{large_offset_data:04x}, calculated: '
+                f'0x{calculated_large_offset_data:04x})\n'))
 
-        image_identifier = strings_file_identifier
-        image_text_offset = 0
-        image_path = ''
+          image_identifier = strings_file_identifier
+          image_text_offset = 0
+          image_path = ''
 
     if self._debug:
       self._DebugPrintValue('Strings file identifier', strings_file_identifier)
@@ -2472,12 +2810,9 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       timesync_sync_record: timesync sync record or None if not available.
     """
-    last_record = None
-    for record in self._timesync_sync_records:
-      if continuous_time < record.kernel_time:
-        return last_record
-
-      last_record = record
+    for record in self._sorted_timesync_sync_records:
+      if continuous_time >= record.kernel_time:
+        return record
 
     return None
 
@@ -2573,14 +2908,14 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return uuidtext_file
 
-  def _ReadCatalog(self, file_object, file_offset, chunk_header):
+  def _ReadCatalog(self, file_object, file_offset, chunk_data_size):
     """Reads a catalog.
 
     Args:
       file_object (file): file-like object.
       file_offset (int): offset of the catalog data relative to the start
           of the file.
-      chunk_header (tracev3_chunk_header): the chunk header of the catalog.
+      chunk_data_size (int): size of the catalog chunk data.
 
     Returns:
       tracev3_catalog: catalog.
@@ -2623,8 +2958,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if self._debug:
       file_object.seek(file_offset, os.SEEK_SET)
-      sub_chunks_data = file_object.read(
-          chunk_header.chunk_data_size - bytes_read)
+      sub_chunks_data = file_object.read(chunk_data_size - bytes_read)
       self._DebugPrintData('Catalog sub chunks data', sub_chunks_data)
 
     for _ in range(catalog.number_of_sub_chunks):
@@ -3024,7 +3358,7 @@ class TraceV3File(data_format.BinaryDataFile):
           new_activity_identifier = getattr(
               tracepoint_data_object, 'new_activity_identifier', None) or 0
           log_entry.activity_identifier = (
-              new_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+              new_activity_identifier & self.ACTIVITY_IDENTIFIER_BITMASK)
 
           current_activity_identifier = getattr(
               tracepoint_data_object, 'current_activity_identifier', None) or 0
@@ -3035,13 +3369,13 @@ class TraceV3File(data_format.BinaryDataFile):
           other_activity_identifier = getattr(
               tracepoint_data_object, 'other_activity_identifier', None) or 0
           log_entry.parent_activity_identifier = (
-              other_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+              other_activity_identifier & self.ACTIVITY_IDENTIFIER_BITMASK)
 
         else:
           current_activity_identifier = getattr(
               tracepoint_data_object, 'current_activity_identifier', None) or 0
           log_entry.activity_identifier = (
-              current_activity_identifier & self._ACTIVITY_IDENTIFIER_BITMASK)
+              current_activity_identifier & self.ACTIVITY_IDENTIFIER_BITMASK)
 
         if firehose_tracepoint.record_type == self._RECORD_TYPE_SIGNPOST:
           name_string_reference, is_dynamic = (
@@ -3179,6 +3513,7 @@ class TraceV3File(data_format.BinaryDataFile):
     precision = None
 
     for data_item in data_items:
+      value_data = None
       value = None
 
       if data_item.value_type in self._DATA_ITEM_NUMERIC_VALUE_TYPES:
@@ -3192,8 +3527,9 @@ class TraceV3File(data_format.BinaryDataFile):
           # TODO: calculate data offset for debugging purposes.
           _ = data_offset
 
+          value_data = data_item.data
           value = self._ReadStructureFromByteStream(
-              data_item.data, 0, data_type_map, data_type_map_name)
+              value_data, 0, data_type_map, data_type_map_name)
 
           if self._debug:
             if type_hint == 'floating-point':
@@ -3207,11 +3543,11 @@ class TraceV3File(data_format.BinaryDataFile):
           # an end-of-string character hence the cstring data_type_map is not
           # used here.
           value_data_offset = values_data_offset + data_item.value_data_offset
-          string_data = tracepoint_data[
+          value_data = tracepoint_data[
               value_data_offset:value_data_offset + data_item.value_data_size]
 
           try:
-            value = string_data.decode('utf-8').rstrip('\x00')
+            value = value_data.decode('utf-8').rstrip('\x00')
           except UnicodeDecodeError:
             pass
 
@@ -3225,11 +3561,11 @@ class TraceV3File(data_format.BinaryDataFile):
           # used here.
           value_data_offset = (
               private_data_range_offset + data_item.value_data_offset)
-          string_data = private_data[
+          value_data = private_data[
               value_data_offset:value_data_offset + data_item.value_data_size]
 
           try:
-            value = string_data.decode('utf-8').rstrip('\x00')
+            value = value_data.decode('utf-8').rstrip('\x00')
           except UnicodeDecodeError:
             pass
 
@@ -3238,11 +3574,12 @@ class TraceV3File(data_format.BinaryDataFile):
 
       elif data_item.value_type in self._DATA_ITEM_BINARY_DATA_VALUE_TYPES:
         value_data_offset = values_data_offset + data_item.value_data_offset
-        value = tracepoint_data[
+        value_data = tracepoint_data[
             value_data_offset:value_data_offset + data_item.value_data_size]
+        value = value_data
 
         if self._debug:
-          data_item.value_data = value
+          data_item.value_data = value_data
 
       if self._debug:
         debug_info = self._DEBUG_INFORMATION.get(
@@ -3265,12 +3602,16 @@ class TraceV3File(data_format.BinaryDataFile):
 
       decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
       if data_item.value_type in self._DATA_ITEM_PRIVATE_VALUE_TYPES:
-        value = '<private>'
+        if value is None:
+          value = '<private>'
 
       elif decoder_names:
         decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_names[0], None)
         if not decoder_class:
           value = f'<decode: unsupported decoder: {decoder_names[0]:s}>'
+        elif decoder_class.VALUE_IN_BYTES:
+          value = decoder_class.FormatValue(
+              value_data, value_formatter=value_formatter)
         else:
           value = decoder_class.FormatValue(
               value, value_formatter=value_formatter)
@@ -3636,8 +3977,10 @@ class TraceV3File(data_format.BinaryDataFile):
           self._timesync_boot_record.timebase_numerator //
           self._timesync_boot_record.timebase_denominator)
 
-      self._timesync_sync_records = sorted(
-          self._timesync_sync_records, key=lambda record: record.kernel_time)
+      # Sort the timesync records starting with the largest kernel time.
+      self._sorted_timesync_sync_records = sorted(
+          self._timesync_sync_records, key=lambda record: record.kernel_time,
+          reverse=True)
 
   def Close(self):
     """Closes a tracev3 file.
@@ -3752,6 +4095,46 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
+    if self._timesync_boot_record:
+      boot_identifier_string = str(self._boot_identifier).upper()
+
+      log_entry = LogEntry()
+      log_entry.activity_identifier = 0
+      log_entry.boot_identifier = self._boot_identifier
+      log_entry.event_message = f'=== system boot: {boot_identifier_string:s}'
+      log_entry.event_type = 'timesyncEvent'
+      log_entry.mach_timestamp = 0
+      log_entry.parent_activity_identifier = 0
+      log_entry.process_identifier = 0
+      log_entry.sender_program_counter = 0
+      log_entry.thread_identifier = 0
+      log_entry.timestamp = self._timesync_boot_record.timestamp
+      log_entry.trace_identifier = 0
+
+      yield log_entry
+
+    # TODO: generate timesyncEvent LogEntry
+    # "=== log class: persist begins"
+    # "=== log class: in-memory begins"
+
+    for record in self._timesync_sync_records:
+      boot_identifier_string = str(self._boot_identifier).upper()
+
+      log_entry = LogEntry()
+      log_entry.activity_identifier = 0
+      log_entry.boot_identifier = self._boot_identifier
+      log_entry.event_message = '=== system wallclock time adjusted'
+      log_entry.event_type = 'timesyncEvent'
+      log_entry.mach_timestamp = record.kernel_time
+      log_entry.parent_activity_identifier = 0
+      log_entry.process_identifier = 0
+      log_entry.sender_program_counter = 0
+      log_entry.thread_identifier = 0
+      log_entry.timestamp = record.timestamp
+      log_entry.trace_identifier = 0
+
+      yield log_entry
+
     file_offset = self._file_object.tell()
 
     while file_offset < self._file_size:
@@ -3764,7 +4147,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
       if chunk_header.chunk_tag == self._CHUNK_TAG_CATALOG:
         self._catalog = self._ReadCatalog(
-            self._file_object, file_offset, chunk_header)
+            self._file_object, file_offset, chunk_header.chunk_data_size)
         self._BuildCatalogProcessInformationEntries(self._catalog)
 
       elif chunk_header.chunk_tag == self._CHUNK_TAG_CHUNK_SET:
@@ -3940,10 +4323,6 @@ class UUIDTextFile(data_format.BinaryDataFile):
       if relative_offset <= entry_descriptor.data_size:
         file_offset += relative_offset
         return self._ReadString(self._file_object, file_offset)
-
-    # TODO: if string_reference is invalid use:
-    # "<Invalid shared cache format string offset>"
-    # "~~> Invalid bounds -142882271 for 3BC14712-721B-3B0E-A542-A289155FE74E"
 
     return None
 

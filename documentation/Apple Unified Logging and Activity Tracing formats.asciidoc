@@ -1170,11 +1170,40 @@ Load address                                                            : 0x8008
 
 Observed behavior:
 
-* Large shared cache data is used to calculate format string
+* Large shared cache data is used to calculate format string reference
 * Image identifier = strings file identifier (value from Shared-Cache Strings (dsc) is not used)
 * Image path is not set
-* Image text offset is set to 0
+* Image text offset = 0
 * Load address = ( Large offset data << 32 ) | UUID entry load address (lower 32-bit)
+
+===== Invalid bounds for uuidtext file
+
+....
+tp 272 + 38:        activity create (has_large_offset, main_exe)
+    thread:         000000000000117c
+    time:           +1,284.168s
+    walltime:       1659848875 - 2022-08-07 07:07:55 (Sunday)
+    new_aid:        8000000000013b44
+    location:       pc:0x744dd fmt:0x7fcbf77bca21
+    image uuid:     3BC14712-721B-3B0E-A542-A289155FE74E
+    image path:     /System/Library/PrivateFrameworks/GameCenterFoundation.framework/Versions/A/gamed
+    error:          ~~> Invalid bounds -142882271 for 3BC14712-721B-3B0E-A542-A289155FE74E
+
+Format string reference                                                 : 0x777bca21
+UUID entry load address (lower 32-bit)                                  : 0x000744dd
+Large offset data                                                       : 0xff97
+
+Calculated format string reference                                      : 0x7fcbf77bca21
+Strings file identifier                                                 : 3bc14712-721b-3b0e-a542-a289155fe74e
+Image identifier                                                        : 3bc14712-721b-3b0e-a542-a289155fe74e
+Load address                                                            : 0x000744dd
+....
+
+Observed behavior:
+
+* Large offset data is used to calculate format string reference
+* Format string is not set
+* Load address = UUID entry load address (lower 32-bit)
 
 ==== [[tracev3_firehose_tracepoint_format_string]]Firehose tracepoint format string
 
@@ -1198,7 +1227,7 @@ The built-in value type decoders are:
 | Value | Identifier | Description
 | "bitrate" | | Formatted as a bit-rate value, for example "123 kbps"
 | "bool" | | Formatted as a lower-case boolean value, for example "true" or "false"
-| "BOOL" | | Formatted as a uppoer-case boolean value, for example "YES" or "NO"
+| "BOOL" | | Formatted as a upper-case boolean value, for example "YES" or "NO"
 | "bytes" | | Formatted a bytes value, for example "4.72 kB"
 | "darwin.errno" | | Formatted as a system error, for example "[32: Broken pipe]"
 | "darwin.mode" | | Formatted as a file mode value, for example "drwxr-xr-x"
@@ -1207,7 +1236,7 @@ The built-in value type decoders are:
 | "iec-bytes" | | Formatted as IEC bytes value, for example "4.61 KiB"
 | "in_addr" | | Formatted as an IPv4 address, for example "127.0.0.1"
 | "in6_addr" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
-| "sockaddr" | | Formatted as socket address, for example "fe80::f:86ff:fee9:5c16"
+| "sockaddr" | | Formatted as a <<socket_address,socket address>>
 | "time_t" | | Formatted as a seconds precision date and time value, for example "2016-01-12 19:41:37"
 | "timespec" | | Formatted as a nanoseconds precision date and time value, for example "2016-01-12 19:41:37.2382382823"
 | "timeval" | | Formatted as a microseconds precision date and time value, for example "2016-01-12 19:41:37.774236"
@@ -1229,17 +1258,17 @@ Other observerd value type decoders are:
 | "location:IOMessage" | | Formatted as a <<locationd_io_message,locationd IO message>>
 | "location:SqliteResult" | | Formatted as a <<locationd_sqlite_result,locationd SQLite result>>
 | "mask.hash" | | Formatted as a <<mask_hash,Mask hash>>
-| "mdns:acceptable" | |
-| "mdns:addrmv" | |
-| "mdns:dns.counts" | |
-| "mdns:dns.idflags" | |
-| "mdns:dnshdr" | | Formatted as a <<msdns_dns_header,mdns DNS header>>
+| "mdns:acceptable" | | Formatted as a boolean value, for example "acceptable" or "unacceptable"
+| "mdns:addrmv" | | Formatted as a boolean value, for example "add" or "rmv"
+| "mdns:dns.counts" | | Formatted as a <<mdns_dns_counters,mDNS DNS countters>>
+| "mdns:dns.idflags" | | Formatted as a <<mdns_dns_identifier_and_flags,mDNS DNS identifier and flags>>
+| "mdns:dnshdr" | | Formatted as a <<mdns_dns_header,mDNS DNS header>>
 | "mdns:gaiopts" | |
 | "mdns:nreason" | |
-| "mdns:protocol" | |
+| "mdns:protocol" | | Formatted as a <<mdns_protocol,mDNS protocol>>
 | "mdns:rd.svcb" | |
-| "mdns:rrtype" | |
-| "mdns:yesno" | |
+| "mdns:rrtype" | | Formatted as a <<mdns_resource_record_type,mDNS resource record (RR) type>>
+| "mdns:yesno" | | Formatted as a boolean value, for example "yes" or "no"
 | "mdnsresponder:domain_name" | |
 | "mdnsresponder:ip_addr" | | Formatted as a <<mdnsresponder_ip_address,mDNSResponder IP address>>
 | "mdnsresponder:mac_addr" | | Formatted as a <<mdnsresponder_mac_address,mDNSResponder MAC address>>
@@ -1247,13 +1276,15 @@ Other observerd value type decoders are:
 | "Name:NAME" | | [yellow-background]*Unknown, see notes below*
 | "network:in_addr" | | Formatted as an IPv4 address, for example "127.0.0.1"
 | "network:in6_addr" | | Formatted as an IPv6 address, for example "fe80::f:86ff:fee9:5c16"
-| "network:sockaddr" | |
+| "network:sockaddr" | | Formatted as a <<socket_address,socket address>>
 | "network:tcp_flags" | |
 | "network:tcp_state" | |
-| "odtypes:ODError" | | Formatted as a <<open_directory_error,Open Directory error>>
 | "odtypes:mbr_details" | | Formatted as a <<open_directory_membership_details,Open Directory membership details>>
 | "odtypes:mbridtype" | | Formatted as a <<open_directory_membership_identifier_type,Open Directory membership identifier type>>
 | "odtypes:nt_sid_t" | | Formatted as a <<open_directory_windows_nt_sid,Open Directory Windows NT Security Identifier (SID)>>
+| "odtypes:ODError" | | Formatted as a <<open_directory_error,Open Directory error>>
+| "private" | | Private formatting argument, which is formatted as "<private>"
+| "public" | | Public formatting argument, which has no additional formatting
 | "sensitive" | | Sensitive formatting argument, which is formatted as "<private>"
 | "signpost.description:attribute" | | Formatted as a signpost description attribute, for example `__##__signpost.description#____#attribute#_##_#efilogin-helper##__##`
 | "signpost.description:begin_time" | | Formatted as a signpost description begin time, for example `__##__signpost.description#____#begin_time#_##_#2180300470618##__##`
@@ -1263,8 +1294,7 @@ Other observerd value type decoders are:
 | "signpost.telemetry:number3" | | For example `__##__signpost.telemetry#____#number3#_##_#6.05859375##__##`, where a avalue can be an integer or floating-point and which is formatted as (at least) "%.9g"
 | "signpost.telemetry:string1" | | For example `__##__signpost.telemetry#____#string1#_##_#executeQueryBegin##__##`
 | "signpost.telemetry:string2" | | For example `__##__signpost.telemetry#____#string2#_##_#executeQueryBegin##__##`
-| "private" | | Private formatting argument, which is formatted as "<private>"
-| "public" | | Public formatting argument, which has no additional formatting
+| "xcode:size-in-bytes" | | No additional formatting
 |===
 
 [NOTE]
@@ -1328,7 +1358,7 @@ The types are defined as:
 | "G" | | Floating-point value
 | "i" | | Signed decimal integer value
 | "m" | | Signed decimal integer value representing a system error (errno), formatted as "No route to host"
-| "n" | |
+| "n" | | [yellow-background]*TODO describe*
 | "o" | | Octal integer value
 | "O" | | Long octal integer value, equivalent to "lo"
 | "p" | | Pointer value, equivalent to "0x%x"
@@ -1342,6 +1372,8 @@ The types are defined as:
 |===
 
 ===== Notes
+
+For a format string like "%25s:%-5d" the string is also right aligned.
 
 For format string:
 
@@ -1907,7 +1939,7 @@ The value is formatted as:
 "%s"
 ....
 
-Where "%s" contains one fo the following identifiers based on the
+Where "%s" contains one of the following identifiers based on the
 <<locationd_sqlite_result_values,value>> for example:
 
 ....
@@ -1977,9 +2009,34 @@ Where "%s" contains the value encoded in base64, for example:
 <mask.hash: 'HR/T++mmRmq3Mn+2mGECsg=='>
 ....
 
-=== [[msdns_dns_header]]mdns DNS header
+=== [[mdns_dns_counters]]mDNS DNS counters
 
-The mdns DNS header is 12 bytes of size and consists of:
+The mDNS DNS counters are 8 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Number of additional records
+| 2 | 2 | | Number of authority records
+| 4 | 2 | | Number of answers
+| 6 | 2 | | Number of questions
+|===
+
+The value is formatted as:
+
+....
+1/0/0/0
+....
+
+where:
+
+....
+questions / answers / authority records / additional records
+....
+
+=== [[mdns_dns_header]]mDNS DNS header
+
+The mDNS DNS header is 12 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1992,11 +2049,145 @@ The mdns DNS header is 12 bytes of size and consists of:
 | 10 | 2 | | Number of additional records
 |===
 
+[NOTE]
+The values of the mDNS DNS header are stored in big-endian.
+
 The value is formatted as:
 
 ....
 id: 0x0000 (0), flags: 0x8180 (R/Query, RD, RA, NoError), counts: 1/0/0/0
 ....
+
+Where "counts" consists of:
+
+....
+questions / answers / authority records / additional records
+....
+
+=== [[mdns_dns_identifier_and_flags]]mDNS DNS identifier and flags
+
+The mDNS DNS identifier and flags are 8 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Flags
+| 2 | 2 | | Identifier
+| 4 | 4 | | [yellow-background]*Unknown*
+|===
+
+The value is formatted as:
+
+....
+id: 0x4BBB (19387), flags: 0x0100 (Q/Query, RD, NoError)
+....
+
+=== [[mdns_protocol]]mDNS protocol
+
+The mDNS protocol value is 4 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | mDNS resource record (RR) type value
+|===
+
+The value is formatted as:
+
+....
+%s
+....
+
+Where %s contains one of the following descriptions based on the value for
+example:
+
+....
+UDP
+....
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | | UDP
+| 2 | | TCP
+| | |
+| 4 | | HTTPS
+|===
+
+=== [[mdns_resource_record_type]]mDNS resource record (RR) type
+
+The mDNS resource record (RR) type value is 4 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | mDNS resource record (RR) type value
+|===
+
+The value is formatted as:
+
+....
+%s
+....
+
+Where %s contains one of the following descriptions based on the value for
+example:
+
+....
+A
+....
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | | A
+| 2 | | NS
+| 5 | | CNAME
+| 6 | | SOA
+| 12 | | PTR
+| 13 | | HINFO
+| 15 | | MX
+| 16 | | TXT
+| 17 | | RP
+| 18 | | AFSDB
+| 24 | | SIG
+| 25 | | KEY
+| 28 | | AAAA
+| 29 | | LOC
+| 33 | | SRV
+| 35 | | NAPTR
+| 36 | | KX
+| 37 | | CERT
+| 39 | | DNAME
+| 42 | | APL
+| 43 | | DS
+| 44 | | SSHFP
+| 45 | | IPSECKEY
+| 46 | | RRSIG
+| 47 | | NSEC
+| 48 | | DNSKEY
+| 49 | | DHCID
+| 50 | | NSEC3
+| 51 | | NSEC3PARAM
+| 52 | | TLSA
+| 53 | | SMIMEA
+| 55 | | HIP
+| 59 | | CDS
+| 60 | | CDNSKEY
+| 61 | | OPENPGPKEY
+| 62 | | CSYNC
+| 63 | | ZONEMD
+| 64 | | SVCB
+| 65 | | HTTPS
+| 108 | | EUI48
+| 109 | | EUI64
+| 249 | | TKEY
+| 250 | | TSIG
+| 256 | | URI
+| 257 | | CAA
+| 32768 | | TA
+| 32769 | | DLV
+|===
 
 === [[mdnsresponder_ip_address]]mDNSResponder IP address
 
@@ -2010,16 +2201,31 @@ in combination with the "mask.hash" value type formatter.
 
 === [[open_directory_error]]Open Directory error
 
-[yellow-background]*TODO describe*
+The Open Directory error code is 4 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Open Directory error code
+|===
+
+The value is formatted as:
 
 ....
-https://developer.apple.com/documentation/opendirectory/odframeworkerrors?changes=__2&language=objc
+%s
+....
+
+Where %s contains one of the following descriptions based on the value for
+example:
+
+....
+ODNoError
 ....
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0 | | ODErrorSuccess
+| 0 | kODErrorSuccess | ODNoError
 | |
 | 2 | | Not Found
 | |
@@ -2104,6 +2310,13 @@ https://developer.apple.com/documentation/opendirectory/odframeworkerrors?change
 | 10003 | | ODErrorPluginOperationTimeout
 |===
 
+==== Notes
+
+....
+List of Open Directory error codes:
+https://developer.apple.com/documentation/opendirectory/odframeworkerrors?changes=__2&language=objc
+....
+
 === [[open_directory_membership_details]]Open Directory membership details
 
 The Open Directory membership details is variable of size and consists of:
@@ -2169,7 +2382,7 @@ group: wheel@/Local/Default
 | 1 | | GID
 | | |
 | 3 | | SID
-| 4 | | USERNAME
+| 4 | | Username
 | 5 | | GROUPNAME
 | 6 | | UUID
 | 7 | | GROUP NFS
@@ -2182,7 +2395,78 @@ group: wheel@/Local/Default
 
 === [[open_directory_windows_nt_sid]]Open Directory Windows NT Security Identifier (SID)
 
-See: https://github.com/libyal/libfwnt/blob/main/documentation/Security%20Descriptor.asciidoc[[LIBFWNT\]]
+The format of a Windows NT Security Identifier (SID) is described in https://github.com/libyal/libfwnt/blob/main/documentation/Security%20Descriptor.asciidoc[[LIBFWNT\]]
+
+The value is formatted as:
+
+....
+S-1-5-1-2-3-4-5
+....
+
+=== [[socket_address]]Socket address
+
+The socket address record is variable of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Record size
+| 1 | 1 | | Address family
+| 2 | ... | | Address data
+|===
+
+==== Address family
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 2 | AF_INET | IPv4 address
+| | |
+| 30 | AF_INET6 | IPv6 address
+|===
+
+=== IPv4 socket address
+
+The IPv4 socket address (sockaddr_in) record is 16 bytes of size and consists
+of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 16 | Record size
+| 1 | 1 | 2 | Address family
+| 2 | 2 | | Port number
+| 4 | 4 | | IPv4 address
+| 8 | 8 | 0 | [yellow-background]*Unknown (reserved)*
+|===
+
+The value is formatted as:
+
+....
+127.0.0.1
+....
+
+=== IPv6 socket address
+
+The IPv6 socket address (sockaddr_in6) record is 28 bytes of size and consists
+of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | 20 | Record size
+| 1 | 1 | 30 | Address family
+| 2 | 2 | | Port number
+| 4 | 4 | | Flow information
+| 8 | 16 | | IPv6 address
+| 24 | 4 | | Scope zone index
+|===
+
+The value is formatted as:
+
+....
+fe80::f:86ff:fee9:5c16
+....
 
 == Notes
 
@@ -2227,32 +2511,6 @@ Output starts with *.tracev3 files under "Signpost" followed by
 
 `log show --style json --timezone UTC --backtrace --debug --info --loss --signpost --file *.tracev3`
 
-....
-[{
-  "bootUUID" : "01234567-89AB-CDEF-0123-4566789ABCDE",
-  "category" : "",
-  "processImageUUID" : "",
-  "eventType" : "timesyncEvent",
-  "threadID" : 0,
-  "timestamp" : "2023-04-23 10:57:26.000000+0000",
-  "activityIdentifier" : 0,
-  "senderProgramCounter" : 0,
-  "parentActivityIdentifier" : 0,
-  "machTimestamp" : 0,
-  "processID" : 0,
-  "subsystem" : "",
-  "timezoneName" : "",
-  "traceID" : 0,
-  "eventMessage" : "=== system boot: 01234567-89AB-CDEF-0123-4566789ABCDE",
-  "formatString" : "",
-  "processImagePath" : "",
-  "senderImageUUID" : "",
-  "senderImagePath" : ""
-},{
-...
-}]
-....
-
 traceID consists of:
 
 ....
@@ -2264,9 +2522,6 @@ senderProgramCounter consists of:
 ....
 ( UUID entry load address (lower 12-bit) )
 ....
-
-
-TODO: where does timesyncEvent originate from?
 
 :numbered!:
 [appendix]

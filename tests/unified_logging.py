@@ -36,6 +36,12 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._type_hints, [])
     self.assertEqual(test_formatter._value_formatters, [])
 
+    test_formatter.ParseFormatString('{text}')
+    self.assertEqual(test_formatter._decoders, [])
+    self.assertEqual(test_formatter._format_string, '{text}')
+    self.assertEqual(test_formatter._type_hints, [])
+    self.assertEqual(test_formatter._value_formatters, [])
+
     test_formatter.ParseFormatString('%%')
     self.assertEqual(test_formatter._decoders, [])
     self.assertEqual(test_formatter._format_string, '%')
@@ -53,6 +59,12 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._format_string, '{0:s}')
     self.assertEqual(test_formatter._type_hints, ['signed'])
     self.assertEqual(test_formatter._value_formatters, ['{0:3d}'])
+
+    test_formatter.ParseFormatString('{text: %d}')
+    self.assertEqual(test_formatter._decoders, [[]])
+    self.assertEqual(test_formatter._format_string, '{{text: {0:s}}}')
+    self.assertEqual(test_formatter._type_hints, ['signed'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:d}'])
 
     test_formatter.ParseFormatString((
         '%{public,signpost.telemetry:number1,'
@@ -495,6 +507,20 @@ class MaskHashFormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, '<mask.hash: (null)>')
 
 
+class MDNSDNSCountersFormatStringDecoderTest(test_lib.BaseTestCase):
+  """mDNS DNS counters format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.MDNSDNSCountersFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, '1/0/0/0')
+
+
 class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
   """mDNS DNS header format string decoder tests."""
 
@@ -509,6 +535,55 @@ class MDNSDNSHeaderFormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, (
         'id: 0x0000 (0), flags: 0x8180 (R/Query, RD, RA, NoError), '
         'counts: 1/0/0/0'))
+
+
+class MDNSDNSIdentifierAndFlagsFormatStringDecoder(test_lib.BaseTestCase):
+  """mDNS DNS header format string decoder tests."""
+
+  _VALUE_DATA = bytes(bytearray([
+      0x00, 0x01, 0xe9, 0x62, 0x00, 0x00, 0x00, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.MDNSDNSIdentifierAndFlagsFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
+    self.assertEqual(formatted_value, (
+        'id: 0x62E9 (25321), flags: 0x0100 (Q/Query, RD, NoError)'))
+
+
+class MDNSProtocolFormatStringDecoderTest(test_lib.BaseTestCase):
+  """mDNS protocol decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.MDNSProtocolFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1)
+    self.assertEqual(formatted_value, 'UDP')
+
+
+class MDNSResourceRecordTypeFormatStringDecoderTest(test_lib.BaseTestCase):
+  """mDNS resource record type decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.MDNSResourceRecordTypeFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(1)
+    self.assertEqual(formatted_value, 'A')
+
+
+class OpenDirectoryErrorFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Open Directory error format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.OpenDirectoryErrorFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(0)
+    self.assertEqual(formatted_value, 'ODNoError')
 
 
 class OpenDirectoryMembershipDetailsFormatStringDecoderTest(
@@ -649,6 +724,21 @@ class SignpostTelemetryStringFormatStringDecoderTest(test_lib.BaseTestCase):
         '__##__signpost.telemetry#____#string2#_##_#executeQueryBegin##__##'))
 
 
+class SocketAdressFormatStringDecoderTest(test_lib.BaseTestCase):
+  """Socket address value format string decoder tests."""
+
+  _VALUE_DATA1 = bytes(bytearray([
+      0x10, 0x02, 0x00, 0x00, 0x17, 0x32, 0x62, 0x82, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00]))
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = unified_logging.SocketAdressFormatStringDecoder()
+
+    formatted_value = test_decoder.FormatValue(self._VALUE_DATA1)
+    self.assertEqual(formatted_value, '23.50.98.130')
+
+
 class UUIDFormatStringDecoderTest(test_lib.BaseTestCase):
   """UUID value format string decoder tests."""
 
@@ -676,20 +766,6 @@ class WindowsNTSecurityIdentifierFormatStringDecoderTest(test_lib.BaseTestCase):
 
     formatted_value = test_decoder.FormatValue(self._VALUE_DATA)
     self.assertEqual(formatted_value, 'S-1-5-21-22-23-24-25')
-
-
-class YesNoFormatStringDecoderTest(test_lib.BaseTestCase):
-  """Yes/No value format string decoder tests."""
-
-  def testFormatValue(self):
-    """Tests the FormatValue function."""
-    test_decoder = unified_logging.YesNoFormatStringDecoder()
-
-    formatted_value = test_decoder.FormatValue(1)
-    self.assertEqual(formatted_value, 'YES')
-
-    formatted_value = test_decoder.FormatValue(0)
-    self.assertEqual(formatted_value, 'NO')
 
 
 class DSCFileTest(test_lib.BaseTestCase):

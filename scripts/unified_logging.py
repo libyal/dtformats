@@ -5,6 +5,7 @@
 import argparse
 import heapq
 import logging
+import re
 import sys
 
 from dfdatetime import posix_time as dfdatetime_posix_time
@@ -195,6 +196,8 @@ def Main():
     for log_entry in unified_logging_file.ReadLogEntries():
       log_entries_heap.PushLogEntry(log_entry)
 
+    escape_regex = re.compile(r'([\\/"])', re.MULTILINE)
+
     if options.format == 'json':
       print('[{')
     else:
@@ -228,20 +231,18 @@ def Main():
         if len(event_message) >= 1085:
           event_message = ''.join([event_message[:1087], '<…>'])
 
-        event_message = event_message.replace('\\', '\\\\')
-        event_message = event_message.replace('/', '\\/')
-        event_message = event_message.replace('"', '\\"')
+        event_message = escape_regex.sub(r'\\\1', event_message)
         event_message = event_message.replace('\n', '\\n')
         event_message = event_message.replace('\t', '\\t')
 
-        if log_entry.creator_activity_identifier is not None:
+        creator_activity_identifier = log_entry.creator_activity_identifier
+
+        if creator_activity_identifier is not None:
           # The format string for an activityCreateEvent is empty.
           format_string = ''
         else:
           format_string = log_entry.format_string or ''
-          format_string = format_string.replace('\\', '\\\\')
-          format_string = format_string.replace('/', '\\/')
-          format_string = format_string.replace('"', '\\"')
+          format_string = escape_regex.sub(r'\\\1', format_string)
           format_string = format_string.replace('\n', '\\n')
           format_string = format_string.replace('\t', '\\t')
 
@@ -251,9 +252,7 @@ def Main():
               log_entry.process_image_identifier).upper()
 
         process_image_path = log_entry.process_image_path or ''
-        process_image_path = process_image_path.replace('\\', '\\\\')
-        process_image_path = process_image_path.replace('/', '\\/')
-        process_image_path = process_image_path.replace('"', '\\"')
+        process_image_path = escape_regex.sub(r'\\\1', process_image_path)
 
         sender_image_identifier = ''
         if log_entry.sender_image_identifier:
@@ -264,98 +263,129 @@ def Main():
         sender_image_path = sender_image_path.replace('"', '\\"')
         sender_image_path = sender_image_path.replace('/', '\\/')
 
-        lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
+        if event_type == 'timesyncEvent':
+          parent_activity_identifier = 0
 
-        if (log_entry.creator_activity_identifier is None and
-            log_entry.signpost_identifier is None):
-          lines.append(f'  "eventMessage" : "{event_message:s}",')
+          lines = [
+              f'  "bootUUID" : "{boot_identifier:s}",',
+              f'  "category" : "{category:s}",',
+              f'  "processImageUUID" : "{process_image_identifier:s}",',
+              f'  "eventType" : "{event_type:s}",',
+              f'  "threadID" : {log_entry.thread_identifier:d},',
+              f'  "timestamp" : "{date_time_string:s}",',
+              f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
+              (f'  "senderProgramCounter" : '
+               f'{log_entry.sender_program_counter:d},'),
+              f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
+              f'  "machTimestamp" : {log_entry.mach_timestamp:d},',
+              f'  "processID" : {log_entry.process_identifier:d},',
+              f'  "subsystem" : "{sub_system:s}",',
+              '  "timezoneName" : "",',
+              f'  "traceID" : {log_entry.trace_identifier:d},',
+              f'  "eventMessage" : "{event_message:s}",',
+              f'  "formatString" : "{format_string:s}",',
+              f'  "processImagePath" : "{process_image_path:s}",',
+              f'  "senderImageUUID" : "{sender_image_identifier:s}",',
+              f'  "senderImagePath" : "{sender_image_path:s}"']
 
-        lines.append(f'  "eventType" : "{event_type:s}",')
+        else:
+          lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
 
-        if log_entry.signpost_identifier is not None:
-          signpost_scope = log_entry.signpost_scope or ''
+          if (creator_activity_identifier is None and
+              log_entry.signpost_identifier is None):
+            lines.append(f'  "eventMessage" : "{event_message:s}",')
 
-          lines.extend([
-              f'  "signpostID" : {log_entry.signpost_identifier:d},',
-              f'  "signpostScope" : "{signpost_scope:s}",'])
+          lines.append(f'  "eventType" : "{event_type:s}",')
 
-        if log_entry.creator_activity_identifier is None:
-          # TODO: implement source support.
-          lines.append('  "source" : null,')
+          if log_entry.signpost_identifier is not None:
+            signpost_scope = log_entry.signpost_scope or ''
 
-        lines.extend([
-            f'  "formatString" : "{format_string:s}",',
-            f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
-            f'  "subsystem" : "{sub_system:s}",',
-            f'  "category" : "{category:s}",',
-            f'  "threadID" : {log_entry.thread_identifier:d},',
-            f'  "senderImageUUID" : "{sender_image_identifier:s}",'])
-
-        if log_entry.signpost_identifier is not None:
-          signpost_type = log_entry.signpost_type or ''
-
-          lines.append(f'  "signpostType" : "{signpost_type:s}",')
-
-        lines.extend([
-            '  "backtrace" : {',
-            '    "frames" : [',
-            '      {'])
-
-        for index, backtrace_frame in enumerate(log_entry.backtrace_frames):
-          if index > 0:
             lines.extend([
-                '      },',
-                '      {'])
+                f'  "signpostID" : {log_entry.signpost_identifier:d},',
+                f'  "signpostScope" : "{signpost_scope:s}",'])
 
-          image_identifier = str(backtrace_frame.image_identifier).upper()
+          if creator_activity_identifier is None:
+            # TODO: implement source support.
+            lines.append('  "source" : null,')
 
           lines.extend([
-              f'        "imageOffset" : {backtrace_frame.image_offset:d},',
-              f'        "imageUUID" : "{image_identifier:s}"'])
+              f'  "formatString" : "{format_string:s}",',
+              f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
+              f'  "subsystem" : "{sub_system:s}",',
+              f'  "category" : "{category:s}",',
+              f'  "threadID" : {log_entry.thread_identifier:d},',
+              f'  "senderImageUUID" : "{sender_image_identifier:s}",'])
 
-        lines.extend([
-            '      }',
-            '    ]',
-            '  },',
-            f'  "bootUUID" : "{boot_identifier:s}",',
-            f'  "processImagePath" : "{process_image_path:s}",',
-            f'  "timestamp" : "{date_time_string:s}",',
-            f'  "senderImagePath" : "{sender_image_path:s}",'])
+          if log_entry.signpost_identifier is not None:
+            signpost_type = log_entry.signpost_type or ''
 
-        if log_entry.creator_activity_identifier is not None:
-          parent_per_activity_identifier[log_entry.activity_identifier] = (
-              log_entry.creator_activity_identifier)
+            lines.append(f'  "signpostType" : "{signpost_type:s}",')
 
-          lines.append((f'  "creatorActivityID" : '
-                        f'{log_entry.creator_activity_identifier:d},'))
+          lines.extend([
+              '  "backtrace" : {',
+              '    "frames" : [',
+              '      {'])
 
-        elif log_entry.signpost_identifier is not None:
-          signpost_name = log_entry.signpost_name or ''
+          for index, backtrace_frame in enumerate(log_entry.backtrace_frames):
+            if index > 0:
+              lines.extend([
+                  '      },',
+                  '      {'])
 
-          lines.append(f'  "signpostName" : "{signpost_name:s}",')
+            image_identifier = str(backtrace_frame.image_identifier).upper()
 
-        lines.append(f'  "machTimestamp" : {log_entry.mach_timestamp:d},')
+            lines.extend([
+                f'        "imageOffset" : {backtrace_frame.image_offset:d},',
+                f'        "imageUUID" : "{image_identifier:s}"'])
 
-        if (log_entry.creator_activity_identifier is not None or
-            log_entry.signpost_identifier is not None):
-          lines.append(f'  "eventMessage" : "{event_message:s}",')
-        else:
-          message_type = log_entry.message_type or ''
+          lines.extend([
+              '      }',
+              '    ]',
+              '  },',
+              f'  "bootUUID" : "{boot_identifier:s}",',
+              f'  "processImagePath" : "{process_image_path:s}",',
+              f'  "timestamp" : "{date_time_string:s}",',
+              f'  "senderImagePath" : "{sender_image_path:s}",'])
 
-          lines.append(f'  "messageType" : "{message_type:s}",')
+          if creator_activity_identifier is not None:
+            parent_per_activity_identifier[log_entry.activity_identifier] = (
+                creator_activity_identifier &
+                unified_logging_file.ACTIVITY_IDENTIFIER_BITMASK)
 
-        if log_entry.parent_activity_identifier:
-          parent_activity_identifier = log_entry.parent_activity_identifier
-        else:
-          parent_activity_identifier = parent_per_activity_identifier.get(
-              log_entry.activity_identifier, None) or 0
+            lines.append(
+                f'  "creatorActivityID" : {creator_activity_identifier:d},')
 
-        lines.extend([
-            f'  "processImageUUID" : "{process_image_identifier:s}",',
-            f'  "processID" : {log_entry.process_identifier:d},',
-            f'  "senderProgramCounter" : {log_entry.sender_program_counter:d},',
-            f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
-            '  "timezoneName" : ""'])
+          elif log_entry.signpost_identifier is not None:
+            signpost_name = log_entry.signpost_name or ''
+
+            lines.append(f'  "signpostName" : "{signpost_name:s}",')
+
+          lines.append(f'  "machTimestamp" : {log_entry.mach_timestamp:d},')
+
+          if (creator_activity_identifier is not None or
+              log_entry.signpost_identifier is not None):
+            lines.append(f'  "eventMessage" : "{event_message:s}",')
+          else:
+            message_type = log_entry.message_type or ''
+
+            lines.append(f'  "messageType" : "{message_type:s}",')
+
+          if log_entry.parent_activity_identifier:
+            parent_activity_identifier = log_entry.parent_activity_identifier
+          else:
+            parent_activity_identifier = parent_per_activity_identifier.get(
+                log_entry.activity_identifier, None) or 0
+
+          if parent_activity_identifier == creator_activity_identifier:
+            parent_activity_identifier = 0
+
+          lines.extend([
+              f'  "processImageUUID" : "{process_image_identifier:s}",',
+              f'  "processID" : {log_entry.process_identifier:d},',
+              (f'  "senderProgramCounter" : '
+               f'{log_entry.sender_program_counter:d},'),
+              f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
+              '  "timezoneName" : ""'])
 
         print('\n'.join(lines))
 

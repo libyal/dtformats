@@ -292,7 +292,7 @@ attributes:
   format: hexadecimal_8digits
 - name: private_data_range
   description: "Private data range"
-  format: custom:data_rang
+  format: custom:data_range
 - name: load_address_lower
   description: "UUID entry load address (lower 32-bit)"
   format: hexadecimal_8digits
@@ -343,7 +343,7 @@ attributes:
   format: hexadecimal_8digits
 - name: private_data_range
   description: "Private data range"
-  format: custom:data_rang
+  format: custom:data_range
 - name: load_address_lower
   description: "UUID entry load address (lower 32-bit)"
   format: hexadecimal_8digits
@@ -421,7 +421,7 @@ attributes:
   format: decimal
 - name: flags
   description: "Flags"
-  format: hexadecimal_4digits
+  format: custom:header_flags
 ---
 data_type_map: tracev3_continuous_time_sub_chunk
 attributes:
