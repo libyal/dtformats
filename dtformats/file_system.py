@@ -156,7 +156,7 @@ class NativeFileSystemHelper(object):
     Returns:
       str: joined path segments prefixed with the path separator.
     """
-    return os.path.join(*path_segments)
+    return ''.join([os.path.sep, os.path.sep.join(path_segments)])
 
   def ListDirectory(self, path):
     """Lists the entries in a directory.

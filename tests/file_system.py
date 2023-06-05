@@ -2,7 +2,6 @@
 """Tests for the file system helper."""
 
 import pathlib
-import os
 import platform
 import unittest
 
@@ -61,7 +60,8 @@ class NativeFileSystemHelperTest(test_lib.BaseTestCase):
 
     test_helper = file_system.NativeFileSystemHelper()
 
-    path_segments = os.path.split(test_file_path)
+    path_segments = list(pathlib.Path(test_file_path).parts)
+    path_segments.pop(0)
 
     path = test_helper.JoinPath(path_segments)
     self.assertEqual(path, test_file_path)
