@@ -669,7 +669,7 @@ A firehose tracepoint is variable of size and consists of:
 | 0 | 1 | | Record type +
 See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+See section: <<tracev3_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string reference (lower 32-bit) +
@@ -704,39 +704,6 @@ See section: <<tracev3_firehose_tracepoint_signpost,Signpost firehose tracepoint
 See section: <<tracev3_firehose_tracepoint_loss,Loss firehose loss>>
 |===
 
-==== [[tracev3_firehose_tracepoint_log_type]]Firehose tracepoint log type
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x00 | default | Default
-| 0x01 | create | Create +
-Note that appears to be only used by the "Activity" record type, other record types use info
-| 0x01 | info | Info
-| 0x02 | debug | Debug
-| 0x03 | useraction | Useraction
-| | |
-| 0x10 | error | Error
-| 0x11 | fault | Fault
-| | |
-3+| _Signpost thread scope (0x40)_
-| 0x40 | thread, event | Thread Signpost event
-| 0x41 | thread, interval_begin | Thread Signpost start
-| 0x42 | thread, interval_end | Thread Signpost end
-| | |
-3+| _Signpost process scope (0x80)_
-| 0x80 | process, event | Process Signpost event
-| 0x81 | process, interval_begin | Process Signpost start
-| 0x82 | process, interval_end | Process Signpost end
-| | |
-3+| _Signpost system scope (0xc0)_
-| 0xc0 | system, event | System Signpost event
-| 0xc1 | system, interval_begin | System Signpost start
-| 0xc2 | system, interval_end | System Signpost end
-|===
-
-[yellow-background]*Other values are marked as "Default"?*
-
 ==== [[tracev3_firehose_tracepoint_flags]]Firehose tracepoint flags
 
 [cols="1,1,5",options="header"]
@@ -752,7 +719,7 @@ Note that appears to be only used by the "Activity" record type, other record ty
 Note that appears to be only used by the "Activity" record type, other record types use has_subsystem
 | 0x0200 | has_subsystem | Has sub system
 | 0x0400 | has_rules | Has rules
-| 0x0800 | | Has data reference
+| 0x0800 | has_oversize | Has oversize data reference
 | 0x1000 | has_backtrace | Has backtrace
 | | |
 | 0x8000 | has_name | Has name string reference
@@ -907,7 +874,7 @@ An activity firehose tracepoint is variable of size and consists of:
 | 0 | 1 | 0x02 | Record type +
 See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+See section: <<tracev3_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string reference (lower 32-bit) +
@@ -953,7 +920,7 @@ A trace firehose tracepoint is variable of size and consists of:
 | 0 | 1 | 0x03 | Record type +
 See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+See section: <<tracev3_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string reference (lower 32-bit) +
@@ -979,7 +946,7 @@ A log firehose tracepoint is variable of size and consists of:
 | 0 | 1 | 0x04 | Record type +
 See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+See section: <<tracev3_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string reference (lower 32-bit) +
@@ -1008,8 +975,8 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 2 | | Sub system identifier
 4+| _Has rules flag (0x0400) is set_
 | ... | 1 | | TTL
-4+| _Has data reference flag (0x0800) is set_
-| ... | 2 | | (Oversize) data reference
+4+| _Has oversize data reference flag (0x0800) is set_
+| ... | 2 | | Oversize data reference
 4+| _Common_
 | ... | 1 | | [yellow-background]*Unknown*
 | ... | 1 | | Number of data items
@@ -1040,7 +1007,7 @@ A signpost firehose tracepoint is variable of size and consists of:
 | 0 | 1 | 0x06 | Record type +
 See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+See section: <<tracev3_log_type,Log type>>
 | 2 | 2 | | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string reference (lower 32-bit) +
@@ -1071,8 +1038,8 @@ Where the range offset is a virtual private strings offset in the <<tracev3_fire
 | ... | 8 | | Signpost identifier
 4+| _Has rules flag (0x0400) is set_
 | ... | 1 | | TTL
-4+| _Has data reference flag (0x0800) is set_
-| ... | 2 | | (Oversize) data reference
+4+| _Has oversize data reference flag (0x0800) is set_
+| ... | 2 | | Oversize data reference
 4+| _Has name string reference flag (0x8000) is set_
 | ... | 4 | | Name string reference (lower 32-bit) +
 See section: <<tracev3_firehose_tracepoint_string_reference,String reference>>
@@ -1100,7 +1067,7 @@ A loss firehose tracepoint is variable of size and consists of:
 | 0 | 1 | 0x07 | Record type +
 See section: <<tracev3_firehose_tracepoint_record_type,Record type>>
 | 1 | 1 | | Log type +
-See section: <<tracev3_firehose_tracepoint_log_type,Log type>>
+See section: <<tracev3_log_type,Log type>>
 | 2 | 2 | 0x00 | Flags +
 See section: <<tracev3_firehose_tracepoint_flags,Flags>>
 | 4 | 4 | | Format string reference (lower 32-bit) +
@@ -1410,17 +1377,17 @@ The Oversize chunk is variable of size and consists of:
 | 29 | 3 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Timestamp +
 Contains a Mach continuous timestamp
-| 40 | 4 | | Data reference
-| 44 | 2 | | Size of public data +
+| 40 | 4 | | Data reference (or message identifier)
+| 44 | 2 | | Size of data (buffdata_sz) +
 Contains the size of the data items and values data
-| 46 | 2 | | Size of private data
-4+| _Public data_
+| 46 | 2 | | Size of private data (privdata_sz)
+4+| _Data_
 | 48 | 1 | | [yellow-background]*Unknown*
 | 49 | 1 | | Number of data items
 | 50 | number of data items | | Array of data items +
 See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
 | ... | ... | | Data items values data
-4+| _End of public data_
+4+| _End of data_
 | ... | ... | | Private data
 |===
 
@@ -1481,12 +1448,13 @@ The SimpleDump chunk is variable of size and consists of:
 | 16 | 8 | | First number in proc_id #@#
 | 24 | 4 | | Second number in proc_id #@#
 | 28 | 1 | | TTL
-| 29 | 1 | | Type
+| 29 | 1 | | Log type +
+See section: <<tracev3_log_type,Log type>>
 | 29 | 2 | 0 | [yellow-background]*Unknown (Reserved?)*
 | 32 | 8 | | Timestamp +
 Contains a Mach continuous timestamp
 | 40 | 8 | | Thread identifier
-| 48 | 8 | | Offset
+| 48 | 8 | | Load address (or offset)
 | 56 | 16 | | Sender identifier +
 Contains a UUID stored in big-endian
 | 72 | 16 | | Shared-Cache Strings (dsc) identifier +
@@ -1499,6 +1467,39 @@ Contains an UTF-8 formatted string with an end-of-string character
 | ... | message string size | | Message string +
 Contains an UTF-8 formatted string with an end-of-string character
 |===
+
+=== [[tracev3_log_type]]Log type
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x00 | default | Default
+| 0x01 | create | Create +
+Note that appears to be only used by the "Activity" record type, other record types use info
+| 0x01 | info | Info
+| 0x02 | debug | Debug
+| 0x03 | useraction | Useraction
+| | |
+| 0x10 | error | Error
+| 0x11 | fault | Fault
+| | |
+3+| _Signpost thread scope (0x40)_
+| 0x40 | thread, event | Thread Signpost event
+| 0x41 | thread, interval_begin | Thread Signpost start
+| 0x42 | thread, interval_end | Thread Signpost end
+| | |
+3+| _Signpost process scope (0x80)_
+| 0x80 | process, event | Process Signpost event
+| 0x81 | process, interval_begin | Process Signpost start
+| 0x82 | process, interval_end | Process Signpost end
+| | |
+3+| _Signpost system scope (0xc0)_
+| 0xc0 | system, event | System Signpost event
+| 0xc1 | system, interval_begin | System Signpost start
+| 0xc2 | system, interval_end | System Signpost end
+|===
+
+[yellow-background]*Other values are marked as "Default"?*
 
 === Notes
 

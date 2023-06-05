@@ -119,6 +119,15 @@ class LogEntry(object):
     event_message (str): event message.
     event_type (str): event type.
     format_string (str): format string.
+    loss_count (int): number of message lost.
+    loss_end_mach_timestamp (int): Mach timestamp of the end of the message
+        loss.
+    loss_end_timestamp (int): timestamp of the end of the message loss, in 
+        number of nanoseconds since January 1, 1970 00:00:00.000000000
+    loss_start_mach_timestamp (int): Mach timestamp of the start of the message
+        loss.
+    loss_start_timestamp (int): timestamp of the start of the message loss, in 
+        number of nanoseconds since January 1, 1970 00:00:00.000000000
     mach_timestamp (int): Mach timestamp.
     message_type (str): message type.
     parent_activity_identifier (int): parent activity identifier.
@@ -152,6 +161,11 @@ class LogEntry(object):
     self.event_message = None
     self.event_type = None
     self.format_string = None
+    self.loss_count = None
+    self.loss_end_mach_timestamp = None
+    self.loss_end_timestamp = None
+    self.loss_start_mach_timestamp = None
+    self.loss_start_timestamp = None
     self.mach_timestamp = None
     self.message_type = None
     self.parent_activity_identifier = None
@@ -1986,6 +2000,7 @@ class TraceV3File(data_format.BinaryDataFile):
           'log_type': '_FormatFirehoseTracepointLogType',
           'posix_time': '_FormatIntegerAsPosixTime',
           'record_type': '_FormatFirehoseTracepointRecordType',
+          'signature': '_FormatStreamAsSignature',
           'stream_type': '_FormatFirehoseStreamType',
           'tracepoint_flags': '_FormatFirehoseTracepointFlags',
           'value_type': '_FormatDataItemValueType'})
@@ -1999,6 +2014,7 @@ class TraceV3File(data_format.BinaryDataFile):
   _EVENT_TYPE_DESCRIPTIONS = {
       _RECORD_TYPE_ACTIVITY: 'activityCreateEvent',
       _RECORD_TYPE_LOG: 'logEvent',
+      _RECORD_TYPE_LOSS: 'lossEvent',
       _RECORD_TYPE_SIGNPOST: 'signpostEvent'}
 
   _RECORD_TYPE_DESCRIPTIONS = {
@@ -2087,48 +2103,6 @@ class TraceV3File(data_format.BinaryDataFile):
       0x00: 'event',
       0x01: 'begin',
       0x02: 'end'}
-
-  _DEBUG_INFO_LZ4_BLOCK_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('uncompressed_data_size', 'Uncompressed data size',
-       '_FormatIntegerAsDecimal'),
-      ('compressed_data_size', 'Compressed data size',
-       '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_SIMPLEDUMP_CHUNK = [
-      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
-      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
-      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
-      ('type', 'Type', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
-      ('thread_identifier', 'Thread identifier', '_FormatIntegerAsDecimal'),
-      ('offset', 'Offset', '_FormatIntegerAsHexadecimal8'),
-      ('sender_identifier', 'Sender identifier', '_FormatUUIDAsString'),
-      ('dsc_identifier', 'DSC identifier', '_FormatUUIDAsString'),
-      ('unknown6', 'Unknown6', '_FormatIntegerAsHexadecimal8'),
-      ('sub_system_string_size', 'Sub system string size',
-       '_FormatIntegerAsDecimal'),
-      ('message_string_size', 'Message string size', '_FormatIntegerAsDecimal'),
-      ('sub_system_string', 'Sub system string', '_FormatString'),
-      ('message_string', 'Message string', '_FormatString')]
-
-  _DEBUG_INFO_STATEDUMP_CHUNK = [
-      ('proc_id_upper', 'proc_id (upper 64-bit)', '_FormatIntegerAsDecimal'),
-      ('proc_id_lower', 'proc_id (lower 32-bit)', '_FormatIntegerAsDecimal'),
-      ('ttl', 'Time to live (TTL)', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal2'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal4'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsDecimal'),
-      ('activity_identifier', 'Activity identifier',
-       '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', 'Unknown3', '_FormatUUIDAsString'),
-      ('data_type', 'Data type', '_FormatIntegerAsDecimal'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('unknown4', 'Unknown4', '_FormatDataInHexadecimal'),
-      ('unknown5', 'Unknown5', '_FormatDataInHexadecimal'),
-      ('name', 'Name', '_FormatString'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
 
   _FORMAT_STRING_DECODERS = {
       'bool': BooleanFormatStringDecoder(
@@ -3105,7 +3079,7 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'LZ4 block header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFO_LZ4_BLOCK_HEADER
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_lz4_block_header', None)
       self._DebugPrintStructureObject(lz4_block_header, debug_info)
 
     if lz4_block_header.signature == b'bv41':
@@ -3168,7 +3142,7 @@ class TraceV3File(data_format.BinaryDataFile):
             data_offset)
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_SIMPLEDUMP:
-        self._ReadSimpleDumpChunkData(
+        yield from self._ReadSimpleDumpChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
             data_offset)
 
@@ -3497,7 +3471,42 @@ class TraceV3File(data_format.BinaryDataFile):
                 firehose_tracepoint.flags, firehose_tracepoint.data,
                 tracepoint_data_offset))
 
-      if tracepoint_data_object:
+      continuous_time = firehose_tracepoint.continuous_time_lower | (
+          firehose_tracepoint.continuous_time_upper << 32)
+      continuous_time += firehose_header.base_continuous_time
+
+      process_image_identifier, process_image_path = (
+          self._GetProcessImageValues(process_information_entry))
+
+      log_entry = LogEntry()
+      log_entry.boot_identifier = self._boot_identifier
+      log_entry.event_type = self._EVENT_TYPE_DESCRIPTIONS.get(
+          firehose_tracepoint.record_type, None)
+      log_entry.mach_timestamp = continuous_time
+      log_entry.process_image_identifier = process_image_identifier
+      log_entry.process_image_path = process_image_path
+      log_entry.thread_identifier = firehose_tracepoint.thread_identifier
+      log_entry.timestamp = self._GetTimestamp(continuous_time)
+      log_entry.trace_identifier = self._GetTraceIdentifier(firehose_tracepoint)
+
+      if record_type == self._RECORD_TYPE_LOSS:
+        loss_count = tracepoint_data_object.number_of_messages or 0
+        loss_start_time = tracepoint_data_object.start_time or 0
+        loss_end_time = tracepoint_data_object.end_time or 0
+
+        log_entry.event_message = (
+            f'lost >={loss_count:d} unreliable messages from '
+            f'{loss_start_time:d}-{loss_end_time:d} (Mach continuous exact '
+            f'start-approx. end)')
+        log_entry.loss_count = loss_count
+        log_entry.loss_end_mach_timestamp = loss_end_time
+        log_entry.loss_end_timestamp = self._GetTimestamp(loss_end_time)
+        log_entry.loss_start_mach_timestamp = loss_start_time
+        log_entry.loss_start_timestamp = self._GetTimestamp(loss_start_time)
+
+        # TODO: add support for lossCountSaturated
+
+      else:
         values_data_offset = bytes_read
 
         if firehose_tracepoint.flags & 0x1000 == 0:
@@ -3548,17 +3557,10 @@ class TraceV3File(data_format.BinaryDataFile):
               data_items, values_data, private_data, private_data_offset,
               string_formatter)
 
-        continuous_time = firehose_tracepoint.continuous_time_lower | (
-            firehose_tracepoint.continuous_time_upper << 32)
-        continuous_time += firehose_header.base_continuous_time
-
         sub_system_identifier = getattr(
             tracepoint_data_object, 'sub_system_identifier', None)
         category, sub_system = self._GetSubSystemStrings(
             process_information_entry, sub_system_identifier)
-
-        process_image_identifier, process_image_path = (
-            self._GetProcessImageValues(process_information_entry))
 
         program_counter = self._CalculateProgramCounter(
             tracepoint_data_object, image_values.text_offset)
@@ -3570,27 +3572,16 @@ class TraceV3File(data_format.BinaryDataFile):
 
           backtrace_frames.append(backtrace_frame)
 
-        log_entry = LogEntry()
         log_entry.backtrace_frames = backtrace_frames
-        log_entry.boot_identifier = self._boot_identifier
         log_entry.category = category
-        log_entry.event_type = self._EVENT_TYPE_DESCRIPTIONS.get(
-            firehose_tracepoint.record_type, None)
         log_entry.format_string = image_values.string
-        log_entry.mach_timestamp = continuous_time
         log_entry.process_identifier = getattr(
             process_information_entry, 'process_identifier', None) or 0
-        log_entry.process_image_identifier = process_image_identifier
-        log_entry.process_image_path = process_image_path
         log_entry.sender_image_identifier = image_values.identifier
         log_entry.sender_image_path = image_values.path
         log_entry.sender_program_counter = program_counter or 0
         log_entry.sub_system = sub_system
-        log_entry.thread_identifier = firehose_tracepoint.thread_identifier
-        log_entry.timestamp = self._GetTimestamp(continuous_time)
         log_entry.time_zone_name = None
-        log_entry.trace_identifier = self._GetTraceIdentifier(
-            firehose_tracepoint)
         log_entry.ttl = getattr(tracepoint_data_object, 'ttl', None) or 0
 
         if firehose_tracepoint.record_type != self._RECORD_TYPE_SIGNPOST:
@@ -3643,7 +3634,7 @@ class TraceV3File(data_format.BinaryDataFile):
         if self._catalog:
           log_entry.event_message = string_formatter.FormatString(values)
 
-        yield log_entry
+      yield log_entry
 
       chunk_data_offset += firehose_tracepoint.data_size
 
@@ -3960,8 +3951,7 @@ class TraceV3File(data_format.BinaryDataFile):
       raise errors.ParseError(
           'Oversize chunk with private data is currently unsupported')
 
-    data_size = 48 + (
-        oversize_chunk.public_data_size + oversize_chunk.private_data_size)
+    data_size = 48 + oversize_chunk.data_size + oversize_chunk.private_data_size
     oversize_chunk.values_data = chunk_data[context.byte_size:data_size]
 
     if self._debug and data_size < chunk_data_size:
@@ -3979,8 +3969,8 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset (int): offset of the SimpleDump chunk relative to the start
           of the chunk set.
 
-    Returns:
-      simpledump_chunk: a SimpleDump chunk.
+    Yields:
+      LogEntry: a log entry.
 
     Raises:
       ParseError: if the chunk cannot be read.
@@ -3994,14 +3984,54 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFO_SIMPLEDUMP_CHUNK
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_simpledump_chunk', None)
       self._DebugPrintStructureObject(simpledump_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
       self._DebugPrintData(
           'Trailing SimpleDump chunk data', chunk_data[context.byte_size:])
 
-    return simpledump_chunk
+    if not self._catalog:
+      process_information_entry = None
+    else:
+      proc_id = (f'{simpledump_chunk.proc_id_upper:d}@'
+                 f'{simpledump_chunk.proc_id_lower:d}')
+      process_information_entry = (
+          self._catalog_process_information_entries.get(proc_id, None))
+      if not process_information_entry:
+        raise errors.ParseError((
+            f'Unable to retrieve process information entry: {proc_id:s} from '
+            f'catalog'))
+
+    backtrace_frame = BacktraceFrame()
+    backtrace_frame.image_identifier = simpledump_chunk.sender_identifier
+    backtrace_frame.image_offset = simpledump_chunk.load_address
+
+    process_image_identifier, process_image_path = (
+        self._GetProcessImageValues(process_information_entry))
+
+    log_entry = LogEntry()
+    log_entry.backtrace_frames = [backtrace_frame]
+    log_entry.boot_identifier = self._boot_identifier
+    log_entry.event_message = simpledump_chunk.message_string
+    log_entry.event_type = 'logEvent'
+    log_entry.mach_timestamp = simpledump_chunk.continuous_time
+    log_entry.message_type = self._LOG_TYPE_DESCRIPTIONS.get(
+        simpledump_chunk.log_type, None)
+    log_entry.process_identifier = getattr(
+        process_information_entry, 'process_identifier', None) or 0
+    log_entry.process_image_identifier = process_image_identifier
+    log_entry.process_image_path = process_image_path
+    log_entry.sub_system = simpledump_chunk.sub_system_string
+    log_entry.sender_image_identifier = simpledump_chunk.sender_identifier
+    # TODO: implement
+    log_entry.sender_image_path = None
+    log_entry.sender_program_counter = simpledump_chunk.load_address
+    log_entry.thread_identifier = simpledump_chunk.thread_identifier
+    log_entry.timestamp = self._GetTimestamp(simpledump_chunk.continuous_time)
+    log_entry.trace_identifier = 0
+
+    yield log_entry
 
   def _ReadStateDumpChunkData(self, chunk_data, chunk_data_size, data_offset):
     """Reads StateDump chunk data.
@@ -4027,7 +4057,7 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFO_STATEDUMP_CHUNK
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_statedump_chunk', None)
       self._DebugPrintStructureObject(statedump_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
@@ -4249,7 +4279,6 @@ class TraceV3File(data_format.BinaryDataFile):
         self._catalog = self._ReadCatalog(
             self._file_object, file_offset, chunk_header.chunk_data_size)
         self._BuildCatalogProcessInformationEntries(self._catalog)
-        oversize_chunks = {}
 
       elif chunk_header.chunk_tag == self._CHUNK_TAG_CHUNK_SET:
         yield from self._ReadChunkSet(

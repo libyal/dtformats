@@ -1424,7 +1424,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(oversize_chunk.unknown2, 0x0000)
     self.assertEqual(oversize_chunk.continuous_time, 100657868900985)
     self.assertEqual(oversize_chunk.data_reference, 82)
-    self.assertEqual(oversize_chunk.public_data_size, 2046)
+    self.assertEqual(oversize_chunk.data_size, 2046)
     self.assertEqual(oversize_chunk.private_data_size, 0)
     self.assertEqual(oversize_chunk.unknown3, 0x22)
     self.assertEqual(oversize_chunk.number_of_data_items, 1)
@@ -1434,28 +1434,33 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    simpledump_chunk = test_file._ReadSimpleDumpChunkData(
-        self._SIMPLEDUMP_CHUNK_DATA, len(self._SIMPLEDUMP_CHUNK_DATA), 0)
+    log_entries = list(test_file._ReadSimpleDumpChunkData(
+        self._SIMPLEDUMP_CHUNK_DATA, len(self._SIMPLEDUMP_CHUNK_DATA), 0))
 
-    self.assertIsNotNone(simpledump_chunk)
-    self.assertEqual(simpledump_chunk.proc_id_upper, 1)
-    self.assertEqual(simpledump_chunk.proc_id_lower, 7)
-    self.assertEqual(simpledump_chunk.ttl, 0)
-    self.assertEqual(simpledump_chunk.type, 0)
-    self.assertEqual(simpledump_chunk.unknown1, 0)
-    self.assertEqual(simpledump_chunk.timestamp, 567448911)
-    self.assertEqual(simpledump_chunk.thread_identifier, 1887)
-    self.assertEqual(simpledump_chunk.offset, 230724)
-    self.assertEqual(simpledump_chunk.sender_identifier, uuid.UUID(
-        '1d625353-a9fa-3ec9-94c0-b2952315b2d2'))
-    self.assertEqual(simpledump_chunk.dsc_identifier, uuid.UUID(
-        'be7fe6ad-4560-3ae2-883e-432f78b45062'))
-    self.assertEqual(simpledump_chunk.unknown6, 1)
-    self.assertEqual(simpledump_chunk.sub_system_string_size, 0)
-    self.assertEqual(simpledump_chunk.message_string_size, 42)
-    self.assertEqual(simpledump_chunk.sub_system_string, '')
-    self.assertEqual(simpledump_chunk.message_string, (
+    self.assertEqual(len(log_entries), 1)
+
+    log_entry = log_entries[0]
+    self.assertEqual(len(log_entry.backtrace_frames), 1)
+    # Not set due to test without catalog.
+    self.assertIsNone(log_entry.boot_identifier)
+    self.assertEqual(log_entry.event_message, (
         'Skipping boot-task: restore-datapartition'))
+    self.assertEqual(log_entry.event_type, 'logEvent')
+    self.assertEqual(log_entry.mach_timestamp, 567448911)
+    self.assertEqual(log_entry.message_type, 'Default')
+    # Not set due to test without catalog.
+    self.assertEqual(log_entry.process_identifier, 0)
+    self.assertIsNone(log_entry.process_image_identifier)
+    self.assertIsNone(log_entry.process_image_path)
+    self.assertEqual(log_entry.sender_image_identifier, uuid.UUID(
+        '1d625353-a9fa-3ec9-94c0-b2952315b2d2'))
+    self.assertIsNone(log_entry.sender_image_path)
+    self.assertEqual(log_entry.sender_program_counter, 230724)
+    self.assertEqual(log_entry.sub_system, '')
+    self.assertEqual(log_entry.thread_identifier, 1887)
+    # Not converted due to test without catalog.
+    self.assertEqual(log_entry.timestamp, 567448911)
+    self.assertEqual(log_entry.trace_identifier, 0)
 
   def testReadStateDumpChunkData(self):
     """Tests the _ReadStateDumpChunkData function."""
@@ -1471,7 +1476,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(statedump_chunk.ttl, 14)
     self.assertEqual(statedump_chunk.unknown1, 0)
     self.assertEqual(statedump_chunk.unknown2, 0)
-    self.assertEqual(statedump_chunk.timestamp, 100662123537283)
+    self.assertEqual(statedump_chunk.continuous_time, 100662123537283)
     self.assertEqual(statedump_chunk.activity_identifier, 0x8000000000ead229)
     self.assertEqual(statedump_chunk.unknown3, uuid.UUID(
         '081b5e9e-59ea-39cd-83c9-eedb68a84076'))

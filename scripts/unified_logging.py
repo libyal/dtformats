@@ -60,6 +60,26 @@ class LogEntriesHeap(object):
     heapq.heappush(self._heap, log_entry)
 
 
+def GetDateTimeString(timestamp):
+  """Determines the date and time string.
+
+  Args:
+    timestamp (int): number of nanoseconds since January 1, 1970
+        00:00:00.000000000.
+
+  Returns:
+    str: date and time string.
+  """
+  if timestamp is None:
+    return 'YYYY-MM-DD hh:ss:mm.######+####'
+
+  date_time = dfdatetime_posix_time.PosixTimeInNanoseconds(timestamp=timestamp)
+  iso8601_string = date_time.CopyToDateTimeStringISO8601()
+  return ''.join([
+      iso8601_string[:10], ' ', iso8601_string[11:26],
+      iso8601_string[29:32], iso8601_string[33:35]])
+
+
 def Main():
   """The main program function.
 
@@ -210,15 +230,10 @@ def Main():
       if options.format == 'json' and index > 0:
         print('},{')
 
-      if log_entry.timestamp is None:
-        date_time_string = 'YYYY-MM-DD hh:ss:mm.######+####'
-      else:
-        date_time = dfdatetime_posix_time.PosixTimeInNanoseconds(
-            timestamp=log_entry.timestamp)
-        iso8601_string = date_time.CopyToDateTimeStringISO8601()
-        date_time_string = ''.join([
-            iso8601_string[:10], ' ', iso8601_string[11:26],
-            iso8601_string[29:32], iso8601_string[33:35]])
+      activity_identifier = log_entry.activity_identifier or 0
+      date_time_string = GetDateTimeString(log_entry.timestamp)
+      process_identifier = log_entry.process_identifier or 0
+      sender_program_counter = log_entry.sender_program_counter or 0
 
       if options.format == 'json':
         boot_identifier = str(log_entry.boot_identifier).upper()
@@ -273,12 +288,11 @@ def Main():
               f'  "eventType" : "{event_type:s}",',
               f'  "threadID" : {log_entry.thread_identifier:d},',
               f'  "timestamp" : "{date_time_string:s}",',
-              f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
-              (f'  "senderProgramCounter" : '
-               f'{log_entry.sender_program_counter:d},'),
+              f'  "activityIdentifier" : {activity_identifier:d},',
+              f'  "senderProgramCounter" : {sender_program_counter:d},',
               f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
               f'  "machTimestamp" : {log_entry.mach_timestamp:d},',
-              f'  "processID" : {log_entry.process_identifier:d},',
+              f'  "processID" : {process_identifier:d},',
               f'  "subsystem" : "{sub_system:s}",',
               '  "timezoneName" : "",',
               f'  "traceID" : {log_entry.trace_identifier:d},',
@@ -292,10 +306,17 @@ def Main():
           lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
 
           if (creator_activity_identifier is None and
+              log_entry.loss_count is None and
               log_entry.signpost_identifier is None):
             lines.append(f'  "eventMessage" : "{event_message:s}",')
 
           lines.append(f'  "eventType" : "{event_type:s}",')
+
+          if log_entry.loss_count is not None:
+            # TODO: improve support for lossCountSaturated
+            lines.extend([
+                f'  "lossCount" : {log_entry.loss_count:d},',
+                '  "lossCountSaturated" : true,'])
 
           if log_entry.signpost_identifier is not None:
             signpost_scope = log_entry.signpost_scope or ''
@@ -304,13 +325,20 @@ def Main():
                 f'  "signpostID" : {log_entry.signpost_identifier:d},',
                 f'  "signpostScope" : "{signpost_scope:s}",'])
 
-          if creator_activity_identifier is None:
+          if (creator_activity_identifier is None and
+              log_entry.loss_count is None):
             # TODO: implement source support.
             lines.append('  "source" : null,')
 
+          lines.append(f'  "formatString" : "{format_string:s}",')
+
+          if log_entry.loss_count is not None:
+            lines.append((
+                f'  "lossEndMachContinuousTimestamp" : '
+                f'{log_entry.loss_end_mach_timestamp:d},'))
+
           lines.extend([
-              f'  "formatString" : "{format_string:s}",',
-              f'  "activityIdentifier" : {log_entry.activity_identifier:d},',
+              f'  "activityIdentifier" : {activity_identifier:d},',
               f'  "subsystem" : "{sub_system:s}",',
               f'  "category" : "{category:s}",',
               f'  "threadID" : {log_entry.thread_identifier:d},',
@@ -321,39 +349,53 @@ def Main():
 
             lines.append(f'  "signpostType" : "{signpost_type:s}",')
 
-          lines.extend([
-              '  "backtrace" : {',
-              '    "frames" : [',
-              '      {'])
+          if log_entry.backtrace_frames:
+            lines.extend([
+                '  "backtrace" : {',
+                '    "frames" : [',
+                '      {'])
 
-          for index, backtrace_frame in enumerate(log_entry.backtrace_frames):
-            if index > 0:
+            for index, backtrace_frame in enumerate(log_entry.backtrace_frames):
+              if index > 0:
+                lines.extend([
+                    '      },',
+                    '      {'])
+
+              image_identifier = str(backtrace_frame.image_identifier).upper()
+
               lines.extend([
-                  '      },',
-                  '      {'])
-
-            image_identifier = str(backtrace_frame.image_identifier).upper()
+                  f'        "imageOffset" : {backtrace_frame.image_offset:d},',
+                  f'        "imageUUID" : "{image_identifier:s}"'])
 
             lines.extend([
-                f'        "imageOffset" : {backtrace_frame.image_offset:d},',
-                f'        "imageUUID" : "{image_identifier:s}"'])
+                '      }',
+                '    ]',
+                '  },'])
 
           lines.extend([
-              '      }',
-              '    ]',
-              '  },',
               f'  "bootUUID" : "{boot_identifier:s}",',
               f'  "processImagePath" : "{process_image_path:s}",',
               f'  "timestamp" : "{date_time_string:s}",',
               f'  "senderImagePath" : "{sender_image_path:s}",'])
 
           if creator_activity_identifier is not None:
-            parent_per_activity_identifier[log_entry.activity_identifier] = (
+            parent_per_activity_identifier[activity_identifier] = (
                 creator_activity_identifier &
                 unified_logging_file.ACTIVITY_IDENTIFIER_BITMASK)
 
             lines.append(
                 f'  "creatorActivityID" : {creator_activity_identifier:d},')
+
+          elif log_entry.loss_count is not None:
+            start_time_string = GetDateTimeString(
+                log_entry.loss_start_timestamp)
+            end_time_string = GetDateTimeString(log_entry.loss_end_timestamp)
+
+            lines.extend([
+                (f'  "lossStartMachContinuousTimestamp" : '
+                 f'{log_entry.loss_start_mach_timestamp:d},'),
+                f'  "lossEndTimestamp" : "{end_time_string:s}",',
+                f'  "lossStartTimestamp" : "{start_time_string:s}",'])
 
           elif log_entry.signpost_identifier is not None:
             signpost_name = log_entry.signpost_name or ''
@@ -363,6 +405,7 @@ def Main():
           lines.append(f'  "machTimestamp" : {log_entry.mach_timestamp:d},')
 
           if (creator_activity_identifier is not None or
+              log_entry.loss_count is not None or
               log_entry.signpost_identifier is not None):
             lines.append(f'  "eventMessage" : "{event_message:s}",')
           else:
@@ -374,16 +417,15 @@ def Main():
             parent_activity_identifier = log_entry.parent_activity_identifier
           else:
             parent_activity_identifier = parent_per_activity_identifier.get(
-                log_entry.activity_identifier, None) or 0
+                activity_identifier, None) or 0
 
           if parent_activity_identifier == creator_activity_identifier:
             parent_activity_identifier = 0
 
           lines.extend([
               f'  "processImageUUID" : "{process_image_identifier:s}",',
-              f'  "processID" : {log_entry.process_identifier:d},',
-              (f'  "senderProgramCounter" : '
-               f'{log_entry.sender_program_counter:d},'),
+              f'  "processID" : {process_identifier:d},',
+              f'  "senderProgramCounter" : {sender_program_counter:d},',
               f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
               '  "timezoneName" : ""'])
 
@@ -411,8 +453,8 @@ def Main():
             f'{date_time_string:s}\t'
             f'0x{log_entry.thread_identifier:<8x}\t'
             f'{log_entry.event_type:11s}\t'
-            f'0x{log_entry.activity_identifier:<18x}\t'
-            f'{log_entry.process_identifier:<6d}\t'
+            f'0x{activity_identifier:<18x}\t'
+            f'{process_identifier:<6d}\t'
             f'{log_entry.ttl:<4d}\t'
             f'{event_message:s}'))
 

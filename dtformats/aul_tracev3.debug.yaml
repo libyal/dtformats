@@ -486,6 +486,18 @@ attributes:
   description: "Path"
   format: string
 ---
+data_type_map: tracev3_lz4_block_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: uncompressed_data_size
+  description: "Uncompressed data size"
+  format: decimal
+- name: compressed_data_size
+  description: "compressed data size"
+  format: decimal
+---
 data_type_map: tracev3_oversize_chunk
 attributes:
 - name: proc_id_upper
@@ -509,8 +521,8 @@ attributes:
 - name: data_reference
   description: "Data reference"
   format: hexadecimal_8digits
-- name: public_data_size
-  description: "Public data size"
+- name: data_size
+  description: "Data size"
   format: decimal
 - name: private_data_size
   description: "Private data size"
@@ -521,3 +533,96 @@ attributes:
 - name: number_of_data_items
   description: "Number of data items"
   format: decimal
+---
+data_type_map: tracev3_simpledump_chunk
+attributes:
+- name: proc_id_upper
+  description: "proc_id (upper 64-bit)"
+  format: decimal
+- name: proc_id_lower
+  description: "proc_id (lower 32-bit)"
+  format: decimal
+- name: ttl
+  description: "Time to live (TTL)"
+  format: decimal
+- name: log_type
+  description: "Log type"
+  format: custom:log_type
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_4digits
+- name: continuous_time
+  description: "Continous time"
+  format: decimal
+- name: thread_identifier
+  description: "Thread identifier"
+  format: decimal
+- name: load_address
+  description: "Load address"
+  format: hexadecimal_8digits
+- name: sender_identifier
+  description: "Sender identifier"
+  format: uuid
+- name: dsc_identifier
+  description: "DSC identifier"
+  format: uuid
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: sub_system_string_size
+  description: "Sub system string size"
+  format: decimal
+- name: message_string_size
+  description: "Message string size"
+  format: decimal
+- name: sub_system_string
+  description: "Sub system string"
+  format: string
+- name: message_string
+  description: "Message string"
+  format: string
+---
+data_type_map: tracev3_statedump_chunk
+attributes:
+- name: proc_id_upper
+  description: "proc_id (upper 64-bit)"
+  format: decimal
+- name: proc_id_lower
+  description: "proc_id (lower 32-bit)"
+  format: decimal
+- name: ttl
+  description: "Time to live (TTL)"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_2digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_4digits
+- name: continuous_time
+  description: "Continous time"
+  format: decimal
+- name: activity_identifier
+  description: "Activity identifier"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: uuid
+- name: data_type
+  description: "Data type"
+  format: decimal
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: unknown4
+  description: "Unknown4"
+  format: binary_data
+- name: unknown5
+  description: "Unknown5"
+  format: binary_data
+- name: name
+  description: "Name"
+  format: string
+- name: data
+  description: "Data"
+  format: binary_data
