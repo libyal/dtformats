@@ -234,6 +234,7 @@ def Main():
       date_time_string = GetDateTimeString(log_entry.timestamp)
       process_identifier = log_entry.process_identifier or 0
       sender_program_counter = log_entry.sender_program_counter or 0
+      thread_identifier = log_entry.thread_identifier or 0
 
       if options.format == 'json':
         boot_identifier = str(log_entry.boot_identifier).upper()
@@ -279,18 +280,16 @@ def Main():
         sender_image_path = sender_image_path.replace('/', '\\/')
 
         if event_type == 'timesyncEvent':
-          parent_activity_identifier = 0
-
           lines = [
               f'  "bootUUID" : "{boot_identifier:s}",',
               f'  "category" : "{category:s}",',
               f'  "processImageUUID" : "{process_image_identifier:s}",',
               f'  "eventType" : "{event_type:s}",',
-              f'  "threadID" : {log_entry.thread_identifier:d},',
+              f'  "threadID" : {thread_identifier:d},',
               f'  "timestamp" : "{date_time_string:s}",',
               f'  "activityIdentifier" : {activity_identifier:d},',
               f'  "senderProgramCounter" : {sender_program_counter:d},',
-              f'  "parentActivityIdentifier" : {parent_activity_identifier:d},',
+              '  "parentActivityIdentifier" : 0,',
               f'  "machTimestamp" : {log_entry.mach_timestamp:d},',
               f'  "processID" : {process_identifier:d},',
               f'  "subsystem" : "{sub_system:s}",',
@@ -341,7 +340,7 @@ def Main():
               f'  "activityIdentifier" : {activity_identifier:d},',
               f'  "subsystem" : "{sub_system:s}",',
               f'  "category" : "{category:s}",',
-              f'  "threadID" : {log_entry.thread_identifier:d},',
+              f'  "threadID" : {thread_identifier:d},',
               f'  "senderImageUUID" : "{sender_image_identifier:s}",'])
 
           if log_entry.signpost_identifier is not None:
@@ -451,7 +450,7 @@ def Main():
 
         print((
             f'{date_time_string:s}\t'
-            f'0x{log_entry.thread_identifier:<8x}\t'
+            f'0x{thread_identifier:<8x}\t'
             f'{log_entry.event_type:11s}\t'
             f'0x{activity_identifier:<18x}\t'
             f'{process_identifier:<6d}\t'

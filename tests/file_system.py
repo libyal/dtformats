@@ -63,8 +63,13 @@ class NativeFileSystemHelperTest(test_lib.BaseTestCase):
     path_segments = list(pathlib.Path(test_file_path).parts)
     path_segments.pop(0)
 
+    if platform.system() == 'Windows':
+      expected_path = test_file_path[2:]
+    else:
+      expected_path = test_file_path
+
     path = test_helper.JoinPath(path_segments)
-    self.assertEqual(path, test_file_path)
+    self.assertEqual(path, expected_path)
 
   def testListDirectory(self):
     """Tests the ListDirectory function."""

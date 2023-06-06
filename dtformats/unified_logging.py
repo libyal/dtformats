@@ -86,10 +86,23 @@ class ImageValues(object):
       text_offset (Optional[int]): the offset of the text.
     """
     super(ImageValues, self).__init__()
+    self._string_formatter = None
     self.identifier = identifier
     self.path = path
     self.string = string
     self.text_offset = text_offset
+
+  def GetStringFormatter(self):
+    """Retrieves a string formatter.
+
+    Returns:
+      StringFormatter: string formatter.
+    """
+    if not self._string_formatter:
+      self._string_formatter = StringFormatter()
+      self._string_formatter.ParseFormatString(self.string)
+
+    return self._string_formatter
 
 
 class BacktraceFrame(object):
@@ -113,7 +126,7 @@ class LogEntry(object):
   Attributes:
     activity_identifier (int): activity identifier.
     backtrace_frames (list[BacktraceFrame]): backtrace frames.
-    boot_identifier (str): boot identifier (UUID).
+    boot_identifier (uuid.UUID): boot identifier.
     category (str): (sub system) category.
     creator_activity_identifier (int): creator activity identifier.
     event_message (str): event message.
@@ -132,9 +145,9 @@ class LogEntry(object):
     message_type (str): message type.
     parent_activity_identifier (int): parent activity identifier.
     process_identifier (int): process identifier (PID).
-    process_image_identifier (str): process image identifier, contains an UUID.
+    process_image_identifier (uuid.UUID): process image identifier.
     process_image_path (str): path of the process image.
-    sender_image_identifier (str): (sender) image identifier, contains an UUID.
+    sender_image_identifier (uuid.UUID): (sender) image identifier.
     sender_image_path (str): path of the (sender) image.
     sender_program_counter (int): (sender) program counter.
     signpost_identifier (int): signpost identifier.
@@ -2166,7 +2179,7 @@ class TraceV3File(data_format.BinaryDataFile):
   _FORMAT_STRING_DECODER_NAMES = frozenset(_FORMAT_STRING_DECODERS.keys())
 
   _MAXIMUM_CACHED_FILES = 64
-  _MAXIMUM_CACHED_FORMAT_STRINGS = 1024
+  _MAXIMUM_CACHED_IMAGE_VALUES = 8192
 
   _NANOSECONDS_PER_SECOND = 1000000000
 
@@ -2185,6 +2198,7 @@ class TraceV3File(data_format.BinaryDataFile):
         output_writer=output_writer)
     self._boot_identifier = None
     self._cached_dsc_files = collections.OrderedDict()
+    self._cached_image_values = collections.OrderedDict()
     self._cached_uuidtext_files = collections.OrderedDict()
     self._catalog = None
     self._catalog_process_information_entries = {}
@@ -2677,48 +2691,59 @@ class TraceV3File(data_format.BinaryDataFile):
 
     uuid_string = strings_file_identifier.hex.upper()
 
-    large_offset_data = getattr(
-        tracepoint_data_object, 'large_offset_data', None) or 0
+    lookup_key = f'{uuid_string:s}:0x{string_reference:x}'
+    image_values = self._cached_image_values.get(lookup_key, None)
+    if not image_values:
+      large_offset_data = getattr(
+          tracepoint_data_object, 'large_offset_data', None) or 0
 
-    if strings_file_type in self._UUIDTEXT_STRINGS_FILE_TYPES:
-      image_values = ImageValues(
-          identifier=strings_file_identifier, text_offset=image_text_offset)
-
-      uuidtext_file = self._GetUUIDTextFile(uuid_string)
-      if uuidtext_file:
-        image_values.path = uuidtext_file.GetImagePath()
-        if is_dynamic:
-          image_values.string = '%s'
-        else:
-          image_values.string = uuidtext_file.GetString(string_reference)
-          if image_values.string is None:
-            # ~~> Invalid bounds INTEGER for UUID
-            image_values.text_offset = large_offset_data << 31
-
-    else:
-      dsc_file = self._GetDSCFile(uuid_string)
-      if dsc_file:
-        image_values = dsc_file.GetImageValues(string_reference, is_dynamic)
-      else:
+      if strings_file_type in self._UUIDTEXT_STRINGS_FILE_TYPES:
         image_values = ImageValues(
             identifier=strings_file_identifier, text_offset=image_text_offset)
 
-      large_shared_cache_data = getattr(
-          tracepoint_data_object, 'large_shared_cache_data', None)
+        uuidtext_file = self._GetUUIDTextFile(uuid_string)
+        if uuidtext_file:
+          image_values.path = uuidtext_file.GetImagePath()
+          if is_dynamic:
+            image_values.string = '%s'
+          else:
+            image_values.string = uuidtext_file.GetString(string_reference)
+            if image_values.string is None:
+              # ~~> Invalid bounds INTEGER for UUID
+              image_values.text_offset = large_offset_data << 31
 
-      if large_offset_data and large_shared_cache_data:
-        calculated_large_offset_data = large_shared_cache_data >> 1
-        if large_offset_data != calculated_large_offset_data:
-          if self._debug:
-            # "<Invalid shared cache code pointer offset>"
-            self._DebugPrintText((
-                f'Large offset data mismatch stored: ('
-                f'0x{large_offset_data:04x}, calculated: '
-                f'0x{calculated_large_offset_data:04x})\n'))
+      else:
+        dsc_file = self._GetDSCFile(uuid_string)
+        if dsc_file:
+          image_values = dsc_file.GetImageValues(string_reference, is_dynamic)
 
-          image_values.identifier = strings_file_identifier
-          image_values.text_offset = 0
-          image_values.path = ''
+        if not image_values:
+          image_values = ImageValues(
+              identifier=strings_file_identifier, text_offset=image_text_offset)
+
+        large_shared_cache_data = getattr(
+            tracepoint_data_object, 'large_shared_cache_data', None)
+
+        if large_offset_data and large_shared_cache_data:
+          calculated_large_offset_data = large_shared_cache_data >> 1
+          if large_offset_data != calculated_large_offset_data:
+            if self._debug:
+              # "<Invalid shared cache code pointer offset>"
+              self._DebugPrintText((
+                  f'Large offset data mismatch stored: ('
+                  f'0x{large_offset_data:04x}, calculated: '
+                  f'0x{calculated_large_offset_data:04x})\n'))
+
+            image_values.identifier = strings_file_identifier
+            image_values.text_offset = 0
+            image_values.path = ''
+
+      if len(self._cached_image_values) >= self._MAXIMUM_CACHED_IMAGE_VALUES:
+        self._cached_image_values.popitem(last=True)
+
+      self._cached_image_values[lookup_key] = image_values
+
+    self._cached_image_values.move_to_end(lookup_key, last=False)
 
     if self._debug:
       self._DebugPrintValue('Strings file identifier', strings_file_identifier)
@@ -3137,7 +3162,7 @@ class TraceV3File(data_format.BinaryDataFile):
         oversize_chunks[oversize_chunk.data_reference] = oversize_chunk
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_STATEDUMP:
-        self._ReadStateDumpChunkData(
+        yield from self._ReadStateDumpChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
             data_offset)
 
@@ -3484,7 +3509,6 @@ class TraceV3File(data_format.BinaryDataFile):
           firehose_tracepoint.record_type, None)
       log_entry.mach_timestamp = continuous_time
       log_entry.process_image_identifier = process_image_identifier
-      log_entry.process_image_path = process_image_path
       log_entry.thread_identifier = firehose_tracepoint.thread_identifier
       log_entry.timestamp = self._GetTimestamp(continuous_time)
       log_entry.trace_identifier = self._GetTraceIdentifier(firehose_tracepoint)
@@ -3523,8 +3547,7 @@ class TraceV3File(data_format.BinaryDataFile):
             process_information_entry, firehose_tracepoint,
             tracepoint_data_object, string_reference, is_dynamic)
 
-        string_formatter = StringFormatter()
-        string_formatter.ParseFormatString(image_values.string)
+        string_formatter = image_values.GetStringFormatter()
 
         data_reference = getattr(tracepoint_data_object, 'data_reference', None)
         if not data_reference:
@@ -3532,13 +3555,13 @@ class TraceV3File(data_format.BinaryDataFile):
           values_data = firehose_tracepoint.data[values_data_offset:]
         else:
           oversize_chunk = oversize_chunks.get(data_reference, None)
-          if not oversize_chunk:
-            raise errors.ParseError((
-                f'Missing Oversize chunk for data reference: '
-                f'0x{data_reference:08x}'))
-
-          data_items = oversize_chunk.data_items
-          values_data = oversize_chunk.values_data
+          if oversize_chunk:
+            data_items = oversize_chunk.data_items
+            values_data = oversize_chunk.values_data
+          else:
+            # Seen in certain tracev3 files that oversize chunks can be missing.
+            data_items = None
+            values_data = None
 
         values = []
         if data_items:
@@ -3577,6 +3600,7 @@ class TraceV3File(data_format.BinaryDataFile):
         log_entry.format_string = image_values.string
         log_entry.process_identifier = getattr(
             process_information_entry, 'process_identifier', None) or 0
+        log_entry.process_image_path = process_image_path
         log_entry.sender_image_identifier = image_values.identifier
         log_entry.sender_image_path = image_values.path
         log_entry.sender_program_counter = program_counter or 0
@@ -4004,7 +4028,7 @@ class TraceV3File(data_format.BinaryDataFile):
             f'catalog'))
 
     backtrace_frame = BacktraceFrame()
-    backtrace_frame.image_identifier = simpledump_chunk.sender_identifier
+    backtrace_frame.image_identifier = simpledump_chunk.sender_image_identifier
     backtrace_frame.image_offset = simpledump_chunk.load_address
 
     process_image_identifier, process_image_path = (
@@ -4023,7 +4047,7 @@ class TraceV3File(data_format.BinaryDataFile):
     log_entry.process_image_identifier = process_image_identifier
     log_entry.process_image_path = process_image_path
     log_entry.sub_system = simpledump_chunk.sub_system_string
-    log_entry.sender_image_identifier = simpledump_chunk.sender_identifier
+    log_entry.sender_image_identifier = simpledump_chunk.sender_image_identifier
     # TODO: implement
     log_entry.sender_image_path = None
     log_entry.sender_program_counter = simpledump_chunk.load_address
@@ -4042,8 +4066,8 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset (int): offset of the StateDump chunk relative to the start
           of the chunk set.
 
-    Returns:
-      statedump_chunk: a StateDump chunk.
+    Yields:
+      LogEntry: a log entry.
 
     Raises:
       ParseError: if the chunk cannot be read.
@@ -4064,7 +4088,45 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintData(
           'Trailing StateDump chunk data', chunk_data[context.byte_size:])
 
-    return statedump_chunk
+    if not self._catalog:
+      process_information_entry = None
+    else:
+      proc_id = (f'{statedump_chunk.proc_id_upper:d}@'
+                 f'{statedump_chunk.proc_id_lower:d}')
+      process_information_entry = (
+          self._catalog_process_information_entries.get(proc_id, None))
+      if not process_information_entry:
+        raise errors.ParseError((
+            f'Unable to retrieve process information entry: {proc_id:s} from '
+            f'catalog'))
+
+    activity_identifier = statedump_chunk.activity_identifier or 0
+
+    backtrace_frame = BacktraceFrame()
+    backtrace_frame.image_identifier = statedump_chunk.sender_image_identifier
+    backtrace_frame.image_offset = 0
+
+    process_image_identifier, process_image_path = (
+        self._GetProcessImageValues(process_information_entry))
+
+    log_entry = LogEntry()
+    log_entry.activity_identifier = (
+        activity_identifier & self.ACTIVITY_IDENTIFIER_BITMASK)
+    log_entry.backtrace_frames = [backtrace_frame]
+    log_entry.boot_identifier = self._boot_identifier
+    # TODO: implement
+    log_entry.event_message = None
+    log_entry.event_type = 'stateEvent'
+    log_entry.mach_timestamp = statedump_chunk.continuous_time
+    log_entry.process_identifier = getattr(
+        process_information_entry, 'process_identifier', None) or 0
+    log_entry.process_image_identifier = process_image_identifier
+    log_entry.process_image_path = process_image_path
+    log_entry.sender_image_identifier = statedump_chunk.sender_image_identifier
+    log_entry.timestamp = self._GetTimestamp(statedump_chunk.continuous_time)
+    log_entry.trace_identifier = 0
+
+    yield log_entry
 
   def _ReadTimesyncRecords(self, boot_identifier):
     """Reads the timesync records corresponding to the boot identifier.
@@ -4149,11 +4211,13 @@ class TraceV3File(data_format.BinaryDataFile):
     lower_last_path_segment = path_segments[-1].lower()
     if not lower_last_path_segment.endswith('.logarchive'):
       path_segments.pop(-1)
-      lower_last_path_segment = path_segments[-1].lower()
+      if path_segments:
+        lower_last_path_segment = path_segments[-1].lower()
 
     if not lower_last_path_segment.endswith('.logarchive'):
       path_segments.pop(-1)
-      lower_last_path_segment = path_segments[-1].lower()
+      if path_segments:
+        lower_last_path_segment = path_segments[-1].lower()
 
     if lower_last_path_segment.endswith('.logarchive'):
       path_segments.append('dsc')
@@ -4174,9 +4238,14 @@ class TraceV3File(data_format.BinaryDataFile):
     # the tracev3 file.
     # * in ../timesync/ for *.logarchive/logdata.LiveData.tracev3
     # * in ../../timesync/ for .logarchive/*/*.tracev3
-    # * in ../../timesync/ for /private/var/db/diagnostics/*/*.tracev3
+    # * in ../timesync/ for /private/var/db/diagnostics/*/*.tracev3
     path_segments.append('timesync')
     timesync_path = self._file_system_helper.JoinPath(path_segments)
+    if not self._file_system_helper.CheckFileExistsByPath(timesync_path):
+      path_segments.insert(-1, 'diagnostics')
+
+      timesync_path = self._file_system_helper.JoinPath(path_segments)
+
     if self._file_system_helper.CheckFileExistsByPath(timesync_path):
       self._timesync_path = timesync_path
 
@@ -4227,14 +4296,10 @@ class TraceV3File(data_format.BinaryDataFile):
       boot_identifier_string = str(self._boot_identifier).upper()
 
       log_entry = LogEntry()
-      log_entry.activity_identifier = 0
       log_entry.boot_identifier = self._boot_identifier
       log_entry.event_message = f'=== system boot: {boot_identifier_string:s}'
       log_entry.event_type = 'timesyncEvent'
       log_entry.mach_timestamp = 0
-      log_entry.parent_activity_identifier = 0
-      log_entry.process_identifier = 0
-      log_entry.sender_program_counter = 0
       log_entry.thread_identifier = 0
       log_entry.timestamp = self._timesync_boot_record.timestamp
       log_entry.trace_identifier = 0
@@ -4249,14 +4314,11 @@ class TraceV3File(data_format.BinaryDataFile):
       boot_identifier_string = str(self._boot_identifier).upper()
 
       log_entry = LogEntry()
-      log_entry.activity_identifier = 0
       log_entry.boot_identifier = self._boot_identifier
       log_entry.event_message = '=== system wallclock time adjusted'
       log_entry.event_type = 'timesyncEvent'
       log_entry.mach_timestamp = record.kernel_time
       log_entry.parent_activity_identifier = 0
-      log_entry.process_identifier = 0
-      log_entry.sender_program_counter = 0
       log_entry.thread_identifier = 0
       log_entry.timestamp = record.timestamp
       log_entry.trace_identifier = 0

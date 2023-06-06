@@ -1467,25 +1467,29 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     output_writer = test_lib.TestOutputWriter()
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
-    statedump_chunk = test_file._ReadStateDumpChunkData(
-        self._STATEDUMP_CHUNK_DATA, len(self._STATEDUMP_CHUNK_DATA), 0)
+    log_entries = list(test_file._ReadStateDumpChunkData(
+        self._STATEDUMP_CHUNK_DATA, len(self._STATEDUMP_CHUNK_DATA), 0))
 
-    self.assertIsNotNone(statedump_chunk)
-    self.assertEqual(statedump_chunk.proc_id_upper, 292241)
-    self.assertEqual(statedump_chunk.proc_id_lower, 875466)
-    self.assertEqual(statedump_chunk.ttl, 14)
-    self.assertEqual(statedump_chunk.unknown1, 0)
-    self.assertEqual(statedump_chunk.unknown2, 0)
-    self.assertEqual(statedump_chunk.continuous_time, 100662123537283)
-    self.assertEqual(statedump_chunk.activity_identifier, 0x8000000000ead229)
-    self.assertEqual(statedump_chunk.unknown3, uuid.UUID(
+    self.assertEqual(len(log_entries), 1)
+
+    log_entry = log_entries[0]
+    self.assertEqual(log_entry.activity_identifier, 15389225)
+    self.assertEqual(len(log_entry.backtrace_frames), 1)
+    # Not set due to test without catalog.
+    self.assertIsNone(log_entry.boot_identifier)
+    self.assertIsNone(log_entry.event_message)
+    self.assertEqual(log_entry.event_type, 'stateEvent')
+    self.assertEqual(log_entry.mach_timestamp, 100662123537283)
+    # Not set due to test without catalog.
+    self.assertEqual(log_entry.process_identifier, 0)
+    self.assertIsNone(log_entry.process_image_identifier)
+    self.assertIsNone(log_entry.process_image_path)
+    self.assertEqual(log_entry.sender_image_identifier, uuid.UUID(
         '081b5e9e-59ea-39cd-83c9-eedb68a84076'))
-    self.assertEqual(statedump_chunk.data_type, 1)
-    self.assertEqual(statedump_chunk.data_size, 42)
-    self.assertEqual(statedump_chunk.unknown4, b'\x00' * 64)
-    self.assertEqual(statedump_chunk.unknown5, b'\x00' * 64)
-    self.assertEqual(statedump_chunk.name, 'SpringBoard - Combined List')
-    self.assertEqual(statedump_chunk.data, self._STATEDUMP_CHUNK_DATA[248:])
+    self.assertIsNone(log_entry.sender_image_path)
+    # Not converted due to test without catalog.
+    self.assertEqual(log_entry.timestamp, 100662123537283)
+    self.assertEqual(log_entry.trace_identifier, 0)
 
   def testReadFileObject(self):
     """Tests the ReadFileObject function."""

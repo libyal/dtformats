@@ -560,8 +560,8 @@ attributes:
 - name: load_address
   description: "Load address"
   format: hexadecimal_8digits
-- name: sender_identifier
-  description: "Sender identifier"
+- name: sender_image_identifier
+  description: "Sender image identifier"
   format: uuid
 - name: dsc_identifier
   description: "DSC identifier"
@@ -605,14 +605,14 @@ attributes:
 - name: activity_identifier
   description: "Activity identifier"
   format: hexadecimal_8digits
-- name: unknown3
-  description: "Unknown3"
+- name: sender_image_identifier
+  description: "Sender image identifier"
   format: uuid
-- name: data_type
-  description: "Data type"
+- name: state_data_type
+  description: "State data type"
   format: decimal
-- name: data_size
-  description: "Data size"
+- name: state_data_size
+  description: "State data size"
   format: decimal
 - name: unknown4
   description: "Unknown4"
@@ -620,9 +620,9 @@ attributes:
 - name: unknown5
   description: "Unknown5"
   format: binary_data
-- name: name
-  description: "Name"
+- name: title
+  description: "Title"
   format: string
-- name: data
-  description: "Data"
+- name: state_data
+  description: "State data"
   format: binary_data
