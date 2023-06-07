@@ -2834,12 +2834,12 @@ class TraceV3File(data_format.BinaryDataFile):
     timesync_record = self._GetTimesyncRecord(continuous_time)
     if timesync_record:
       continuous_time -= timesync_record.kernel_time
-      timestamp = timesync_record.timestamp + (
-          continuous_time * self._timesync_timebase)
+      timestamp = int(timesync_record.timestamp + (
+          continuous_time * self._timesync_timebase))
 
     elif self._timesync_boot_record:
-      timestamp = self._timesync_boot_record.timestamp + (
-          continuous_time * self._timesync_timebase)
+      timestamp = int(self._timesync_boot_record.timestamp + (
+          continuous_time * self._timesync_timebase))
 
     else:
       timestamp = self._header_timestamp + (
@@ -4164,7 +4164,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if self._timesync_boot_record:
       self._timesync_timebase = (
-          self._timesync_boot_record.timebase_numerator //
+          self._timesync_boot_record.timebase_numerator /
           self._timesync_boot_record.timebase_denominator)
 
       # Sort the timesync records starting with the largest kernel time.
