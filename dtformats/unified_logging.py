@@ -2204,13 +2204,13 @@ class TraceV3File(data_format.BinaryDataFile):
     self._catalog_process_information_entries = {}
     self._catalog_strings_map = {}
     self._chunk_index = 0
-    self._header_timebase = 1
+    self._header_timebase = 1.0
     self._header_timestamp = 0
     self._sorted_timesync_sync_records = []
     self._timesync_boot_record = None
     self._timesync_path = None
     self._timesync_sync_records = []
-    self._timesync_timebase = 1
+    self._timesync_timebase = 1.0
     self._uuidtext_path = None
 
   def _BuildCatalogProcessInformationEntries(self, catalog):
@@ -2834,15 +2834,15 @@ class TraceV3File(data_format.BinaryDataFile):
     timesync_record = self._GetTimesyncRecord(continuous_time)
     if timesync_record:
       continuous_time -= timesync_record.kernel_time
-      timestamp = timesync_record.timestamp + (
+      timestamp = timesync_record.timestamp + int(
           continuous_time * self._timesync_timebase)
 
     elif self._timesync_boot_record:
-      timestamp = self._timesync_boot_record.timestamp + (
+      timestamp = self._timesync_boot_record.timestamp + int(
           continuous_time * self._timesync_timebase)
 
     else:
-      timestamp = self._header_timestamp + (
+      timestamp = self._header_timestamp + int(
           continuous_time * self._header_timebase)
 
     if self._debug:
@@ -4177,7 +4177,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if self._timesync_boot_record:
       self._timesync_timebase = (
-          self._timesync_boot_record.timebase_numerator //
+          self._timesync_boot_record.timebase_numerator /
           self._timesync_boot_record.timebase_denominator)
 
       # Sort the timesync records starting with the largest kernel time.
@@ -4286,7 +4286,7 @@ class TraceV3File(data_format.BinaryDataFile):
     self._header_timestamp = (
         header_chunk.timestamp * self._NANOSECONDS_PER_SECOND)
     self._header_timebase = (
-        header_chunk.timebase_numerator // header_chunk.timebase_denominator)
+        header_chunk.timebase_numerator / header_chunk.timebase_denominator)
 
     self._ReadTimesyncRecords(self._boot_identifier)
 

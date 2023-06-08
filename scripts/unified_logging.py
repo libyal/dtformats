@@ -448,14 +448,12 @@ def Main():
         event_message_parts.append(log_entry.event_message)
         event_message = ' '.join(event_message_parts)
 
+        ttl = log_entry.ttl or 0
+
         print((
-            f'{date_time_string:s}\t'
-            f'0x{thread_identifier:<8x}\t'
-            f'{log_entry.event_type:11s}\t'
-            f'0x{activity_identifier:<18x}\t'
-            f'{process_identifier:<6d}\t'
-            f'{log_entry.ttl:<4d}\t'
-            f'{event_message:s}'))
+            f'{date_time_string:s}\t0x{thread_identifier:<8x}\t'
+            f'{log_entry.event_type:11s}\t0x{activity_identifier:<18x}\t'
+            f'{process_identifier:<6d}\t{ttl:<4d}\t{event_message:s}'))
 
     if options.format == 'json':
       print('}]', end='')
