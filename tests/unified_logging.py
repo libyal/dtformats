@@ -1477,7 +1477,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     self.assertEqual(len(log_entry.backtrace_frames), 1)
     # Not set due to test without catalog.
     self.assertIsNone(log_entry.boot_identifier)
-    self.assertIsNone(log_entry.event_message)
+    self.assertEqual(log_entry.event_message, '')
     self.assertEqual(log_entry.event_type, 'stateEvent')
     self.assertEqual(log_entry.mach_timestamp, 100662123537283)
     # Not set due to test without catalog.

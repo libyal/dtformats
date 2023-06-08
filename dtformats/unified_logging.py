@@ -4100,6 +4100,20 @@ class TraceV3File(data_format.BinaryDataFile):
             f'Unable to retrieve process information entry: {proc_id:s} from '
             f'catalog'))
 
+    event_message = ''
+    if statedump_chunk.state_data_type == 0x03:
+      library = statedump_chunk.library.decode('ascii').rstrip('\x00')
+      decoder_type = statedump_chunk.decoder_type.decode('ascii').rstrip('\x00')
+
+      decoder_name = f'{library:s}:{decoder_type:s}'
+      decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_name, None)
+      if not decoder_class:
+        value = f'<decode: unsupported decoder: {decoder_name:s}>'
+      else:
+        value = decoder_class.FormatValue(statedump_chunk.state_data)
+
+      event_message = f'{statedump_chunk.title:s}\n{value:s}'
+
     activity_identifier = statedump_chunk.activity_identifier or 0
 
     backtrace_frame = BacktraceFrame()
@@ -4114,8 +4128,7 @@ class TraceV3File(data_format.BinaryDataFile):
         activity_identifier & self.ACTIVITY_IDENTIFIER_BITMASK)
     log_entry.backtrace_frames = [backtrace_frame]
     log_entry.boot_identifier = self._boot_identifier
-    # TODO: implement
-    log_entry.event_message = None
+    log_entry.event_message = event_message
     log_entry.event_type = 'stateEvent'
     log_entry.mach_timestamp = statedump_chunk.continuous_time
     log_entry.process_identifier = getattr(

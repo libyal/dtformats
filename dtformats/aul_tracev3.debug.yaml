@@ -614,11 +614,11 @@ attributes:
 - name: state_data_size
   description: "State data size"
   format: decimal
-- name: unknown4
-  description: "Unknown4"
+- name: library
+  description: "Library"
   format: binary_data
-- name: unknown5
-  description: "Unknown5"
+- name: decoder_type
+  description: "Decocder type"
   format: binary_data
 - name: title
   description: "Title"

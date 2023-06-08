@@ -1220,6 +1220,7 @@ Other observerd value type decoders are:
 | "location:_CLLocationManagerStateTrackerState" | | Formatted as a <<locationd_core_location_location_manager_state_tracker_state,locationd Core Location location manager (CLLocationManager) state tracker state>>
 | "location:CLClientAuthorizationStatus" | | Formatted as a <<locationd_core_location_client_authorization_status,locationd Core Location client authorization status>>
 | "location:CLDaemonStatus_Type::Reachability" | | Formatted as a <<locationd_core_location_daemon_reachability_status_types,locationd Core Location daemon reachability status types>>
+| "location:CLDaemonStatusStateTracker" | | Formatted as a <<locationd_core_location_daemon_tracker_state,locationd Core Location daemon tracker state>>
 | "location:CLSubHarvesterIdentifier" | | Formatted as a <<locationd_core_location_sub_harvester_identifier,locationd Core Location sub harvester identifier>>
 | "location:escape_only" | |
 | "location:IOMessage" | | Formatted as a <<locationd_io_message,locationd IO message>>
@@ -1790,6 +1791,59 @@ Contains an UTF-8 formatted string with an end-of-string character
 | 56 | | Reachability Unachievable
 |===
 
+=== [[locationd_core_location_daemon_tracker_state]]locationd Core Location daemon tracker state
+
+The locationd Core Location Daemon status tracker state (CLDaemonStatusStateTracker)
+is 36 bytes of size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Level +
+Contains a floating-point value
+| 8 | 1 | | Is charged +
+Contains a boolean value where false if 0 or true otherwise
+| 9 | 1 | | Is connected +
+Contains a boolean value where false if 0 or true otherwise
+| 10 | 4 | | Charger type
+| 14 | 1 | | Was connected +
+Contains a boolean value where false if 0 or true otherwise
+| 15 | 9 | | [yellow-background]*Unknown*
+| 24 | 4 | | Reachability
+| 28 | 4 | | Thermal level +
+Contains a signed integer
+| 32 | 1 | | Airplane mode (enabled) +
+Contains a boolean value where false if 0 or true otherwise
+| 33 | 1 | | Battery saver mode (enabled) +
+Contains a boolean value where false if 0 or true otherwise
+| 34 | 1 | | Push service +
+Contains a boolean value where false if 0 or true otherwise
+| 35 | 1 | | Restricted mode (enabled) +
+Contains a boolean value where false if 0 or true otherwise
+|===
+
+The value is formatted as:
+
+....
+{"thermalLevel":-1,"reachability":"kReachabilityLarge","airplaneMode":false,"batteryData":{"wasConnected":false,"charged":false,"level":-1,"connected":false,"chargerType":"kChargerTypeUnknown"},"restrictedMode":false,"batterySaverModeEnabled":false}"
+....
+
+Charger type values:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | kChargerTypeUnknown |
+|===
+
+Reachability values:
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 2 | kReachabilityLarge |
+|===
+
 === [[locationd_core_location_client_manager_state_tracker_state]]locationd Core Location client manager (CLClientManager) state tracker state
 
 The locationd Core Location client manager (CLClientManager) state tracker
@@ -1814,7 +1868,7 @@ The value is formatted as:
 
 === [[locationd_core_location_location_manager_state_tracker_state]]locationd Core Location location manager (CLLocationManager) state tracker state
 
-The locationd ore Location location manager (CLLocationManager) state tracker
+The locationd Core Location location manager (CLLocationManager) state tracker
 state is 64 or 72 bytes of size and consists of:
 
 [cols="1,1,1,5",options="header"]
