@@ -135,11 +135,11 @@ class LogEntry(object):
     loss_count (int): number of message lost.
     loss_end_mach_timestamp (int): Mach timestamp of the end of the message
         loss.
-    loss_end_timestamp (int): timestamp of the end of the message loss, in 
+    loss_end_timestamp (int): timestamp of the end of the message loss, in
         number of nanoseconds since January 1, 1970 00:00:00.000000000
     loss_start_mach_timestamp (int): Mach timestamp of the start of the message
         loss.
-    loss_start_timestamp (int): timestamp of the start of the message loss, in 
+    loss_start_timestamp (int): timestamp of the start of the message loss, in
         number of nanoseconds since January 1, 1970 00:00:00.000000000
     mach_timestamp (int): Mach timestamp.
     message_type (str): message type.
@@ -1831,7 +1831,7 @@ class DSCFile(data_format.BinaryDataFile):
       ImageValues: image value or None if not available.
 
     Raises:
-      ParseError: if the image values string cannot be read.
+      ParseError: if the image values cannot be read.
     """
     for dsc_range in self.ranges:
       if is_dynamic:
