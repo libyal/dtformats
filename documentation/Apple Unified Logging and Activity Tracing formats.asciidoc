@@ -802,7 +802,7 @@ Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Fire
 | 0x40 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x41 | | [yellow-background]*Unknown (private value)* +
-Contains a 32-bit value, formatted as "<private>"
+Consists of a <<tracev3_firehose_tracepoint_data_time_with_private_data_range,Firehose tracepoint data item with private data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 | 0x42 | | [yellow-background]*Unknown (string)* +
 Consists of a <<tracev3_firehose_tracepoint_data_time_with_value_data_range,Firehose tracepoint data item with value data range>> where the value data contains an UTF-8 encoded string with an optional end-of-string character.
 3+|
@@ -931,7 +931,13 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 | 22 | 2 | | Data size
 4+| _Start of data_
 | ... | 4 | | UUID entry load address (lower 32-bit)
-| ... | 1 | | [yellow-background]*Unknown*
+4+| _If data size > 5_
+| ... | ... | | Values data
+| ... | number of values | | Value data size +
+Seen: 4 and 8
+4+| _Common_
+| ... | 1 | | Number of values +
+Seen: 0 and 1
 4+| _End of data_
 | ... | ... | | 64-bit alignment padding
 |===
@@ -1215,6 +1221,7 @@ Other observerd value type decoders are:
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
+| "bluetooth:OI_STATUS" | | No additional formatting
 | "errno" | | Formatted as a system error, for example "[32: Broken pipe]"
 | "location:_CLClientManagerStateTrackerState" | | Formatted as a <<locationd_core_location_client_manager_state_tracker_state,locationd Core Location client manager (CLClientManager) state tracker state>>
 | "location:_CLLocationManagerStateTrackerState" | | Formatted as a <<locationd_core_location_location_manager_state_tracker_state,locationd Core Location location manager (CLLocationManager) state tracker state>>
@@ -1222,7 +1229,7 @@ Other observerd value type decoders are:
 | "location:CLDaemonStatus_Type::Reachability" | | Formatted as a <<locationd_core_location_daemon_reachability_status_types,locationd Core Location daemon reachability status types>>
 | "location:CLDaemonStatusStateTracker" | | Formatted as a <<locationd_core_location_daemon_tracker_state,locationd Core Location daemon tracker state>>
 | "location:CLSubHarvesterIdentifier" | | Formatted as a <<locationd_core_location_sub_harvester_identifier,locationd Core Location sub harvester identifier>>
-| "location:escape_only" | |
+| "location:escape_only" | | Formatter that escapes specific characters such as: "/"
 | "location:IOMessage" | | Formatted as a <<locationd_io_message,locationd IO message>>
 | "location:SqliteResult" | | Formatted as a <<locationd_sqlite_result,locationd SQLite result>>
 | "mask.hash" | | Formatted as a <<mask_hash,Mask hash>>
@@ -1341,9 +1348,46 @@ The types are defined as:
 
 ===== Notes
 
-For a format string like "%25s:%-5d" the string is also right aligned.
+For a format string like "%25s:%-5d" the string and the integer are right
+aligned.
 
-For format string:
+....
+%25s:%-5d Destroying SandboxHelper connection
+....
+
+Formatted as:
+
+....
+  SandboxHelperClient.cpp:53    Destroying SandboxHelper connection
+....
+
+This is not the case if there is a "[" in front of the string:
+
+....
+[%s:%-5d %.*s:%p] constructed
+....
+
+Formatted as:
+
+....
+[Detector.cpp:20    rtaid::Detector:0x7f9b67f255e0] constructed
+....
+
+
+For a format string like "%6.6d" 0 padding is used.
+
+....
+Post "com.apple.system.config.network_change" (%s: %ld.%6.6d: 0x%x)
+....
+
+Formatted as:
+
+....
+Post "com.apple.system.config.network_change" (delayed: 0.000001: 0x2)
+....
+
+
+For format string with a "Name:" custom formatter:
 
 ....
  enableTelemetry=YES ResultCount=%{public, signpost.telemetry:number1, Name:ResultCount}ld DataSize=%{public, signpost.telemetry:number2, Name:DataSize}ld
@@ -1356,6 +1400,25 @@ Seen:
 ....
 
 Is "Name:NAME" used for some kind of formatting override?
+
+
+For a format string like "%{public}-22s" space padding is used:
+
+....
+%{public}-22s: OFF
+....
+
+Formatted as:
+
+....
+SFIManagedFocal       : OFF
+....
+
+
+Observed behavior:
+
+If the number of values stored in the data items > number of formatters
+the values are formatted as "<decode: missing data>".
 
 === Oversize chunk
 
@@ -1761,11 +1824,79 @@ The UUID text (uuidtext) entry descriptor is 8 bytes of size and consists of:
 Contains an UTF-8 formatted string with an end-of-string character
 |===
 
+== [[converting_continuous_time]]Converting a Mach continuous in to wall clock time
+
+The Apple Unified Logging and Activity Tracing formats contain both Mach
+continuous time and POSIX timestamps. The exact method of converting between
+both is undocumented but the following behavior has been observed:
+
+=== Without corresponding timesync database file
+
+If there is no timesync database corresponding to the boot identifier:
+
+* use the timebase numerator and timebase denominator of the .tracev3 file to determine the timebase:
+
+....
+timebase = numerator / denominator
+....
+
+* calculate the wall clock time from the continuous time
+
+....
+wall clock time = header wall clock time + (continuous time * timebase)
+....
+
+[yellow-background]*TODO it is currently unknown if a floor or ceil function is
+used to convert the timebase corrected continuous time to an integer*
+
+=== With corresponding timesync database file
+
+If there is a timesync database corresponding to the boot identifier:
+
+* use the timebase numerator and timebase denominator of the corresponding timesync boot record to determine the timebase:
+
+....
+timebase = numerator / denominator
+....
+
+* find the timesync sync record that corresponds to the continuous time, if none applicable the timesync boot record is used
+
+* determine the base continous time from the record, for timesync boot record the base is 0
+
+* calculate the wall clock time from the continuous time
+
+....
+wall clock time = record wall clock time + ((continuous time - base continuous time) * timebase)
+....
+
+[yellow-background]*TODO it is currently unknown if a floor or ceil function is
+used to convert the timebase corrected continuous time to an integer*
+
 == Value type decoders
 
 === [[locationd_core_location_client_authorization_status]]locationd Core Location client authorization status
 
-[yellow-background]*TODO describe*
+The locationd Core Location client authorization status value is 8 bytes of size
+and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Authorization status
+|===
+
+The value is formatted as:
+
+....
+%s
+....
+
+Where %s contains one of the following descriptions based on the value for
+example:
+
+....
+Denied
+....
 
 [cols="1,1,5",options="header"]
 |===
@@ -2455,7 +2586,7 @@ Where membership data is type indicator dependent:
 |===
 | Type indicator | Membership data
 | 0x23 | user identifier (UID)
-Contains a 32-bit integer
+Contains a 32-bit signed integer
 | 0x24 | Username +
 Contains an UTF-8 encoded string with end-of-string character
 | |
@@ -2466,12 +2597,12 @@ Contains an UTF-8 encoded string with end-of-string character
 Contains an UTF-8 encoded string with end-of-string character
 | |
 | 0xa3 | user identifier (UID)
-Contains a 32-bit integer
+Contains a 32-bit signed integer
 | 0xa4 | Username +
 Contains an UTF-8 encoded string with end-of-string character
 | |
 | 0xc3 | group identifier (GID)
-Contains a 32-bit integer
+Contains a 32-bit signed integer
 |===
 
 The value is formatted as:
@@ -2502,7 +2633,7 @@ group: wheel@/Local/Default
 | | |
 | 3 | | SID
 | 4 | | Username
-| 5 | | GROUPNAME
+| 5 | | Groupname
 | 6 | | UUID
 | 7 | | GROUP NFS
 | 8 | | USER NFS
@@ -2616,6 +2747,8 @@ plutil -p /var/db/diagnostics/version.plist
   "Version" => 7
 }
 ....
+
+[yellow-background]*TODO what about .atrc and .ktrace files?*
 
 === Output
 

@@ -64,7 +64,7 @@ class StringFormatterTest(test_lib.BaseTestCase):
     self.assertEqual(test_formatter._decoders, [[]])
     self.assertEqual(test_formatter._format_string, '{0:s}')
     self.assertEqual(test_formatter._type_hints, ['signed'])
-    self.assertEqual(test_formatter._value_formatters, ['{0:3d}'])
+    self.assertEqual(test_formatter._value_formatters, ['{0:03d}'])
 
     test_formatter.ParseFormatString('{text: %d}')
     self.assertEqual(test_formatter._decoders, [[]])
@@ -415,6 +415,19 @@ class IPv6FormatStringDecoderTest(test_lib.BaseTestCase):
     self.assertEqual(formatted_value, '2001:0db8:0000:0000:0000:ff00:0042:8329')
 
 
+class LocationClientAuthorizationStatusFormatStringDecoder(
+    test_lib.BaseTestCase):
+  """client authorization status format string decoder tests."""
+
+  def testFormatValue(self):
+    """Tests the FormatValue function."""
+    test_decoder = (
+        unified_logging.LocationClientAuthorizationStatusFormatStringDecoder())
+
+    formatted_value = test_decoder.FormatValue(2)
+    self.assertEqual(formatted_value, 'Denied')
+
+
 class LocationClientManagerStateFormatStringDecoderTest(test_lib.BaseTestCase):
   """Location client manager state value format string decoder tests."""
 
@@ -581,7 +594,7 @@ class MDNSDNSIdentifierAndFlagsFormatStringDecoder(test_lib.BaseTestCase):
 
 
 class MDNSProtocolFormatStringDecoderTest(test_lib.BaseTestCase):
-  """mDNS protocol decoder tests."""
+  """mDNS protocol format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
@@ -592,7 +605,7 @@ class MDNSProtocolFormatStringDecoderTest(test_lib.BaseTestCase):
 
 
 class MDNSReasonFormatStringDecoder(test_lib.BaseTestCase):
-  """mDNS reason decoder tests."""
+  """mDNS reason format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
@@ -603,7 +616,7 @@ class MDNSReasonFormatStringDecoder(test_lib.BaseTestCase):
 
 
 class MDNSResourceRecordTypeFormatStringDecoderTest(test_lib.BaseTestCase):
-  """mDNS resource record type decoder tests."""
+  """mDNS resource record type format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""
@@ -1345,15 +1358,17 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
     trace, _ = test_file._ReadFirehoseTracepointTraceData(
-        0x0000, self._FIREHOSE_TRACEPOINT_TRACE_DATA, 0)
+        0x0000, self._FIREHOSE_TRACEPOINT_TRACE_DATA,
+        len(self._FIREHOSE_TRACEPOINT_TRACE_DATA), 0)
 
     self.assertIsNotNone(trace)
     self.assertEqual(trace.load_address_lower, 0x0003f42b)
-    self.assertEqual(trace.unknown1, 0x00)
+    self.assertEqual(trace.number_of_values, 0)
 
     with self.assertRaises(errors.ParseError):
       test_file._ReadFirehoseTracepointTraceData(
-          0xffff, self._FIREHOSE_TRACEPOINT_TRACE_DATA, 0)
+          0xffff, self._FIREHOSE_TRACEPOINT_TRACE_DATA,
+        len(self._FIREHOSE_TRACEPOINT_TRACE_DATA), 0)
 
   def testReadHeaderChunk(self):
     """Tests the _ReadHeaderChunk function."""

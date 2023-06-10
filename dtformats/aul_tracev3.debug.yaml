@@ -389,9 +389,12 @@ attributes:
 - name: load_address_lower
   description: "UUID entry load address (lower 32-bit)"
   format: hexadecimal_8digits
-- name: unknown1
-  description: "Unknown1"
-  format: hexadecimal_2digits
+- name: number_of_values
+  description: "Number of values"
+  format: decimal
+- name: value_size
+  description: "Value size"
+  format: decimal
 ---
 data_type_map: tracev3_header_chunk
 attributes:
