@@ -60,9 +60,9 @@ type: structure
 attributes:
   byte_order: big-endian
 members:
-- name: major_version
+- name: major_format_version
   data_type: int8
-- name: minor_version
+- name: minor_format_version
   data_type: int8
 - name: operation_identifier
   aliases: [status_code]

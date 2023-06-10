@@ -1,0 +1,34 @@
+# dtFormats debug specification.
+---
+data_type_map: cups_ipp_attribute
+attributes:
+- name: tag_value
+  description: "Tag value"
+  format: custom:tag_value
+- name: name_size
+  description: "Name size"
+  format: decimal
+- name: name
+  description: "Name"
+  format: string
+- name: value_data_size
+  description: "Value data size"
+  format: decimal
+- name: value_data
+  description: "Value data"
+  format: binary_data
+---
+data_type_map: cups_ipp_header
+attributes:
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: operation_identifier
+  description: "Operation identifier"
+  format: hexadecimal_4digits
+- name: request_identifier
+  description: "Request identifier"
+  format: hexadecimal_8digits

@@ -1,0 +1,103 @@
+# dtFormats debug specification.
+---
+data_type_map: asl_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: format_version
+  description: "Format version"
+  format: decimal
+- name: first_log_entry_offset
+  description: "First log entry offset"
+  format: hexadecimal_8digits
+- name: creation_time
+  description: "Creation time"
+  format: custom:posix_time
+- name: cache_size
+  description: "Cache size"
+  format: decimal
+- name: last_log_entry_offset
+  description: "Last log entry offset"
+  format: hexadecimal_8digits
+- name: unknown1
+  description: "Unknown1"
+  format: binary_data
+---
+data_type_map: asl_record
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: next_record_offset
+  description: "Next record offset"
+  format: hexadecimal_8digits
+- name: message_identifier
+  description: "Message identifier"
+  format: hexadecimal_8digits
+- name: written_time
+  description: "Written time"
+  format: custom:posix_time
+- name: written_time_nanoseconds
+  description: "Written time nanoseconds"
+  format: decimal
+- name: alert_level
+  description: "Alert level"
+  format: decimal
+- name: flags
+  description: "Flags"
+  format: custom:record_flags
+- name: process_identifier
+  description: "Process identifier (PID)"
+  format: decimal
+- name: user_identifier
+  description: "User identifier (UID)"
+  format: decimal
+- name: group_identifier
+  description: "Group identifier (GID)"
+  format: decimal
+- name: read_user_identifier
+  description: "Read user identifier (UID)"
+  format: decimal
+- name: read_group_identifier
+  description: "Read group identifier (GID)"
+  format: decimal
+- name: reference_process_identifier
+  description: "Reference process identifier (PID)"
+  format: decimal
+- name: hostname_string_offset
+  description: "Hostname string offset"
+  format: hexadecimal_8digits
+- name: sender_string_offset
+  description: "Sender string offset"
+  format: hexadecimal_8digits
+- name: facility_string_offset
+  description: "Facility string offset"
+  format: hexadecimal_8digits
+- name: message_string_offset
+  description: "Message string offset"
+  format: hexadecimal_8digits
+---
+data_type_map: asl_record_extra_field
+attributes:
+- name: name_string_offset
+  description: "Name string offset"
+  format: hexadecimal_8digits
+- name: value_string_offset
+  description: "Value string offset"
+  format: hexadecimal_8digits
+---
+data_type_map: asl_record_string
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: string_size
+  description: "String size"
+  format: decimal
+- name: string
+  description: "String"
+  format: string

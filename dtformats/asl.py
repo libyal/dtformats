@@ -9,75 +9,26 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
   """Apple System Log (.asl) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('asl.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'asl.debug.yaml', custom_format_callbacks={
+          'posix_time': '_FormatIntegerAsPosixTime',
+          'record_flags': '_FormatRecordFlags',
+          'signature': '_FormatStreamAsSignature'})
 
   # Most significant bit of a 64-bit string offset.
   _STRING_OFFSET_MSB = 1 << 63
 
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
-      ('first_log_entry_offset', 'First log entry offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('creation_time', 'Creation time', '_FormatIntegerAsPosixTime'),
-      ('cache_size', 'Cache size', '_FormatIntegerAsDecimal'),
-      ('last_log_entry_offset', 'Last log entry offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('unknown1', 'Unknown1', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_RECORD = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('next_record_offset', 'Next record offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('message_identifier', 'Message identifier',
-       '_FormatIntegerAsHexadecimal8'),
-      ('written_time', 'Written time', '_FormatIntegerAsPosixTime'),
-      ('written_time_nanoseconds', 'Written time nanoseconds',
-       '_FormatIntegerAsDecimal'),
-      ('alert_level', 'Alert level', '_FormatIntegerAsDecimal'),
-      ('flags', 'Flags', '_FormatIntegerAsFlags'),
-      ('process_identifier', 'Process identifier (PID)',
-       '_FormatIntegerAsDecimal'),
-      ('user_identifier', 'User identifier (UID))',
-       '_FormatIntegerAsDecimal'),
-      ('group_identifier', 'Group identifier (GID))',
-       '_FormatIntegerAsDecimal'),
-      ('read_user_identifier', 'Read user identifier (UID))',
-       '_FormatIntegerAsDecimal'),
-      ('read_group_identifier', 'Read group identifier (GID))',
-       '_FormatIntegerAsDecimal'),
-      ('reference_process_identifier', 'Reference process identifier (PID)',
-       '_FormatIntegerAsDecimal'),
-      ('hostname_string_offset', 'Hostname string offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('sender_string_offset', 'Sender string offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('facility_string_offset', 'Facility string offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('message_string_offset', 'Message string offset',
-       '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_RECORD_EXTRA_FIELD = [
-      ('name_string_offset', 'Name string offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('value_string_offset', 'Value string offset',
-       '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_RECORD_STRING = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('string_size', 'String size', '_FormatIntegerAsDecimal'),
-      ('string', 'String', '_FormatString')]
-
-  def _FormatIntegerAsFlags(self, integer):
-    """Formats an integer as flags.
+  def _FormatRecordFlags(self, integer):
+    """Formats record flags.
 
     Args:
       integer (int): integer.
 
     Returns:
-      str: integer formatted as flags.
+      str: integer formatted as record flags.
     """
     return f'0x{integer:04x}'
 
@@ -110,7 +61,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('asl_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
 
@@ -143,7 +95,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record')
 
     if self._debug:
-      self._DebugPrintStructureObject(record, self._DEBUG_INFO_RECORD)
+      debug_info = self._DEBUG_INFORMATION.get('asl_record', None)
+      self._DebugPrintStructureObject(record, debug_info)
 
     hostname = self._ReadRecordString(
         file_object, record.hostname_string_offset)
@@ -226,8 +179,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           f'with error: {exception!s}'))
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          record_extra_field, self._DEBUG_INFO_RECORD_EXTRA_FIELD)
+      debug_info = self._DEBUG_INFORMATION.get('asl_record_extra_field', None)
+      self._DebugPrintStructureObject(record_extra_field, debug_info)
 
     return record_extra_field
 
@@ -290,8 +243,8 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           f'with error: {exception!s}'))
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          record_string, self._DEBUG_INFO_RECORD_STRING)
+      debug_info = self._DEBUG_INFORMATION.get('asl_record_string', None)
+      self._DebugPrintStructureObject(record_string, debug_info)
 
     return record_string.string.rstrip('\x00')
 

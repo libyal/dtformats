@@ -13,11 +13,11 @@ class AppleSystemLogFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  def testFormatIntegerAsFlags(self):
-    """Tests the _FormatIntegerAsFlags function."""
+  def testFormatRecordFlags(self):
+    """Tests the _FormatRecordFlags function."""
     test_file = asl.AppleSystemLogFile()
 
-    formatted_flags = test_file._FormatIntegerAsFlags(1)
+    formatted_flags = test_file._FormatRecordFlags(1)
     self.assertEqual(formatted_flags, '0x0001')
 
   def testFormatStreamAsSignature(self):

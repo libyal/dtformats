@@ -2,8 +2,8 @@
 ---
 data_type_map: job_fixed_length_data_section
 attributes:
-- name: signature
-  description: "Signature"
+- name: product_version
+  description: "Product version"
   format: custom:product_version
 - name: format_version
   description: "Format version"

@@ -2458,18 +2458,18 @@ Where membership data is type indicator dependent:
 Contains a 32-bit integer
 | 0x24 | Username +
 Contains an UTF-8 encoded string with end-of-string character
-| | |
+| |
 | 0x44 | Group name +
 Contains an UTF-8 encoded string with end-of-string character
-| | |
+| |
 | 0xa0 | Username +
 Contains an UTF-8 encoded string with end-of-string character
-| | |
+| |
 | 0xa3 | user identifier (UID)
 Contains a 32-bit integer
 | 0xa4 | Username +
 Contains an UTF-8 encoded string with end-of-string character
-| | |
+| |
 | 0xc3 | group identifier (GID)
 Contains a 32-bit integer
 |===
