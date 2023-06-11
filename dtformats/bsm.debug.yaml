@@ -1,0 +1,437 @@
+# dtFormats debug specification.
+---
+# AUT_ARG32 or AUT_ARG64 token debug information.
+data_type_map: bsm_token_arg
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: argument_index
+  description: "Argument index"
+  format: decimal
+- name: argument_name
+  description: "Argument name"
+  format: hexadecimal_8digits
+- name: argument_value_size
+  description: "Argument value size"
+  format: decimal
+- name: argument_value
+  description: "Argument value"
+  format: string
+---
+# AUT_ATTR32 or AUT_ATTR64 token debug information.
+data_type_map: bsm_token_attr
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_4digits
+- name: file_mode
+  description: "File mode"
+  format: hexadecimal_4digits
+- name: user_identifier
+  description: "User identifier (UID)"
+  format: decimal
+- name: group_identifier
+  description: "Group identifier (GID)"
+  format: decimal
+- name: file_system_identifier
+  description: "File system identifier"
+  format: hexadecimal_8digits
+- name: file_identifier
+  description: "File identifier"
+  format: hexadecimal_8digits
+- name: device
+  description: "Device"
+  format: hexadecimal_8digits
+---
+# AUT_DATA token debug information.
+# TODO: improve reading data
+data_type_map: bsm_token_data
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: data_format
+  description: "Data format"
+  format: hexadecimal_2digits
+- name: element_data_type
+  description: "Element data type"
+  format: hexadecimal_2digits
+- name: number_of_elements
+  description: "Number of elements"
+  format: decimal
+- name: data
+  description: "Data"
+  format: binary_data
+---
+# AUT_EXIT, AUT_RETURN32, AUT_RETURN64 token debug information.
+data_type_map: bsm_token_exit
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: status
+  description: "Status"
+  format: hexadecimal_8digits
+- name: return_value
+  description: "Return value"
+  format: hexadecimal_8digits
+---
+# AUT_HEADER32, AUT_HEADER64 token debug information.
+data_type_map: bsm_token_header
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: record_size
+  description: "Record size"
+  format: decimal
+- name: format_version
+  description: "Format version"
+  format: decimal
+- name: event_type
+  description: "Event type"
+  format: custom:event_type
+- name: modifier
+  description: "Modifier"
+  format: hexadecimal_4digits
+- name: timestamp
+  description: "Timestamp"
+  format: custom:posix_time
+- name: microseconds
+  description: "Microseconds"
+  format: decimal
+---
+# AUT_HEADER32_EX, AUT_HEADER64_EX token debug information.
+data_type_map: bsm_token_header_ex
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: record_size
+  description: "Record size"
+  format: decimal
+- name: format_version
+  description: "Format version"
+  format: decimal
+- name: event_type
+  description: "Event type"
+  format: custom:event_type
+- name: modifier
+  description: "Modifier"
+  format: hexadecimal_4digits
+- name: net_type
+  description: "Net type"
+  format: custom:net_type
+- name: ip_address
+  description: "IP address"
+  format: custom:ip_address
+- name: timestamp
+  description: "Timestamp"
+  format: custom:posix_time
+- name: microseconds
+  description: "Microseconds"
+  format: decimal
+---
+# AUT_IN_ADDR token debug information.
+data_type_map: bsm_token_in_addr
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: ip_address
+  description: "IP address"
+  format: custom:ipv4_address
+---
+# AUT_IN_ADDR_EX token debug information.
+data_type_map: bsm_token_in_addr_ex
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: net_type
+  description: "Net type"
+  format: custom:net_type
+- name: ip_address
+  description: "IP address"
+  format: custom:ip_address
+---
+# AUT_IP token debug information.
+# TODO: add remaining IPv4 header information.
+data_type_map: bsm_token_ip
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: source_ip_address
+  description: "Source IP address"
+  format: custom:ipv4_address
+- name: destination_ip_address
+  description: "Destination IP address"
+  format: custom:ipv4_address
+---
+# AUT_IPC token debug information.
+data_type_map: bsm_token_ipc
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: object_type
+  description: "Object type"
+  format: hexadecimal_2digits
+- name: object_identifier
+  description: "Object identifier"
+  format: hexadecimal_8digits
+---
+# AUT_IPORT token debug information.
+data_type_map: bsm_token_iport
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: port_number
+  description: "Port number"
+  format: decimal
+---
+# AUT_OPAQUE token debug information.
+data_type_map: bsm_token_opaque
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: data
+  description: "Data"
+  format: binary_data
+---
+# AUT_OTHER_FILE32 token debug information.
+data_type_map: bsm_token_other_file32
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: timestamp
+  description: "Timestamp"
+  format: custom:posix_time
+- name: microseconds
+  description: "Microseconds"
+  format: decimal
+- name: name_size
+  description: "Name size"
+  format: decimal
+- name: name
+  description: "Name"
+  format: string
+---
+# AUT_PATH token debug information.
+data_type_map: bsm_token_path
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: path_size
+  description: "Path size"
+  format: decimal
+- name: path
+  description: "Path"
+  format: string
+---
+# AUT_SEQ token debug information.
+data_type_map: bsm_token_seq
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: sequence_number
+  description: "Sequence number"
+  format: decimal
+---
+# AUT_SOCKET_EX token debug information.
+data_type_map: bsm_token_socket_ex
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: socket_domain
+  description: "Socket domain"
+  format: hexadecimal_4digits
+- name: socket_type
+  description: "Socket type"
+  format: hexadecimal_4digits
+- name: net_type
+  description: "Net type"
+  format: custom:net_type
+- name: local_port
+  description: "Local port"
+  format: decimal
+- name: local_ip_address
+  description: "Local IP address"
+  format: custom:ip_address
+- name: remote_port
+  description: "Remote port"
+  format: decimal
+- name: remote_ip_address
+  description: "Remote IP address"
+  format: custom:ip_address
+---
+# AUT_SOCKINET32 token debug information.
+data_type_map: bsm_token_sockinet32
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: socket_family
+  description: "Socket family"
+  format: hexadecimal_4digits
+- name: local_port
+  description: "Local port"
+  format: decimal
+- name: local_ip_address
+  description: "Local IP address"
+  format: custom:ipv4_address
+---
+# AUT_SOCKINET64 token debug information.
+data_type_map: bsm_token_sockinet64
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: socket_family
+  description: "Socket family"
+  format: hexadecimal_4digits
+- name: local_port
+  description: "Local port"
+  format: decimal
+- name: local_ip_address
+  description: "Local IP address"
+  format: custom:ipv6_address
+---
+# AUT_SOCKUNIX token debug information.
+data_type_map: bsm_token_sockunix
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: socket_family
+  description: "Socket family"
+  format: hexadecimal_4digits
+- name: socket_path
+  description: "Socket path"
+  format: string
+---
+# AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32 and AUT_PROCESS64 token
+# debug information.
+data_type_map: bsm_token_subject
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: audit_user_identifier
+  description: "Audit user identifier"
+  format: decimal
+- name: effective_user_identifier
+  description: "Effective user identifier"
+  format: decimal
+- name: effective_group_identifier
+  description: "Effective group identifier"
+  format: decimal
+- name: real_user_identifier
+  description: "Real user identifier"
+  format: decimal
+- name: real_group_identifier
+  description: "Real group identifier"
+  format: decimal
+- name: process_identifier
+  description: "Process identifier (PID)"
+  format: decimal
+- name: session_identifier
+  description: "Session identifier"
+  format: decimal
+- name: terminal_port
+  description: "Terminal port"
+  format: decimal
+- name: ip_address
+  description: "IP address"
+  format: custom:ipv4_address
+---
+# AUT_SUBJECT32_EX, AUT_SUBJECT64_EX, AUT_PROCESS32_EX and AUT_PROCESS64_EX
+# token debug information.
+data_type_map: bsm_token_subject_ex
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: audit_user_identifier
+  description: "Audit user identifier"
+  format: decimal
+- name: effective_user_identifier
+  description: "Effective user identifier"
+  format: decimal
+- name: effective_group_identifier
+  description: "Effective group identifier"
+  format: decimal
+- name: real_user_identifier
+  description: "Real user identifier"
+  format: decimal
+- name: real_group_identifier
+  description: "Real group identifier"
+  format: decimal
+- name: process_identifier
+  description: "Process identifier (PID)"
+  format: decimal
+- name: session_identifier
+  description: "Session identifier"
+  format: decimal
+- name: terminal_port
+  description: "Terminal port"
+  format: decimal
+- name: net_type
+  description: "Net type"
+  format: custom:net_type
+- name: ip_address
+  description: "IP address"
+  format: custom:ip_address
+---
+# AUT_TEXT token debug information.
+data_type_map: bsm_token_text
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: text_size
+  description: "Text size"
+  format: decimal
+- name: text
+  description: "Text"
+  format: string
+---
+# AUT_TRAILER token debug information.
+data_type_map: bsm_token_trailer
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: signature
+  description: "Signature"
+  format: hexadecimal_4digits
+- name: record_size
+  description: "Record size"
+  format: decimal
+---
+# AUT_ZONENAME token debug information.
+data_type_map: bsm_token_zonename
+attributes:
+- name: token_type
+  description: "Token type"
+  format: hexadecimal_2digits
+- name: name_size
+  description: "Name size"
+  format: decimal
+- name: name
+  description: "Name"
+  format: string

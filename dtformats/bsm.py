@@ -9,8 +9,17 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
   """BSM event auditing file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('bsm.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'bsm.debug.yaml', custom_format_callbacks={
+          'event_type': '_FormatIntegerAsEventType',
+          'ip_address': '_FormatArrayOfIntegersAsIPAddress',
+          'ipv4_address': '_FormatArrayOfIntegersAsIPv4Address',
+          'ipv6_address': '_FormatArrayOfIntegersAsIPv6Address',
+          'net_type': '_FormatIntegerAsNetType',
+          'posix_time': '_FormatIntegerAsPosixTime'})
 
   _EVENT_TYPES = {
       0: 'indir system call',
@@ -786,261 +795,53 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       0x7f: 'token socket_ex',
       0x80: 'token sockinet32',
       0x81: 'token sockinet64',
-      0x82: 'token sockunix',
-  }
+      0x82: 'token sockunix'}
 
   _HEADER_TOKEN_TYPES = frozenset([0x14, 0x15, 0x74, 0x79])
 
   _TRAILER_TOKEN_TYPE = 0x13
 
-  # AUT_ARG32 or AUT_ARG64 token debug information.
-  _DEBUG_INFO_TOKEN_ARG = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('argument_index', 'Argument index', '_FormatIntegerAsDecimal'),
-      ('argument_name', 'Argument name', '_FormatIntegerAsHexadecimal8'),
-      ('argument_value_size', 'Argument value size', '_FormatIntegerAsDecimal'),
-      ('argument_value', 'Argument value', '_FormatString')]
-
-  # AUT_ATTR32 or AUT_ATTR64 token debug information.
-  _DEBUG_INFO_TOKEN_ATTR = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal4'),
-      ('file_mode', 'File mode', '_FormatIntegerAsHexadecimal4'),
-      ('user_identifier', 'User identifier', '_FormatIntegerAsDecimal'),
-      ('group_identifier', 'Group identifier', '_FormatIntegerAsDecimal'),
-      ('file_system_identifier', 'File system identifier',
-       '_FormatIntegerAsHexadecimal8'),
-      ('file_identifier', 'File identifier', '_FormatIntegerAsHexadecimal8'),
-      ('device', 'Device', '_FormatIntegerAsHexadecimal8')]
-
-  # AUT_DATA token debug information.
-  # TODO: improve reading data
-  _DEBUG_INFO_TOKEN_DATA = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('data_format', 'Data format', '_FormatIntegerAsHexadecimal2'),
-      ('element_data_type', 'Element data type',
-       '_FormatIntegerAsHexadecimal2'),
-      ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
-
-  # AUT_EXIT, AUT_RETURN32, AUT_RETURN64 token debug information.
-  _DEBUG_INFO_TOKEN_EXIT = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('status', 'Status', '_FormatIntegerAsHexadecimal8'),
-      ('return_value', 'Return value', '_FormatIntegerAsHexadecimal8')]
-
-  # AUT_HEADER32, AUT_HEADER64 token debug information.
-  _DEBUG_INFO_TOKEN_HEADER = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
-      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
-      ('event_type', 'Event type', '_FormatIntegerAsEventType'),
-      ('modifier', 'Modifier', '_FormatIntegerAsHexadecimal4'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
-      ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal')]
-
-  # AUT_HEADER32_EX, AUT_HEADER64_EX token debug information.
-  _DEBUG_INFO_TOKEN_HEADER_EX = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('record_size', 'Record size', '_FormatIntegerAsDecimal'),
-      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
-      ('event_type', 'Event type', '_FormatIntegerAsEventType'),
-      ('modifier', 'Modifier', '_FormatIntegerAsHexadecimal4'),
-      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
-      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
-      ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal')]
-
-  # AUT_IN_ADDR token debug information.
-  _DEBUG_INFO_TOKEN_IN_ADDR = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPv4Address')]
-
-  # AUT_IN_ADDR_EX token debug information.
-  _DEBUG_INFO_TOKEN_IN_ADDR_EX = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
-      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress')]
-
-  # AUT_IP token debug information.
-  # TODO: add remaining IPv4 header information.
-  _DEBUG_INFO_TOKEN_IP = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('source_ip_address', 'Source IP address',
-       '_FormatArrayOfIntegersAsIPv4Address'),
-      ('destination_ip_address', 'Destination IP address',
-       '_FormatArrayOfIntegersAsIPv4Address')]
-
-  # AUT_IPC token debug information.
-  _DEBUG_INFO_TOKEN_IPC = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('object_type', 'Object type', '_FormatIntegerAsHexadecimal2'),
-      ('object_identifier', 'Object identifier',
-       '_FormatIntegerAsHexadecimal8')]
-
-  # AUT_IPORT token debug information.
-  _DEBUG_INFO_TOKEN_IPORT = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('port_number', 'Port number', '_FormatIntegerAsDecimal')]
-
-  # AUT_OPAQUE token debug information.
-  _DEBUG_INFO_TOKEN_OPAQUE = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
-
-  # AUT_OTHER_FILE32 token debug information.
-  _DEBUG_INFO_TOKEN_OTHER_FILE32 = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('timestamp', 'Timestamp', '_FormatIntegerAsPosixTime'),
-      ('microseconds', 'Microseconds', '_FormatIntegerAsDecimal'),
-      ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
-      ('name', 'Name', '_FormatString')]
-
-  # AUT_PATH token debug information.
-  _DEBUG_INFO_TOKEN_PATH = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('path_size', 'Path size', '_FormatIntegerAsDecimal'),
-      ('path', 'Path', '_FormatString')]
-
-  # AUT_SEQ token debug information.
-  _DEBUG_INFO_TOKEN_SEQ = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('sequence_number', 'Sequence number', '_FormatIntegerAsDecimal')]
-
-  # AUT_SOCKET_EX token debug information.
-  _DEBUG_INFO_TOKEN_SOCKET_EX = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('socket_domain', 'Socket domain', '_FormatIntegerAsHexadecimal4'),
-      ('socket_type', 'Socket type', '_FormatIntegerAsHexadecimal4'),
-      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
-      ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
-      ('local_ip_address', 'Local IP address',
-       '_FormatArrayOfIntegersAsIPAddress'),
-      ('remote_port', 'Remote port', '_FormatIntegerAsDecimal'),
-      ('remote_ip_address', 'Remote IP address',
-       '_FormatArrayOfIntegersAsIPAddress')]
-
-  # AUT_SOCKINET32 token debug information.
-  _DEBUG_INFO_TOKEN_SOCKINET32 = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
-      ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
-      ('local_ip_address', 'Local IP address',
-       '_FormatArrayOfIntegersAsIPv4Address')]
-
-  # AUT_SOCKINET64 token debug information.
-  _DEBUG_INFO_TOKEN_SOCKINET64 = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
-      ('local_port', 'Local port', '_FormatIntegerAsDecimal'),
-      ('local_ip_address', 'Local IP address',
-       '_FormatArrayOfIntegersAsIPv6Address')]
-
-  # AUT_SOCKUNIX token debug information.
-  _DEBUG_INFO_TOKEN_SOCKUNIX = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('socket_family', 'Socket family', '_FormatIntegerAsHexadecimal4'),
-      ('socket_path', 'Socket path', None)]
-
-  # AUT_SUBJECT32, AUT_SUBJECT64, AUT_PROCESS32 and AUT_PROCESS64 token
-  # debug information.
-  _DEBUG_INFO_TOKEN_SUBJECT = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('audit_user_identifier', 'Audit user identifier',
-       '_FormatIntegerAsDecimal'),
-      ('effective_user_identifier', 'Effective user identifier',
-       '_FormatIntegerAsDecimal'),
-      ('effective_group_identifier', 'Effective group identifier',
-       '_FormatIntegerAsDecimal'),
-      ('real_user_identifier', 'Real user identifier',
-       '_FormatIntegerAsDecimal'),
-      ('real_group_identifier', 'Real group identifier',
-       '_FormatIntegerAsDecimal'),
-      ('process_identifier', 'Process identifier', '_FormatIntegerAsDecimal'),
-      ('session_identifier', 'Session identifier', '_FormatIntegerAsDecimal'),
-      ('terminal_port', 'Terminal port', '_FormatIntegerAsDecimal'),
-      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPv4Address')]
-
-  # AUT_SUBJECT32_EX, AUT_SUBJECT64_EX, AUT_PROCESS32_EX and AUT_PROCESS64_EX
-  # token debug information.
-  _DEBUG_INFO_TOKEN_SUBJECT_EX = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('audit_user_identifier', 'Audit user identifier',
-       '_FormatIntegerAsDecimal'),
-      ('effective_user_identifier', 'Effective user identifier',
-       '_FormatIntegerAsDecimal'),
-      ('effective_group_identifier', 'Effective group identifier',
-       '_FormatIntegerAsDecimal'),
-      ('real_user_identifier', 'Real user identifier',
-       '_FormatIntegerAsDecimal'),
-      ('real_group_identifier', 'Real group identifier',
-       '_FormatIntegerAsDecimal'),
-      ('process_identifier', 'Process identifier', '_FormatIntegerAsDecimal'),
-      ('session_identifier', 'Session identifier', '_FormatIntegerAsDecimal'),
-      ('terminal_port', 'Terminal port', '_FormatIntegerAsDecimal'),
-      ('net_type', 'Net type', '_FormatIntegerAsNetType'),
-      ('ip_address', 'IP address', '_FormatArrayOfIntegersAsIPAddress')]
-
-  # AUT_TEXT token debug information.
-  _DEBUG_INFO_TOKEN_TEXT = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('text_size', 'Text size', '_FormatIntegerAsDecimal'),
-      ('text', 'Text', '_FormatString')]
-
-  # AUT_TRAILER token debug information.
-  _DEBUG_INFO_TOKEN_TRAILER = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal4'),
-      ('record_size', 'Record size', '_FormatIntegerAsDecimal')]
-
-  # AUT_ZONENAME token debug information.
-  _DEBUG_INFO_TOKEN_ZONENAME = [
-      ('token_type', 'Token type', '_FormatIntegerAsHexadecimal2'),
-      ('name_size', 'Name size', '_FormatIntegerAsDecimal'),
-      ('name', 'Name', '_FormatString')]
-
+  # Name of the debug information per token.
   # TODO: implement and add debug info for token type 0x32
   # TODO: implement and add debug info for token type 0x34 and 0x3b
   # TODO: implement and add debug info for token type 0x3c and 0x3d
-  _DEBUG_INFO_TOKEN = {
-      0x11: _DEBUG_INFO_TOKEN_OTHER_FILE32,
-      0x13: _DEBUG_INFO_TOKEN_TRAILER,
-      0x14: _DEBUG_INFO_TOKEN_HEADER,
-      0x15: _DEBUG_INFO_TOKEN_HEADER_EX,
-      0x21: _DEBUG_INFO_TOKEN_DATA,
-      0x22: _DEBUG_INFO_TOKEN_IPC,
-      0x23: _DEBUG_INFO_TOKEN_PATH,
-      0x24: _DEBUG_INFO_TOKEN_SUBJECT,
-      0x26: _DEBUG_INFO_TOKEN_SUBJECT,
-      0x27: _DEBUG_INFO_TOKEN_EXIT,
-      0x28: _DEBUG_INFO_TOKEN_TEXT,
-      0x29: _DEBUG_INFO_TOKEN_OPAQUE,
-      0x2a: _DEBUG_INFO_TOKEN_IN_ADDR,
-      0x2b: _DEBUG_INFO_TOKEN_IP,
-      0x2c: _DEBUG_INFO_TOKEN_IPORT,
-      0x2d: _DEBUG_INFO_TOKEN_ARG,
-      0x2f: _DEBUG_INFO_TOKEN_SEQ,
-      0x3e: _DEBUG_INFO_TOKEN_ATTR,
-      0x52: _DEBUG_INFO_TOKEN_EXIT,
-      0x60: _DEBUG_INFO_TOKEN_ZONENAME,
-      0x71: _DEBUG_INFO_TOKEN_ARG,
-      0x72: _DEBUG_INFO_TOKEN_EXIT,
-      0x73: _DEBUG_INFO_TOKEN_ATTR,
-      0x74: _DEBUG_INFO_TOKEN_HEADER,
-      0x75: _DEBUG_INFO_TOKEN_SUBJECT,
-      0x77: _DEBUG_INFO_TOKEN_SUBJECT,
-      0x79: _DEBUG_INFO_TOKEN_HEADER_EX,
-      0x7a: _DEBUG_INFO_TOKEN_SUBJECT_EX,
-      0x7b: _DEBUG_INFO_TOKEN_SUBJECT_EX,
-      0x7c: _DEBUG_INFO_TOKEN_SUBJECT_EX,
-      0x7d: _DEBUG_INFO_TOKEN_SUBJECT_EX,
-      0x7e: _DEBUG_INFO_TOKEN_IN_ADDR_EX,
-      0x7f: _DEBUG_INFO_TOKEN_SOCKET_EX,
-      0x80: _DEBUG_INFO_TOKEN_SOCKINET32,
-      0x81: _DEBUG_INFO_TOKEN_SOCKINET64,
-      0x82: _DEBUG_INFO_TOKEN_SOCKUNIX,
-  }
+  _DEBUG_INFO_NAME = {
+      0x11: 'bsm_token_other_file32',
+      0x13: 'bsm_token_trailer',
+      0x14: 'bsm_token_header',
+      0x15: 'bsm_token_header_ex',
+      0x21: 'bsm_token_data',
+      0x22: 'bsm_token_ipc',
+      0x23: 'bsm_token_path',
+      0x24: 'bsm_token_subject',
+      0x26: 'bsm_token_subject',
+      0x27: 'bsm_token_exit',
+      0x28: 'bsm_token_text',
+      0x29: 'bsm_token_opaque',
+      0x2a: 'bsm_token_in_addr',
+      0x2b: 'bsm_token_ip',
+      0x2c: 'bsm_token_iport',
+      0x2d: 'bsm_token_arg',
+      0x2f: 'bsm_token_seq',
+      0x3e: 'bsm_token_attr',
+      0x52: 'bsm_token_exit',
+      0x60: 'bsm_token_zonename',
+      0x71: 'bsm_token_arg',
+      0x72: 'bsm_token_exit',
+      0x73: 'bsm_token_attr',
+      0x74: 'bsm_token_header',
+      0x75: 'bsm_token_subject',
+      0x77: 'bsm_token_subject',
+      0x79: 'bsm_token_header_ex',
+      0x7a: 'bsm_token_subject_ex',
+      0x7b: 'bsm_token_subject_ex',
+      0x7c: 'bsm_token_subject_ex',
+      0x7d: 'bsm_token_subject_ex',
+      0x7e: 'bsm_token_in_addr_ex',
+      0x7f: 'bsm_token_socket_ex',
+      0x80: 'bsm_token_sockinet32',
+      0x81: 'bsm_token_sockinet64',
+      0x82: 'bsm_token_sockunix'}
 
   def _FormatArrayOfIntegersAsIPAddress(self, array_of_integers):
     """Formats an array of integers as an IP address.
@@ -1155,9 +956,9 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       raise errors.ParseError(f'Unsupported token type: {token_type:d}')
 
     if self._debug:
-      debug_information = self._DEBUG_INFO_TOKEN.get(token.token_type, None)
-      if debug_information:
-        self._DebugPrintStructureObject(token, debug_information)
+      debug_info_name = self._DEBUG_INFO_NAME.get(token.token_type, None)
+      debug_info = self._DEBUG_INFORMATION.get(debug_info_name, None)
+      self._DebugPrintStructureObject(token, debug_info)
 
     return token
 

@@ -395,6 +395,9 @@ attributes:
 - name: value_size
   description: "Value size"
   format: decimal
+- name: integer
+  description: "Integer value"
+  format: decimal
 ---
 data_type_map: tracev3_header_chunk
 attributes:
