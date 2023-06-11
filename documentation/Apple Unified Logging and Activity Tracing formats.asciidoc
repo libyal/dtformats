@@ -774,6 +774,7 @@ Contains a 32-bit value, formatted as "<private>"
 Contains a 8-bit, 16-bit, 32-bit or 64-bit value
 3+|
 | 0x10 | | [yellow-background]*Unknown (integer format precision)* +
+Contains a 32-bit value +
 This value has been seen to be used in combination with format strings like "%.0lld"
 3+|
 | 0x12 | | [yellow-background]*Unknown (string format precision)* +
@@ -1283,10 +1284,10 @@ The flags are defined as:
 | Value | Identifier | Description
 | "#" | | Value should be converted to an "alternate form". Note that "%#x" is formatted as "0x%x" with the exception of "0".
 | "0" | | Value should be padded with 0
-| "-" | | Value should be right-justified instead of left-justified
+| "-" | | Value should be left-justified instead of right-justified
 | " " | | Value should be padded with space
 | "+" | | Add the '+' sign in front of positive values
-| "'" | |
+| "'" | | [yellow-background]*TODO describe*
 |===
 
 The length modifiers are defined as:
@@ -1347,32 +1348,6 @@ The types are defined as:
 |===
 
 ===== Notes
-
-For a format string like "%25s:%-5d" the string and the integer are right
-aligned.
-
-....
-%25s:%-5d Destroying SandboxHelper connection
-....
-
-Formatted as:
-
-....
-  SandboxHelperClient.cpp:53    Destroying SandboxHelper connection
-....
-
-This is not the case if there is a "[" in front of the string:
-
-....
-[%s:%-5d %.*s:%p] constructed
-....
-
-Formatted as:
-
-....
-[Detector.cpp:20    rtaid::Detector:0x7f9b67f255e0] constructed
-....
-
 
 For a format string like "%6.6d" 0 padding is used.
 
@@ -1552,7 +1527,8 @@ Contains an UTF-8 formatted string with an end-of-string character
 Note that appears to be only used by the "Activity" record type, other record types use info
 | 0x01 | info | Info
 | 0x02 | debug | Debug
-| 0x03 | useraction | Useraction
+| 0x03 | useraction | Useraction +
+Note that appears to be only used by the "Activity" record type
 | | |
 | 0x10 | error | Error
 | 0x11 | fault | Fault

@@ -140,21 +140,9 @@ attributes:
 - name: value_data_size
   description: "Value data size"
   format: decimal
-- name: floating_point
-  description: "Floating point value"
-  format: floating_point
-- name: integer
-  description: "Integer value"
-  format: decimal
 - name: private_string
   description: "Private string value"
   format: string
-- name: string
-  description: "String value"
-  format: string
-- name: uuid
-  description: "UUID value"
-  format: uuid
 - name: value_data
   description: "Value data"
   format: binary_data

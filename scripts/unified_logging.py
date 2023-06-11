@@ -253,8 +253,9 @@ def Main():
 
         creator_activity_identifier = log_entry.creator_activity_identifier
 
-        if creator_activity_identifier is not None:
-          # The format string for an activityCreateEvent is empty.
+        if event_type in ('activityCreateEvent', 'userActionEvent'):
+          # The format string for an activityCreateEvent or an userActionEvent
+          # is empty.
           format_string = ''
         else:
           format_string = log_entry.format_string or ''
@@ -304,9 +305,9 @@ def Main():
         else:
           lines = [f'  "traceID" : {log_entry.trace_identifier:d},']
 
-          if (creator_activity_identifier is None and
-              log_entry.loss_count is None and
-              log_entry.signpost_identifier is None):
+          if event_type not in (
+              'activityCreateEvent', 'lossEvent', 'signpostEvent',
+              'userActionEvent'):
             lines.append(f'  "eventMessage" : "{event_message:s}",')
 
           lines.append(f'  "eventType" : "{event_type:s}",')
@@ -324,8 +325,8 @@ def Main():
                 f'  "signpostID" : {log_entry.signpost_identifier:d},',
                 f'  "signpostScope" : "{signpost_scope:s}",'])
 
-          if (creator_activity_identifier is None and
-              log_entry.loss_count is None):
+          if event_type not in (
+              'activityCreateEvent', 'lossEvent', 'userActionEvent'):
             # TODO: implement source support.
             lines.append('  "source" : null,')
 
@@ -403,9 +404,9 @@ def Main():
 
           lines.append(f'  "machTimestamp" : {log_entry.mach_timestamp:d},')
 
-          if (creator_activity_identifier is not None or
-              log_entry.loss_count is not None or
-              log_entry.signpost_identifier is not None):
+          if event_type in (
+              'activityCreateEvent', 'lossEvent', 'signpostEvent',
+              'userActionEvent'):
             lines.append(f'  "eventMessage" : "{event_message:s}",')
           else:
             message_type = log_entry.message_type or ''
