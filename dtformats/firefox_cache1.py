@@ -11,26 +11,13 @@ class CacheMapFile(data_format.BinaryDataFile):
   """Firefox cache version 1 map file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('firefox_cache1.yaml')
 
-  _DEBUG_INFO_FILE_HEADER = [
-      ('major_format_version', 'Major format version',
-       '_FormatIntegerAsDecimal'),
-      ('minor_format_version', 'Minor format version',
-       '_FormatIntegerAsDecimal'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('is_dirty_flag', 'Is dirty flag', '_FormatIntegerAsDecimal'),
-      ('number_of_records', 'Number of records', '_FormatIntegerAsDecimal'),
-      ('eviction_ranks', 'Eviction ranks', '_FormatArrayOfIntegersAsDecimals'),
-      ('bucket_usage', 'Bucket usage', '_FormatArrayOfIntegersAsDecimals')]
-
-  _DEBUG_INFO_RECORD = [
-      ('hash_number', 'Hash number', '_FormatIntegerAsDecimal'),
-      ('eviction_rank', 'Eviction rank', '_FormatIntegerAsDecimal'),
-      ('data_location', 'Data location', '_FormatCacheLocation'),
-      ('metadata_location', 'Metadata location', '_FormatCacheLocation')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'firefox_cache1.debug.yaml', custom_format_callbacks={
+          'array_of_decimal': '_FormatArrayOfIntegersAsDecimals',
+          'cache_location': '_FormatCacheLocation'})
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Firefox cache map file.
@@ -76,7 +63,9 @@ class CacheMapFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'firefox_cache1_map_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.major_format_version != 1:
       raise errors.ParseError((
@@ -103,7 +92,9 @@ class CacheMapFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record')
 
     if self._debug:
-      self._DebugPrintStructureObject(record, self._DEBUG_INFO_RECORD)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'firefox_cache1_map_record', None)
+      self._DebugPrintStructureObject(record, debug_info)
 
   def ReadFileObject(self, file_object):
     """Reads a Firefox cache map file-like object.
@@ -126,24 +117,13 @@ class CacheBlockFile(data_format.BinaryDataFile):
   """Firefox cache version 1 block file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('firefox_cache1.yaml')
 
-  _DEBUG_INFO_CACHE_ENTRY = [
-      ('major_format_version', 'Major format version',
-       '_FormatIntegerAsDecimal'),
-      ('minor_format_version', 'Minor format version',
-       '_FormatIntegerAsDecimal'),
-      ('location', 'Location', '_FormatCacheLocation'),
-      ('fetch_count', 'Fetch count', '_FormatIntegerAsDecimal'),
-      ('last_fetched_time', 'Last fetched time', '_FormatIntegerAsPosixTime'),
-      ('last_modified_time', 'Last modified time', '_FormatIntegerAsPosixTime'),
-      ('cached_data_size', 'Cached data size', '_FormatIntegerAsDecimal'),
-      ('request_size', 'Request size', '_FormatIntegerAsDecimal'),
-      ('information_size', 'Information size', '_FormatIntegerAsDecimal'),
-      ('request', 'Request', None),
-      ('information', 'Information', '_FormatDataInHexadecimal'),
-  ]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'firefox_cache1.debug.yaml', custom_format_callbacks={
+          'cache_location': '_FormatCacheLocation',
+          'posix_time': '_FormatIntegerAsPosixTime'})
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Firefox cache map file.
@@ -196,7 +176,8 @@ class CacheBlockFile(data_format.BinaryDataFile):
       return
 
     if self._debug and cache_entry.major_format_version == 1:
-      self._DebugPrintStructureObject(cache_entry, self._DEBUG_INFO_CACHE_ENTRY)
+      debug_info = self._DEBUG_INFORMATION.get('firefox_cache1_entry', None)
+      self._DebugPrintStructureObject(cache_entry, debug_info)
 
     _, trailing_data_size = divmod(cache_entry_data_size, self._block_size)
     if trailing_data_size > 0:

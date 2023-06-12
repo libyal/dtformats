@@ -1,0 +1,79 @@
+# dtFormats debug specification.
+---
+data_type_map: firefox_cache1_entry
+attributes:
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: location
+  description: "Location"
+  format: custom:cache_lcation
+- name: fetch_count
+  description: "Fetch count"
+  format: decimal
+- name: last_fetched_time
+  description: "Last fetched time"
+  format: custom:posix_time
+- name: last_modified_time
+  description: "Last modified time"
+  format: custom:posix_time
+- name: cached_data_size
+  description: "Cached data size"
+  format: decimal
+- name: request_size
+  description: "Request size"
+  format: decimal
+- name: information_size
+  description: "Information size"
+  format: decimal
+- name: request
+  description: "Request"
+  format: string
+- name: information
+  description: "Information"
+  format: binary_data
+---
+data_type_map: firefox_cache1_map_header
+attributes:
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: number_of_entries
+  description: "Number of entries"
+  format: decimal
+- name: is_dirty_flag
+  description: "Is dirty flag"
+  format: decimal
+- name: number_of_records
+  description: "Number of records"
+  format: decimal
+- name: eviction_ranks
+  description: "Eviction ranks"
+  format: custrom:array_of_decimals
+- name: bucket_usage
+  description: "Bucket usage"
+  format: custrom:array_of_decimals
+---
+data_type_map: firefox_cache1_map_record
+attributes:
+- name: hash_number
+  description: "Hash number"
+  format: decimal
+- name: eviction_rank
+  description: "Eviction rank"
+  format: decimal
+- name: data_location
+  description: "Data location"
+  format: custom:cache_lcation
+- name: metadata_location
+  description: "Metadata location"
+  format: custom:cache_lcation
