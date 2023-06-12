@@ -1,0 +1,70 @@
+# dtFormats debug specification.
+---
+data_type_map: detection_history_value
+attributes:
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: data_type
+  description: "Data type"
+  format: hexadecimal_8digits
+- name: data
+  description: "Data"
+  format: binary_data
+- name: value_filetime
+  description: "Value FILETIME"
+  format: custom:filetime
+- name: value_guid
+  description: "Value GUID"
+  format: uuid
+- name: value_integer
+  description: "Value integer"
+  format: decimal
+- name: value_string
+  description: "Value string"
+  format: string
+- name: alignment_padding
+  description: "Alignment padding"
+  format: binary_data
+---
+data_type_map: threat_tracking_header
+attributes:
+- name: version
+  description: "Version"
+  format: decimal
+- name: header_size
+  description: "Header size"
+  format: decimal
+- name: values_data_size
+  description: "Values data size"
+  format: decimal
+- name: total_data_size
+  description: "Total data size"
+  format: decimal
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+---
+data_type_map: threat_tracking_value
+attributes:
+- name: key_string_size
+  description: "Key string size"
+  format: decimal
+- name: key_string
+  description: "Key string"
+  format: string
+- name: value_type
+  description: "Value type"
+  format: hexadecimal_8digits
+- name: value_integer
+  description: "Value integer"
+  format: decimal
+- name: value_string_size
+  description: "Value string size"
+  format: decimal
+- name: value_string
+  description: "Value string"
+  format: string
+- name: value_data
+  description: "Value data"
+  format: binary_data

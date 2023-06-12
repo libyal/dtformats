@@ -49,9 +49,9 @@ members:
 - name: signature
   data_type: uint32
   value: 0xc104cac3
-- name: minor_version
+- name: minor_format_version
   data_type: uint16
-- name: major_version
+- name: major_format_version
   data_type: uint16
 - name: file_number
   data_type: uint16
@@ -134,9 +134,9 @@ members:
 - name: signature
   data_type: uint32
   value: 0xc103cac3
-- name: minor_version
+- name: minor_format_version
   data_type: uint16
-- name: major_version
+- name: major_format_version
   data_type: uint16
 - name: number_of_entries
   data_type: uint32

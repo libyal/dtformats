@@ -1,0 +1,103 @@
+# dtFormats debug specification.
+---
+data_type_map: chrome_cache_data_block_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: hexadecimal_8digits
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: file_number
+  description: "File number"
+  format: decimal
+- name: next_file_number
+  description: "Next file number"
+  format: decimal
+- name: block_size
+  description: "Block size"
+  format: decimal
+- name: number_of_entries
+  description: "Number of entries"
+  format: decimal
+- name: maximum_number_of_entries
+  description: "Maximum number of entries"
+  format: decimal
+- name: empty
+  description: "Empty"
+  format: custom:array_of_decimals
+- name: hints
+  description: "Hints"
+  format: custom:array_of_decimals
+- name: updating
+  description: "Updating"
+  format: hexadecimal_8digits
+- name: user
+  description: "User"
+  format: custom:array_of_decimals
+---
+data_type_map: chrome_cache_data_block_file_header
+attributes:
+- name: hash
+  description: "Hash"
+  format: hexadecimal_8digits
+- name: next_address
+  description: "Next address"
+  format: custom:cache_address
+- name: rankings_node_address
+  description: "Rankings node address"
+  format: custom:cache_address
+- name: reuse_count
+  description: "Reuse count"
+  format: decimal
+- name: refetch_count
+  description: "Refetch count"
+  format: decimal
+- name: state
+  description: "State"
+  format: hexadecimal_8digits
+- name: creation_time
+  description: "Creation time"
+  format: custom:timestamp
+---
+data_type_map: chrome_cache_index_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: hexadecimal_8digits
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: number_of_entries
+  description: "Number of entries"
+  format: decimal
+- name: stored_data_size
+  description: "Stored data size"
+  format: decimal
+- name: last_created_file_number
+  description: "Last created file number"
+  format: custom:filename
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: table_size
+  description: "Table size"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: unknown4
+  description: "Unknown4"
+  format: hexadecimal_8digits
+- name: creation_time
+  description: "Creation time"
+  format: custom:timestamp

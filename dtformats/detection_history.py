@@ -10,53 +10,13 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
   """Windows Defender scan DetectionHistory file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
       'detection_history.yaml')
 
-  _DEBUG_INFO_THREAT_TRACKING_HEADER = [
-      ('version', 'Version', '_FormatIntegerAsDecimal'),
-      ('header_size', 'Header size', '_FormatIntegerAsDecimal'),
-      ('values_data_size', 'Values data size', '_FormatIntegerAsDecimal'),
-      ('total_data_size', 'Total data size', '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_THREAT_TRACKING_VALUE = [
-      ('key_string_size', 'Key string size', '_FormatIntegerAsDecimal'),
-      ('key_string', 'Key string', '_FormatString'),
-      ('value_type', 'Value type', '_FormatIntegerAsHexadecimal8'),
-      ('value_integer', 'Value integer', '_FormatIntegerAsDecimal'),
-      ('value_string_size', 'Value string size', '_FormatIntegerAsDecimal'),
-      ('value_string', 'Value string', '_FormatString'),
-      ('value_data', 'Value data', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_VALUE = [
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data_type', 'Data type', '_FormatIntegerAsHexadecimal8'),
-      ('data', 'Data', '_FormatDataInHexadecimal'),
-      ('value_filetime', 'Value FILETIME', '_FormatIntegerAsFiletime'),
-      ('value_guid', 'Value GUID', '_FormatUUIDAsString'),
-      ('value_integer', 'Value integer', '_FormatIntegerAsDecimal'),
-      ('value_string', 'Value string', '_FormatString'),
-      ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal')]
-
-  _VALUE_DESCRIPTIONS = [
-      {0: 'Threat identifier',
-       1: 'Identifier'},
-      {0: 'UnknownMagic1',
-       1: 'Threat name',
-       4: 'Category'},
-      {0: 'UnknownMagic2',
-       1: 'Resource type',
-       2: 'Resource location',
-       4: 'Threat tracking data size',
-       5: 'Threat tracking data',
-       6: 'Last threat status change time',
-       12: 'Domain user1',
-       14: 'Process name',
-       18: 'Initial detection time',
-       20: 'Remediation time',
-       24: 'Domain user2'}]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'detection_history.debug.yaml', custom_format_callbacks={
+          'filetime': '_FormatIntegerAsFiletime'})
 
   _CATEGORY_NAME = {
       0: 'INVALID',
@@ -109,6 +69,24 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
       49: 'EUS',
       50: 'RANSOM',
       51: 'ASR'}
+
+  _VALUE_DESCRIPTIONS = [
+      {0: 'Threat identifier',
+       1: 'Identifier'},
+      {0: 'UnknownMagic1',
+       1: 'Threat name',
+       4: 'Category'},
+      {0: 'UnknownMagic2',
+       1: 'Resource type',
+       2: 'Resource location',
+       4: 'Threat tracking data size',
+       5: 'Threat tracking data',
+       6: 'Last threat status change time',
+       12: 'Domain user1',
+       14: 'Process name',
+       18: 'Initial detection time',
+       20: 'Remediation time',
+       24: 'Domain user2'}]
 
   def _ReadThreatTrackingData(self, threat_tracking_data, file_offset):
     """Reads the threat tracking data.
@@ -164,8 +142,8 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         threat_tracking_data, 0, data_type_map, 'threat tracking header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          threat_tracking_header, self._DEBUG_INFO_THREAT_TRACKING_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('threat_tracking_header', None)
+      self._DebugPrintStructureObject(threat_tracking_header, debug_info)
 
     if threat_tracking_header.header_size > 20:
       # TODO: debug print additional data.
@@ -196,8 +174,8 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         'threat tracking value', context=context)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          threat_tracking_value, self._DEBUG_INFO_THREAT_TRACKING_VALUE)
+      debug_info = self._DEBUG_INFORMATION.get('threat_tracking_value', None)
+      self._DebugPrintStructureObject(threat_tracking_value, debug_info)
 
     return threat_tracking_value, context.byte_size
 
@@ -220,7 +198,8 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'value')
 
     if self._debug:
-      self._DebugPrintStructureObject(value, self._DEBUG_INFO_VALUE)
+      debug_info = self._DEBUG_INFORMATION.get('detection_history_value', None)
+      self._DebugPrintStructureObject(value, debug_info)
 
     value_object = None
     if value.data_type in (

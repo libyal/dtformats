@@ -603,7 +603,7 @@ class IPv6FormatStringDecoderTest(test_lib.BaseTestCase):
 
 class LocationClientAuthorizationStatusFormatStringDecoder(
     test_lib.BaseTestCase):
-  """client authorization status format string decoder tests."""
+  """Location client authorization status format string decoder tests."""
 
   def testFormatValue(self):
     """Tests the FormatValue function."""

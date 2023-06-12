@@ -193,38 +193,18 @@ class DataBlockFile(data_format.BinaryDataFile):
   """
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('chrome_cache.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'chrome_cache.debug.yaml', custom_format_callbacks={
+          'array_of_decimals': '_FormatArrayOfIntegersAsDecimals',
+          'cache_address': '_FormatIntegerAsCacheAddress',
+          'timestamp': '_FormatIntegerAsTimestamp'})
 
   # TODO: update empty, hints, updating and user.
 
   SIGNATURE = 0xc104cac3
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
-      ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
-      ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
-      ('file_number', 'File number', '_FormatIntegerAsDecimal'),
-      ('next_file_number', 'Next file number', '_FormatIntegerAsDecimal'),
-      ('block_size', 'Block size', '_FormatIntegerAsDecimal'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('maximum_number_of_entries', 'Maximum number of entries',
-       '_FormatIntegerAsDecimal'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('empty', 'Empty', '_FormatArrayOfIntegersAsDecimals'),
-      ('hints', 'Hints', '_FormatArrayOfIntegersAsDecimals'),
-      ('updating', 'Updating', '_FormatIntegerAsHexadecimal8'),
-      ('user', 'User', '_FormatArrayOfIntegersAsDecimals')]
-
-  _DEBUG_INFO_CACHE_ENTRY = [
-      ('hash', 'Hash', '_FormatIntegerAsHexadecimal8'),
-      ('next_address', 'Next address', '_FormatIntegerAsCacheAddress'),
-      ('rankings_node_address', 'Rankings node address',
-       '_FormatIntegerAsCacheAddress'),
-      ('reuse_count', 'Reuse count', '_FormatIntegerAsDecimal'),
-      ('refetch_count', 'Refetch count', '_FormatIntegerAsDecimal'),
-      ('state', 'State', '_FormatIntegerAsHexadecimal8'),
-      ('creation_time', 'Creation time', '_FormatIntegerAsTimestamp')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Chrome Cache data block file.
@@ -298,7 +278,8 @@ class DataBlockFile(data_format.BinaryDataFile):
     Args:
       cache_entry (chrome_cache_entry): cache entry.
     """
-    self._DebugPrintStructureObject(cache_entry, self._DEBUG_INFO_CACHE_ENTRY)
+    debug_info = self._DEBUG_INFORMATION.get('chrome_cache_entry', None)
+    self._DebugPrintStructureObject(cache_entry, debug_info)
 
     self._DebugPrintCacheEntryDataStreamSizes(cache_entry.data_stream_sizes)
 
@@ -319,7 +300,9 @@ class DataBlockFile(data_format.BinaryDataFile):
     Args:
       file_header (chrome_cache_data_block_file_header): file header.
     """
-    self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+    debug_info = self._DEBUG_INFORMATION.get(
+        'chrome_cache_data_block_file_header', None)
+    self._DebugPrintStructureObject(file_header, debug_info)
 
     self._DebugPrintAllocationBitmap(file_header.allocation_bitmap)
 
@@ -368,7 +351,8 @@ class DataBlockFile(data_format.BinaryDataFile):
       self._DebugPrintFileHeader(file_header)
 
     self.format_version = (
-        f'{file_header.major_version:d}.{file_header.minor_version:d}')
+        f'{file_header.major_format_version:d}.'
+        f'{file_header.minor_format_version:d}')
 
     if self.format_version not in ('2.0', '2.1'):
       raise errors.ParseError(
@@ -446,23 +430,13 @@ class IndexFile(data_format.BinaryDataFile):
   """
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('chrome_cache.yaml')
 
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
-      ('minor_version', 'Minor version', '_FormatIntegerAsDecimal'),
-      ('major_version', 'Major version', '_FormatIntegerAsDecimal'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('stored_data_size', 'Stored data size', '_FormatIntegerAsDecimal'),
-      ('last_created_file_number', 'Last created file number',
-       '_FormatIntegerAsDataStreamFilename'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('table_size', 'Table size', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('creation_time', 'Creation time', '_FormatIntegerAsTimestamp')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'chrome_cache.debug.yaml', custom_format_callbacks={
+          'filename': '_FormatIntegerAsDataStreamFilename',
+          'timestamp': '_FormatIntegerAsTimestamp'})
 
   SIGNATURE = 0xc103cac3
 
@@ -548,10 +522,13 @@ class IndexFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'index file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'chrome_cache_index_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     self.format_version = (
-        f'{file_header.major_version:d}.{file_header.minor_version:d}')
+        f'{file_header.major_format_version:d}.'
+        f'{file_header.minor_format_version:d}')
 
     if self.format_version not in ('2.0', '2.1'):
       raise errors.ParseError(

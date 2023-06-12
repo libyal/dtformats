@@ -1864,14 +1864,14 @@ and consists of:
 The value is formatted as:
 
 ....
-%s
+"%s"
 ....
 
 Where %s contains one of the following descriptions based on the value for
 example:
 
 ....
-Denied
+"Denied"
 ....
 
 [cols="1,1,5",options="header"]
