@@ -943,6 +943,9 @@ Seen: 0 and 1
 | ... | ... | | 64-bit alignment padding
 |===
 
+[yellow-background]*TODO: it is currently unknown if the value data sizes are
+stored front-to-back or back-to-front. Only 1 value has been observed so far.*
+
 ==== [[tracev3_firehose_tracepoint_log]]Log firehose tracepoint
 
 A log firehose tracepoint is variable of size and consists of:
@@ -1469,6 +1472,9 @@ Contains an UTF-8 formatted string with an end-of-string character
 Contains an UTF-8 formatted string with an end-of-string character
 | 264 | state data size | | State data
 |===
+
+[NOTE]
+Note that both the decoder library and decoder type can contain remnant data.
 
 ==== [[state_data_types]]State data types
 

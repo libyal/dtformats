@@ -2699,6 +2699,35 @@ class TraceV3File(data_format.BinaryDataFile):
 
     return program_counter
 
+  def _DecodeValue(
+      self, string_formatter, value_index, value_data, precision=None):
+    """Decodes value data using the string formatter.
+
+    Args:
+      string_formatter (StringFormatter): string formatter.
+      value_index (int): index of the value in the string formatter.
+      value_data (bytes): value data.
+      precision (Optional[int]): value format string precision.
+
+    Returns:
+      str: decoded value.
+    """
+    decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
+    if not decoder_names:
+      return '<decode: missing decoder>'
+
+    decoder_object = self._FORMAT_STRING_DECODERS.get(decoder_names[0], None)
+    if not decoder_object:
+      return f'<decode: unsupported decoder: {decoder_names[0]:s}>'
+
+    # TODO: add support for precision
+    _ = precision
+
+    format_string_operator = string_formatter.GetFormatStringOperator(
+        value_index)
+    return decoder_object.FormatValue(
+        value_data, format_string_operator=format_string_operator)
+
   def _FormatArrayOfStrings(self, array_of_strings):
     """Formats an array of strings.
 
@@ -2945,6 +2974,32 @@ class TraceV3File(data_format.BinaryDataFile):
       map_offset += len(string) + 1
 
     return strings_map
+
+  def _GetDataItemsAndValuesData(
+      self, tracepoint_data_object, values_data, oversize_chunks):
+    """Retrieves the data items and values data.
+
+    Args:
+      tracepoint_data_object (object): firehose tracepoint data object.
+      values_data (bytes): (public) values data.
+      oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
+          reference.
+
+    Returns:
+      tuple[list[tracev3_data_item], bytes]: data items and values data.
+    """
+    data_reference = getattr(tracepoint_data_object, 'data_reference', None)
+    if not data_reference:
+      data_items = getattr(tracepoint_data_object, 'data_items', None)
+      return data_items, values_data
+
+    oversize_chunk = oversize_chunks.get(data_reference, None)
+    if oversize_chunk:
+      return oversize_chunk.data_items, oversize_chunk.values_data
+
+    # Seen in certain tracev3 files that oversize chunks can be missing.
+    # TODO: issue warning.
+    return None, None
 
   def _GetDSCFile(self, uuid_string):
     """Retrieves a specific shared-cache strings (DSC) file.
@@ -3520,10 +3575,11 @@ class TraceV3File(data_format.BinaryDataFile):
 
       data_offset += alignment
 
-  def _ReadBacktraceData(self, backtrace_data, data_offset):
+  def _ReadBacktraceData(self, flags, backtrace_data, data_offset):
     """Reads firehose tracepoint backtrace data.
 
     Args:
+      flags (int): firehose tracepoint flags.
       backtrace_data (bytes): firehose tracepoint backtrace data.
       data_offset (int): offset of the firehose tracepoint backtrace data
           relative to the start of the chunk set.
@@ -3534,6 +3590,9 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the backtrace data cannot be read.
     """
+    if flags & 0x1000 == 0:
+      return []
+
     data_type_map = self._GetDataTypeMap(
         'tracev3_firehose_tracepoint_backtrace_data')
 
@@ -3635,23 +3694,8 @@ class TraceV3File(data_format.BinaryDataFile):
           value = '<private>'
 
       if not value:
-        decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
-        if not decoder_names:
-          value = '<decode: missing decoder>'
-
-        else:
-          decoder_object = self._FORMAT_STRING_DECODERS.get(
-              decoder_names[0], None)
-          if not decoder_object:
-            value = f'<decode: unsupported decoder: {decoder_names[0]:s}>'
-
-          else:
-            format_string_operator = string_formatter.GetFormatStringOperator(
-                value_index)
-            # TODO: add support for precision
-            _ = precision
-            value = decoder_object.FormatValue(
-                value_data, format_string_operator=format_string_operator)
+        value = self._DecodeValue(
+            string_formatter, value_index, value_data, precision=precision)
 
       precision = None
 
@@ -3751,9 +3795,7 @@ class TraceV3File(data_format.BinaryDataFile):
         tracepoint_data_object, bytes_read = (
             self._ReadFirehoseTracepointTraceData(
                 firehose_tracepoint.flags, firehose_tracepoint.data,
-                firehose_tracepoint.data_size, tracepoint_data_offset))
-
-        # TODO: read values.
+                tracepoint_data_offset))
 
       elif record_type == self._RECORD_TYPE_LOG:
         if firehose_tracepoint.log_type not in (0x00, 0x01, 0x02, 0x10, 0x11):
@@ -3827,13 +3869,11 @@ class TraceV3File(data_format.BinaryDataFile):
 
       else:
         values_data_offset = bytes_read
+        values_data = firehose_tracepoint.data[values_data_offset:]
 
-        if firehose_tracepoint.flags & 0x1000 == 0:
-          backtrace_frames = []
-        else:
-          backtrace_frames = self._ReadBacktraceData(
-              firehose_tracepoint.data[values_data_offset:],
-              tracepoint_data_offset + values_data_offset)
+        backtrace_frames = self._ReadBacktraceData(
+            firehose_tracepoint.flags, values_data,
+            tracepoint_data_offset + values_data_offset)
 
         string_reference, is_dynamic = self._CalculateFormatStringReference(
             tracepoint_data_object, firehose_tracepoint.format_string_reference)
@@ -3844,36 +3884,30 @@ class TraceV3File(data_format.BinaryDataFile):
 
         string_formatter = image_values.GetStringFormatter()
 
-        data_reference = getattr(tracepoint_data_object, 'data_reference', None)
-        if not data_reference:
-          data_items = getattr(tracepoint_data_object, 'data_items', None)
-          values_data = firehose_tracepoint.data[values_data_offset:]
-        else:
-          oversize_chunk = oversize_chunks.get(data_reference, None)
-          if oversize_chunk:
-            data_items = oversize_chunk.data_items
-            values_data = oversize_chunk.values_data
-          else:
-            # Seen in certain tracev3 files that oversize chunks can be missing.
-            data_items = None
-            values_data = None
-
         values = []
-        if data_items:
-          private_data_range = getattr(
-              tracepoint_data_object, 'private_data_range', None)
-          if private_data_range is None:
-            private_data_offset = 0
-          else:
-            # TODO: error if private_data_virtual_offset >
-            # private_data_range.offset
-            private_data_offset = (
-                private_data_range.offset - private_data_virtual_offset)
+        if record_type == self._RECORD_TYPE_TRACE:
+          values = self._ReadFirehoseTracepointTraceValuesData(
+              tracepoint_data_object, values_data, string_formatter)
 
-          # TODO: calculate item data offset for debugging purposes.
-          values = self._ReadDataItems(
-              data_items, values_data, private_data, private_data_offset,
-              string_formatter)
+        else:
+          data_items, values_data = self._GetDataItemsAndValuesData(
+              tracepoint_data_object, values_data, oversize_chunks)
+
+          if data_items:
+            private_data_range = getattr(
+                tracepoint_data_object, 'private_data_range', None)
+            if private_data_range is None:
+              private_data_offset = 0
+            else:
+              # TODO: error if private_data_virtual_offset >
+              # private_data_range.offset
+              private_data_offset = (
+                  private_data_range.offset - private_data_virtual_offset)
+
+            # TODO: calculate item data offset for debugging purposes.
+            values = self._ReadDataItems(
+                data_items, values_data, private_data, private_data_offset,
+                string_formatter)
 
         sub_system_identifier = getattr(
             tracepoint_data_object, 'sub_system_identifier', None)
@@ -4004,8 +4038,8 @@ class TraceV3File(data_format.BinaryDataFile):
     """Reads firehose tracepoint activity data.
 
     Args:
-      log_type (bytes): firehose tracepoint log type.
-      flags (bytes): firehose tracepoint flags.
+      log_type (int): firehose tracepoint log type.
+      flags (int): firehose tracepoint flags.
       tracepoint_data (bytes): firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint data relative to
           the start of the chunk set.
@@ -4044,7 +4078,7 @@ class TraceV3File(data_format.BinaryDataFile):
     """Reads firehose tracepoint log data.
 
     Args:
-      flags (bytes): firehose tracepoint flags.
+      flags (int): firehose tracepoint flags.
       tracepoint_data (bytes): firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint data relative to
           the start of the chunk set.
@@ -4083,7 +4117,7 @@ class TraceV3File(data_format.BinaryDataFile):
     """Reads firehose tracepoint loss data.
 
     Args:
-      flags (bytes): firehose tracepoint flags.
+      flags (int): firehose tracepoint flags.
       tracepoint_data (bytes): firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint data relative to
           the start of the chunk set.
@@ -4121,7 +4155,7 @@ class TraceV3File(data_format.BinaryDataFile):
     """Reads firehose tracepoint signpost data.
 
     Args:
-      flags (bytes): firehose tracepoint flags.
+      flags (int): firehose tracepoint flags.
       tracepoint_data (bytes): firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint data relative to
           the start of the chunk set.
@@ -4157,13 +4191,12 @@ class TraceV3File(data_format.BinaryDataFile):
     return signpost, context.byte_size
 
   def _ReadFirehoseTracepointTraceData(
-      self, flags, tracepoint_data, data_size, data_offset):
+      self, flags, tracepoint_data, data_offset):
     """Reads firehose tracepoint trace data.
 
     Args:
-      flags (bytes): firehose tracepoint flags.
+      flags (int): firehose tracepoint flags.
       tracepoint_data (bytes): firehose tracepoint data.
-      data_size (int): size of the firehose tracepoint data.
       data_offset (int): offset of the firehose tracepoint data relative to
           the start of the chunk set.
 
@@ -4174,9 +4207,6 @@ class TraceV3File(data_format.BinaryDataFile):
     Raises:
       ParseError: if the trace data cannot be read.
     """
-    if data_size < 5:
-      raise errors.ParseError(f'Unsupported data size: {data_size:d}')
-
     supported_flags = 0x0002
 
     if flags & ~supported_flags != 0:
@@ -4193,24 +4223,59 @@ class TraceV3File(data_format.BinaryDataFile):
 
     trace.number_of_values = tracepoint_data[-1]
 
-    bytes_read = context.byte_size + 1
-
-    if trace.number_of_values not in (0, 1):
-      raise errors.ParseError(
-          f'Unsupported number of values: {trace.number_of_values:d}')
-
-    if trace.number_of_values == 1:
-      trace.value_size = tracepoint_data[-2]
-
-      if trace.value_size not in (4, 8):
-        raise errors.ParseError(f'Unsupported value size: {trace.value_size:d}')
-
     if self._debug:
       debug_info = self._DEBUG_INFORMATION.get(
           'tracev3_firehose_tracepoint_trace', None)
       self._DebugPrintStructureObject(trace, debug_info)
 
-    return trace, bytes_read
+    return trace, context.byte_size
+
+  def _ReadFirehoseTracepointTraceValuesData(
+      self, trace, values_data, string_formatter):
+    """Reads firehose tracepoint trace values data.
+
+    Args:
+      trace (tracev3_firehose_tracepoint_trace): trace.
+      values_data (bytes): (public) values data.
+      string_formatter (StringFormatter): string formatter.
+
+    Returns:
+      list[str]: values formatted as strings.
+
+    Raises:
+      ParseError: if the values cannot be read.
+    """
+    if not trace.number_of_values:
+      return []
+
+    # TODO: currently unknown if the value sizes are stored front-to-back or
+    # back-to-front.
+    if trace.number_of_values != 1:
+      raise errors.ParseError(
+          f'Unsupported number of values: {trace.number_of_values:d}')
+
+    values = []
+
+    value_data_offset = 0
+    value_size_offset = -2
+
+    for value_index in range(trace.number_of_values):
+      value_data_size = values_data[value_size_offset]
+
+      if value_data_size not in (4, 8):
+        raise errors.ParseError(f'Unsupported value size: {value_data_size:d}')
+
+      value_data = values_data[
+          value_data_offset:value_data_offset + value_data_size]
+
+      value = self._DecodeValue(string_formatter, value_index, value_data)
+
+      values.append(value)
+
+      value_data_offset += value_data_size
+      value_size_offset -= 1
+
+    return values
 
   def _ReadHeaderChunk(self, file_object, file_offset):
     """Reads a header chunk.
@@ -4417,8 +4482,12 @@ class TraceV3File(data_format.BinaryDataFile):
 
     event_message = ''
     if statedump_chunk.state_data_type == 0x03:
-      library = statedump_chunk.library.decode('utf8').rstrip('\x00')
-      decoder_type = statedump_chunk.decoder_type.decode('utf8').rstrip('\x00')
+      library_data = statedump_chunk.library.split(b'\x00', maxsplit=1)[0]
+      library = library_data.decode('utf8')
+
+      decoder_type_data = statedump_chunk.decoder_type.split(
+          b'\x00', maxsplit=1)[0]
+      decoder_type = decoder_type_data.decode('utf8')
 
       decoder_name = f'{library:s}:{decoder_type:s}'
       decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_name, None)

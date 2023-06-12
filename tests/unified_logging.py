@@ -1564,7 +1564,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
     backtrace_frames = test_file._ReadBacktraceData(
-        self._FIREHOSE_TRACEPOINT_BACKTRACE_DATA, 0)
+        0x1000, self._FIREHOSE_TRACEPOINT_BACKTRACE_DATA, 0)
 
     self.assertEqual(len(backtrace_frames), 15)
 
@@ -1641,8 +1641,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
     test_file = unified_logging.TraceV3File(output_writer=output_writer)
 
     trace, _ = test_file._ReadFirehoseTracepointTraceData(
-        0x0000, self._FIREHOSE_TRACEPOINT_TRACE_DATA,
-        len(self._FIREHOSE_TRACEPOINT_TRACE_DATA), 0)
+        0x0000, self._FIREHOSE_TRACEPOINT_TRACE_DATA, 0)
 
     self.assertIsNotNone(trace)
     self.assertEqual(trace.load_address_lower, 0x0003f42b)
@@ -1650,8 +1649,7 @@ class TraceV3FileTest(test_lib.BaseTestCase):
 
     with self.assertRaises(errors.ParseError):
       test_file._ReadFirehoseTracepointTraceData(
-          0xffff, self._FIREHOSE_TRACEPOINT_TRACE_DATA,
-        len(self._FIREHOSE_TRACEPOINT_TRACE_DATA), 0)
+          0xffff, self._FIREHOSE_TRACEPOINT_TRACE_DATA, 0)
 
   def testReadHeaderChunk(self):
     """Tests the _ReadHeaderChunk function."""
