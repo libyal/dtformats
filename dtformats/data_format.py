@@ -483,7 +483,7 @@ class BinaryDataFormat(object):
 
       lines.append(text)
 
-    if not lines[-1] or lines[-1][-2:] != '\n\n':
+    if not lines or not lines[-1] or lines[-1][-2:] != '\n\n':
       lines.append('\n')
 
     return ''.join(lines)

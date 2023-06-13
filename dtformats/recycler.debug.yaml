@@ -1,0 +1,37 @@
+# dtFormats debug specification.
+---
+data_type_map: recycler_info2_file_entry
+attributes:
+- name: original_filename
+  description: "Original filename (ANSI)"
+  format: custom:ansi_string
+- name: index
+  description: "Index"
+  format: decimal
+- name: drive_number
+  description: "Drive number"
+  format: decimal
+- name: deletion_time
+  description: "Deletion time"
+  format: custom:filetime
+- name: original_file_size
+  description: "Original file size"
+  format: decimal
+---
+data_type_map: recycler_info2_file_header
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: number_of_file_entries
+  description: "Number of file entries"
+  format: decimal
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: file_entry_size
+  description: "File entry size"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits

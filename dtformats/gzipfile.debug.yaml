@@ -1,0 +1,31 @@
+# dtFormats debug specification.
+---
+data_type_map: gzip_member_footer
+attributes:
+- name: checksum
+  description: "Checksum"
+  format: hexadecimal_8digits
+- name: uncompressed_data_size
+  description: "Uncompressed data size"
+  format: decimal
+---
+data_type_map: gzip_member_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: hexadecimal_4digits
+- name: compression_method
+  description: "Compression method"
+  format: decimal
+- name: flags
+  description: "Flags"
+  format: hexadecimal_2digits
+- name: modification_time
+  description: "Modification time"
+  format: custom:posix_time
+- name: operating_system
+  description: "Operating system"
+  format: decimal
+- name: compression_flags
+  description: "Compression flags"
+  format: hexadecimal_2digits

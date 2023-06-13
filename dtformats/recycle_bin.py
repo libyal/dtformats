@@ -17,15 +17,14 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
   """
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('recycle_bin.yaml')
 
-  _SUPPORTED_FORMAT_VERSION = (1, 2)
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'recycle_bin.debug.yaml', custom_format_callbacks={
+          'filetime': '_FormatIntegerAsFiletime'})
 
-  _DEBUG_INFO_FILE_HEADER = [
-      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
-      ('original_file_size', 'Original file size', '_FormatIntegerAsDecimal'),
-      ('deletion_time', 'Deletion time', '_FormatIntegerAsFiletime')]
+  _SUPPORTED_FORMAT_VERSION = (1, 2)
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Windows Recycle.Bin metadata ($I) file.
@@ -59,7 +58,9 @@ class RecycleBinMetadataFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'recycle_bin_metadata_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.format_version not in self._SUPPORTED_FORMAT_VERSION:
       raise errors.ParseError(

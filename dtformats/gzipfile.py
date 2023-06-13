@@ -16,8 +16,12 @@ class GZipFile(data_format.BinaryDataFile):
   """GZip (.gz) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('gzipfile.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'gzipfile.debug.yaml', custom_format_callbacks={
+          'posix_time': '_FormatIntegerAsPosixTime'})
 
   _GZIP_SIGNATURE = 0x8b1f
 
@@ -30,20 +34,6 @@ class GZipFile(data_format.BinaryDataFile):
   _FLAG_FCOMMENT = 0x10
 
   _BUFFER_SIZE = 16 * 1024 * 1024
-
-  _DEBUG_INFO_MEMBER_FOOTER = [
-      ('checksum', 'Checksum', '_FormatIntegerAsHexadecimal8'),
-      ('uncompressed_data_size', 'Uncompressed data size',
-       '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_MEMBER_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal4'),
-      ('compression_method', 'Compression method', '_FormatStreamAsDecimal'),
-      ('flags', 'Flags', '_FormatIntegerAsHexadecimal2'),
-      ('modification_time', 'Modification time', '_FormatIntegerAsPosixTime'),
-      ('operating_system', 'Operating system', '_FormatStreamAsDecimal'),
-      ('compression_flags', 'Compression flags',
-       '_FormatIntegerAsHexadecimal2')]
 
   def _ReadCompressedData(self, zlib_decompressor, compressed_data):
     """Reads compressed data.
@@ -101,8 +91,8 @@ class GZipFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'member footer')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          member_footer, self._DEBUG_INFO_MEMBER_FOOTER)
+      debug_info = self._DEBUG_INFORMATION.get('gzip_member_footer', None)
+      self._DebugPrintStructureObject(member_footer, debug_info)
 
   def _ReadMemberHeader(self, file_object):
     """Reads a member header.
@@ -120,8 +110,8 @@ class GZipFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'member header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          member_header, self._DEBUG_INFO_MEMBER_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('gzip_member_header', None)
+      self._DebugPrintStructureObject(member_header, debug_info)
 
     if member_header.signature != self._GZIP_SIGNATURE:
       raise errors.ParseError(

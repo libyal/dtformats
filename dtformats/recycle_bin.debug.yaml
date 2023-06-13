@@ -1,0 +1,13 @@
+# dtFormats debug specification.
+---
+data_type_map: recycle_bin_metadata_file_header
+attributes:
+- name: format_version
+  description: "Format version"
+  format: decimal
+- name: original_file_size
+  description: "Original file size"
+  format: decimal
+- name: deletion_time
+  description: "Deletion time"
+  format: custom:filetime

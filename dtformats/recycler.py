@@ -9,23 +9,13 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
   """Windows Recycler INFO2 file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('recycler.yaml')
 
-  _DEBUG_INFO_FILE_ENTRY = [
-      ('original_filename', 'Original filename (ANSI)', '_FormatANSIString'),
-      ('index', 'Index', '_FormatIntegerAsDecimal'),
-      ('drive_number', 'Drive number', '_FormatIntegerAsDecimal'),
-      ('deletion_time', 'Deletion time', '_FormatIntegerAsFiletime'),
-      ('original_file_size', 'Original file size', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('number_of_file_entries', 'Number of file entries',
-       '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('file_entry_size', 'File entry size', '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'recycler.debug.yaml', custom_format_callbacks={
+          'ansi_string': '_FormatANSIString',
+          'filetime': '_FormatIntegerAsFiletime'})
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Windows Recycler INFO2 file.
@@ -82,7 +72,9 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
           f'error: {exception!s}'))
 
     if self._debug:
-      self._DebugPrintStructureObject(file_entry, self._DEBUG_INFO_FILE_ENTRY)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'recycler_info2_file_entry', None)
+      self._DebugPrintStructureObject(file_entry, debug_info)
 
     if self._file_entry_data_size > 280:
       file_offset += 280
@@ -119,7 +111,9 @@ class RecyclerInfo2File(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'recycler_info2_file_entry', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.file_entry_size not in (280, 800):
       raise errors.ParseError(
