@@ -1,0 +1,28 @@
+# dtFormats debug specification.
+---
+data_type_map: dls_page_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: unknown1
+  description: "Unknown1"
+  format: binary_data
+- name: page_size
+  description: "Page size"
+  format: decimal
+---
+data_type_map: dls_record
+attributes:
+- name: path
+  description: "Path"
+  format: string
+- name: event_identifier
+  description: "Event identifier"
+  format: decimal
+- name: flags
+  description: "Flags"
+  format: hexadecimal_4digits
+- name: node_identifier
+  description: "Node identifier"
+  format: decimal

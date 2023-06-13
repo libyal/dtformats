@@ -1,0 +1,103 @@
+# dtFormats debug specification.
+---
+data_type_map: custom_file_footer
+attributes:
+- name: signature
+  description: "Signature"
+  format: hexadecimal_8digits
+---
+data_type_map: custom_file_header
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: header_values_type
+  description: "Header value type"
+  format: decimal
+---
+data_type_map: dest_list_entry
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: droid_volume_identifier
+  description: "Droid volume identifier"
+  format: uuid
+- name: droid_file_identifier
+  description: "Droid file identifier"
+  format: uuid
+- name: birth_droid_volume_identifier
+  description: "Birth droid volume identifier"
+  format: uuid
+- name: birth_droid_file_identifier
+  description: "Birth droid file identifier"
+  format: uuid
+- name: hostname
+  description: "Hostname"
+  format: string
+- name: entry_number
+  description: "Entry number"
+  format: string
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: floating_point
+- name: last_modification_time
+  description: "Last modification time"
+  format: custom:filetime
+- name: pin_status
+  description: "Pin status"
+  format: string
+- name: unknown4
+  description: "Unknown4"
+  format: decimal
+- name: unknown5
+  description: "Unknown5"
+  format: hexadecimal_8digits
+- name: unknown6
+  description: "Unknown6"
+  format: hexadecimal_8digits
+- name: path_size
+  description: "Path size"
+  format: custom:path_size
+- name: path
+  description: "Path"
+  format: string
+- name: unknown7
+  description: "Unknown7"
+  format: hexadecimal_8digits
+---
+data_type_map: dest_list_header
+attributes:
+- name: format_version
+  description: "Format version"
+  format: decimal
+- name: number_of_entries
+  description: "Number of entries"
+  format: decimal
+- name: number_of_pinned_entries
+  description: "Number of pinned entries"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: floating_point
+- name: last_entry_number
+  description: "Last entry number"
+  format: decimal
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: last_revision_number
+  description: "Last revision number"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits

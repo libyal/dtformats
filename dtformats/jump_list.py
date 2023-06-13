@@ -84,44 +84,14 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
   """Automatic Destinations Jump List (.automaticDestinations-ms) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('jump_list.yaml')
 
-  # TODO: debug print pin status.
-  _DEBUG_INFO_DEST_LIST_ENTRY = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('droid_volume_identifier', 'Droid volume identifier',
-       '_FormatUUIDAsString'),
-      ('droid_file_identifier', 'Droid file identifier', '_FormatUUIDAsString'),
-      ('birth_droid_volume_identifier', 'Birth droid volume identifier',
-       '_FormatUUIDAsString'),
-      ('birth_droid_file_identifier', 'Birth droid file identifier',
-       '_FormatUUIDAsString'),
-      ('hostname', 'Hostname', '_FormatString'),
-      ('entry_number', 'Entry number', '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', 'Unknown3', '_FormatFloatingPoint'),
-      ('last_modification_time', 'Last modification time',
-       '_FormatIntegerAsFiletime'),
-      ('pin_status', 'Pin status', '_FormatIntegerAsDecimal'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8'),
-      ('unknown6', 'Unknown6', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsPathSize'),
-      ('path', 'Path', '_FormatString'),
-      ('unknown7', 'Unknown7', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_DEST_LIST_HEADER = [
-      ('format_version', 'Format version', '_FormatIntegerAsDecimal'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal'),
-      ('number_of_pinned_entries', 'Number of pinned entries',
-       '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatFloatingPoint'),
-      ('last_entry_number', 'Last entry number', '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('last_revision_number', 'Last revision number',
-       '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8')]
+  # TODO: add custom formatter for pin status.
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'jump_list.debug.yaml', custom_format_callbacks={
+          'filetime': '_FormatIntegerAsFiletime',
+          'path_size': '_FormatIntegerAsPathSize'})
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes an Automatic Destinations Jump List file.
@@ -198,8 +168,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
         olecf_item, stream_offset, data_type_map, description)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          dest_list_entry, self._DEBUG_INFO_DEST_LIST_ENTRY)
+      debug_info = self._DEBUG_INFORMATION.get('dest_list_entry', None)
+      self._DebugPrintStructureObject(dest_list_entry, debug_info)
 
     return entry_data_size
 
@@ -219,8 +189,8 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
         olecf_item, stream_offset, data_type_map, 'dest list header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          dest_list_header, self._DEBUG_INFO_DEST_LIST_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('dest_list_header', None)
+      self._DebugPrintStructureObject(dest_list_header, debug_info)
 
     if dest_list_header.format_version not in (1, 2, 3, 4):
       raise errors.ParseError(
@@ -301,22 +271,16 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
   """Custom Destinations Jump List (.customDestinations-ms) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('jump_list.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'jump_list.debug.yaml', custom_format_callbacks={})
 
   _FILE_FOOTER_SIGNATURE = 0xbabffbab
 
   _LNK_GUID = (
       b'\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46')
-
-  _DEBUG_INFO_FILE_FOOTER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('header_values_type', 'Header value type', '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a Custom Destinations Jump List file.
@@ -344,7 +308,8 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_footer, self._DEBUG_INFO_FILE_FOOTER)
+      debug_info = self._DEBUG_INFORMATION.get('custom_file_footer', None)
+      self._DebugPrintStructureObject(file_footer, debug_info)
 
     if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
       raise errors.ParseError(
@@ -365,7 +330,8 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('custom_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.unknown1 != 2:
       raise errors.ParseError(

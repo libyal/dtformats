@@ -10,19 +10,12 @@ class FseventsFile(data_format.BinaryDataFile):
   """MacOS fseventsd file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('fseventsd.yaml')
 
-  _DEBUG_INFO_DLS_PAGE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('unknown1', 'Unknown1', '_FormatDataInHexadecimal'),
-      ('page_size', 'Page size', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_DLS_RECORD = [
-      ('path', 'Path', '_FormatString'),
-      ('event_identifier', 'Event identifier', '_FormatIntegerAsDecimal'),
-      ('flags', 'Flags', '_FormatIntegerAsHexadecimal4'),
-      ('node_identifier', 'Node identifier', '_FormatIntegerAsDecimal')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'fseventsd.debug.yaml', custom_format_callbacks={
+          'signature': '_FormatStreamAsSignature'})
 
   # The version 1 format was used in Mac OS X 10.5 (Leopard) through macOS 10.12
   # (Sierra).
@@ -73,8 +66,8 @@ class FseventsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'DLS page header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          dls_page_header, self._DEBUG_INFO_DLS_PAGE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('dls_page_header', None)
+      self._DebugPrintStructureObject(dls_page_header, debug_info)
 
     return dls_page_header, bytes_read
 
@@ -103,7 +96,8 @@ class FseventsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'DLS record')
 
     if self._debug:
-      self._DebugPrintStructureObject(dls_record, self._DEBUG_INFO_DLS_RECORD)
+      debug_info = self._DEBUG_INFORMATION.get('dls_record', None)
+      self._DebugPrintStructureObject(dls_record, debug_info)
 
     return dls_record, bytes_read
 
