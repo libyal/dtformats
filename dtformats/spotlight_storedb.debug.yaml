@@ -1,0 +1,154 @@
+# dtFormats debug specification.
+---
+data_type_map: spotlight_store_db_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: flags
+  description: "Flags"
+  format: hexadecimal_8digits
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: unknown4
+  description: "Unknown4"
+  format: hexadecimal_8digits
+- name: unknown5
+  description: "Unknown5"
+  format: hexadecimal_8digits
+- name: unknown6
+  description: "Unknown6"
+  format: hexadecimal_8digits
+- name: unknown7
+  description: "Unknown7"
+  format: hexadecimal_8digits
+- name: map_offset
+  description: "Map offset"
+  format: hexadecimal_8digits
+- name: map_size
+  description: "Map size"
+  format: decimal
+- name: page_size
+  description: "Page size"
+  format: decimal
+- name: metadata_types_block_number
+  description: "Metadata types block number"
+  format: decimal
+- name: metadata_values_block_number
+  description: "Metadata values block number"
+  format: decimal
+- name: unknown_values41_block_number
+  description: "Unknown values 0x41 block number"
+  format: decimal
+- name: metadata_lists_block_number
+  description: "Metadata lists block number"
+  format: decimal
+- name: metadata_localized_strings_block_number
+  description: "Metadata localized strings block number"
+  format: decimal
+- name: unknown8
+  description: "Unknown8"
+  format: binary_data
+- name: path
+  description: "Path"
+  format: string
+---
+data_type_map: spotlight_store_db_lz4_block_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: uncompressed_data_size
+  description: "Uncompressed data size"
+  format: decimal
+- name: compressed_data_size
+  description: "compressed data size"
+  format: decimal
+---
+data_type_map: spotlight_store_db_map_page_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: page_size
+  description: "Page size"
+  format: decimal
+- name: number_of_map_values
+  description: "Number of map values"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+---
+data_type_map: spotlight_store_db_map_page_value
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: block_number
+  description: "Block number"
+  format: decimal
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+---
+data_type_map: spotlight_store_db_property_page_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: page_size
+  description: "Page size"
+  format: decimal
+- name: used_page_size
+  description: "Used page size"
+  format: decimal
+- name: property_table_type
+  description: "Property table type"
+  format: hexadecimal_8digits
+- name: uncompressed_page_size
+  description: "Uncompressed page size"
+  format: decimal
+---
+data_type_map: spotlight_store_db_property_values_header
+attributes:
+- name: next_block_number
+  description: "Next block number"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+---
+data_type_map: spotlight_store_db_property_value11
+attributes:
+- name: table_index
+  description: "Table index"
+  format: decimal
+- name: value_type
+  description: "Value type"
+  format: hexadecimal_2digits
+- name: property_type
+  description: "Property type"
+  format: hexadecimal_2digits
+- name: key_name
+  description: "Key name"
+  format: string
+---
+data_type_map: spotlight_store_db_property_value21
+attributes:
+- name: table_index
+  description: "Table index"
+  format: decimal
+- name: value_name
+  description: "Value name"
+  format: string

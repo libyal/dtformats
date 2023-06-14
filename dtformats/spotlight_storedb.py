@@ -113,78 +113,13 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
   """Apple Spotlight store database file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
       'spotlight_storedb.yaml')
 
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('flags', 'Flags', '_FormatIntegerAsHexadecimal8'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8'),
-      ('unknown6', 'Unknown6', '_FormatIntegerAsHexadecimal8'),
-      ('unknown7', 'Unknown7', '_FormatIntegerAsHexadecimal8'),
-      ('map_offset', 'Map offset', '_FormatIntegerAsHexadecimal8'),
-      ('map_size', 'Map size', '_FormatIntegerAsDecimal'),
-      ('page_size', 'Page size', '_FormatIntegerAsDecimal'),
-      ('metadata_types_block_number', 'Metadata types block number',
-       '_FormatIntegerAsDecimal'),
-      ('metadata_values_block_number', 'Metadata values block number',
-       '_FormatIntegerAsDecimal'),
-      ('unknown_values41_block_number', 'Unknown valuex 0x41 block number',
-       '_FormatIntegerAsDecimal'),
-      ('metadata_lists_block_number', 'Metadata lists block number',
-       '_FormatIntegerAsDecimal'),
-      ('metadata_localized_strings_block_number',
-       'Metadata localized strings block number', '_FormatIntegerAsDecimal'),
-      ('unknown8', 'Unknown8', '_FormatDataInHexadecimal'),
-      ('path', 'Path', '_FormatString')]
-
-  _DEBUG_INFO_MAP_PAGE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('page_size', 'Page size', '_FormatIntegerAsDecimal'),
-      ('number_of_map_values', 'Number of map values',
-       '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_MAP_VALUE = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('block_number', 'Block number', '_FormatIntegerAsDecimal'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_PROPERTY_PAGE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('page_size', 'Page size', '_FormatIntegerAsDecimal'),
-      ('used_page_size', 'Used page size', '_FormatIntegerAsDecimal'),
-      ('property_table_type', 'Property table type',
-       '_FormatIntegerAsHexadecimal8'),
-      ('uncompressed_page_size', 'Uncompressed page size',
-       '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_PROPERTY_VALUES_HEADER = [
-      ('next_block_number', 'Next block number', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_PROPERTY_VALUE11 = [
-      ('table_index', 'Table index', '_FormatIntegerAsDecimal'),
-      ('value_type', 'Value type', '_FormatIntegerAsHexadecimal2'),
-      ('property_type', 'Property type', '_FormatIntegerAsHexadecimal2'),
-      ('key_name', 'Key name', '_FormatString')]
-
-  _DEBUG_INFO_PROPERTY_VALUE21 = [
-      ('table_index', 'Table index', '_FormatIntegerAsDecimal'),
-      ('value_name', 'Value name', '_FormatString')]
-
-  _DEBUG_INFO_LZ4_BLOCK_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('uncompressed_data_size', 'Uncompressed data size',
-       '_FormatIntegerAsDecimal'),
-      ('compressed_data_size', 'Compressed data size',
-       '_FormatIntegerAsDecimal')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'spotlight_storedb.debug.yaml', custom_format_callbacks={
+          'signature': '_FormatStreamAsSignature'})
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a binary data file.
@@ -354,21 +289,29 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           f'with error: {exception!s}'))
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          lz4_block_header, self._DEBUG_INFO_LZ4_BLOCK_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'spotlight_store_db_lz4_block_header', None)
+      self._DebugPrintStructureObject(lz4_block_header, debug_info)
 
-    end_of_compressed_data_offset = (
-        12 + lz4_block_header.compressed_data_size)
+    if lz4_block_header.signature == b'bv41':
+      end_of_data_offset = 12 + lz4_block_header.compressed_data_size
 
-    page_data = lz4.block.decompress(
-        compressed_page_data[12:end_of_compressed_data_offset],
-        uncompressed_size=lz4_block_header.uncompressed_data_size)
+      page_data = lz4.block.decompress(
+          compressed_page_data[12:end_of_data_offset],
+          uncompressed_size=lz4_block_header.uncompressed_data_size)
+
+    elif lz4_block_header.signature == b'bv4-':
+      end_of_data_offset = 8 + lz4_block_header.uncompressed_data_size
+      page_data = compressed_page_data[8:end_of_data_offset]
+
+    else:
+      raise errors.ParseError('Unsupported start of LZ4 block marker')
 
     end_of_compressed_data_identifier = compressed_page_data[
-        end_of_compressed_data_offset:end_of_compressed_data_offset + 4]
+        end_of_data_offset:end_of_data_offset + 4]
 
     if end_of_compressed_data_identifier != b'bv4$':
-      file_offset += end_of_compressed_data_offset
+      file_offset += end_of_data_offset
       raise errors.ParseError((
           f'Unsupported LZ4 end of compressed data marker at offset: '
           f'0x{file_offset:08x}'))
@@ -437,7 +380,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'spotlight_store_db_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if self._debug:
       trailing_data = file_object.read(
@@ -553,8 +498,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'map page header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          page_header, self._DEBUG_INFO_MAP_PAGE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'spotlight_store_db_map_page_header', None)
+      self._DebugPrintStructureObject(page_header, debug_info)
 
     file_offset += page_header_size
 
@@ -602,7 +548,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           file_object, file_offset, data_type_map, 'map page value')
 
       if self._debug:
-        self._DebugPrintStructureObject(map_value, self._DEBUG_INFO_MAP_VALUE)
+        debug_info = self._DEBUG_INFORMATION.get(
+            'spotlight_store_db_map_page_value', None)
+        self._DebugPrintStructureObject(map_value, debug_info)
 
       self._map_values.append(map_value)
 
@@ -985,8 +933,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         page_data, file_offset, data_type_map, 'property values header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          page_values_header, self._DEBUG_INFO_PROPERTY_VALUES_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'spotlight_store_db_property_values_header', None)
+      self._DebugPrintStructureObject(page_values_header, debug_info)
 
     if page_header.property_table_type in (0x00000011, 0x00000021):
       self._ReadPropertyPageValues(page_header, page_data, property_table)
@@ -1028,8 +977,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       self._DebugPrintText('\n')
 
-      self._DebugPrintStructureObject(
-          page_header, self._DEBUG_INFO_PROPERTY_PAGE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'spotlight_store_db_property_page_header', None)
+      self._DebugPrintStructureObject(page_header, debug_info)
 
     return page_header, bytes_read
 
@@ -1093,9 +1043,11 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             page_data[page_data_offset:page_data_offset + context.byte_size])
 
         if page_header.property_table_type == 0x00000011:
-          debug_info = self._DEBUG_INFO_PROPERTY_VALUE11
+          debug_info = self._DEBUG_INFORMATION.get(
+              'spotlight_store_db_property_value11', None)
         elif page_header.property_table_type == 0x00000021:
-          debug_info = self._DEBUG_INFO_PROPERTY_VALUE21
+          debug_info = self._DEBUG_INFORMATION.get(
+              'spotlight_store_db_property_value21', None)
 
         self._DebugPrintStructureObject(property_value, debug_info)
 

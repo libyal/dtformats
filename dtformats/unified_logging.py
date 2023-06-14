@@ -2556,6 +2556,9 @@ class TraceV3File(data_format.BinaryDataFile):
 
     Args:
       catalog (tracev3_catalog): catalog.
+
+    Raises:
+      ParseError: if a process information entry already exists.
     """
     self._catalog_strings_map = self._GetCatalogSubSystemStringMap(catalog)
 
@@ -4542,7 +4545,8 @@ class TraceV3File(data_format.BinaryDataFile):
       if self._timesync_boot_record:
         break
 
-      if not directory_entry.endswith('.timesync'):
+      lower_directory_entry = directory_entry.lower()
+      if not lower_directory_entry.endswith('.timesync'):
         continue
 
       timesync_file = self._OpenTimesyncDatabaseFile(directory_entry)
