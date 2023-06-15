@@ -2019,30 +2019,6 @@ class DSCFile(data_format.BinaryDataFile):
 
     return file_header
 
-  def _ReadString(self, file_object, file_offset):
-    """Reads a string.
-
-    Args:
-      file_object (file): file-like object.
-      file_offset (int): offset of the string data relative to the start
-          of the file.
-
-    Returns:
-      str: string.
-
-    Raises:
-      ParseError: if the string cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('cstring')
-
-    format_string, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'string')
-
-    if self._debug:
-      self._DebugPrintValue('String', format_string)
-
-    return format_string
-
   def _ReadImagePath(self, file_object, file_offset):
     """Reads an image path.
 
@@ -2112,6 +2088,30 @@ class DSCFile(data_format.BinaryDataFile):
       dsc_range.range_size = range_descriptor.range_size
       dsc_range.uuid_index = range_descriptor.uuid_descriptor_index
       yield dsc_range
+
+  def _ReadString(self, file_object, file_offset):
+    """Reads a string.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the string data relative to the start
+          of the file.
+
+    Returns:
+      str: string.
+
+    Raises:
+      ParseError: if the string cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('cstring')
+
+    format_string, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'string')
+
+    if self._debug:
+      self._DebugPrintValue('String', format_string)
+
+    return format_string
 
   def _ReadUUIDDescriptors(
       self, file_object, file_offset, version, number_of_uuids):
@@ -2523,11 +2523,15 @@ class TraceV3File(data_format.BinaryDataFile):
 
   ACTIVITY_IDENTIFIER_BITMASK = (1 << 63) - 1
 
-  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
+  def __init__(
+      self, debug=False, error_on_warning=True, file_system_helper=None,
+      output_writer=None):
     """Initializes a tracev3 file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      error_on_warning (Optional[bool]): True if warnings should be treated as
+          errors.
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
@@ -2542,6 +2546,7 @@ class TraceV3File(data_format.BinaryDataFile):
     self._catalog_process_information_entries = {}
     self._catalog_strings_map = {}
     self._chunk_index = 0
+    self._error_on_warning = error_on_warning
     self._header_timebase = 1.0
     self._header_timestamp = 0
     self._sorted_timesync_sync_records = []
@@ -2979,30 +2984,34 @@ class TraceV3File(data_format.BinaryDataFile):
     return strings_map
 
   def _GetDataItemsAndValuesData(
-      self, tracepoint_data_object, values_data, oversize_chunks):
+      self, tracepoint_data_object, values_data, private_data,
+      oversize_chunks):
     """Retrieves the data items and values data.
 
     Args:
       tracepoint_data_object (object): firehose tracepoint data object.
       values_data (bytes): (public) values data.
+      private_data (bytes): private data.
       oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
           reference.
 
     Returns:
-      tuple[list[tracev3_data_item], bytes]: data items and values data.
+      tuple[list[tracev3_data_item], bytes, bytes]: data items and values
+          data and private data.
     """
     data_reference = getattr(tracepoint_data_object, 'data_reference', None)
     if not data_reference:
       data_items = getattr(tracepoint_data_object, 'data_items', None)
-      return data_items, values_data
+      return data_items, values_data, private_data
 
     oversize_chunk = oversize_chunks.get(data_reference, None)
     if oversize_chunk:
-      return oversize_chunk.data_items, oversize_chunk.values_data
+      return (oversize_chunk.data_items, oversize_chunk.values_data,
+              oversize_chunk.private_data)
 
     # Seen in certain tracev3 files that oversize chunks can be missing.
     # TODO: issue warning.
-    return None, None
+    return None, values_data, private_data
 
   def _GetDSCFile(self, uuid_string):
     """Retrieves a specific shared-cache strings (DSC) file.
@@ -3078,6 +3087,8 @@ class TraceV3File(data_format.BinaryDataFile):
           image_text_offset = uuid_entry.load_address_lower | (
               uuid_entry.load_address_upper << 32)
           break
+
+      # TODO: determine how to handle missing strings file identifier.
 
     elif strings_file_type == 0x000a:
       strings_file_identifier = tracepoint_data_object.uuidtext_file_identifier
@@ -3379,6 +3390,21 @@ class TraceV3File(data_format.BinaryDataFile):
     uuidtext_file.Open(uuidtext_file_path)
 
     return uuidtext_file
+
+  def _RaiseParserWarning(self, message):
+    """Raises a non-fatal parser warning.
+
+    Args:
+      message (str): warning message.
+
+    Raises:
+      ParseError: if warning are treated as errors.
+    """
+    if self._error_on_warning:
+      raise errors.ParseError(message)
+
+    # TODO: write warning to output writer.
+    print(f'[WARNING] {message:s}')
 
   def _ReadCatalog(self, file_object, file_offset, chunk_data_size):
     """Reads a catalog.
@@ -3750,17 +3776,6 @@ class TraceV3File(data_format.BinaryDataFile):
             f'Unable to retrieve process information entry: {proc_id:s} from '
             f'catalog'))
 
-    private_data_virtual_offset = (
-        firehose_header.private_data_virtual_offset & 0x0fff)
-    if not private_data_virtual_offset:
-      private_data_size = 0
-      private_data = b''
-    else:
-      private_data_size = 4096 - private_data_virtual_offset
-      private_data = chunk_data[-private_data_size:]
-      if self._debug:
-        self._DebugPrintData('Private data', private_data)
-
     chunk_data_offset = 32
     while chunk_data_offset < firehose_header.public_data_size:
       firehose_tracepoint = self._ReadFirehoseTracepointData(
@@ -3893,8 +3908,21 @@ class TraceV3File(data_format.BinaryDataFile):
               tracepoint_data_object, values_data, string_formatter)
 
         else:
-          data_items, values_data = self._GetDataItemsAndValuesData(
-              tracepoint_data_object, values_data, oversize_chunks)
+          private_data_virtual_offset = (
+              firehose_header.private_data_virtual_offset & 0x0fff)
+          if not private_data_virtual_offset:
+            private_data = b''
+          else:
+            private_data_size = 4096 - private_data_virtual_offset
+            private_data = chunk_data[-private_data_size:]
+
+          data_items, values_data, private_data = (
+              self._GetDataItemsAndValuesData(
+                  tracepoint_data_object, values_data, private_data,
+                  oversize_chunks))
+
+          if self._debug and private_data:
+            self._DebugPrintData('Private data', private_data)
 
           if data_items:
             private_data_range = getattr(
@@ -4002,6 +4030,7 @@ class TraceV3File(data_format.BinaryDataFile):
 
       chunk_data_offset += alignment
 
+    private_data_size = len(private_data)
     if private_data_size:
       chunk_data_size -= private_data_size
 
@@ -4354,12 +4383,13 @@ class TraceV3File(data_format.BinaryDataFile):
       debug_info = self._DEBUG_INFORMATION.get('tracev3_oversize_chunk', None)
       self._DebugPrintStructureObject(oversize_chunk, debug_info)
 
-    if oversize_chunk.private_data_size:
-      raise errors.ParseError(
-          'Oversize chunk with private data is currently unsupported')
+    data_offset = context.byte_size
+    data_size = data_offset + oversize_chunk.data_size
+    oversize_chunk.values_data = chunk_data[data_offset:data_size]
 
-    data_size = 48 + oversize_chunk.data_size + oversize_chunk.private_data_size
-    oversize_chunk.values_data = chunk_data[context.byte_size:data_size]
+    data_offset += oversize_chunk.data_size
+    data_size = data_offset + oversize_chunk.private_data_size
+    oversize_chunk.private_data = chunk_data[data_offset:data_size]
 
     if self._debug and data_size < chunk_data_size:
       self._DebugPrintData(
@@ -4398,17 +4428,14 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintData(
           'Trailing SimpleDump chunk data', chunk_data[context.byte_size:])
 
-    if not self._catalog:
-      process_information_entry = None
-    else:
-      proc_id = (f'{simpledump_chunk.proc_id_upper:d}@'
-                 f'{simpledump_chunk.proc_id_lower:d}')
-      process_information_entry = (
-          self._catalog_process_information_entries.get(proc_id, None))
-      if not process_information_entry:
-        raise errors.ParseError((
-            f'Unable to retrieve process information entry: {proc_id:s} from '
-            f'catalog'))
+    proc_id = (f'{simpledump_chunk.proc_id_upper:d}@'
+               f'{simpledump_chunk.proc_id_lower:d}')
+    process_information_entry = (
+        self._catalog_process_information_entries.get(proc_id, None))
+    if not process_information_entry:
+      self._RaiseParserWarning((
+          f'Unable to retrieve process information entry: {proc_id:s} from '
+          f'catalog'))
 
     backtrace_frame = BacktraceFrame()
     backtrace_frame.image_identifier = simpledump_chunk.sender_image_identifier
@@ -4471,17 +4498,14 @@ class TraceV3File(data_format.BinaryDataFile):
       self._DebugPrintData(
           'Trailing StateDump chunk data', chunk_data[context.byte_size:])
 
-    if not self._catalog:
-      process_information_entry = None
-    else:
-      proc_id = (f'{statedump_chunk.proc_id_upper:d}@'
-                 f'{statedump_chunk.proc_id_lower:d}')
-      process_information_entry = (
-          self._catalog_process_information_entries.get(proc_id, None))
-      if not process_information_entry:
-        raise errors.ParseError((
-            f'Unable to retrieve process information entry: {proc_id:s} from '
-            f'catalog'))
+    proc_id = (f'{statedump_chunk.proc_id_upper:d}@'
+               f'{statedump_chunk.proc_id_lower:d}')
+    process_information_entry = (
+        self._catalog_process_information_entries.get(proc_id, None))
+    if not process_information_entry:
+      self._RaiseParserWarning((
+          f'Unable to retrieve process information entry: {proc_id:s} from '
+          f'catalog'))
 
     event_message = ''
     if statedump_chunk.state_data_type == 0x03:

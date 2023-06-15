@@ -1,0 +1,43 @@
+# dtFormats debug specification.
+---
+data_type_map: usn_record_v2
+attributes:
+- name: size
+  description: "Size"
+  format: decimal
+- name: major_format_version
+  description: "Major format version"
+  format: decimal
+- name: minor_format_version
+  description: "Minor format version"
+  format: decimal
+- name: file_reference
+  description: "File reference"
+  format: hexadecimal_8digits
+- name: parent_file_reference
+  description: "Parent file reference"
+  format: hexadecimal_8digits
+- name: timestamp
+  description: "Timestamp"
+  format: custom:filetime
+- name: update_reason_flags
+  description: "Update reason flags"
+  format: hexadecimal_8digits
+- name: update_source_flags
+  description: "Update source flags"
+  format: hexadecimal_8digits
+- name: security_descriptor_entry
+  description: "Security descriptor entry"
+  format: decimal
+- name: file_attribute_flags
+  description: "File attribute flags"
+  format: hexadecimal_8digits
+- name: name_size
+  description: "Name size"
+  format: decimal
+- name: name_offset
+  description: "Name offset"
+  format: decimal
+- name: name
+  description: "Name"
+  format: string

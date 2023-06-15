@@ -51,10 +51,10 @@ attributes:
 members:
 - name: size
   data_type: uint32
-- name: major_version
+- name: major_format_version
   data_type: uint16
   value: 2
-- name: minor_version
+- name: minor_format_version
   data_type: uint16
   value: 0
 - name: file_reference
