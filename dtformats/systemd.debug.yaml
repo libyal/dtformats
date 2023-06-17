@@ -1,0 +1,142 @@
+# dtFormats debug specification.
+---
+data_type_map: systemd_journal_data_object_values
+attributes:
+- name: hash
+  description: "Hash"
+  format: hexadecimal_8digits
+- name: next_hash_offset
+  description: "Next hash offset"
+  format: hexadecimal_8digits
+- name: next_field_offset
+  description: "Next field offset"
+  format: hexadecimal_8digits
+- name: entry_offset
+  description: "Entry offset"
+  format: hexadecimal_8digits
+- name: entry_array_offset
+  description: "Entry array offset"
+  format: hexadecimal_8digits
+- name: number_of_entries
+  description: "Number of entries"
+  format: decimal
+---
+data_type_map: systemd_journal_entry_array_object_values
+attributes:
+- name: next_entry_array_offset
+  description: "Next entry array offset"
+  format: hexadecimal_8digits
+- name: entry_object_offsets
+  description: "Entry object offsets"
+  format: custom:entry_object_offsets
+---
+data_type_map: systemd_journal_entry_object_values
+attributes:
+- name: sequence_number
+  description: "Sequence number"
+  format: decimal
+- name: real_time
+  description: "Real time"
+  format: custom:posix_time
+- name: monotonic
+  description: "Monotonic"
+  format: hexadecimal_8digits
+- name: boot_identifier
+  description: "Boot identifier"
+  format: binary_data
+- name: xor_hash
+  description: "XOR hash"
+  format: hexadecimal_8digits
+- name: entry_items
+  description: "Entry items"
+  format: custom:entry_items
+---
+data_type_map: systemd_journal_file_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: compatible_flags
+  description: "Compatible flags"
+  format: hexadecimal_8digits
+- name: incompatible_flags
+  description: "Incompatible flags"
+  format: hexadecimal_8digits
+- name: state
+  description: "State"
+  format: hexadecimal_2digits
+- name: reserved1
+  description: "Reserved"
+  format: binary_data
+- name: file_identifier
+  description: "File identifier"
+  format: binary_data
+- name: machine_identifier
+  description: "Machine identifier"
+  format: binary_data
+- name: boot_identifier
+  description: "Boot identifier"
+  format: binary_data
+- name: sequence_number_identifier
+  description: "Sequence number identifier"
+  format: binary_data
+- name: header_size
+  description: "Header size"
+  format: decimal
+- name: arena_size
+  description: "Arena size"
+  format: decimal
+- name: data_hash_table_offset
+  description: "Data hash table offset"
+  format: hexadecimal_8digits
+- name: data_hash_table_size
+  description: "Data hash table size"
+  format: decimal
+- name: field_hash_table_offset
+  description: "Field hash table offset"
+  format: hexadecimal_8digits
+- name: field_hash_table_size
+  description: "Field hash table size"
+  format: decimal
+- name: tail_object_offset
+  description: "Tail object offset"
+  format: hexadecimal_8digits
+- name: number_of_objects
+  description: "Number of objects"
+  format: decimal
+- name: number_of_entry_objects
+  description: "Number of entry objects"
+  format: decimal
+- name: tail_entry_sequence_number
+  description: "Tail entry sequence number"
+  format: hexadecimal_8digits
+- name: head_entry_sequence_number
+  description: "Head entry sequence number"
+  format: hexadecimal_8digits
+- name: entry_array_offset
+  description: "Entry array offset"
+  format: hexadecimal_8digits
+- name: head_entry_real_time
+  description: "Head entry real time"
+  format: custom:posix_time
+- name: tail_entry_real_time
+  description: "Tail entry real time"
+  format: custom:posix_time
+- name: tail_entry_monotonic
+  description: "Tail entry monotonic"
+  format: hexadecimal_8digits
+---
+data_type_map: systemd_journal_object_header
+attributes:
+- name: object_type
+  description: "Object type"
+  format: custom:object_type
+- name: object_flags
+  description: "Object flags"
+  format: custom:object_flags
+- name: reserved1
+  description: "Reserved"
+  format: binary_data
+- name: data_sizes
+  description: "Data size"
+  format: decimal

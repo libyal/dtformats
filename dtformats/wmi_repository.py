@@ -295,8 +295,12 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
   """Index binary-tree (Index.btr) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'wmi_repository.debug.yaml', custom_format_callbacks={
+          'page_type': '_FormatIntegerAsPageType'})
 
   _PAGE_SIZE = 8192
 
@@ -305,16 +309,9 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
   _PAGE_TYPES = {
       0xaccc: 'Is active',
       0xaddd: 'Is administrative',
-      0xbadd: 'Is deleted',
-  }
+      0xbadd: 'Is deleted'}
 
   _KEY_SEGMENT_SEPARATOR = '\\'
-
-  _DEBUG_INFO_PAGE_HEADER = [
-      ('page_type', 'Page type', '_FormatIntegerAsPageType'),
-      ('mapped_page_number', 'Mapped page number', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('root_page_number', 'Root page number', '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes an index binary-tree file.
@@ -501,7 +498,8 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         page_header_data, file_offset, data_type_map, 'page header')
 
     if self._debug:
-      self._DebugPrintStructureObject(page_header, self._DEBUG_INFO_PAGE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('cim_page_header', None)
+      self._DebugPrintStructureObject(page_header, debug_info)
 
     return page_header
 
@@ -626,26 +624,12 @@ class MappingFile(data_format.BinaryDataFile):
   """
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _DEBUG_INFO_FILE_FOOTER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatIntegerAsHexadecimal8'),
-      ('sequence_number', 'Sequence number', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('number_of_pages', 'Number of pages', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_TABLE_ENTRY = [
-      ('page_number', '    Page number', '_FormatIntegerAsPageNumber'),
-      ('unknown1', '    Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', '    Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unknown3', '    Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', '    Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('unknown5', '    Unknown5', '_FormatIntegerAsHexadecimal8')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'wmi_repository.debug.yaml', custom_format_callbacks={
+          'page_number': '_FormatIntegerAsPageNumber'})
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a mappings file.
@@ -674,9 +658,9 @@ class MappingFile(data_format.BinaryDataFile):
     self._DebugPrintText('\n')
 
     for index, mapping_table_entry in enumerate(mapping_table.entries):
+      debug_info = self._DEBUG_INFORMATION.get('cim_map_table_entry', None)
       self._DebugPrintText(f'  Entry: {index:d}:\n')
-      self._DebugPrintStructureObject(
-          mapping_table_entry, self._DEBUG_INFO_TABLE_ENTRY)
+      self._DebugPrintStructureObject(mapping_table_entry, debug_info)
 
     self._DebugPrintText('\n')
 
@@ -749,7 +733,8 @@ class MappingFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_footer, self._DEBUG_INFO_FILE_FOOTER)
+      debug_info = self._DEBUG_INFORMATION.get('cim_map_footer', None)
+      self._DebugPrintStructureObject(file_footer, debug_info)
 
     return file_footer
 
@@ -777,7 +762,8 @@ class MappingFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('cim_map_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
 

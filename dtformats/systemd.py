@@ -9,8 +9,17 @@ class SystemdJournalFile(data_format.BinaryDataFile):
   """Systemd journal file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('systemd.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'systemd.debug.yaml', custom_format_callbacks={
+          'entry_items': '_FormatEntryItems',
+          'entry_object_offsets': '_FormatEntryObjectOffsets',
+          'object_flags': '_FormatIntegerAsObjectFlags',
+          'object_type': '_FormatIntegerAsObjectType',
+          'posix_time': '_FormatIntegerAsPosixTimeInMicroseconds',
+          'signature': '_FormatStreamAsSignature'})
 
   _OBJECT_COMPRESSED_XZ = 1
   _OBJECT_COMPRESSED_LZ4 = 2
@@ -49,76 +58,6 @@ class SystemdJournalFile(data_format.BinaryDataFile):
       _OBJECT_TYPE_FIELD_HASH_TABLE,
       _OBJECT_TYPE_ENTRY_ARRAY,
       _OBJECT_TYPE_TAG])
-
-  _DEBUG_INFO_DATA_OBJECT_VALUES = [
-      ('hash', 'Hash', '_FormatIntegerAsHexadecimal8'),
-      ('next_hash_offset', 'Next hash offset', '_FormatIntegerAsHexadecimal8'),
-      ('next_field_offset', 'Next field offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('entry_offset', 'Entry offset', '_FormatIntegerAsHexadecimal8'),
-      ('entry_array_offset', 'Entry array offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('number_of_entries', 'Number of entries', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_ENTRY_ARRAY_OBJECT_VALUES = [
-      ('next_entry_array_offset', 'Next entry array offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('entry_object_offsets', 'Entry object offsets',
-       '_FormatEntryObjectOffsets')]
-
-  _DEBUG_INFO_ENTRY_OBJECT_VALUES = [
-      ('sequence_number', 'Sequence number', '_FormatIntegerAsDecimal'),
-      ('real_time', 'Real time', '_FormatIntegerAsPosixTimeInMicroseconds'),
-      ('monotonic', 'Monotonic', '_FormatIntegerAsHexadecimal8'),
-      ('boot_identifier', 'Boot identifier', '_FormatDataInHexadecimal'),
-      ('xor_hash', 'XOR hash', '_FormatIntegerAsHexadecimal8'),
-      ('entry_items', 'Entry items', '_FormatEntryItems')]
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('signature', 'Signature', '_FormatStreamAsSignature'),
-      ('compatible_flags', 'Compatible flags', '_FormatIntegerAsHexadecimal8'),
-      ('incompatible_flags', 'Incompatible flags',
-       '_FormatIntegerAsHexadecimal8'),
-      ('state', 'State', '_FormatIntegerAsHexadecimal2'),
-      ('reserved1', 'Reserved', '_FormatDataInHexadecimal'),
-      ('file_identifier', 'File identifier', '_FormatDataInHexadecimal'),
-      ('machine_identifier', 'Machine identifier', '_FormatDataInHexadecimal'),
-      ('boot_identifier', 'Boot identifier', '_FormatDataInHexadecimal'),
-      ('sequence_number_identifier', 'Sequence number identifier',
-       '_FormatDataInHexadecimal'),
-      ('header_size', 'Header size', '_FormatIntegerAsDecimal'),
-      ('arena_size', 'Arena size', '_FormatIntegerAsDecimal'),
-      ('data_hash_table_offset', 'Data hash table offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('data_hash_table_size', 'Data hash table size',
-       '_FormatIntegerAsDecimal'),
-      ('field_hash_table_offset', 'Field hash table offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('field_hash_table_size', 'Field hash table size',
-       '_FormatIntegerAsDecimal'),
-      ('tail_object_offset', 'Tail object offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('number_of_objects', 'Number of objects', '_FormatIntegerAsDecimal'),
-      ('number_of_entry_objects', 'Number of entry objects',
-       '_FormatIntegerAsDecimal'),
-      ('tail_entry_sequence_number', 'Tail entry sequence number',
-       '_FormatIntegerAsHexadecimal8'),
-      ('head_entry_sequence_number', 'Head entry sequence number',
-       '_FormatIntegerAsHexadecimal8'),
-      ('entry_array_offset', 'Entry array offset',
-       '_FormatIntegerAsHexadecimal8'),
-      ('head_entry_real_time', 'Head entry real time',
-       '_FormatIntegerAsPosixTimeInMicroseconds'),
-      ('tail_entry_real_time', 'Tail entry real time',
-       '_FormatIntegerAsPosixTimeInMicroseconds'),
-      ('tail_entry_monotonic', 'Tail entry monotonic',
-       '_FormatIntegerAsHexadecimal8')]
-
-  _DEBUG_INFO_OBJECT_HEADER = [
-      ('object_type', 'Object type', '_FormatIntegerAsObjectType'),
-      ('object_flags', 'Object flags', '_FormatIntegerAsObjectFlags'),
-      ('reserved1', 'Reserved', '_FormatDataInHexadecimal'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal')]
 
   def __init__(self, debug=False, output_writer=None):
     """Initializes a systemd journal file.
@@ -230,8 +169,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'data object')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          data_object, self._DEBUG_INFO_OBJECT_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_object_header', None)
+      self._DebugPrintStructureObject(data_object, debug_info)
 
     if data_object.object_type != self._OBJECT_TYPE_DATA:
       raise errors.ParseError(
@@ -243,8 +183,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           f'Unsupported object flags: 0x{data_object.object_flags:02x}.')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          data_object, self._DEBUG_INFO_DATA_OBJECT_VALUES)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_data_object_values', None)
+      self._DebugPrintStructureObject(data_object, debug_info)
 
     return data_object
 
@@ -268,8 +209,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'entry array object')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          entry_array_object, self._DEBUG_INFO_OBJECT_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_object_header', None)
+      self._DebugPrintStructureObject(entry_array_object, debug_info)
 
     if entry_array_object.object_type != self._OBJECT_TYPE_ENTRY_ARRAY:
       raise errors.ParseError(
@@ -280,8 +222,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           f'Unsupported object flags: 0x{entry_array_object.object_flags:02x}.')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          entry_array_object, self._DEBUG_INFO_ENTRY_ARRAY_OBJECT_VALUES)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_entry_array_object_values', None)
+      self._DebugPrintStructureObject(entry_array_object, debug_info)
 
     return entry_array_object
 
@@ -305,8 +248,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'entry object')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          entry_object, self._DEBUG_INFO_OBJECT_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_object_header', None)
+      self._DebugPrintStructureObject(entry_object, debug_info)
 
     if entry_object.object_type != self._OBJECT_TYPE_ENTRY:
       raise errors.ParseError(
@@ -317,8 +261,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           f'Unsupported object flags: 0x{entry_object.object_flags:02x}.')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          entry_object, self._DEBUG_INFO_ENTRY_OBJECT_VALUES)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_entry_object_values', None)
+      self._DebugPrintStructureObject(entry_object, debug_info)
 
     return entry_object
 
@@ -340,7 +285,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.header_size not in self._SUPPORTED_FILE_HEADER_SIZES:
       raise errors.ParseError(
@@ -373,8 +320,9 @@ class SystemdJournalFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'object header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          object_header, self._DEBUG_INFO_OBJECT_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'systemd_journal_object_header', None)
+      self._DebugPrintStructureObject(object_header, debug_info)
 
     return object_header
 

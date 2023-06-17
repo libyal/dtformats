@@ -1,0 +1,61 @@
+# dtFormats debug specification.
+---
+data_type_map: cim_map_footer
+attributes:
+- name: signature
+  description: "Signature"
+  format: hexadecimal_8digits
+---
+data_type_map: cim_map_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: hexadecimal_8digits
+- name: sequence_number
+  description: "Sequence number"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: number_of_pages
+  description: "Number of pages"
+  format: decimal
+---
+data_type_map: cim_map_table_entry
+attributes:
+- name: page_number
+  description: "    Page number"
+  format: custom:page_number
+- name: unknown1
+  description: "    Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "    Unknown2"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "    Unknown3"
+  format: hexadecimal_8digits
+- name: unknown4
+  description: "    Unknown4"
+  format: hexadecimal_8digits
+- name: unknown5
+  description: "    Unknown5"
+  format: hexadecimal_8digits
+---
+data_type_map: cim_page_header
+attributes:
+- name: page_type
+  description: "Page type"
+  format: custom:page_type
+- name: mapped_page_number
+  description: "Mapped page number"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: root_page_number
+  description: "Root page number"
+  format: decimal
