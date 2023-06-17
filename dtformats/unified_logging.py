@@ -2357,9 +2357,9 @@ class TraceV3File(data_format.BinaryDataFile):
           'record_type': '_FormatFirehoseTracepointRecordType',
           'signature': '_FormatStreamAsSignature',
           'stream_type': '_FormatFirehoseStreamType',
-          'tracepoint_flags': '_FormatFirehoseTracepointFlags',
-          'value_type': '_FormatDataItemValueType'})
+          'tracepoint_flags': '_FormatFirehoseTracepointFlags'})
 
+  _RECORD_TYPE_UNUSED = 0x00
   _RECORD_TYPE_ACTIVITY = 0x02
   _RECORD_TYPE_TRACE = 0x03
   _RECORD_TYPE_LOG = 0x04
@@ -2381,7 +2381,8 @@ class TraceV3File(data_format.BinaryDataFile):
       _RECORD_TYPE_LOG: 'Log',
       _RECORD_TYPE_LOSS: 'Loss',
       _RECORD_TYPE_SIGNPOST: 'Signpost',
-      _RECORD_TYPE_TRACE: 'Trace'}
+      _RECORD_TYPE_TRACE: 'Trace',
+      _RECORD_TYPE_UNUSED: 'Unused'}
 
   _STREAM_TYPE_DESCRIPTIONS = {
       0x00: 'persist',
@@ -2405,8 +2406,6 @@ class TraceV3File(data_format.BinaryDataFile):
       _CHUNK_TAG_SIMPLEDUMP: 'SimpleDump',
       _CHUNK_TAG_CATALOG: 'Catalog',
       _CHUNK_TAG_CHUNK_SET: 'ChunkSet'}
-
-  _DATA_ITEM_VALUE_TYPE_DESCRIPTIONS = {}
 
   _DATA_ITEM_BINARY_DATA_VALUE_TYPES = (0x30, 0x32, 0xf2)
   _DATA_ITEM_NUMERIC_VALUE_TYPES = (0x00, 0x02)
@@ -2721,6 +2720,9 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: decoded value.
     """
+    if not string_formatter:
+      return '<decode: missing string formatter>'
+
     decoder_names = string_formatter.GetDecoderNamesByIndex(value_index)
     if not decoder_names:
       return '<decode: missing decoder>'
@@ -2813,21 +2815,6 @@ class TraceV3File(data_format.BinaryDataFile):
       return f'0x{integer:08x} ({description:s})'
 
     return f'0x{integer:08x}'
-
-  def _FormatDataItemValueType(self, integer):
-    """Formats a data item value type.
-
-    Args:
-      integer (int): integer.
-
-    Returns:
-      str: integer formatted as data item value type.
-    """
-    description = self._DATA_ITEM_VALUE_TYPE_DESCRIPTIONS.get(integer, None)
-    if description:
-      return f'0x{integer:02x} ({description:s})'
-
-    return f'0x{integer:02x}'
 
   def _FormatDataRange(self, data_range):
     """Formats a data range.
@@ -3091,7 +3078,9 @@ class TraceV3File(data_format.BinaryDataFile):
               uuid_entry.load_address_upper << 32)
           break
 
-      # TODO: determine how to handle missing strings file identifier.
+      if not strings_file_identifier:
+        # ~~> no uuid found for absolute pc
+        return None
 
     elif strings_file_type == 0x000a:
       strings_file_identifier = tracepoint_data_object.uuidtext_file_identifier
@@ -3786,18 +3775,25 @@ class TraceV3File(data_format.BinaryDataFile):
 
     chunk_data_offset = 32
     while chunk_data_offset < firehose_header.public_data_size:
-      firehose_tracepoint = self._ReadFirehoseTracepointData(
-          chunk_data[chunk_data_offset:], data_offset + chunk_data_offset)
+      if self._debug:
+        self._DebugPrintText(f'Tracepoint: {chunk_data_offset:d}\n')
 
-      chunk_data_offset += 24
+      firehose_tracepoint, bytes_read = self._ReadFirehoseTracepointData(
+          chunk_data[chunk_data_offset:], data_offset + chunk_data_offset)
 
       record_type = firehose_tracepoint.record_type
       if record_type not in (
-          0x00, self._RECORD_TYPE_ACTIVITY, self._RECORD_TYPE_TRACE,
-          self._RECORD_TYPE_LOG, self._RECORD_TYPE_SIGNPOST,
-          self._RECORD_TYPE_LOSS):
+          self._RECORD_TYPE_UNUSED, self._RECORD_TYPE_ACTIVITY,
+          self._RECORD_TYPE_TRACE, self._RECORD_TYPE_LOG,
+          self._RECORD_TYPE_SIGNPOST, self._RECORD_TYPE_LOSS):
         raise errors.ParseError(
             f'Unsupported record type: 0x{record_type:02x}.')
+
+      if record_type == self._RECORD_TYPE_UNUSED:
+        chunk_data_offset += bytes_read
+        continue
+
+      chunk_data_offset += 24
 
       tracepoint_data_offset = data_offset + chunk_data_offset
       tracepoint_data_object = None
@@ -3904,7 +3900,10 @@ class TraceV3File(data_format.BinaryDataFile):
             process_information_entry, firehose_tracepoint,
             tracepoint_data_object, string_reference, is_dynamic)
 
-        string_formatter = image_values.GetStringFormatter()
+        if image_values:
+          string_formatter = image_values.GetStringFormatter()
+        else:
+          string_formatter = None
 
         backtrace_frames = []
         values = []
@@ -3955,10 +3954,11 @@ class TraceV3File(data_format.BinaryDataFile):
         category, sub_system = self._GetSubSystemStrings(
             process_information_entry, sub_system_identifier)
 
+        text_offset = getattr(image_values, 'text_offset', None) or 0
         program_counter = self._CalculateProgramCounter(
-            tracepoint_data_object, image_values.text_offset)
+            tracepoint_data_object, text_offset)
 
-        if not backtrace_frames:
+        if not backtrace_frames and image_values:
           backtrace_frame = BacktraceFrame()
           backtrace_frame.image_identifier = image_values.identifier
           backtrace_frame.image_offset = program_counter or 0
@@ -3967,12 +3967,13 @@ class TraceV3File(data_format.BinaryDataFile):
 
         log_entry.backtrace_frames = backtrace_frames
         log_entry.category = category
-        log_entry.format_string = image_values.string
+        log_entry.format_string = getattr(image_values, 'string', None)
         log_entry.process_identifier = getattr(
             process_information_entry, 'process_identifier', None) or 0
         log_entry.process_image_path = process_image_path
-        log_entry.sender_image_identifier = image_values.identifier
-        log_entry.sender_image_path = image_values.path
+        log_entry.sender_image_identifier = getattr(
+            image_values, 'identifier', None)
+        log_entry.sender_image_path = getattr(image_values, 'path', None)
         log_entry.sender_program_counter = program_counter or 0
         log_entry.sub_system = sub_system
         log_entry.time_zone_name = None
@@ -4027,8 +4028,11 @@ class TraceV3File(data_format.BinaryDataFile):
           log_entry.signpost_type = self._SIGNPOST_TYPE_DESCRIPTIONS.get(
               firehose_tracepoint.log_type & 0x0f, None)
 
-        if self._catalog:
+        if string_formatter:
           log_entry.event_message = string_formatter.FormatString(values)
+        else:
+          log_entry.event_message = (
+              '<compose failure [missing precomposed log]>')
 
       yield log_entry
 
@@ -4058,22 +4062,26 @@ class TraceV3File(data_format.BinaryDataFile):
           the start of the chunk set.
 
     Returns:
-      tracev3_firehose_tracepoint: firehose tracepoint.
+      tuple[tracev3_firehose_tracepoint, int]: firehose tracepoint and number
+          of bytes read.
 
     Raises:
       ParseError: if the firehose tracepoint cannot be read.
     """
     data_type_map = self._GetDataTypeMap('tracev3_firehose_tracepoint')
 
+    context = dtfabric_data_maps.DataTypeMapContext()
+
     firehose_tracepoint = self._ReadStructureFromByteStream(
-        tracepoint_data, data_offset, data_type_map, 'firehose tracepoint')
+        tracepoint_data, data_offset, data_type_map, 'firehose tracepoint',
+        context=context)
 
     if self._debug:
       debug_info = self._DEBUG_INFORMATION.get(
           'tracev3_firehose_tracepoint', None)
       self._DebugPrintStructureObject(firehose_tracepoint, debug_info)
 
-    return firehose_tracepoint
+    return firehose_tracepoint, context.byte_size
 
   def _ReadFirehoseTracepointActivityData(
       self, log_type, flags, tracepoint_data, data_offset):

@@ -689,7 +689,7 @@ Contains the delta relative to the base continuous time in the <<tracev3_firehos
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00 | | [yellow-background]*Unknown (Empty or Unused?)*
+| 0x00 | | Unused (or Empty)
 | | |
 | 0x02 | activity | Activity +
 See section: <<tracev3_firehose_tracepoint_activity,Activity firehose tracepoint>>

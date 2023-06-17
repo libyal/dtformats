@@ -127,7 +127,7 @@ data_type_map: tracev3_data_item
 attributes:
 - name: value_type
   description: "Value type"
-  format: custom:value_type
+  format: hexadecimal_2digits
 - name: data_size
   description: "Data item data size"
   format: decimal
