@@ -943,8 +943,8 @@ Seen: 0 and 1
 | ... | ... | | 64-bit alignment padding
 |===
 
-[yellow-background]*TODO: it is currently unknown if the value data sizes are
-stored front-to-back or back-to-front. Only 1 value has been observed so far.*
+[NOTE]
+The value data sizes and values are stored front-to-back.
 
 ==== [[tracev3_firehose_tracepoint_log]]Log firehose tracepoint
 
@@ -1428,6 +1428,10 @@ Contains the size of the data items and values data
 | 49 | 1 | | Number of data items
 | 50 | number of data items | | Array of data items +
 See section: <<tracev3_firehose_tracepoint_data_item,Data item>>
+4+| _Has backtrace flag (0x1000) is set_
+| ... | ... | | Backtrace data +
+See section: <<tracev3_firehose_tracepoint_backtrace_data,Backtrace data>>
+4+| _Common_
 | ... | ... | | Data items values data
 4+| _End of data_
 | ... | ... | | Private data

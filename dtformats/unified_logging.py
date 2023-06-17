@@ -2683,7 +2683,8 @@ class TraceV3File(data_format.BinaryDataFile):
 
     if large_shared_cache_data:
       calculated_large_offset_data = large_shared_cache_data >> 1
-      if large_offset_data != calculated_large_offset_data:
+      if (large_offset_data and
+          large_offset_data != calculated_large_offset_data):
         load_address |= large_offset_data << 32
       else:
         load_address |= large_shared_cache_data << 31
@@ -2984,15 +2985,16 @@ class TraceV3File(data_format.BinaryDataFile):
     return strings_map
 
   def _GetDataItemsAndValuesData(
-      self, tracepoint_data_object, values_data, private_data,
+      self, proc_id, tracepoint_data_object, values_data, private_data,
       oversize_chunks):
     """Retrieves the data items and values data.
 
     Args:
+      proc_id (str): firehose tracepoint proc_id value.
       tracepoint_data_object (object): firehose tracepoint data object.
       values_data (bytes): (public) values data.
       private_data (bytes): private data.
-      oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
+      oversize_chunks (dict[str, oversize_chunk]): Oversize chunks per data
           reference.
 
     Returns:
@@ -3004,7 +3006,8 @@ class TraceV3File(data_format.BinaryDataFile):
       data_items = getattr(tracepoint_data_object, 'data_items', None)
       return data_items, values_data, private_data
 
-    oversize_chunk = oversize_chunks.get(data_reference, None)
+    lookup_key = f'{proc_id:s}:{data_reference:04x}'
+    oversize_chunk = oversize_chunks.get(lookup_key, None)
     if oversize_chunk:
       return (oversize_chunk.data_items, oversize_chunk.values_data,
               oversize_chunk.private_data)
@@ -3509,7 +3512,7 @@ class TraceV3File(data_format.BinaryDataFile):
       file_offset (int): offset of the chunk set data relative to the start
           of the file.
       chunk_header (tracev3_chunk_header): the chunk header of the chunk set.
-      oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
+      oversize_chunks (dict[str, oversize_chunk]): Oversize chunks per data
           reference.
 
     Yields:
@@ -3581,7 +3584,11 @@ class TraceV3File(data_format.BinaryDataFile):
         oversize_chunk = self._ReadOversizeChunkData(
             chunkset_chunk_data, chunkset_chunk_header.chunk_data_size,
             data_offset)
-        oversize_chunks[oversize_chunk.data_reference] = oversize_chunk
+
+        lookup_key = (f'{oversize_chunk.proc_id_upper:d}@'
+                      f'{oversize_chunk.proc_id_lower:d}:'
+                      f'{oversize_chunk.data_reference:04x}')
+        oversize_chunks[lookup_key] = oversize_chunk
 
       elif chunkset_chunk_header.chunk_tag == self._CHUNK_TAG_STATEDUMP:
         yield from self._ReadStateDumpChunkData(
@@ -3743,7 +3750,7 @@ class TraceV3File(data_format.BinaryDataFile):
       chunk_data_size (int): size of the firehose chunk data.
       data_offset (int): offset of the firehose chunk relative to the start
           of the chunk set.
-      oversize_chunks (dict[int, oversize_chunk]): Oversize chunks per data
+      oversize_chunks (dict[str, oversize_chunk]): Oversize chunks per data
           reference.
 
     Yields:
@@ -3764,11 +3771,12 @@ class TraceV3File(data_format.BinaryDataFile):
           firehose_header.base_continuous_time,
           description='Base continuous time')
 
+    proc_id = (f'{firehose_header.proc_id_upper:d}@'
+               f'{firehose_header.proc_id_lower:d}')
+
     if not self._catalog:
       process_information_entry = None
     else:
-      proc_id = (f'{firehose_header.proc_id_upper:d}@'
-                 f'{firehose_header.proc_id_lower:d}')
       process_information_entry = (
           self._catalog_process_information_entries.get(proc_id, None))
       if not process_information_entry:
@@ -3889,10 +3897,6 @@ class TraceV3File(data_format.BinaryDataFile):
         values_data_offset = bytes_read
         values_data = firehose_tracepoint.data[values_data_offset:]
 
-        backtrace_frames = self._ReadBacktraceData(
-            firehose_tracepoint.flags, values_data,
-            tracepoint_data_offset + values_data_offset)
-
         string_reference, is_dynamic = self._CalculateFormatStringReference(
             tracepoint_data_object, firehose_tracepoint.format_string_reference)
 
@@ -3902,7 +3906,9 @@ class TraceV3File(data_format.BinaryDataFile):
 
         string_formatter = image_values.GetStringFormatter()
 
+        backtrace_frames = []
         values = []
+
         if record_type == self._RECORD_TYPE_TRACE:
           values = self._ReadFirehoseTracepointTraceValuesData(
               tracepoint_data_object, values_data, string_formatter)
@@ -3918,11 +3924,15 @@ class TraceV3File(data_format.BinaryDataFile):
 
           data_items, values_data, private_data = (
               self._GetDataItemsAndValuesData(
-                  tracepoint_data_object, values_data, private_data,
+                  proc_id, tracepoint_data_object, values_data, private_data,
                   oversize_chunks))
 
           if self._debug and private_data:
             self._DebugPrintData('Private data', private_data)
+
+          backtrace_frames = self._ReadBacktraceData(
+              firehose_tracepoint.flags, values_data,
+              tracepoint_data_offset + values_data_offset)
 
           if data_items:
             private_data_range = getattr(
@@ -4280,16 +4290,10 @@ class TraceV3File(data_format.BinaryDataFile):
     if not trace.number_of_values:
       return []
 
-    # TODO: currently unknown if the value sizes are stored front-to-back or
-    # back-to-front.
-    if trace.number_of_values != 1:
-      raise errors.ParseError(
-          f'Unsupported number of values: {trace.number_of_values:d}')
-
     values = []
 
     value_data_offset = 0
-    value_size_offset = -2
+    value_size_offset = -(1 + trace.number_of_values)
 
     for value_index in range(trace.number_of_values):
       value_data_size = values_data[value_size_offset]
@@ -4305,7 +4309,7 @@ class TraceV3File(data_format.BinaryDataFile):
       values.append(value)
 
       value_data_offset += value_data_size
-      value_size_offset -= 1
+      value_size_offset += 1
 
     return values
 
