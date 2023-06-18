@@ -880,15 +880,12 @@ class ObjectsDataFile(data_format.BinaryDataFile):
   """An objects data (Objects.data) file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _DEBUG_INFO_OBJECT_DESCRIPTOR = [
-      ('identifier', 'Identifier', '_FormatIntegerAsHexadecimal8'),
-      ('data_offset', 'Data offset (relative)', '_FormatIntegerAsOffset'),
-      ('data_file_offset', 'Data offset (file)', '_FormatIntegerAsOffset'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('data_checksum', 'Data checksum', '_FormatIntegerAsHexadecimal8')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'wmi_repository.debug.yaml', custom_format_callbacks={
+          'offset': '_FormatIntegerAsOffset'})
 
   _EMPTY_OBJECT_DESCRIPTOR = b'\x00' * 16
 
@@ -932,8 +929,8 @@ class ObjectsDataFile(data_format.BinaryDataFile):
             file_offset + object_descriptor.data_offset)
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          object_descriptor, self._DEBUG_INFO_OBJECT_DESCRIPTOR)
+      debug_info = self._DEBUG_INFORMATION.get('cim_object_descriptor', None)
+      self._DebugPrintStructureObject(object_descriptor, debug_info)
 
     return object_descriptor
 
@@ -1048,136 +1045,12 @@ class RepositoryFile(data_format.BinaryDataFile):
   """Repository file."""
 
   # Using a class constant significantly speeds up the time required to load
-  # the dtFabric definition file.
+  # the dtFabric and dtFormats definition files.
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('wmi_repository.yaml')
 
-  _DEBUG_INFO_CHILD_OBJECTS_LIST_NODE = [
-      ('list_element_node_offset1', 'List element node offset 1',
-       '_FormatIntegerAsOffset'),
-      ('first_list_element_node_offset', 'First list element node offset',
-       '_FormatIntegerAsOffset'),
-      ('last_list_element_node_offset', 'Last list element node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsDecimal'),
-      ('number_of_elements', 'Number of elements', '_FormatIntegerAsDecimal'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CHILD_OBJECTS_LIST_ELEMENT_NODE = [
-      ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('value_node_offset', 'Value node offset', '_FormatIntegerAsOffset'),
-      ('list_element_node_offset1', 'Unknown node 3 offset 1',
-       '_FormatIntegerAsOffset'),
-      ('list_element_node_offset2', 'Unknown node 3 offset 2',
-       '_FormatIntegerAsOffset'),
-      ('previous_list_element_node_offset', 'Previous list element node offset',
-       '_FormatIntegerAsOffset'),
-      ('next_list_element_node_offset', 'Next list element node offset',
-       '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CHILD_OBJECTS_BRANCH_NODE = [
-      ('number_of_leaf_values', 'Number of leaf values',
-       '_FormatIntegerAsDecimal'),
-      ('maximum_number_of_leaf_values', 'Maximum number of leaf values',
-       '_FormatIntegerAsDecimal'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('leaf_node_offset', 'Leaf node offset', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CHILD_OBJECTS_LEAF_NODE = [
-      ('value_node_offset1', 'Value node offset1', '_FormatIntegerAsOffset'),
-      ('value_node_offset2', 'Value node offset2', '_FormatIntegerAsOffset'),
-      ('value_node_offset3', 'Value node offset3', '_FormatIntegerAsOffset'),
-      ('value_node_offset4', 'Value node offset4', '_FormatIntegerAsOffset'),
-      ('value_node_offset5', 'Value node offset5', '_FormatIntegerAsOffset'),
-      ('value_node_offset6', 'Value node offset6', '_FormatIntegerAsOffset'),
-      ('value_node_offset7', 'Value node offset7', '_FormatIntegerAsOffset'),
-      ('value_node_offset8', 'Value node offset8', '_FormatIntegerAsOffset'),
-      ('value_node_offset9', 'Value node offset9', '_FormatIntegerAsOffset'),
-      ('value_node_offset10', 'Value node offset10', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CHILD_OBJECTS_ROOT_NODE = [
-      ('depth', 'Depth', '_FormatIntegerAsDecimal'),
-      ('number_of_leaf_values', 'Number of leaf values',
-       '_FormatIntegerAsDecimal'),
-      ('branch_node_offset', 'Branch node offset', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_DEFINITION_BRANCH_NODE = [
-      ('instance_root_node_offset', 'Instance root node offset',
-       '_FormatIntegerAsOffset'),
-      ('class_definition_root_node_offset', 'Class definition root node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('class_definition_leaf_node_offset', 'Class definition leaf node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown3', 'Unknown3 offset', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_DEFINITION_LEAF_NODE = [
-      ('class_definition_block_size', 'Class definition block size',
-       '_FormatIntegerAsDecimal'),
-      ('class_definition_block_data', 'Class definition block data',
-       '_FormatDataInHexadecimal'),
-      ('unknown_block_size', 'Unknown block size', '_FormatIntegerAsDecimal'),
-      ('unknown_block_data', 'Unknown block data', '_FormatDataInHexadecimal'),
-      ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_CLASS_DEFINITION_ROOT_NODE = [
-      ('instance_root_node_offset', 'Instance root node offset',
-       '_FormatIntegerAsOffset'),
-      ('class_definition_branch_node_offset',
-       'Class definition branch node offset', '_FormatIntegerAsOffset'),
-      ('parent_class_root_node_offset', 'Parent class root node offset',
-       '_FormatIntegerAsOffset'),
-      ('sub_node_type', 'Sub node type', '_FormatIntegerAsHexadecimal2'),
-      ('child_objects_list_node_offset', 'Child objects list node offset',
-       '_FormatIntegerAsOffset'),
-      ('sub_node_offset', 'Sub node offset', '_FormatIntegerAsOffset'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('child_objects_root_node_offset', 'Child objects root node offset',
-       '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_FILE_HEADER = [
-      ('system_class_cell_number', 'System class cell number',
-       '_FormatIntegerAsDecimal'),
-      ('root_namespace_cell_number', 'Root namespace cell number',
-       '_FormatIntegerAsDecimal'),
-      ('data_size', 'Data size', '_FormatIntegerAsDecimal'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsHexadecimal8'),
-      ('unknown2', 'Unknown2', '_FormatIntegerAsHexadecimal8'),
-      ('unused_space_offset', 'Unused space offset', '_FormatIntegerAsOffset'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsHexadecimal8'),
-      ('unknown4', 'Unknown4', '_FormatIntegerAsHexadecimal8'),
-      ('unknown5', 'Unknown5', '_FormatIntegerAsHexadecimal8'),
-      ('node_bin_size', 'Node bin size', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_INSTANCE_BRANCH_NODE = [
-      ('instance_root_node_offset', 'Instance root node offset',
-       '_FormatIntegerAsOffset'),
-      ('class_definition_root_node_offset', 'Class definition root node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown1', 'Unknown1', '_FormatIntegerAsDecimal'),
-      ('instance_leaf_node_offset', 'Instance leaf node offset',
-       '_FormatIntegerAsOffset'),
-      ('unknown3', 'Unknown3', '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_INSTANCE_LEAF_NODE = [
-      ('instance_block_size', 'Instance block size', '_FormatIntegerAsDecimal'),
-      ('instance_block_data', 'Instance block data',
-       '_FormatDataInHexadecimal'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_INSTANCE_LEAF_VALUE_NODE = [
-      ('name_node_offset', 'Name node offset', '_FormatIntegerAsOffset'),
-      ('instance_root_node_offset', 'Instance root node offset',
-       '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'wmi_repository.debug.yaml', custom_format_callbacks={
+          'offset': '_FormatIntegerAsOffset'})
 
   _DEBUG_INFO_INSTANCE_ROOT_NODE = [
       ('child_objects_root_node_offset', 'Child objects root node offset',
@@ -1191,23 +1064,6 @@ class RepositoryFile(data_format.BinaryDataFile):
       ('unknown2', 'Unknown2', '_FormatIntegerAsOffset'),
       ('unknown_node5_offset', 'Unknown node 5 offset',
        '_FormatIntegerAsOffset'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_NAME_NODE = [
-      ('name', 'Name', '_FormatString'),
-      ('alignment_padding', 'Alignment padding', '_FormatDataInHexadecimal'),
-      ('footer', 'Footer', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_NODE_CELL = [
-      ('size', 'Size', '_FormatIntegerAsDecimal'),
-      ('data', 'Data', '_FormatDataInHexadecimal')]
-
-  _DEBUG_INFO_NODE_BIN_HEADER = [
-      ('node_bin_size', 'Node bin size', '_FormatIntegerAsDecimal')]
-
-  _DEBUG_INFO_UNKNOWN_NODE5 = [
-      ('unknown_block_size', 'Unknown block size', '_FormatIntegerAsDecimal'),
-      ('unknown_block_data', 'Unknown block data', '_FormatDataInHexadecimal'),
       ('footer', 'Footer', '_FormatDataInHexadecimal')]
 
   def __init__(self, debug=False, output_writer=None):
@@ -1284,8 +1140,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'child objects list node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          list_node, self._DEBUG_INFO_CHILD_OBJECTS_LIST_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_child_objects_list_node', None)
+      self._DebugPrintStructureObject(list_node, debug_info)
 
     return list_node
 
@@ -1316,8 +1173,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         'child objects list element node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          list_element_node, self._DEBUG_INFO_CHILD_OBJECTS_LIST_ELEMENT_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_child_objects_list_element_node', None)
+      self._DebugPrintStructureObject(list_element_node, debug_info)
 
     return list_element_node
 
@@ -1391,8 +1249,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'child objects branch node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          branch_node, self._DEBUG_INFO_CHILD_OBJECTS_BRANCH_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_child_objects_branch_node', None)
+      self._DebugPrintStructureObject(branch_node, debug_info)
 
     return branch_node
 
@@ -1421,8 +1280,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'child objects leaf node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          leaf_node, self._DEBUG_INFO_CHILD_OBJECTS_LEAF_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_child_objects_leaf_node', None)
+      self._DebugPrintStructureObject(leaf_node, debug_info)
 
     return leaf_node
 
@@ -1452,8 +1312,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'child objects root node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          root_node, self._DEBUG_INFO_CHILD_OBJECTS_ROOT_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_child_objects_root_node', None)
+      self._DebugPrintStructureObject(root_node, debug_info)
 
     return root_node
 
@@ -1483,9 +1344,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'class definition branch node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          class_definition_branch_node,
-          self._DEBUG_INFO_CLASS_DEFINITION_BRANCH_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_class_definition_branch_node', None)
+      self._DebugPrintStructureObject(class_definition_branch_node, debug_info)
 
     return class_definition_branch_node
 
@@ -1514,9 +1375,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'class definition leaf node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          class_definition_leaf_node,
-          self._DEBUG_INFO_CLASS_DEFINITION_LEAF_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_class_definition_leaf_node', None)
+      self._DebugPrintStructureObject(class_definition_leaf_node, debug_info)
 
     return class_definition_leaf_node
 
@@ -1545,9 +1406,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'class definition root node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          class_definition_root_node,
-          self._DEBUG_INFO_CLASS_DEFINITION_ROOT_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_class_definition_root_node', None)
+      self._DebugPrintStructureObject(class_definition_root_node, debug_info)
 
     return class_definition_root_node
 
@@ -1569,7 +1430,8 @@ class RepositoryFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      self._DebugPrintStructureObject(file_header, self._DEBUG_INFO_FILE_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_file_header', None)
+      self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
 
@@ -1598,8 +1460,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'instance branch node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          instance_branch_node, self._DEBUG_INFO_INSTANCE_BRANCH_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_instance_branch_node', None)
+      self._DebugPrintStructureObject(instance_branch_node, debug_info)
 
     return instance_branch_node
 
@@ -1628,8 +1491,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'instance leaf node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          instance_leaf_node, self._DEBUG_INFO_INSTANCE_LEAF_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_instance_leaf_node', None)
+      self._DebugPrintStructureObject(instance_leaf_node, debug_info)
 
     return instance_leaf_node
 
@@ -1658,8 +1522,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'instance leaf value node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          instance_leaf_value_node, self._DEBUG_INFO_INSTANCE_LEAF_VALUE_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_instance_leaf_value_node', None)
+      self._DebugPrintStructureObject(instance_leaf_value_node, debug_info)
 
     return instance_leaf_value_node
 
@@ -1688,8 +1553,9 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'instance root node')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          instance_root_node, self._DEBUG_INFO_INSTANCE_ROOT_NODE)
+      debug_info = self._DEBUG_INFORMATION.get(
+          'cim_rep_instance_root_node', None)
+      self._DebugPrintStructureObject(instance_root_node, debug_info)
 
     return instance_root_node
 
@@ -1718,7 +1584,8 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'name node')
 
     if self._debug:
-      self._DebugPrintStructureObject(name_node, self._DEBUG_INFO_NAME_NODE)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_name_node', None)
+      self._DebugPrintStructureObject(name_node, debug_info)
 
     return name_node
 
@@ -1742,8 +1609,8 @@ class RepositoryFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'node bin header')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          node_bin_header, self._DEBUG_INFO_NODE_BIN_HEADER)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_bin_header', None)
+      self._DebugPrintStructureObject(node_bin_header, debug_info)
 
     return node_bin_header
 
@@ -1778,7 +1645,8 @@ class RepositoryFile(data_format.BinaryDataFile):
         value_string = self._FormatIntegerAsDecimal(cell_number)
         self._DebugPrintValue('Node cell number', value_string)
 
-      self._DebugPrintStructureObject(node_cell, self._DEBUG_INFO_NODE_CELL)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_cell', None)
+      self._DebugPrintStructureObject(node_cell, debug_info)
 
     return node_cell
 
@@ -1807,8 +1675,8 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'unknown node 5')
 
     if self._debug:
-      self._DebugPrintStructureObject(
-          unknown_node, self._DEBUG_INFO_UNKNOWN_NODE5)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_unknown_node5', None)
+      self._DebugPrintStructureObject(unknown_node, debug_info)
 
     return unknown_node
 

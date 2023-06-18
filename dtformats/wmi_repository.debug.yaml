@@ -45,6 +45,24 @@ attributes:
   description: "    Unknown5"
   format: hexadecimal_8digits
 ---
+data_type_map: cim_object_descriptor
+attributes:
+- name: identifier
+  description: "Identifier"
+  format: hexadecimal_8digits
+- name: data_offset
+  description: "Data offset (relative)"
+  format: custom:offset
+- name: data_file_offset
+  description: "Data offset (file)"
+  format: custom:offset
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: data_checksum
+  description: "Data checksum"
+  format: hexadecimal_8digits
+---
 data_type_map: cim_page_header
 attributes:
 - name: page_type
@@ -59,3 +77,336 @@ attributes:
 - name: root_page_number
   description: "Root page number"
   format: decimal
+---
+data_type_map: cim_rep_child_objects_list_node
+attributes:
+- name: list_element_node_offset1
+  description: "List element node offset 1"
+  format: custom:offset
+- name: first_list_element_node_offset
+  description: "First list element node offset"
+  format: custom:offset
+- name: last_list_element_node_offset
+  description: "Last list element node offset"
+  format: custom:offset
+- name: unknown4
+  description: "Unknown4"
+  format: decimal
+- name: number_of_elements
+  description: "Number of elements"
+  format: decimal
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_child_objects_list_element_node
+attributes:
+- name: unknown1
+  description: "Unknown1"
+  format: decimal
+- name: name_node_offset
+  description: "Name node offset"
+  format: custom:offset
+- name: value_node_offset
+  description: "Value node offset"
+  format: custom:offset
+- name: list_element_node_offset1
+  description: "Unknown node 3 offset 1"
+  format: custom:offset
+- name: list_element_node_offset2
+  description: "Unknown node 3 offset 2"
+  format: custom:offset
+- name: previous_list_element_node_offset
+  description: "Previous list element node offset"
+  format: custom:offset
+- name: next_list_element_node_offset
+  description: "Next list element node offset"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_child_objects_branch_node
+attributes:
+- name: number_of_leaf_values
+  description: "Number of leaf values"
+  format: decimal
+- name: maximum_number_of_leaf_values
+  description: "Maximum number of leaf values"
+  format: decimal
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: leaf_node_offset
+  description: "Leaf node offset"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_child_objects_leaf_node
+attributes:
+- name: value_node_offset1
+  description: "Value node offset1"
+  format: custom:offset
+- name: value_node_offset2
+  description: "Value node offset2"
+  format: custom:offset
+- name: value_node_offset3
+  description: "Value node offset3"
+  format: custom:offset
+- name: value_node_offset4
+  description: "Value node offset4"
+  format: custom:offset
+- name: value_node_offset5
+  description: "Value node offset5"
+  format: custom:offset
+- name: value_node_offset6
+  description: "Value node offset6"
+  format: custom:offset
+- name: value_node_offset7
+  description: "Value node offset7"
+  format: custom:offset
+- name: value_node_offset8
+  description: "Value node offset8"
+  format: custom:offset
+- name: value_node_offset9
+  description: "Value node offset9"
+  format: custom:offset
+- name: value_node_offset10
+  description: "Value node offset10"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_child_objects_root_node
+attributes:
+- name: depth
+  description: "Depth"
+  format: decimal
+- name: number_of_leaf_values
+  description: "Number of leaf values"
+  format: decimal
+- name: branch_node_offset
+  description: "Branch node offset"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_class_definition_branch_node
+attributes:
+- name: instance_root_node_offset
+  description: "Instance root node offset"
+  format: custom:offset
+- name: class_definition_root_node_offset
+  description: "Class definition root node offset"
+  format: custom:offset
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: class_definition_leaf_node_offset
+  description: "Class definition leaf node offset"
+  format: custom:offset
+- name: unknown3
+  description: "Unknown3"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_class_definition_leaf_node
+attributes:
+- name: class_definition_block_size
+  description: "Class definition block size"
+  format: decimal
+- name: class_definition_block_data
+  description: "Class definition block data"
+  format: binary_data
+- name: unknown_block_size
+  description: "Unknown block size"
+  format: decimal
+- name: unknown_block_data
+  description: "Unknown block data"
+  format: binary_data
+- name: alignment_padding
+  description: "Alignment padding"
+  format: binary_data
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_class_definition_root_node
+attributes:
+- name: instance_root_node_offset
+  description: "Instance root node offset"
+  format: custom:offset
+- name: class_definition_branch_node_offset
+  description: "Class definition branch node offset"
+  format: custom:offset
+- name: parent_class_root_node_offset
+  description: "Parent class root node offset"
+  format: custom:offset
+- name: sub_node_type
+  description: "Sub node type"
+  format: hexadecimal_2digits
+- name: child_objects_list_node_offset
+  description: "Child objects list node offset"
+  format: custom:offset
+- name: sub_node_offset
+  description: "Sub node offset"
+  format: custom:offset
+- name: unknown4
+  description: "Unknown4"
+  format: hexadecimal_8digits
+- name: child_objects_root_node_offset
+  description: "Child objects root node offset"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_file_header
+attributes:
+- name: system_class_cell_number
+  description: "System class cell number"
+  format: decimal
+- name: root_namespace_cell_number
+  description: "Root namespace cell number"
+  format: decimal
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: unused_space_offset
+  description: "Unused space offset"
+  format: custom:offset
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: unknown4
+  description: "Unknown4"
+  format: hexadecimal_8digits
+- name: unknown5
+  description: "Unknown5"
+  format: hexadecimal_8digits
+- name: node_bin_size
+  description: "Node bin size"
+  format: decimal
+---
+data_type_map: cim_rep_instance_branch_node
+attributes:
+- name: instance_root_node_offset
+  description: "Instance root node offset"
+  format: custom:offset
+- name: class_definition_root_node_offset
+  description: "Class definition root node offset"
+  format: custom:offset
+- name: unknown1
+  description: "Unknown1"
+  format: binary_data
+- name: instance_leaf_node_offset
+  description: "Instance leaf node offset"
+  format: custom:offset
+- name: unknown3
+  description: "Unknown3"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_instance_leaf_node
+attributes:
+- name: instance_block_size
+  description: "Instance block size"
+  format: decimal
+- name: instance_block_data
+  description: "Instance block data"
+  format: binary_data
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_instance_leaf_value_node
+attributes:
+- name: name_node_offset
+  description: "Name node offset"
+  format: custom:offset
+- name: instance_root_node_offset
+  description: "Instance root node offset"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_instance_root_node
+attributes:
+- name: child_objects_root_node_offset
+  description: "Child objects root node offset"
+  format: custom:offset
+- name: name_node_offset
+  description: "Name node offset"
+  format: custom:offset
+- name: instance_branch_node_offset
+  description: "Instance branch node offset"
+  format: custom:offset
+- name: unknown1
+  description: "Unknown1"
+  format: decimal
+- name: child_objects_list_node_offset
+  description: "Child objects list node offset"
+  format: custom:offset
+- name: unknown2
+  description: "Unknown2"
+  format: custom:offset
+- name: unknown_node5_offset
+  description: "Unknown node 5 offset"
+  format: custom:offset
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_name_node
+attributes:
+- name: name
+  description: "Name"
+  format: string
+- name: alignment_padding
+  description: "Alignment padding"
+  format: binary_data
+- name: footer
+  description: "Footer"
+  format: binary_data
+---
+data_type_map: cim_rep_node_bin_header
+attributes:
+- name: node_bin_size
+  description: "Node bin size"
+  format: decimal
+---
+data_type_map: cim_rep_node_cell
+attributes:
+- name: size
+  description: "Size"
+  format: decimal
+- name: data
+  description: "Data"
+  format: binary_data
+---
+data_type_map: cim_rep_unknown_node5
+attributes:
+- name: unknown_block_size
+  description: "Unknown block size"
+  format: decimal
+- name: unknown_block_data
+  description: "Unknown block data"
+  format: binary_data
+- name: footer
+  description: "Footer"
+  format: binary_data
