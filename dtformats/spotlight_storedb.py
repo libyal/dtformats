@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Apple Spotlight store database files."""
 
+import os
 import zlib
 
 import lz4.block
@@ -12,6 +13,21 @@ from dtfabric.runtime import data_maps as dtfabric_data_maps
 
 from dtformats import data_format
 from dtformats import errors
+
+
+class SpotlightStoreIndexValue(object):
+  """Index value.
+
+  Attributes:
+    table_index (int): table index.
+    values_list (list[str]): values list.
+  """
+
+  def __init__(self):
+    """Initializes an index value."""
+    super(SpotlightStoreIndexValue, self).__init__()
+    self.table_index = None
+    self.values_list = []
 
 
 class SpotlightStoreMetadataAttribute(object):
@@ -109,6 +125,246 @@ class SpotlightStoreRecordHeader(object):
     self.parent_identifier = 0
 
 
+class AppleSpotlightStreamsMapDataFile(data_format.BinaryDataFile):
+  """Apple Spotlight database streams map data file (dbStr-#.map.data).
+
+  Attributes:
+    stream_values (list[bytes]): stream values.
+  """
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric and dtFormats definition files.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'spotlight_storedb.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'spotlight_storedb.debug.yaml', custom_format_callbacks={})
+
+  def __init__(
+      self, data_size, offsets, debug=False, file_system_helper=None,
+      output_writer=None):
+    """Initializes a database streams map data file.
+
+    Args:
+      data_size (int): data size.
+      offsets (list[int]): offsets from the corresponding streams map offsets
+          file.
+      debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(AppleSpotlightStreamsMapDataFile, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
+    self._data_size = data_size
+    self._offsets = offsets
+    self.stream_values = []
+
+  def _ReadVariableSizeInteger(self, data):
+    """Reads a variable size integer.
+
+    Args:
+      data (bytes): data.
+
+    Returns:
+      tuple[int, int]: integer value and number of bytes read.
+    """
+    byte_value = data[0]
+    bytes_read = 1
+
+    number_of_additional_bytes = 0
+    for bitmask in (0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff):
+      if byte_value & bitmask != bitmask:
+        break
+      number_of_additional_bytes += 1
+
+    if number_of_additional_bytes > 4:
+      byte_value = 0
+    elif number_of_additional_bytes > 0:
+      byte_value &= bitmask ^ 0xff
+
+    integer_value = int(byte_value)
+    while number_of_additional_bytes > 0:
+      integer_value <<= 8
+
+      integer_value += int(data[bytes_read])
+      bytes_read += 1
+
+      number_of_additional_bytes -= 1
+
+    return integer_value, bytes_read
+
+  def ReadFileObject(self, file_object):
+    """Reads a database streams map data file-like object.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    data = file_object.read(self._data_size)
+
+    for index, value_offset in enumerate(self._offsets):
+      data_offset = value_offset
+      data_size, bytes_read = self._ReadVariableSizeInteger(data[data_offset:])
+
+      data_offset += bytes_read
+
+      stream_value = data[data_offset:data_offset + data_size]
+
+      if self._debug:
+        self._DebugPrintData((
+            f'Stream value: {index:d} at offset: 0x{value_offset:08x} of '
+            f'size: {data_size:d}'), stream_value)
+
+      self.stream_values.append(stream_value)
+
+      data_offset += data_size
+
+    if self._debug and self._data_size < self._file_size:
+      trailing_data = file_object.read(self._file_size - self._data_size)
+      self._DebugPrintData('Trailing data', trailing_data)
+
+
+class AppleSpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
+  """Apple Spotlight database streams map header file (dbStr-#.map.header).
+
+  Attributes:
+    data_size (int): data size.
+    number_of_entries (int): number of entries in the streams map.
+  """
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric and dtFormats definition files.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'spotlight_storedb.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'spotlight_storedb.debug.yaml', custom_format_callbacks={
+          'signature': '_FormatStreamAsSignature'})
+
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
+    """Initializes a database streams map header file.
+
+    Args:
+      debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(AppleSpotlightStreamsMapHeaderFile, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
+    self.data_size = None
+    self.number_of_entries = None
+
+  def _FormatStreamAsSignature(self, stream):
+    """Formats a stream as a signature.
+
+    Args:
+      stream (bytes): stream.
+
+    Returns:
+      str: stream formatted as a signature.
+    """
+    return stream.decode('ascii').replace('\x00', '\\x00')
+
+  def ReadFileObject(self, file_object):
+    """Reads a database streams map header file-like object.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap(
+        'spotlight_database_streams_map_header')
+
+    streams_map_header, bytes_read = self._ReadStructureFromFileObject(
+        file_object, 0, data_type_map, 'streams map header')
+
+    if self._debug:
+      debug_info = self._DEBUG_INFORMATION.get(
+          'spotlight_database_streams_map_header', None)
+      self._DebugPrintStructureObject(streams_map_header, debug_info)
+
+    self.data_size = streams_map_header.unknown4
+    self.number_of_entries = streams_map_header.unknown6
+
+    if self._debug and bytes_read < self._file_size:
+      trailing_data = file_object.read(self._file_size - bytes_read)
+      self._DebugPrintData('Trailing data', trailing_data)
+
+
+class AppleSpotlightStreamsMapOffsetsFile(data_format.BinaryDataFile):
+  """Apple Spotlight database streams map offsets file (dbStr-#.map.offsets).
+
+  Attributes:
+    offsets (list[int]): offsets.
+  """
+
+  # Using a class constant significantly speeds up the time required to load
+  # the dtFabric and dtFormats definition files.
+  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile(
+      'spotlight_storedb.yaml')
+
+  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+      'spotlight_storedb.debug.yaml', custom_format_callbacks={})
+
+  def __init__(
+      self, number_of_entries, debug=False, file_system_helper=None,
+      output_writer=None):
+    """Initializes a database streams map offsets file.
+
+    Args:
+      number_of_entries (int): number of entries in the offsets file.
+      debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
+      output_writer (Optional[OutputWriter]): output writer.
+    """
+    super(AppleSpotlightStreamsMapOffsetsFile, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
+    self._number_of_entries = number_of_entries
+    self.offsets = []
+
+  def ReadFileObject(self, file_object):
+    """Reads a database streams map offsets file-like object.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    data_size = self._number_of_entries * 4
+    data = file_object.read(data_size)
+
+    data_type_map = self._GetDataTypeMap('array_of_uint32le')
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'number_of_elements': self._number_of_entries})
+
+    try:
+      offsets_array = data_type_map.MapByteStream(data, context=context)
+
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError(
+          f'Unable to parse array of 32-bit offsets with error: {exception!s}')
+
+    if self._debug:
+      value_string, _ = self._FormatArrayOfIntegersAsDecimals(offsets_array)
+      self._DebugPrintValue('Offsets', value_string)
+      self._DebugPrintText('\n')
+
+    self.offsets = offsets_array
+
+    if self._debug and data_size < self._file_size:
+      trailing_data = file_object.read(self._file_size - data_size)
+      self._DebugPrintData('Trailing data', trailing_data)
+
+
 class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
   """Apple Spotlight store database file."""
 
@@ -122,7 +378,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           'signature': '_FormatStreamAsSignature'})
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
-    """Initializes a binary data file.
+    """Initializes a store database file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
@@ -179,7 +435,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       self._DebugPrintValue('Boolean', f'{value_boolean!s}')
 
     elif metadata_attribute.value_type in (0x02, 0x06):
-      value_string = self._FormatIntegerAsHexadecimal8(metadata_attribute.value)
+      value_string, _ = self._FormatIntegerAsHexadecimal8(
+          metadata_attribute.value)
       self._DebugPrintValue('Integer', value_string)
 
     elif metadata_attribute.value_type == 0x07:
@@ -198,11 +455,11 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     elif metadata_attribute.value_type in (0x09, 0x0a):
       if metadata_attribute.property_type & 0x02 == 0x00:
-        value_string = self._FormatFloatingPoint(metadata_attribute.value)
+        value_string, _ = self._FormatFloatingPoint(metadata_attribute.value)
         self._DebugPrintValue('Floating-point', value_string)
       else:
         for array_index, array_value in enumerate(metadata_attribute.value):
-          value_string = self._FormatFloatingPoint(array_value)
+          value_string, _ = self._FormatFloatingPoint(array_value)
           self._DebugPrintValue(
               f'Floating-point: {array_index:d}', value_string)
 
@@ -219,7 +476,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           self._DebugPrintCocoaTimeValue(
               'Date and time', metadata_attribute.value)
         else:
-          value_string = self._FormatFloatingPoint(metadata_attribute.value)
+          value_string, _ = self._FormatFloatingPoint(metadata_attribute.value)
           self._DebugPrintValue('Floating-point', value_string)
 
       else:
@@ -228,7 +485,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             self._DebugPrintCocoaTimeValue(
                 f'Date and time: {array_index:d}', array_value)
           else:
-            value_string = self._FormatFloatingPoint(array_value)
+            value_string, _ = self._FormatFloatingPoint(array_value)
             self._DebugPrintValue(
                 f'Floating-point: {array_index:d}', value_string)
 
@@ -266,23 +523,26 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     self._DebugPrintValue(description, date_time_string)
 
-  def _DecompressLZ4PageData(self, compressed_page_data, file_offset):
-    """Decompresses LZ4 compressed page data.
+  def _DecompressLZ4Block(
+      self, file_offset, compressed_data, previous_uncompressed_data):
+    """Decompresses LZ4 compressed block.
 
     Args:
-      compressed_page_data (bytes): LZ4 compressed page data.
       file_offset (int): file offset.
+      compressed_data (bytes): LZ4 compressed data.
+      previous_uncompressed_data (bytes): uncompressed data of the previous
+          (preceding) block.
 
     Returns:
-      bytes: uncompressed page data.
+      tuple[bytes, int]: uncompressed data and number of bytes read.
 
     Raises:
-      ParseError: if the page data cannot be decompressed.
+      ParseError: if the data cannot be decompressed.
     """
     data_type_map = self._GetDataTypeMap('spotlight_store_db_lz4_block_header')
 
     try:
-      lz4_block_header = data_type_map.MapByteStream(compressed_page_data)
+      lz4_block_header = data_type_map.MapByteStream(compressed_data)
     except dtfabric_errors.MappingError as exception:
       raise errors.ParseError((
           f'Unable to map LZ4 block header at offset: 0x{file_offset:08x} '
@@ -296,27 +556,67 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     if lz4_block_header.signature == b'bv41':
       end_of_data_offset = 12 + lz4_block_header.compressed_data_size
 
-      page_data = lz4.block.decompress(
-          compressed_page_data[12:end_of_data_offset],
-          uncompressed_size=lz4_block_header.uncompressed_data_size)
+      uncompressed_data = lz4.block.decompress(
+          compressed_data[12:end_of_data_offset],
+          uncompressed_size=lz4_block_header.uncompressed_data_size,
+          dict=previous_uncompressed_data)
 
     elif lz4_block_header.signature == b'bv4-':
       end_of_data_offset = 8 + lz4_block_header.uncompressed_data_size
-      page_data = compressed_page_data[8:end_of_data_offset]
+      uncompressed_data = compressed_data[8:end_of_data_offset]
 
     else:
-      raise errors.ParseError('Unsupported start of LZ4 block marker')
-
-    end_of_compressed_data_identifier = compressed_page_data[
-        end_of_data_offset:end_of_data_offset + 4]
-
-    if end_of_compressed_data_identifier != b'bv4$':
-      file_offset += end_of_data_offset
       raise errors.ParseError((
-          f'Unsupported LZ4 end of compressed data marker at offset: '
+          f'Unsupported start of LZ4 block marker at offset: '
           f'0x{file_offset:08x}'))
 
-    return page_data
+    return uncompressed_data, end_of_data_offset
+
+  def _DecompressLZ4PageData(self, compressed_page_data, file_offset):
+    """Decompresses LZ4 compressed page data.
+
+    Args:
+      compressed_page_data (bytes): LZ4 compressed page data.
+      file_offset (int): file offset.
+
+    Returns:
+      bytes: uncompressed page data.
+
+    Raises:
+      ParseError: if the page data cannot be decompressed.
+    """
+    compressed_data_offset = 0
+    compressed_data_size = len(compressed_page_data)
+
+    last_uncompressed_block = None
+
+    uncompressed_blocks = []
+    while compressed_data_offset < compressed_data_size:
+      lz4_block_marker = compressed_page_data[
+          compressed_data_offset:compressed_data_offset + 4]
+
+      if self._debug:
+        self._DebugPrintData('LZ4 block marker', lz4_block_marker)
+
+      if lz4_block_marker == b'bv4$':
+        break
+
+      uncompressed_data, bytes_read = self._DecompressLZ4Block(
+          file_offset, compressed_page_data[compressed_data_offset:],
+          last_uncompressed_block)
+
+      compressed_data_offset += bytes_read
+      file_offset += bytes_read
+
+      last_uncompressed_block = uncompressed_data
+
+      uncompressed_blocks.append(uncompressed_data)
+
+    if lz4_block_marker != b'bv4$':
+      raise errors.ParseError(
+          f'Unsupported end of LZ4 block marker at offset: 0x{file_offset:08x}')
+
+    return b''.join(uncompressed_blocks)
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -397,13 +697,14 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     Args:
       page_header (spotlight_store_db_property_page_header): page header.
       page_data (bytes): page data.
-      property_table (dict[int, object]): property table in which to store the
-          property page values.
+      property_table (dict[int, SpotlightStoreIndexValue]): property table in
+          which to store the index values.
 
     Raises:
-      ParseError: if the property page values cannot be read.
+      ParseError: if the index page values cannot be read.
     """
     data_type_map = self._GetDataTypeMap('spotlight_store_db_property_value81')
+
     index_values_data_type_map = self._GetDataTypeMap(
         'spotlight_store_db_index_values')
 
@@ -456,14 +757,13 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         value_string = getattr(metadata_value, 'value_name', '')
         values_list.append(value_string)
 
-      setattr(property_value, 'values_list', values_list)
-
       if self._debug:
         self._DebugPrintDecimalValue('Table index', property_value.table_index)
         self._DebugPrintDecimalValue('Index size', index_size)
 
-        value_string = self._FormatArrayOfIntegersAsDecimals(index_values)
+        value_string, _ = self._FormatArrayOfIntegersAsDecimals(index_values)
         self._DebugPrintValue('Index values', value_string)
+        # TODO: print padding.
         self._DebugPrintText('\n')
 
         for metadata_value_index in index_values:
@@ -474,10 +774,80 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
         self._DebugPrintText('\n')
 
-      property_table[property_value.table_index] = property_value
+      index_value = SpotlightStoreIndexValue()
+      index_value.table_index = property_value.table_index
+      index_value.values_list = values_list
+
+      property_table[index_value.table_index] = index_value
 
       page_data_offset += page_value_size
       page_value_index += 1
+
+  def _ReadIndexStreamsMap(self, streams_map_number, property_table):
+    """Reads an index streams map.
+
+    Args:
+      streams_map_number (int): number of the streams map.
+      property_table (dict[int, SpotlightStoreIndexValue]): property table in
+          which to store the index values.
+
+    Raises:
+      ParseError: if the index streams map cannot be read.
+    """
+    stream_values = self._ReadStreamsMap(streams_map_number)
+
+    index_values_data_type_map = self._GetDataTypeMap(
+        'spotlight_store_db_index_values')
+
+    for index, stream_value in enumerate(stream_values):
+      if self._debug:
+        self._DebugPrintData(f'Streams value: {index:d} data', stream_value)
+
+      if index == 0:
+        continue
+
+      index_size, bytes_read = self._ReadVariableSizeInteger(stream_value)
+
+      context = dtfabric_data_maps.DataTypeMapContext(values={
+          'index_size': index_size})
+
+      try:
+        index_values = index_values_data_type_map.MapByteStream(
+            stream_value[bytes_read:], context=context)
+
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            f'Unable to map stream value: {index:d} data with error: '
+            f'{exception!s}'))
+
+      values_list = []
+      for metadata_value_index in index_values:
+        metadata_value = self._metadata_values.get(metadata_value_index, None)
+        value_string = getattr(metadata_value, 'value_name', '')
+        values_list.append(value_string)
+
+      if self._debug:
+        self._DebugPrintDecimalValue('Table index', index)
+        self._DebugPrintDecimalValue('Index size', index_size)
+
+        value_string, _ = self._FormatArrayOfIntegersAsDecimals(index_values)
+        self._DebugPrintValue('Index values', value_string)
+        # TODO: print padding.
+        self._DebugPrintText('\n')
+
+        for metadata_value_index in index_values:
+          metadata_value = self._metadata_values.get(metadata_value_index, None)
+          value_string = getattr(metadata_value, 'value_name', '')
+          self._DebugPrintValue(
+              f'Value: {metadata_value_index:d}', value_string)
+
+        self._DebugPrintText('\n')
+
+      index_value = SpotlightStoreIndexValue()
+      index_value.table_index = index
+      index_value.values_list = values_list
+
+      property_table[index] = index_value
 
   def _ReadMapPage(self, file_object, file_offset):
     """Reads a map page.
@@ -578,15 +948,15 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintValue('Key name', key_name or '')
 
-      value_string = self._FormatIntegerAsHexadecimal2(property_type or 0)
+      value_string, _ = self._FormatIntegerAsHexadecimal2(property_type or 0)
       self._DebugPrintValue('Property type', value_string)
 
-      value_string = self._FormatIntegerAsHexadecimal2(value_type or 0)
+      value_string, _ = self._FormatIntegerAsHexadecimal2(value_type or 0)
       self._DebugPrintValue('Value type', value_string)
 
     if key_name == 'kMDStoreAccumulatedSizes':
-      bytes_read = 4 * 16
-      value = data[:bytes_read]
+      bytes_read = len(data)
+      value = data
 
     elif value_type in (0x00, 0x02, 0x06):
       value, bytes_read = self._ReadVariableSizeInteger(data)
@@ -654,12 +1024,12 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the metadata attribute byte value cannot be read.
     """
-    if property_type & 0x02 == 0x00:
-      data_size, bytes_read = 1, 0
-    else:
+    if property_type & 0x02:
       data_size, bytes_read = self._ReadVariableSizeInteger(data)
+    else:
+      data_size, bytes_read = 1, 0
 
-    if self._debug and bytes_read != 0:
+    if self._debug and bytes_read:
       self._DebugPrintDecimalValue('Data size', data_size)
 
     data_type_map = self._GetDataTypeMap('array_of_byte')
@@ -774,6 +1144,62 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     return value, bytes_read
 
+  def _ReadMetadataAttributePageValues(
+      self, page_header, page_data, property_table):
+    """Reads the metadata atribute page values.
+
+    Args:
+      page_header (spotlight_store_db_property_page_header): page header.
+      page_data (bytes): page data.
+      property_table (dict[int, object]): property table in which to store the
+          metadata attribute values.
+
+    Raises:
+      ParseError: if the property page values cannot be read.
+    """
+    if page_header.property_table_type == 0x00000011:
+      data_type_map = self._GetDataTypeMap(
+          'spotlight_store_db_property_value11')
+
+      if self._debug:
+        debug_info = self._DEBUG_INFORMATION.get(
+            'spotlight_metadata_attribute_type', None)
+
+    elif page_header.property_table_type == 0x00000021:
+      data_type_map = self._GetDataTypeMap(
+          'spotlight_store_db_property_value21')
+
+      if self._debug:
+        debug_info = self._DEBUG_INFORMATION.get(
+            'spotlight_metadata_attribute_value', None)
+
+    page_data_offset = 12
+    page_data_size = page_header.used_page_size - 20
+    page_value_index = 0
+
+    while page_data_offset < page_data_size:
+      context = dtfabric_data_maps.DataTypeMapContext()
+
+      try:
+        property_value = data_type_map.MapByteStream(
+            page_data[page_data_offset:], context=context)
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            f'Unable to map property value data at offset: '
+            f'0x{page_data_offset:08x} with error: {exception!s}'))
+
+      if self._debug:
+        self._DebugPrintData(
+            f'Page value: {page_value_index:d} data',
+            page_data[page_data_offset:page_data_offset + context.byte_size])
+
+        self._DebugPrintStructureObject(property_value, debug_info)
+
+      property_table[property_value.table_index] = property_value
+
+      page_data_offset += context.byte_size
+      page_value_index += 1
+
   def _ReadMetadataAttributeReferenceValue(self, property_type, data):
     """Reads a metadata attribute reference value.
 
@@ -819,6 +1245,57 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       value = getattr(metadata_value, 'value_name', '(null)')
 
     return value, bytes_read
+
+  def _ReadMetadataAttributeStreamsMap(
+      self, streams_map_number, property_table):
+    """Reads a metadata attribute streams map.
+
+    Args:
+      streams_map_number (int): number of the streams map.
+      property_table (dict[int, object]): property table in which to store the
+          metadata attribute values.
+
+    Raises:
+      ParseError: if the metadata attribute streams map cannot be read.
+    """
+    stream_values = self._ReadStreamsMap(streams_map_number)
+
+    if streams_map_number == 1:
+      data_type_map = self._GetDataTypeMap(
+          'spotlight_metadata_attribute_type')
+
+      if self._debug:
+        debug_info = self._DEBUG_INFORMATION.get(
+            'spotlight_metadata_attribute_type', None)
+
+    elif streams_map_number == 2:
+      data_type_map = self._GetDataTypeMap(
+          'spotlight_metadata_attribute_value')
+
+      if self._debug:
+        debug_info = self._DEBUG_INFORMATION.get(
+            'spotlight_metadata_attribute_value', None)
+
+    for index, stream_value in enumerate(stream_values):
+      if self._debug:
+        self._DebugPrintData(f'Streams value: {index:d} data', stream_value)
+
+      if index == 0:
+        continue
+
+      try:
+        property_value = data_type_map.MapByteStream(stream_value)
+      except dtfabric_errors.MappingError as exception:
+        raise errors.ParseError((
+            f'Unable to map stream value: {index:d} data with error: '
+            f'{exception!s}'))
+
+      property_value.table_index = index
+
+      if self._debug:
+        self._DebugPrintStructureObject(property_value, debug_info)
+
+      property_table[index] = property_value
 
   def _ReadMetadataAttributeStringValue(self, property_type, data):
     """Reads a metadata attribute string value.
@@ -938,7 +1415,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(page_values_header, debug_info)
 
     if page_header.property_table_type in (0x00000011, 0x00000021):
-      self._ReadPropertyPageValues(page_header, page_data, property_table)
+      self._ReadMetadataAttributePageValues(
+          page_header, page_data, property_table)
 
     elif page_header.property_table_type == 0x00000081:
       self._ReadIndexPageValues(page_header, page_data, property_table)
@@ -969,10 +1447,10 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'property page header')
 
     if self._debug:
-      block_number = int(file_offset / 0x1000)
+      block_number = file_offset // 0x1000
       self._DebugPrintDecimalValue('Block number', block_number)
 
-      page_number = int(file_offset / page_header.page_size)
+      page_number = file_offset // page_header.page_size
       self._DebugPrintDecimalValue('Page number', page_number)
 
       self._DebugPrintText('\n')
@@ -1002,60 +1480,6 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       file_offset = next_block_number * 0x1000
 
-  def _ReadPropertyPageValues(self, page_header, page_data, property_table):
-    """Reads the property page values.
-
-    Args:
-      page_header (spotlight_store_db_property_page_header): page header.
-      page_data (bytes): page data.
-      property_table (dict[int, object]): property table in which to store the
-          property page values.
-
-    Raises:
-      ParseError: if the property page values cannot be read.
-    """
-    if page_header.property_table_type == 0x00000011:
-      data_type_map = self._GetDataTypeMap(
-          'spotlight_store_db_property_value11')
-
-    elif page_header.property_table_type == 0x00000021:
-      data_type_map = self._GetDataTypeMap(
-          'spotlight_store_db_property_value21')
-
-    page_data_offset = 12
-    page_data_size = page_header.used_page_size - 20
-    page_value_index = 0
-
-    while page_data_offset < page_data_size:
-      context = dtfabric_data_maps.DataTypeMapContext()
-
-      try:
-        property_value = data_type_map.MapByteStream(
-            page_data[page_data_offset:], context=context)
-      except dtfabric_errors.MappingError as exception:
-        raise errors.ParseError((
-            f'Unable to map property value data at offset: '
-            f'0x{page_data_offset:08x} with error: {exception!s}'))
-
-      if self._debug:
-        self._DebugPrintData(
-            f'Page value: {page_value_index:d} data',
-            page_data[page_data_offset:page_data_offset + context.byte_size])
-
-        if page_header.property_table_type == 0x00000011:
-          debug_info = self._DEBUG_INFORMATION.get(
-              'spotlight_store_db_property_value11', None)
-        elif page_header.property_table_type == 0x00000021:
-          debug_info = self._DEBUG_INFORMATION.get(
-              'spotlight_store_db_property_value21', None)
-
-        self._DebugPrintStructureObject(property_value, debug_info)
-
-      property_table[property_value.table_index] = property_value
-
-      page_data_offset += context.byte_size
-      page_value_index += 1
-
   def _ReadRecord(self, page_data, page_value_offset):
     """Reads a record.
 
@@ -1071,7 +1495,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       ParseError: if the record cannot be read.
     """
     if self._debug:
-      value_string = self._FormatIntegerAsHexadecimal8(
+      value_string, _ = self._FormatIntegerAsHexadecimal8(
           page_value_offset)
       self._DebugPrintValue('Record data offset', value_string)
 
@@ -1091,9 +1515,15 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     metadata_attribute_index = 0
     metadata_type_index = 0
 
+    record_data_end_offset = page_data_offset + record_header.data_size
+
     while record_data_offset < record_header.data_size:
-      relative_metadata_type_index, bytes_read = (
-          self._ReadVariableSizeInteger(page_data[page_data_offset:]))
+      relative_metadata_type_index, bytes_read = self._ReadVariableSizeInteger(
+          page_data[page_data_offset:record_data_end_offset])
+
+      if self._debug:
+        self._DebugPrintData('Relative metadata attribute data', page_data[
+            page_data_offset:page_data_offset + bytes_read])
 
       page_data_offset += bytes_read
       record_data_offset += bytes_read
@@ -1104,8 +1534,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         description = (
             f'Relative metadata attribute: {metadata_attribute_index:d} '
             f'type index')
-        self._DebugPrintDecimalValue(
-            description, relative_metadata_type_index)
+        self._DebugPrintDecimalValue(description, relative_metadata_type_index)
 
         description = (
             f'Metadata attribute: {metadata_attribute_index:d} type index')
@@ -1113,7 +1542,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       metadata_type = self._metadata_types.get(metadata_type_index, None)
       metadata_attribute, bytes_read = self._ReadMetadataAttribute(
-          metadata_type, page_data[page_data_offset:])
+          metadata_type, page_data[page_data_offset:record_data_end_offset])
 
       page_data_offset += bytes_read
       record_data_offset += bytes_read
@@ -1195,7 +1624,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     page_header, bytes_read = self._ReadPropertyPageHeader(
         file_object, file_offset)
 
-    if page_header.property_table_type not in (0x00000009, 0x00001009):
+    if page_header.property_table_type not in (
+        0x00000009, 0x00001009, 0x00004009, 0x00005009):
       raise errors.ParseError((
           f'Unsupported property table type: '
           f'0x{page_header.property_table_type:08x}'))
@@ -1207,14 +1637,13 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     if page_header.uncompressed_page_size > 0:
       compressed_page_data = page_data
 
-      if (page_header.property_table_type == 0x00000009 and
-          compressed_page_data[0] == 0x78):
-        page_data = zlib.decompress(compressed_page_data)
-
-      elif (page_header.property_table_type == 0x00001009 and
-            compressed_page_data[0:4] == b'bv41'):
+      if (page_header.property_table_type & 0x00001000 and
+          compressed_page_data[0:4] in (b'bv41', b'bv4-')):
         page_data = self._DecompressLZ4PageData(
             compressed_page_data, file_offset)
+
+      elif compressed_page_data[0] == 0x78:
+        page_data = zlib.decompress(compressed_page_data)
 
       # TODO: add support for other compression types.
       else:
@@ -1240,7 +1669,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     while page_data_offset < page_data_size:
       if self._debug:
-        value_string = self._FormatIntegerAsHexadecimal8(
+        value_string, _ = self._FormatIntegerAsHexadecimal8(
             page_data_offset + 20)
         self._DebugPrintValue('Record data offset', value_string)
 
@@ -1259,10 +1688,10 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           description = 'File system identifier'
         self._DebugPrintDecimalValue(description, record_header.identifier)
 
-        value_string = self._FormatIntegerAsHexadecimal2(record_header.flags)
+        value_string, _ = self._FormatIntegerAsHexadecimal2(record_header.flags)
         self._DebugPrintValue('Flags', value_string)
 
-        value_string = self._FormatIntegerAsHexadecimal2(
+        value_string, _ = self._FormatIntegerAsHexadecimal2(
             record_header.item_identifier)
         self._DebugPrintValue('Item identifier', value_string)
 
@@ -1287,6 +1716,60 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       self._record_descriptors[record_header.identifier] = record_descriptor
 
       page_data_offset += 4 + record_header.data_size
+
+  def _ReadStreamsMap(self, streams_map_number):
+    """Reads a streams map.
+
+    Args:
+      streams_map_number (int): number of the streams map.
+
+    Returns:
+      list[bytes]: stream values.
+
+    Raises:
+      ParseError: if the streams map cannot be read.
+    """
+    path = os.path.abspath(self._path)
+    path_segments = self._file_system_helper.SplitPath(path)
+
+    path_segments.pop(-1)
+    path_segments.append(f'dbStr-{streams_map_number:d}.map.header')
+    header_file_path = self._file_system_helper.JoinPath(path_segments)
+
+    streams_map_header = AppleSpotlightStreamsMapHeaderFile(
+        file_system_helper=self._file_system_helper)
+    streams_map_header.Open(header_file_path)
+
+    data_size = streams_map_header.data_size
+    number_of_entries = streams_map_header.number_of_entries
+
+    streams_map_header.Close()
+
+    path_segments.pop(-1)
+    path_segments.append(f'dbStr-{streams_map_number:d}.map.offsets')
+    offsets_file_path = self._file_system_helper.JoinPath(path_segments)
+
+    streams_map_offsets = AppleSpotlightStreamsMapOffsetsFile(
+        number_of_entries, file_system_helper=self._file_system_helper)
+    streams_map_offsets.Open(offsets_file_path)
+
+    offsets = streams_map_offsets.offsets
+
+    streams_map_offsets.Close()
+
+    path_segments.pop(-1)
+    path_segments.append(f'dbStr-{streams_map_number:d}.map.data')
+    data_file_path = self._file_system_helper.JoinPath(path_segments)
+
+    streams_map_data = AppleSpotlightStreamsMapDataFile(
+        data_size, offsets, file_system_helper=self._file_system_helper)
+    streams_map_data.Open(data_file_path)
+
+    stream_values = streams_map_data.stream_values
+
+    streams_map_data.Close()
+
+    return stream_values
 
   def _ReadVariableSizeInteger(self, data):
     """Reads a variable size integer.
@@ -1372,24 +1855,39 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     self._ReadMapPages(
         file_object, file_header.map_offset, file_header.map_size)
 
-    self._ReadPropertyPages(
-        file_object, file_header.metadata_types_block_number,
-        self._metadata_types)
+    if not file_header.metadata_types_block_number:
+      self._ReadMetadataAttributeStreamsMap(1, self._metadata_types)
+    else:
+      self._ReadPropertyPages(
+          file_object, file_header.metadata_types_block_number,
+          self._metadata_types)
 
-    self._ReadPropertyPages(
-        file_object, file_header.metadata_values_block_number,
-        self._metadata_values)
+    if not file_header.metadata_values_block_number:
+      self._ReadMetadataAttributeStreamsMap(2, self._metadata_values)
+    else:
+      self._ReadPropertyPages(
+          file_object, file_header.metadata_values_block_number,
+          self._metadata_values)
 
-    self._ReadPropertyPages(
-        file_object, file_header.unknown_values41_block_number, {})
+    if not file_header.unknown_values41_block_number:
+      self._ReadIndexStreamsMap(3, {})
+    else:
+      self._ReadPropertyPages(
+          file_object, file_header.unknown_values41_block_number, {})
 
-    self._ReadPropertyPages(
-        file_object, file_header.metadata_lists_block_number,
-        self._metadata_lists)
+    if not file_header.metadata_lists_block_number:
+      self._ReadIndexStreamsMap(4, self._metadata_lists)
+    else:
+      self._ReadPropertyPages(
+          file_object, file_header.metadata_lists_block_number,
+          self._metadata_lists)
 
-    self._ReadPropertyPages(
-        file_object, file_header.metadata_localized_strings_block_number,
-        self._metadata_localized_strings)
+    if not file_header.metadata_localized_strings_block_number:
+      self._ReadIndexStreamsMap(5, self._metadata_localized_strings)
+    else:
+      self._ReadPropertyPages(
+          file_object, file_header.metadata_localized_strings_block_number,
+          self._metadata_localized_strings)
 
     for map_value in self._map_values:
       file_offset = map_value.block_number * 0x1000

@@ -545,23 +545,24 @@ The ChunkSet chunk is variable of size and consists of:
 The compressed data contains chunks
 |===
 
-=== Compressed data
+=== LZ4 compressed data
 
-The compressed data consists of:
+LZ4 compressed data consists of:
 
-* start of compressed data marker
-* compressed data
-* end of compressed data marker
+* compressed block marker
+** compressed or uncompressed data
+* end of compressed stream marker
 
-==== Start of compressed data marker
+==== LZ4 compressed data markers
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| "bv41" | | start of LZ4 compressed block +
+| "bv41" | | LZ4 compressed block marker +
 See section: <<lz4_compressed_block,LZ4 compressed block>>
-| "bv4-" | | start of lZ4 uncompressed block +
+| "bv4-" | | LZ4 uncompressed block marker +
 See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
+| "bv4$" | | end of LZ4 compressed stream marker
 |===
 
 ==== [[lz4_compressed_block]]LZ4 compressed block
@@ -570,13 +571,11 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 |===
 | Offset | Size | Value | Description
 4+| _LZ4 compressed block header_
-| 0 | 4 | "bv41" | Start of LZ4 (compressed) block marker
+| 0 | 4 | "bv41" | LZ4 compressed block marker
 | 4 | 4 | | Uncompressed data size (in bytes)
 | 8 | 4 | | LZ4 compressed data size (in bytes)
 4+| _LZ4 compressed block data_
 | 12 | ... | | LZ4 compressed data
-4+| _LZ4 compressed block footer_
-| ... | 4 | "bv4$" | | End of LZ4 block marker
 |===
 
 ==== [[lz4_uncompressed_block]]LZ4 uncompressed block
@@ -584,12 +583,10 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "bv4-" | Start of LZ4 (uncompressed) block marker
+| 0 | 4 | "bv4-" | LZ4 uncompressed block marker
 | 4 | 4 | | Uncompressed data size (in bytes)
 4+| _LZ4 uncompressed block data_
 | 8 | ... | | Uncompressed data
-4+| _LZ4 compressed block footer_
-| ... | 4 | "bv4$" | | End of LZ4 block marker
 |===
 
 === [[tracev3_firehose_chunk]]Firehose chunk

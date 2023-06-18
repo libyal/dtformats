@@ -147,68 +147,103 @@ def Main():
     print('')
     return False
 
-  spotlight_store_database = spotlight_storedb.AppleSpotlightStoreDatabaseFile(
-      debug=options.debug, file_system_helper=file_system_helper,
-      output_writer=output_writer)
-  spotlight_store_database.Open(options.source)
+  source_lower = options.source.lower()
+  if source_lower.endswith('.map.header'):
+    streams_map_header = spotlight_storedb.AppleSpotlightStreamsMapHeaderFile(
+        debug=options.debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
+    streams_map_header.Open(options.source)
 
-  if options.item is None:
-    properties_plist = ''
-    metadata_version = ''
+    data_size = streams_map_header.data_size
+    number_of_entries = streams_map_header.number_of_entries
 
-    metadata_item = spotlight_store_database.GetMetadataItemByIdentifier(1)
-    if metadata_item:
-      metadata_attribute = metadata_item.attributes.get(
-          'kMDStoreProperties', None)
-      if metadata_attribute:
-        properties_plist = metadata_attribute.value.decode('utf-8')
+    streams_map_header.Close()
 
-      metadata_attribute = metadata_item.attributes.get(
-          '_kStoreMetadataVersion', None)
-      if metadata_attribute:
-        major_version = metadata_attribute.value >> 16
-        minor_version = metadata_attribute.value & 0xffff
-        metadata_version = f'{major_version:d}.{minor_version:d}'
+    path = ''.join([options.source[:-6], 'offsets'])
+    streams_map_offsets = spotlight_storedb.AppleSpotlightStreamsMapOffsetsFile(
+        number_of_entries, debug=options.debug,
+        file_system_helper=file_system_helper, output_writer=output_writer)
+    streams_map_offsets.Open(path)
 
-    table_view = TableView(
-        header='Apple Spotlight database information:')
-    table_view.AddRow(['Metadata version:', metadata_version])
-    table_view.AddRow([
-        'Number of metadata items:',
-        spotlight_store_database.number_of_metadata_items])
+    offsets = streams_map_offsets.offsets
 
-    table_view.Write(output_writer)
+    streams_map_offsets.Close()
 
-    if properties_plist:
-      output_writer.WriteText('Properties:\n')
-      output_writer.WriteText(properties_plist)
-      output_writer.WriteText('\n')
+    path = ''.join([options.source[:-6], 'data'])
+    streams_map_data = spotlight_storedb.AppleSpotlightStreamsMapDataFile(
+        data_size, offsets, debug=options.debug,
+        file_system_helper=file_system_helper, output_writer=output_writer)
+    streams_map_data.Open(path)
+
+    # TODO: print streams map.
+
+    streams_map_data.Close()
 
   else:
-    metadata_item = spotlight_store_database.GetMetadataItemByIdentifier(
-        options.item)
-    if not metadata_item:
-      output_writer.WriteText(f'No such metadata item: {options.item:d}\n')
+    spotlight_store_database = (
+        spotlight_storedb.AppleSpotlightStoreDatabaseFile(
+            debug=options.debug, file_system_helper=file_system_helper,
+            output_writer=output_writer))
+    spotlight_store_database.Open(options.source)
+
+    if options.item is None:
+      properties_plist = ''
+      metadata_version = ''
+
+      metadata_item = spotlight_store_database.GetMetadataItemByIdentifier(1)
+      if metadata_item:
+        metadata_attribute = metadata_item.attributes.get(
+            'kMDStoreProperties', None)
+        if metadata_attribute:
+          properties_plist = metadata_attribute.value.decode('utf-8')
+
+        metadata_attribute = metadata_item.attributes.get(
+            '_kStoreMetadataVersion', None)
+        if metadata_attribute:
+          major_version = metadata_attribute.value >> 16
+          minor_version = metadata_attribute.value & 0xffff
+          metadata_version = f'{major_version:d}.{minor_version:d}'
+
+      table_view = TableView(
+          header='Apple Spotlight database information:')
+      table_view.AddRow(['Metadata version:', metadata_version])
+      table_view.AddRow([
+          'Number of metadata items:',
+          spotlight_store_database.number_of_metadata_items])
+
+      table_view.Write(output_writer)
+
+      if properties_plist:
+        output_writer.WriteText('Properties:\n')
+        output_writer.WriteText(properties_plist)
+        output_writer.WriteText('\n')
+
     else:
-      table_view = TableView()
-      for name, metadata_attribute in sorted(metadata_item.attributes.items()):
-        if metadata_attribute.value_type != 0x0c:
-          value_string = f'{metadata_attribute.value!s}'
-        else:
-          date_time = dfdatetime_cocoa_time.CocoaTime(
-              timestamp=metadata_attribute.value)
-          value_string = date_time.CopyToDateTimeString()
-
-          if value_string:
-            value_string = f'{value_string:s} UTC'
+      metadata_item = spotlight_store_database.GetMetadataItemByIdentifier(
+          options.item)
+      if not metadata_item:
+        output_writer.WriteText(f'No such metadata item: {options.item:d}\n')
+      else:
+        table_view = TableView()
+        for name, metadata_attribute in sorted(
+              metadata_item.attributes.items()):
+          if metadata_attribute.value_type != 0x0c:
+            value_string = f'{metadata_attribute.value!s}'
           else:
-            value_string = f'{metadata_attribute.value:f}'
+            date_time = dfdatetime_cocoa_time.CocoaTime(
+                timestamp=metadata_attribute.value)
+            value_string = date_time.CopyToDateTimeString()
 
-        table_view.AddRow([name, value_string])
+            if value_string:
+              value_string = f'{value_string:s} UTC'
+            else:
+              value_string = f'{metadata_attribute.value:f}'
 
-    table_view.Write(output_writer)
+          table_view.AddRow([name, value_string])
 
-  spotlight_store_database.Close()
+      table_view.Write(output_writer)
+
+    spotlight_store_database.Close()
 
   output_writer.Close()
 

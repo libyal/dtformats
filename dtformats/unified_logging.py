@@ -3521,6 +3521,7 @@ class TraceV3File(data_format.BinaryDataFile):
       debug_info = self._DEBUG_INFORMATION.get('tracev3_lz4_block_header', None)
       self._DebugPrintStructureObject(lz4_block_header, debug_info)
 
+    # TODO: add support for multi block compressed data.
     if lz4_block_header.signature == b'bv41':
       end_of_data_offset = 12 + lz4_block_header.compressed_data_size
       uncompressed_data = lz4.block.decompress(

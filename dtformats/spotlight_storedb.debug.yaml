@@ -1,5 +1,71 @@
 # dtFormats debug specification.
 ---
+data_type_map: spotlight_metadata_attribute_type
+attributes:
+- name: table_index
+  description: "Table index"
+  format: decimal
+- name: value_type
+  description: "Value type"
+  format: hexadecimal_2digits
+- name: property_type
+  description: "Property type"
+  format: hexadecimal_2digits
+- name: key_name
+  description: "Key name"
+  format: string
+---
+data_type_map: spotlight_metadata_attribute_value
+attributes:
+- name: table_index
+  description: "Table index"
+  format: decimal
+- name: value_name
+  description: "Value name"
+  format: string
+---
+data_type_map: spotlight_database_streams_map_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: unknown2
+  description: "Unknown2"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: hexadecimal_8digits
+- name: unknown4
+  description: "Unknown4"
+  format: decimal
+- name: unknown5
+  description: "Unknown5"
+  format: hexadecimal_8digits
+- name: unknown6
+  description: "Unknown6"
+  format: decimal
+- name: unknown7
+  description: "Unknown7"
+  format: decimal
+- name: unknown8
+  description: "Unknown8"
+  format: hexadecimal_8digits
+- name: unknown9
+  description: "Unknown9"
+  format: decimal
+- name: unknown10
+  description: "Unknown10"
+  format: hexadecimal_8digits
+- name: unknown11
+  description: "Unknown11"
+  format: hexadecimal_8digits
+- name: unknown12
+  description: "Unknown12"
+  format: hexadecimal_8digits
+---
 data_type_map: spotlight_store_db_file_header
 attributes:
 - name: signature
@@ -128,27 +194,3 @@ attributes:
 - name: unknown1
   description: "Unknown1"
   format: hexadecimal_8digits
----
-data_type_map: spotlight_store_db_property_value11
-attributes:
-- name: table_index
-  description: "Table index"
-  format: decimal
-- name: value_type
-  description: "Value type"
-  format: hexadecimal_2digits
-- name: property_type
-  description: "Property type"
-  format: hexadecimal_2digits
-- name: key_name
-  description: "Key name"
-  format: string
----
-data_type_map: spotlight_store_db_property_value21
-attributes:
-- name: table_index
-  description: "Table index"
-  format: decimal
-- name: value_name
-  description: "Value name"
-  format: string
