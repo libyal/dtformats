@@ -370,8 +370,8 @@ The header system information sub chunk is 64 bytes of size and consist of:
 | 4 | 4 | | Sub chunk data size +
 The size value does not include the 8 bytes of the sub chunk tag and data size
 4+| _The system information sub chunk data (tracev3_subchunk_systeminfo)_
-| 8 | 4 | | [yellow-background]*Unknown* (Observed value: 0x100000C on iOS 14.x)
-| 12 | 4 | | [yellow-background]*Unknown* (Observed value: 2 on iOS 14.x)
+| 8 | 4 | | [yellow-background]*Unknown (Observed value: 0x100000C on iOS 14.x)*
+| 12 | 4 | | [yellow-background]*Unknown (Observed value: 2 on iOS 14.x)*
 | 16 | 16 | | Build version +
 Contains an UTF-8 encoded string with end-of-string character
 | 32 | 32 | | Hardware model string +
