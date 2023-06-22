@@ -1515,7 +1515,7 @@ Contains a Mach continuous timestamp
 Contains a UUID stored in big-endian
 | 72 | 16 | | Shared-Cache Strings (dsc) identifier +
 Contains a UUID stored in big-endian
-| 88 | 4 | | [yellow-background]*Unknown (number of message strings?, observed value 0x1 )*
+| 88 | 4 | | [yellow-background]*Unknown (number of message strings?, observed value 0x1)*
 | 92 | 4 | | Subsystem string size
 | 96 | 4 | | Message string size
 | 100 | subsystem string size | | Subsystem string +
