@@ -63,6 +63,7 @@ The Spotlight store is typically stored under:
 But can also be stored in other locations such as:
 
 ....
+/private/var/db/Spotlight-V100/BootVolume/Store-V2/${UUID}/
 /Users/${USERNAME}/Library/Caches/com.apple.helpd/index.spotlightV3/
 /Users/${USERNAME}/Library/Metadata/CoreSpotlight/index.spotlightV3/
 /Users/${USERNAME}/Library/Developer/Xcode/DocumentationCache/v18/9.0.1/DeveloperDocumentation.index/
@@ -254,13 +255,13 @@ in line of "database property".
 | 0x00000009 | | data records +
 Page contains zlib+DEFLATE compressed data
 | 0x00000011 | | Metadata attribute types +
-Page contains a property table header
+Page contains a <<property_table_header,property table header>>
 | 0x00000021 | | Metadata attribute values +
-Page contains a property table header
+Page contains a <<property_table_header,property table header>>
 | 0x00000041 | | [yellow-background]*Unknown* +
-Page contains a property table header
+Page contains a <<property_table_header,property table header>>
 | 0x00000081 | | Metadata lists or localized strings +
-Page contains a property table header
+Page contains a <<property_table_header,property table header>>
 3+| _Flags_
 | 0x00001000 | | Data is LZ4 compressed
 | 0x00004000 | | [yellow-background]*Unknown*
@@ -303,7 +304,7 @@ See section: <<lz4_uncompressed_block,LZ4 uncompressed block>>
 | 8 | ... | | Uncompressed data
 |===
 
-==== Property table header
+==== [[property_table_header]]Property table header
 
 The property table header is 12 bytes of size and consists of:
 
@@ -610,7 +611,7 @@ Data:
 0x00000000  80 98 00 00 a0 00 e5 67  20 00 f0 1f 9d 11 44 00  .......g .....D.
 0x00000010  83 1b f0 12 5a c0 00 f0  ae f4 31 6d 00 f0 52 fc  ....Z.....1m..R.
 0x00000020  0a 60 e3 8d df 39 c1 07  3a f0 45 57 00 f8 ea 2f  .`...9..:.EW.../
-0x00000030  23 54 f0 81 cc d2 e2 a2  00 00 f8 0a              #T..........    
+0x00000030  23 54 f0 81 cc d2 e2 a2  00 00 f8 0a              #T..........
 
 Relative metadata attribute: 3 type index                               : 1
 Metadata attribute: 3 type index                                        : 23
@@ -775,14 +776,14 @@ size and consists of:
 | Offset | Size | Value | Description
 | 0 | 8 | "\x00PataD\x00\x00" | Signature
 | 8 | 4 | | [yellow-background]*Unknown (Seen: 13)*
-| 12 | 4 | | [yellow-background]*Unknown (Seen: 0, 2)*
+| 12 | 4 | | [yellow-background]*Unknown (Seen: 0, 2 in dbStr-1.map.header)*
 | 16 | 4 | | [yellow-background]*Unknown (Seen: 1)*
-| 20 | 4 | | [yellow-background]*Unknown (size of the corresponding dbStr-#.map.data file?)*
-| 24 | 4 | | [yellow-background]*Unknown (page/block size or flags?)*
-| 28 | 4 | | [yellow-background]*Unknown (number of entries in the corresponding dbStr-#.map.ofsets file?)*
-| 32 | 4 | | [yellow-background]*Unknown (similar to value at offset 20)*
-| 36 | 4 | | [yellow-background]*Unknown (similar to value at offset 24)*
-| 40 | 4 | | [yellow-background]*Unknown (similar to value at offset 28)*
+| 20 | 4 | | Size of the data in the corresponding dbStr-#.map.data file
+| 24 | 4 | | Number of entries in the corresponding dbStr-#.map.buckets file
+| 28 | 4 | | Number of entries in the corresponding dbStr-#.map.ofsets file
+| 32 | 4 | | [yellow-background]*Unknown (copy of value at offset 20?)*
+| 36 | 4 | | [yellow-background]*Unknown (copy of value at offset 24?)*
+| 40 | 4 | | [yellow-background]*Unknown (copy of value at offset 28?)*
 | 44 | 4 | 0 | [yellow-background]*Unknown (empty)*
 | 48 | 4 | 0 | [yellow-background]*Unknown (empty)*
 | 52 | 4 | 0 | [yellow-background]*Unknown (empty)*
@@ -790,8 +791,8 @@ size and consists of:
 
 === Database streams map offsets file (dbStr-#.map.offsets)
 
-The database streams map offsets file (dbStr-#.map.offsets) file is 4096 bytes
-in size and consists of:
+The database streams map offsets file (dbStr-#.map.offsets) file is variable of
+size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -800,6 +801,12 @@ in size and consists of:
 The offset of the value in the corresponding dbStr-#.map.data file
 | ... | ... | 0 | [yellow-background]*Unknown (empty)*
 |===
+
+The size of corresponding stream value is calculated as:
+
+....
+size = next offset or data size - current offset
+....
 
 === Database streams map data file (dbStr-#.map.data)
 
@@ -816,10 +823,7 @@ A stream value is variable of size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | ... | | Stream value size
-Contains a variable size integer +
-See section: <<variable_size_integer,Variable size integer>> +
-| ... | Stream value size | | Stream value
+| 0 | ... | | Stream value data
 |===
 
 ==== Metadata attribute types
@@ -829,10 +833,12 @@ The dbStr-1.map.data file contains metadata attribute types that consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 1 | | Value type +
+| 0 | ... | | [yellow-background]*Unknown (stream value data size)* +
+See section: <<variable_size_integer,Variable size integer>>
+| ... | 1 | | Value type +
 See section: <<metadata_attribute_value_types,Metadata attribute value types>>
-| 1 | 1 | | Property type
-| 2 | ... | | Key name +
+| ... | 1 | | Property type
+| ... | ... | | Key name +
 Contains an UTF-8 encoded string with an end-of-string character
 |===
 
@@ -843,16 +849,40 @@ The dbStr-2.map.data file contains metadata attribute values that consist of:
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | ... | | Metadata attribute value name +
+| 0 | ... | | [yellow-background]*Unknown (stream value data size)* +
+See section: <<variable_size_integer,Variable size integer>>
+| ... | ... | | Metadata attribute value name +
 Contains an UTF-8 encoded string with an end-of-string character
+|===
+
+==== Index values
+
+The dbStr-3.map.data, dbStr-4.map.data and dbStr-5.map.data files contains
+metadata attribute values that consist of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | ... | | [yellow-background]*Unknown* +
+See section: <<variable_size_integer,Variable size integer>>
+| ... | ... | | Index data size +
+Contains a variable size integer
+| ... | ... | | Index array +
+Contains an array of 32-bit integer values
 |===
 
 === Database streams map buckets file (dbStr-#.map.buckets)
 
-The database streams map buckets file (dbStr-#.map.buckets) file is 4096 bytes
-in size and consists of:
+The database streams map buckets file (dbStr-#.map.buckets) file is variable of
+size and consists of:
 
-[yellow-background]*TODO: describe*
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 x number of entries | | Array of 32-bit offsets +
+[yellow-background]*TODO:Relates to an index in the corresponding dbStr-#.map.offsets file?*
+| ... | ... | 0 | [yellow-background]*Unknown (empty)*
+|===
 
 == Notes
 

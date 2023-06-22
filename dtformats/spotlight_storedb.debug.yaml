@@ -39,22 +39,22 @@ attributes:
   description: "Unknown3"
   format: hexadecimal_8digits
 - name: unknown4
-  description: "Unknown4"
+  description: "Data size"
   format: decimal
 - name: unknown5
-  description: "Unknown5"
-  format: hexadecimal_8digits
+  description: "Number of buckets"
+  format: decimal
 - name: unknown6
-  description: "Unknown6"
+  description: "Number of offsets"
   format: decimal
 - name: unknown7
-  description: "Unknown7"
+  description: "Copy of data size"
   format: decimal
 - name: unknown8
-  description: "Unknown8"
-  format: hexadecimal_8digits
+  description: "Copy of number of buckets"
+  format: decimal
 - name: unknown9
-  description: "Unknown9"
+  description: "Copy of number of offsets"
   format: decimal
 - name: unknown10
   description: "Unknown10"

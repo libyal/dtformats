@@ -336,12 +336,12 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       self._DebugPrintDecimalValue(f'Unknown2: {index:d}', value)
 
     for index, page_number in enumerate(page_body.sub_pages):
-      value_string = self._FormatIntegerAsPageNumber(page_number)
+      value_string, _ = self._FormatIntegerAsPageNumber(page_number)
       self._DebugPrintValue(
           f'Sub page: {index:d} mapped page number', value_string)
 
     for index, key_offset in enumerate(page_body.key_offsets):
-      value_string = self._FormatIntegerAsOffset(key_offset)
+      value_string, _ = self._FormatIntegerAsOffset(key_offset)
       self._DebugPrintValue(f'Key: {index:d} offset', value_string)
 
     number_of_bytes = page_body.key_data_size * 2
@@ -355,7 +355,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         'Number of values', page_body.number_of_values)
 
     for index, offset in enumerate(page_body.value_offsets):
-      value_string = self._FormatIntegerAsOffset(offset)
+      value_string, _ = self._FormatIntegerAsOffset(offset)
       self._DebugPrintValue(f'Value: {index:d} offset', value_string)
 
     number_of_bytes = page_body.value_data_size * 2
@@ -521,7 +521,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       page_key_offset = key_offset * 2
 
       if self._debug:
-        value_string = self._FormatIntegerAsOffset(page_key_offset)
+        value_string, _ = self._FormatIntegerAsOffset(page_key_offset)
         self._DebugPrintValue(
             f'Page key: {page_key_index:d} offset', value_string)
 
@@ -675,7 +675,7 @@ class MappingFile(data_format.BinaryDataFile):
         '  Number of entries', unknown_table.number_of_entries)
 
     for index, page_number in enumerate(unknown_table.entries):
-      value_string = self._FormatIntegerAsPageNumber(page_number)
+      value_string, _ = self._FormatIntegerAsPageNumber(page_number)
       self._DebugPrintValue(f'  Entry: {index:d} page number', value_string)
 
     self._DebugPrintText('\n')
@@ -1635,14 +1635,14 @@ class RepositoryFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'node cell')
 
     if self._debug:
-      value_string = self._FormatIntegerAsOffset(file_offset)
+      value_string, _ = self._FormatIntegerAsOffset(file_offset)
       self._DebugPrintValue('Node cell offset', value_string)
 
-      value_string = self._FormatIntegerAsOffset(file_offset + 4)
+      value_string, _ = self._FormatIntegerAsOffset(file_offset + 4)
       self._DebugPrintValue('Data offset', value_string)
 
       if cell_number is not None:
-        value_string = self._FormatIntegerAsDecimal(cell_number)
+        value_string, _ = self._FormatIntegerAsDecimal(cell_number)
         self._DebugPrintValue('Node cell number', value_string)
 
       debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_cell', None)
@@ -2198,15 +2198,15 @@ class ClassDefinition(CIMObject):
     """
     lines = []
     for index, property_descriptor in enumerate(array_of_property_descriptors):
-      value_string = self._FormatIntegerAsOffset(
+      value_string, _ = self._FormatIntegerAsOffset(
           property_descriptor.name_offset)
-      line = self._FormatValue(
+      line, _ = self._FormatValue(
           f'    Property descriptor: {index:d} name offset', value_string)
       lines.append(line)
 
-      value_string = self._FormatIntegerAsOffset(
+      value_string, _ = self._FormatIntegerAsOffset(
           property_descriptor.definition_offset)
-      line = self._FormatValue(
+      line, _ = self._FormatValue(
           f'    Property descriptor: {index:d} definition offset', value_string)
       lines.append(line)
 
@@ -2517,11 +2517,11 @@ class ClassDefinition(CIMObject):
     for property_name, class_definition_property in self.properties.items():
       self._DebugPrintText(f'    Property: {property_name:s}\n')
 
-      value_string = self._FormatIntegerAsDecimal(
+      value_string, _ = self._FormatIntegerAsDecimal(
           class_definition_property.index)
       self._DebugPrintValue('        Index', value_string)
 
-      value_string = self._FormatIntegerAsOffset(
+      value_string, _ = self._FormatIntegerAsOffset(
           class_definition_property.value_data_offset)
       self._DebugPrintValue('        Value data offset', value_string)
 
@@ -2836,10 +2836,10 @@ class Instance(CIMObject):
       property_state_bits_size += 1
 
     if self._debug:
-      value_string = self._FormatIntegerAsDecimal(property_state_bits_size)
+      value_string, _ = self._FormatIntegerAsDecimal(property_state_bits_size)
       self._DebugPrintValue('Property state bits size', value_string)
 
-      value_string = self._FormatIntegerAsDecimal(
+      value_string, _ = self._FormatIntegerAsDecimal(
           class_value_data_map.properties_size)
       self._DebugPrintValue('Property values data size', value_string)
 
@@ -2897,7 +2897,7 @@ class Instance(CIMObject):
          data_type_map, 'unknown offset')
 
     if self._debug:
-      value_string = self._FormatIntegerAsOffset(unknown_offset)
+      value_string, _ = self._FormatIntegerAsOffset(unknown_offset)
       self._DebugPrintValue('Unknown offset', value_string)
 
     data_offset += 4
@@ -3258,7 +3258,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     # Unsure how reliable this method is since multiple index[1-3].map files
     # can have the same sequence number but contain different mappings.
     for mapping_file_number in range(1, 4):
-      filename_as_glob = self._FormatFilenameAsGlob(
+      filename_as_glob, _ = self._FormatFilenameAsGlob(
           f'mapping{mapping_file_number:d}.map')
       path_with_glob = self._file_system_helper.JoinPath([
           path, filename_as_glob])
@@ -3598,7 +3598,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       IndexBinaryTreeFile: index binary tree file or None if not available.
     """
-    filename_as_glob = self._FormatFilenameAsGlob('index.btr')
+    filename_as_glob, _ = self._FormatFilenameAsGlob('index.btr')
     index_binary_tree_file_glob = self._file_system_helper.JoinPath([
         path, filename_as_glob])
 
@@ -3625,7 +3625,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       MappingFile: mapping file or None if not available.
     """
-    filename_as_glob = self._FormatFilenameAsGlob(filename)
+    filename_as_glob, _ = self._FormatFilenameAsGlob(filename)
     mapping_file_glob = self._file_system_helper.JoinPath([
         path, filename_as_glob])
 
@@ -3651,7 +3651,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       file: file-like object or None if not available.
     """
-    filename_as_glob = self._FormatFilenameAsGlob('mapping.ver')
+    filename_as_glob, _ = self._FormatFilenameAsGlob('mapping.ver')
     mapping_version_file_glob = self._file_system_helper.JoinPath([
         path, filename_as_glob])
 
@@ -3670,7 +3670,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       ObjectsDataFile: objects data file or None if not available.
     """
-    filename_as_glob = self._FormatFilenameAsGlob('objects.data')
+    filename_as_glob, _ = self._FormatFilenameAsGlob('objects.data')
     objects_data_file_glob = self._file_system_helper.JoinPath([
         path, filename_as_glob])
 
@@ -3696,7 +3696,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     Returns:
       RepositoryFile: repository file or None if not available.
     """
-    filename_as_glob = self._FormatFilenameAsGlob('cim.rep')
+    filename_as_glob, _ = self._FormatFilenameAsGlob('cim.rep')
     repository_file_glob = self._file_system_helper.JoinPath([
         path, filename_as_glob])
 

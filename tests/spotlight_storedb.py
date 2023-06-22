@@ -8,7 +8,7 @@ from dtformats import spotlight_storedb
 from tests import test_lib
 
 
-class AppleSpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
+class SpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
   """Apple Spotlight store database file tests."""
 
   # pylint: disable=protected-access
@@ -22,7 +22,7 @@ class AppleSpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
 
   def testReadVariableSizeInteger(self):
     """Tests the _ReadVariableSizeInteger function."""
-    test_file = spotlight_storedb.AppleSpotlightStoreDatabaseFile()
+    test_file = spotlight_storedb.SpotlightStoreDatabaseFile()
 
     integer_value, bytes_read = test_file._ReadVariableSizeInteger(b'\x24')
     self.assertEqual(integer_value, 36)
@@ -83,7 +83,7 @@ class AppleSpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
     self._SkipIfPathNotExists(test_file_path)
 
     output_writer = test_lib.TestOutputWriter()
-    test_file = spotlight_storedb.AppleSpotlightStoreDatabaseFile(
+    test_file = spotlight_storedb.SpotlightStoreDatabaseFile(
         debug=False, output_writer=output_writer)
 
     test_file.Open(test_file_path)

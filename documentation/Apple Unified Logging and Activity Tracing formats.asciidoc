@@ -1463,7 +1463,7 @@ See section: <<state_data_types,State data types>>
 [yellow-background]*Only used when data type is 3?*
 | 136 | 64 | | [yellow-background]*Unknown* +
 [yellow-background]*Only used when data type is 3?*
-4+| _If state data type != 3_
+4+| _If state data type == 3_
 | 72 | 64 | | Decoder library +
 Contains an UTF-8 formatted string with an end-of-string character
 | 136 | 64 | | Decoder type +

@@ -18,6 +18,71 @@ except ImportError:
   dfvfs_helpers = None
 
 
+ATTRIBUTE_NAMES = (
+    '_kMDItemDisplayNameWithExtensions',
+    'kMDItemContentCreationDate',
+    'kMDItemContentCreationDate_Ranking',
+    'kMDItemContentModificationDate',
+    'kMDItemContentModificationDate_Ranking',
+    'kMDItemContentType',
+    'kMDItemContentTypeTree',
+    'kMDItemDateAdded',
+    'kMDItemDateAdded_Ranking',
+    'kMDItemDisplayName',
+    'kMDItemDocumentIdentifier',
+    'kMDItemFSContentChangeDate',
+    'kMDItemFSCreationDate',
+    'kMDItemFSCreatorCode',
+    'kMDItemFSFinderFlags',
+    'kMDItemFSHasCustomIcon',
+    'kMDItemFSInvisible',
+    'kMDItemFSIsExtensionHidden',
+    'kMDItemFSIsStationery',
+    'kMDItemFSLabel',
+    'kMDItemFSName',
+    'kMDItemFSNodeCount',
+    'kMDItemFSOwnerGroupID',
+    'kMDItemFSOwnerUserID',
+    'kMDItemFSSize',
+    'kMDItemFSTypeCode',
+    'kMDItemInterestingDate_Ranking',
+    'kMDItemKind',
+    'kMDItemLogicalSize',
+    'kMDItemPhysicalSize')
+
+
+LOOKUP_ATTRIBUTE_NAMES = {
+    'kMDItemFSContentChangeDate': '_kMDItemContentChangeDate',
+    'kMDItemFSCreationDate': '_kMDItemCreationDate',
+    'kMDItemFSCreatorCode': '_kMDItemCreatorCode',
+    'kMDItemFSFinderFlags': '_kMDItemFinderFlags',
+    'kMDItemFSIsExtensionHidden': '_kMDItemIsExtensionHidden',
+    'kMDItemFSLabel': '_kMDItemFinderLabel',
+    'kMDItemFSName': '_kMDItemFileName',
+    'kMDItemFSNodeCount': '_kMDItemNodeCount',
+    'kMDItemFSOwnerGroupID': '_kMDItemOwnerGroupID',
+    'kMDItemFSOwnerUserID': '_kMDItemOwnerUserID'}
+
+
+def GetDateTimeString(timestamp):
+  """Determines the date and time string.
+
+  Args:
+    timestamp (int): number of seconds since 2001-01-01 00:00:00.
+
+  Returns:
+    str: date and time string.
+  """
+  if timestamp is None:
+    return 'YYYY-MM-DD hh:ss:mm +####'
+
+  date_time = dfdatetime_cocoa_time.CocoaTime(timestamp=timestamp)
+  iso8601_string = date_time.CopyToDateTimeStringISO8601()
+  return ''.join([
+      iso8601_string[:10], ' ', iso8601_string[11:26], ' ',
+      iso8601_string[33:35]])
+
+
 class TableView(object):
   """Table view."""
 
@@ -149,29 +214,29 @@ def Main():
 
   source_lower = options.source.lower()
   if source_lower.endswith('.map.header'):
-    streams_map_header = spotlight_storedb.AppleSpotlightStreamsMapHeaderFile(
+    streams_map_header = spotlight_storedb.SpotlightStreamsMapHeaderFile(
         debug=options.debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     streams_map_header.Open(options.source)
 
     data_size = streams_map_header.data_size
-    number_of_entries = streams_map_header.number_of_entries
+    number_of_offsets = streams_map_header.number_of_offsets
 
     streams_map_header.Close()
 
     path = ''.join([options.source[:-6], 'offsets'])
-    streams_map_offsets = spotlight_storedb.AppleSpotlightStreamsMapOffsetsFile(
-        number_of_entries, debug=options.debug,
+    streams_map_offsets = spotlight_storedb.SpotlightStreamsMapOffsetsFile(
+        data_size, number_of_offsets, debug=options.debug,
         file_system_helper=file_system_helper, output_writer=output_writer)
     streams_map_offsets.Open(path)
 
-    offsets = streams_map_offsets.offsets
+    ranges = streams_map_offsets.ranges
 
     streams_map_offsets.Close()
 
     path = ''.join([options.source[:-6], 'data'])
-    streams_map_data = spotlight_storedb.AppleSpotlightStreamsMapDataFile(
-        data_size, offsets, debug=options.debug,
+    streams_map_data = spotlight_storedb.SpotlightStreamsMapDataFile(
+        data_size, ranges, debug=options.debug,
         file_system_helper=file_system_helper, output_writer=output_writer)
     streams_map_data.Open(path)
 
@@ -180,10 +245,9 @@ def Main():
     streams_map_data.Close()
 
   else:
-    spotlight_store_database = (
-        spotlight_storedb.AppleSpotlightStoreDatabaseFile(
-            debug=options.debug, file_system_helper=file_system_helper,
-            output_writer=output_writer))
+    spotlight_store_database = spotlight_storedb.SpotlightStoreDatabaseFile(
+        debug=options.debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     spotlight_store_database.Open(options.source)
 
     if options.item is None:
@@ -225,21 +289,27 @@ def Main():
         output_writer.WriteText(f'No such metadata item: {options.item:d}\n')
       else:
         table_view = TableView()
-        for name, metadata_attribute in sorted(
-              metadata_item.attributes.items()):
-          if metadata_attribute.value_type != 0x0c:
-            value_string = f'{metadata_attribute.value!s}'
+
+        # TODO: add option to print all names
+        # names = metadata_item.attributes.keys()
+        names = ATTRIBUTE_NAMES
+
+        for name in names:
+          lookup_name = LOOKUP_ATTRIBUTE_NAMES.get(name, name)
+          metadata_attribute = metadata_item.attributes.get(lookup_name, None)
+          if not metadata_attribute:
+            value_string = '(null)'
+
+          elif metadata_attribute.value_type == 0x0b:
+            value_string = f'"{metadata_attribute.value:s}"'
+
+          elif metadata_attribute.value_type == 0x0c:
+            value_string = GetDateTimeString(metadata_attribute.value)
+
           else:
-            date_time = dfdatetime_cocoa_time.CocoaTime(
-                timestamp=metadata_attribute.value)
-            value_string = date_time.CopyToDateTimeString()
+            value_string = f'{metadata_attribute.value!s}'
 
-            if value_string:
-              value_string = f'{value_string:s} UTC'
-            else:
-              value_string = f'{metadata_attribute.value:f}'
-
-          table_view.AddRow([name, value_string])
+          table_view.AddRow([name, f'= {value_string:s}'])
 
       table_view.Write(output_writer)
 

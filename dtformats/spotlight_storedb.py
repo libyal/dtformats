@@ -125,7 +125,7 @@ class SpotlightStoreRecordHeader(object):
     self.parent_identifier = 0
 
 
-class AppleSpotlightStreamsMapDataFile(data_format.BinaryDataFile):
+class SpotlightStreamsMapDataFile(data_format.BinaryDataFile):
   """Apple Spotlight database streams map data file (dbStr-#.map.data).
 
   Attributes:
@@ -141,23 +141,23 @@ class AppleSpotlightStreamsMapDataFile(data_format.BinaryDataFile):
       'spotlight_storedb.debug.yaml', custom_format_callbacks={})
 
   def __init__(
-      self, data_size, offsets, debug=False, file_system_helper=None,
+      self, data_size, ranges, debug=False, file_system_helper=None,
       output_writer=None):
     """Initializes a database streams map data file.
 
     Args:
       data_size (int): data size.
-      offsets (list[int]): offsets from the corresponding streams map offsets
-          file.
+      ranges (list[tuple[int, int]]): offset and size pairs of the stream value
+          data ranges.
       debug (Optional[bool]): True if debug information should be written.
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(AppleSpotlightStreamsMapDataFile, self).__init__(
+    super(SpotlightStreamsMapDataFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._data_size = data_size
-    self._offsets = offsets
+    self._ranges = ranges
     self.stream_values = []
 
   def _ReadVariableSizeInteger(self, data):
@@ -205,34 +205,32 @@ class AppleSpotlightStreamsMapDataFile(data_format.BinaryDataFile):
     """
     data = file_object.read(self._data_size)
 
-    for index, value_offset in enumerate(self._offsets):
-      data_offset = value_offset
-      data_size, bytes_read = self._ReadVariableSizeInteger(data[data_offset:])
+    for index, value_range in enumerate(self._ranges):
+      value_offset, value_size = value_range
 
-      data_offset += bytes_read
-
-      stream_value = data[data_offset:data_offset + data_size]
+      stream_value = data[value_offset:value_offset + value_size]
 
       if self._debug:
         self._DebugPrintData((
             f'Stream value: {index:d} at offset: 0x{value_offset:08x} of '
-            f'size: {data_size:d}'), stream_value)
+            f'size: {value_size:d}'), stream_value)
 
       self.stream_values.append(stream_value)
-
-      data_offset += data_size
 
     if self._debug and self._data_size < self._file_size:
       trailing_data = file_object.read(self._file_size - self._data_size)
       self._DebugPrintData('Trailing data', trailing_data)
 
 
-class AppleSpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
+class SpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
   """Apple Spotlight database streams map header file (dbStr-#.map.header).
 
   Attributes:
     data_size (int): data size.
-    number_of_entries (int): number of entries in the streams map.
+    number_of_buckets (int): number of entries in the database streams map
+        buckets file (dbStr-#.map.buckets).
+    number_of_offsets (int): number of entries in the database streams map
+        offsets file (dbStr-#.map.offsets).
   """
 
   # Using a class constant significantly speeds up the time required to load
@@ -252,11 +250,12 @@ class AppleSpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(AppleSpotlightStreamsMapHeaderFile, self).__init__(
+    super(SpotlightStreamsMapHeaderFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self.data_size = None
-    self.number_of_entries = None
+    self.number_of_buckets = None
+    self.number_of_offsets = None
 
   def _FormatStreamAsSignature(self, stream):
     """Formats a stream as a signature.
@@ -290,18 +289,20 @@ class AppleSpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
       self._DebugPrintStructureObject(streams_map_header, debug_info)
 
     self.data_size = streams_map_header.unknown4
-    self.number_of_entries = streams_map_header.unknown6
+    self.number_of_buckets = streams_map_header.unknown5
+    self.number_of_offsets = streams_map_header.unknown6
 
     if self._debug and bytes_read < self._file_size:
       trailing_data = file_object.read(self._file_size - bytes_read)
       self._DebugPrintData('Trailing data', trailing_data)
 
 
-class AppleSpotlightStreamsMapOffsetsFile(data_format.BinaryDataFile):
+class SpotlightStreamsMapOffsetsFile(data_format.BinaryDataFile):
   """Apple Spotlight database streams map offsets file (dbStr-#.map.offsets).
 
   Attributes:
-    offsets (list[int]): offsets.
+    ranges (list[tuple[int, int]]): offset and size pairs of the stream value
+        data ranges.
   """
 
   # Using a class constant significantly speeds up the time required to load
@@ -313,21 +314,23 @@ class AppleSpotlightStreamsMapOffsetsFile(data_format.BinaryDataFile):
       'spotlight_storedb.debug.yaml', custom_format_callbacks={})
 
   def __init__(
-      self, number_of_entries, debug=False, file_system_helper=None,
+      self, data_size, number_of_entries, debug=False, file_system_helper=None,
       output_writer=None):
     """Initializes a database streams map offsets file.
 
     Args:
+      data_size (int): data size.
       number_of_entries (int): number of entries in the offsets file.
       debug (Optional[bool]): True if debug information should be written.
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(AppleSpotlightStreamsMapOffsetsFile, self).__init__(
+    super(SpotlightStreamsMapOffsetsFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
+    self._data_size = data_size
     self._number_of_entries = number_of_entries
-    self.offsets = []
+    self.ranges = []
 
   def ReadFileObject(self, file_object):
     """Reads a database streams map offsets file-like object.
@@ -353,19 +356,42 @@ class AppleSpotlightStreamsMapOffsetsFile(data_format.BinaryDataFile):
       raise errors.ParseError(
           f'Unable to parse array of 32-bit offsets with error: {exception!s}')
 
-    if self._debug:
-      value_string, _ = self._FormatArrayOfIntegersAsDecimals(offsets_array)
-      self._DebugPrintValue('Offsets', value_string)
-      self._DebugPrintText('\n')
+    index = 0
+    last_offset = 0
 
-    self.offsets = offsets_array
+    for index, offset in enumerate(offsets_array):
+      if index == 0:
+        last_offset = offsets_array[0]
+        continue
+
+      range_size = offset - last_offset
+
+      if self._debug:
+        self._DebugPrintValue(f'Range: {index:d}', (
+            f'0x{last_offset:08x} - 0x{offset:08x} ({range_size:d})'))
+
+      self.ranges.append((last_offset, range_size))
+
+      last_offset = offset
+
+    if last_offset:
+      range_size = self._data_size - last_offset
+
+      if self._debug:
+        self._DebugPrintValue(f'Range: {index:d}', (
+            f'0x{last_offset:08x} - 0x{self._data_size:08x} ({range_size:d})'))
+
+      self.ranges.append((last_offset, range_size))
+
+    if self._debug:
+      self._DebugPrintText('\n')
 
     if self._debug and data_size < self._file_size:
       trailing_data = file_object.read(self._file_size - data_size)
       self._DebugPrintData('Trailing data', trailing_data)
 
 
-class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
+class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
   """Apple Spotlight store database file."""
 
   # Using a class constant significantly speeds up the time required to load
@@ -385,7 +411,7 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(AppleSpotlightStoreDatabaseFile, self).__init__(
+    super(SpotlightStoreDatabaseFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._map_values = []
@@ -760,10 +786,10 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       if self._debug:
         self._DebugPrintDecimalValue('Table index', property_value.table_index)
         self._DebugPrintDecimalValue('Index size', index_size)
+        # TODO: print padding.
 
         value_string, _ = self._FormatArrayOfIntegersAsDecimals(index_values)
         self._DebugPrintValue('Index values', value_string)
-        # TODO: print padding.
         self._DebugPrintText('\n')
 
         for metadata_value_index in index_values:
@@ -801,19 +827,31 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     for index, stream_value in enumerate(stream_values):
       if self._debug:
-        self._DebugPrintData(f'Streams value: {index:d} data', stream_value)
+        self._DebugPrintData(f'Stream value: {index:d} data', stream_value)
 
       if index == 0:
         continue
 
-      index_size, bytes_read = self._ReadVariableSizeInteger(stream_value)
+      unknown1, data_offset = self._ReadVariableSizeInteger(stream_value)
+
+      if self._debug:
+        self._DebugPrintDecimalValue('Unknown1', unknown1)
+
+      index_size, bytes_read = self._ReadVariableSizeInteger(
+          stream_value[data_offset:])
+
+      data_offset += bytes_read
+
+      _, padding_size = divmod(index_size, 4)
+
+      index_size -= padding_size
 
       context = dtfabric_data_maps.DataTypeMapContext(values={
           'index_size': index_size})
 
       try:
         index_values = index_values_data_type_map.MapByteStream(
-            stream_value[bytes_read:], context=context)
+            stream_value[data_offset + padding_size:], context=context)
 
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
@@ -829,10 +867,11 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       if self._debug:
         self._DebugPrintDecimalValue('Table index', index)
         self._DebugPrintDecimalValue('Index size', index_size)
+        self._DebugPrintData('Padding', stream_value[
+            data_offset:data_offset + padding_size])
 
         value_string, _ = self._FormatArrayOfIntegersAsDecimals(index_values)
         self._DebugPrintValue('Index values', value_string)
-        # TODO: print padding.
         self._DebugPrintText('\n')
 
         for metadata_value_index in index_values:
@@ -1278,13 +1317,23 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
     for index, stream_value in enumerate(stream_values):
       if self._debug:
-        self._DebugPrintData(f'Streams value: {index:d} data', stream_value)
+        self._DebugPrintData(f'Stream value: {index:d} data', stream_value)
 
       if index == 0:
         continue
 
+      data_size, data_offset = self._ReadVariableSizeInteger(stream_value)
+
+      if self._debug:
+        self._DebugPrintDecimalValue('Data size', data_size)
+
+      if data_offset + data_size != len(stream_value):
+        # Stream values where the data size does not match appear to contain
+        # remnant data.
+        continue
+
       try:
-        property_value = data_type_map.MapByteStream(stream_value)
+        property_value = data_type_map.MapByteStream(stream_value[data_offset:])
       except dtfabric_errors.MappingError as exception:
         raise errors.ParseError((
             f'Unable to map stream value: {index:d} data with error: '
@@ -1522,8 +1571,9 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           page_data[page_data_offset:record_data_end_offset])
 
       if self._debug:
-        self._DebugPrintData('Relative metadata attribute data', page_data[
-            page_data_offset:page_data_offset + bytes_read])
+        self._DebugPrintData(
+            'Relative metadata attribute type index data',
+            page_data[page_data_offset:page_data_offset + bytes_read])
 
       page_data_offset += bytes_read
       record_data_offset += bytes_read
@@ -1736,12 +1786,13 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     path_segments.append(f'dbStr-{streams_map_number:d}.map.header')
     header_file_path = self._file_system_helper.JoinPath(path_segments)
 
-    streams_map_header = AppleSpotlightStreamsMapHeaderFile(
+    streams_map_header = SpotlightStreamsMapHeaderFile(
         file_system_helper=self._file_system_helper)
     streams_map_header.Open(header_file_path)
 
     data_size = streams_map_header.data_size
-    number_of_entries = streams_map_header.number_of_entries
+    # number_of_buckets = streams_map_header.number_of_buckets
+    number_of_offsets = streams_map_header.number_of_offsets
 
     streams_map_header.Close()
 
@@ -1749,11 +1800,12 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     path_segments.append(f'dbStr-{streams_map_number:d}.map.offsets')
     offsets_file_path = self._file_system_helper.JoinPath(path_segments)
 
-    streams_map_offsets = AppleSpotlightStreamsMapOffsetsFile(
-        number_of_entries, file_system_helper=self._file_system_helper)
+    streams_map_offsets = SpotlightStreamsMapOffsetsFile(
+        data_size, number_of_offsets,
+        file_system_helper=self._file_system_helper)
     streams_map_offsets.Open(offsets_file_path)
 
-    offsets = streams_map_offsets.offsets
+    ranges = streams_map_offsets.ranges
 
     streams_map_offsets.Close()
 
@@ -1761,8 +1813,8 @@ class AppleSpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     path_segments.append(f'dbStr-{streams_map_number:d}.map.data')
     data_file_path = self._file_system_helper.JoinPath(path_segments)
 
-    streams_map_data = AppleSpotlightStreamsMapDataFile(
-        data_size, offsets, file_system_helper=self._file_system_helper)
+    streams_map_data = SpotlightStreamsMapDataFile(
+        data_size, ranges, file_system_helper=self._file_system_helper)
     streams_map_data.Open(data_file_path)
 
     stream_values = streams_map_data.stream_values
