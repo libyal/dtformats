@@ -93,15 +93,17 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
           'filetime': '_FormatIntegerAsFiletime',
           'path_size': '_FormatIntegerAsPathSize'})
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes an Automatic Destinations Jump List file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(AutomaticDestinationsFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
     self._format_version = None
     self._olecf_file = None
 
@@ -282,15 +284,17 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
   _LNK_GUID = (
       b'\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46')
 
-  def __init__(self, debug=False, output_writer=None):
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a Custom Destinations Jump List file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
     super(CustomDestinationsFile, self).__init__(
-        debug=debug, output_writer=output_writer)
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.

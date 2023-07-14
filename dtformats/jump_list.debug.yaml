@@ -43,7 +43,7 @@ attributes:
   format: string
 - name: entry_number
   description: "Entry number"
-  format: string
+  format: decimal
 - name: unknown2
   description: "Unknown2"
   format: hexadecimal_8digits
@@ -55,7 +55,7 @@ attributes:
   format: custom:filetime
 - name: pin_status
   description: "Pin status"
-  format: string
+  format: decimal
 - name: unknown4
   description: "Unknown4"
   format: decimal

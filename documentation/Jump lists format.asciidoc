@@ -161,7 +161,11 @@ Contains the number of characters
 Contains a UTF-16 little-endian string without an end-of-string character
 |===
 
-The path points to:
+[NOTE]
+The path string is not strict UTF-16 since it allows for unpaired surrogates,
+such as "U+d800" and "U+dc00".
+
+The path can point to:
 
 * a directory [yellow-background]*containing LNK files?*
 * A XML .library-ms file
@@ -203,6 +207,10 @@ Contains a UTF-16 little-endian string without an end-of-string character
 |===
 
 The differences between the version 1 and 3 have been highlighted in bold.
+
+[NOTE]
+The path string is not strict UTF-16 since it allows for unpaired surrogates,
+such as "U+d800" and "U+dc00".
 
 === Hexadecimal numbered streams
 
