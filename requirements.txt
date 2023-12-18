@@ -1,4 +1,3 @@
-pip >= 7.0.0
 PyYAML >= 3.10
 dfdatetime >= 20180510
 dtfabric >= 20230518
