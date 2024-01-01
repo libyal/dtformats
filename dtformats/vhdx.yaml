@@ -46,7 +46,7 @@ members:
 - name: signature
   type: stream
   element_data_type: byte
-  number_of_elements: 8
+  elements_data_size: 8
   value: "vhdxfile"
 - name: creator
   type: string
@@ -56,7 +56,7 @@ members:
 - name: unknown1
   type: stream
   element_data_type: byte
-  number_of_elements: 65016
+  elements_data_size: 65016
 ---
 name: header
 type: structure
@@ -66,7 +66,7 @@ members:
 - name: signature
   type: stream
   element_data_type: byte
-  number_of_elements: 4
+  elements_data_size: 4
   value: "head"
 - name: checksum
   data_type: uint32
@@ -85,7 +85,7 @@ members:
 - name: unknown1
   type: stream
   element_data_type: byte
-  number_of_elements: 4016
+  elements_data_size: 4016
 ---
 name: region_table_entry
 type: structure
@@ -109,7 +109,7 @@ members:
 - name: signature
   type: stream
   element_data_type: byte
-  number_of_elements: 4
+  elements_data_size: 4
   value: "regi"
 - name: checksum
   data_type: uint32

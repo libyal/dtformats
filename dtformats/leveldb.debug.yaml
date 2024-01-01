@@ -1,0 +1,37 @@
+# dtFormats debug specification.
+---
+data_type_map: leveldb_ldb_footer
+attributes:
+- name: metaindex_block_offset
+  description: "Metaindex block offset"
+  format: hexadecimal_8digits
+- name: metaindex_block_size
+  description: "Metaindex block size"
+  format: decimal
+- name: index_block_offset
+  description: "Index block offset"
+  format: hexadecimal_8digits
+- name: index_block_size
+  description: "Index block size"
+  format: decimal
+- name: padding
+  description: "Padding"
+  format: binary_data
+- name: signature
+  description: "Signature"
+  format: binary_data
+---
+data_type_map: leveldb_log_block
+attributes:
+- name: checksum
+  description: "Checksum"
+  format: hexadecimal_8digits
+- name: data_size
+  description: "Record data size"
+  format: decimal
+- name: record_type
+  description: "Record type"
+  format: decimal
+- name: record_data
+  description: "Record data"
+  format: binary_data

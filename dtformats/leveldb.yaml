@@ -1,0 +1,65 @@
+# dtFabric format specification.
+---
+name: leveldb
+type: format
+description: LevelDB database formats
+urls: ["https://github.com/libyal/dtformats/blob/main/documentation/LevelDB%20database%20format.asciidoc"]
+---
+name: byte
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint8
+type: integer
+attributes:
+  format: unsigned
+  size: 1
+  units: bytes
+---
+name: uint16
+type: integer
+attributes:
+  format: unsigned
+  size: 2
+  units: bytes
+---
+name: uint32
+type: integer
+attributes:
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: leveldb_ldb_footer
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: 40
+- name: signature
+  type: stream
+  element_data_type: byte
+  elements_data_size: 8
+  value: "\x57\xfb\x80\x8b\x24\x75\x47\xdb"
+---
+name: leveldb_log_block
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: checksum
+  data_type: uint32
+- name: record_data_size
+  data_type: uint16
+- name: record_type
+  data_type: uint8
+- name: record_data
+  type: stream
+  element_data_type: byte
+  elements_data_size: leveldb_log_block.record_data_size
