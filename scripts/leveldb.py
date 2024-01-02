@@ -80,11 +80,16 @@ def Main():
   finally:
     file_object.close()
 
-  # TODO: add support for descriptor file
+  path_segments = file_system_helper.SplitPath(options.source)
 
   if file_signature == b'\x57\xfb\x80\x8b\x24\x75\x47\xdb':
     leveldb_file = leveldb.LevelDBDatabaseTableFile(
         debug=options.debug, output_writer=output_writer)
+
+  elif path_segments[-1].startswith('MANIFEST'):
+    leveldb_file = leveldb.LevelDBDatabaseDescriptorFile(
+        debug=options.debug, output_writer=output_writer)
+
   else:
     leveldb_file = leveldb.LevelDBDatabaseLogFile(
         debug=options.debug, output_writer=output_writer)

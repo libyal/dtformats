@@ -52,15 +52,9 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
       3: 'MIDDLE',
       4: 'LAST'}
 
-  _VALUE_TAGS = {
-      1: 'kComparator',
-      2: 'kLogNumber',
-      3: 'kNextFileNumber',
-      4: 'kLastSequence',
-      5: 'kCompactPointer',
-      6: 'kDeletedFile',
-      7: 'kNewFile',
-      9: 'kPrevLogNumber'}
+  _VALUE_TYPES = {
+      0: 'kTypeDeletion',
+      1: 'kTypeValue'}
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a LevelDB write ahead log file.
@@ -115,6 +109,144 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
       value_string, _ = self._FormatIntegerAsDecimal(file_offset)
       self._DebugPrintValue('Offset', value_string)
 
+    value_header, data_offset = self._ReadRecordValueHeader(file_offset, data)
+
+    while data_offset < data_size:
+      value_type = int(data[data_offset])
+      data_offset += 1
+
+      if self._debug:
+        value_type_string = self._VALUE_TYPES.get(value_type, 'UNKNOWN')
+        value_string, _ = self._FormatIntegerAsDecimal(value_type)
+        self._DebugPrintValue(
+            'Value type', f'{value_string:s} ({value_type_string:s})')
+
+      if value_type not in (0, 1):
+        raise errors.ParseError(f'Unsupported value type: {value_type:d}')
+
+      key, bytes_read = self._ReadRecordValueSlice(data[data_offset:], 'Key')
+      data_offset += bytes_read
+
+      if value_type == 1:
+        value, bytes_read = self._ReadRecordValueSlice(
+            data[data_offset:], 'Value')
+        data_offset += bytes_read
+
+  def _ReadRecordValueHeader(self, file_offset, data):
+    """Reads a value header.
+
+    Args:
+      file_offset (int): offset of the record relative to the start of the file.
+      data (bytes): record data.
+
+    Returns:
+      tuple[leveldb_log_value_header, int]: value header and number of bytes
+          read.
+
+    Raises:
+      ParseError: if the value header cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('leveldb_log_value_header')
+
+    value_header = self._ReadStructureFromByteStream(
+        data, file_offset, data_type_map, 'Value header')
+
+    if self._debug:
+      debug_info = self._DEBUG_INFORMATION.get('leveldb_log_value_header', None)
+      self._DebugPrintStructureObject(value_header, debug_info)
+
+    return value_header, 12
+
+  def _ReadRecordValueSlice(self, data, description):
+    """Reads a slice record value.
+
+    Args:
+      data (bytes): value data.
+      description (str): description of the value.
+
+    Returns:
+      tuple[bytes, int]: slice value and number of bytes read.
+
+    Raises:
+      ParseError: if the value cannot be read.
+    """
+    data_size, bytes_read = _ReadVariableSizeInteger(data)
+
+    value_data = data[bytes_read:bytes_read + data_size]
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(data_size)
+      self._DebugPrintValue(f'{description:s} size', value_string)
+
+      self._DebugPrintData(description, value_data)
+
+    return value_data, bytes_read + data_size
+
+  def ReadFileObject(self, file_object):
+    """Reads a LevelDB write ahead log file-like object.
+
+    Args:
+      file_object (file): file-like object.
+
+    Raises:
+      ParseError: if the file cannot be read.
+    """
+    file_offset = 0
+    page_size = 32 * 1024
+    record_data = b''
+    record_offset = 0
+
+    while file_offset < self._file_size:
+      log_block, bytes_read = self._ReadBlock(file_object, file_offset)
+
+      if log_block.record_type in (1, 2):
+        record_data = log_block.record_data
+        record_offset = file_offset
+
+      elif log_block.record_type in (3, 4):
+        record_data = b''.join([record_data, log_block.record_data])
+
+      if log_block.record_type in (1, 4):
+        self._ReadRecord(record_offset, record_data, len(record_data))
+
+      file_offset += bytes_read
+      page_size -= bytes_read
+
+      if page_size <= 6:
+        file_offset += page_size
+        page_size = 32 * 1024
+
+
+class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
+  """LevelDB descriptor file."""
+
+  _VALUE_TAGS = {
+      1: 'kComparator',
+      2: 'kLogNumber',
+      3: 'kNextFileNumber',
+      4: 'kLastSequence',
+      5: 'kCompactPointer',
+      6: 'kDeletedFile',
+      7: 'kNewFile',
+      9: 'kPrevLogNumber'}
+
+  def _ReadRecord(self, file_offset, data, data_size):
+    """Reads a record.
+
+    Args:
+      file_offset (int): offset of the record relative to the start of the file.
+      data (bytes): record data.
+      data_size (int): record data size.
+
+    Raises:
+      ParseError: if the record cannot be read.
+    """
+    # pylint: disable=unused-variable
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(file_offset)
+      self._DebugPrintValue('Offset', value_string)
+
     data_offset = 0
 
     while data_offset < data_size:
@@ -151,7 +283,7 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
             data[data_offset:], 'Level')
         data_offset += bytes_read
 
-        key, bytes_read = self._ReadRecordValueKey(data[data_offset:], 'Key')
+        key, bytes_read = self._ReadRecordValueSlice(data[data_offset:], 'Key')
 
       elif value_tag == 6:
         level, bytes_read = self._ReadRecordValueInteger(
@@ -174,11 +306,11 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
             data[data_offset:], 'File size')
         data_offset += bytes_read
 
-        smallest_record_key, bytes_read = self._ReadRecordValueKey(
+        smallest_record_key, bytes_read = self._ReadRecordValueSlice(
             data[data_offset:], 'Smallest record key')
         data_offset += bytes_read
 
-        largest_record_key, bytes_read = self._ReadRecordValueKey(
+        largest_record_key, bytes_read = self._ReadRecordValueSlice(
             data[data_offset:], 'Largest record key')
 
       elif value_tag == 9:
@@ -208,31 +340,6 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
 
     return integer_value, bytes_read
 
-  def _ReadRecordValueKey(self, data, description):
-    """Reads a key record value.
-
-    Args:
-      data (bytes): value data.
-      description (str): description of the value.
-
-    Returns:
-      tuple[bytes, int]: key value and number of bytes read.
-
-    Raises:
-      ParseError: if the value cannot be read.
-    """
-    data_size, bytes_read = _ReadVariableSizeInteger(data)
-
-    key_data = data[bytes_read:bytes_read + data_size]
-
-    if self._debug:
-      value_string, _ = self._FormatIntegerAsDecimal(data_size)
-      self._DebugPrintValue(f'{description:s} key size', value_string)
-
-      self._DebugPrintData(f'{description:s} key', key_data)
-
-    return key_data, bytes_read + data_size
-
   def _ReadRecordValueString(self, data, description):
     """Reads a string record value.
 
@@ -259,40 +366,6 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
       self._DebugPrintValue(f'{description:s} string', string_value)
 
     return string_value, bytes_read + data_size
-
-  def ReadFileObject(self, file_object):
-    """Reads a LevelDB write ahead log file-like object.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the file cannot be read.
-    """
-    file_offset = 0
-    page_size = 32 * 1024
-    record_data = b''
-    record_offset = 0
-
-    while file_offset < self._file_size:
-      log_block, bytes_read = self._ReadBlock(file_object, file_offset)
-
-      if log_block.record_type in (1, 2):
-        record_data = log_block.record_data
-        record_offset = file_offset
-
-      elif log_block.record_type in (3, 4):
-        record_data = b''.join([record_data, log_block.record_data])
-
-      if log_block.record_type in (1, 4):
-        self._ReadRecord(record_offset, record_data, len(record_data))
-
-      file_offset += bytes_read
-      page_size -= bytes_read
-
-      if page_size <= 6:
-        file_offset += page_size
-        page_size = 32 * 1024
 
 
 class LevelDBDatabaseTableFile(data_format.BinaryDataFile):

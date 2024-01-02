@@ -76,12 +76,156 @@ For example:
 00000000  4d 41 4e 49 46 45 53 54  2d 30 30 30 30 30 31 0a  |MANIFEST-000001.|
 ....
 
-== Write ahead log file (.ldb)
+== Descriptor file
+
+The desriptor file is a <<log_file,write ahead log file>> that consist of:
+
+* one or more descriptor records
+
+=== Descriptor record
+
+A descriptor (VersionEdit) record consists of:
+
+* One or more descriptor values
+
+=== Descriptor value
+
+A descriptor value consists of:
+
+* A <<descriptor_value_tags,value tag>>
+* Value data
+
+==== [[descriptor_value_tags]]Descriptor value tags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | kComparator | Comparator +
+See: <<descriptor_comparator_value,comparator value>>
+| 2 | kLogNumber | Log number +
+See: <<descriptor_log_number_value,log number value>>
+| 3 | kNextFileNumber | Next file number +
+See: <<descriptor_next_file_number_value,next file number value>>
+| 4 | kLastSequence | Last sequence number +
+See: <<descriptor_last_sequence_number_value,last sequence number value>>
+| 5 | kCompactPointer | Compact pointer +
+See: <<descriptor_compact_pointer_value,compact pointer value>>
+| 6 | kDeletedFile | Deleted file +
+See: <<descriptor_deleted_file_value,deleted file value>>
+| 7 | kNewFile | New file +
+See: <<descriptor_new_file_value,new file value>>
+| 8 | | [yellow-background]*Unknown (was used for large value references)*
+| 9 | kPrevLogNumber | Previous log number +
+See: <<descriptor_previous_log_number_value,previous log number value>>
+|===
+
+==== [[descriptor_comparator_value]]Comparator value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 1 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Name string size
+| ... | ... | | Name string +
+Contains an UTF-8 encoded string without end-of-string character
+|===
+
+==== [[descriptor_log_number_value]]Log number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 2 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Log number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[descriptor_next_file_number_value]]Next file number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 3 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Next file number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[descriptor_last_sequence_number_value]]Last sequence number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 4 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Last sequence number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[descriptor_compact_pointer_value]]Compact pointer value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 5 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Level +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Key +
+Contains a <<log_slice_value,slice value>>
+|===
+
+==== [[descriptor_deleted_file_value]]Deleted file value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 6 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Level +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Number of files +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[descriptor_new_file_value]]New file value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 7 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Level +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Number of files +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | File size +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Smallest record key +
+Contains a <<log_slice_value,slice value>>
+| ... | ... | | Largest record key +
+Contains a <<log_slice_value,slice value>>
+|===
+
+==== [[descriptor_previous_log_number_value]]Previous log number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 9 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<descriptor_value_tags,value tags>>
+| 1 | ... | | Previous log number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+== [[log_file]]Write ahead log file (.log)
 
 A write ahead log file consists of:
 
 * one or more 32k pages
-** one or more data blocks
+** one or more log blocks
 
 [cols="1,5",options="header"]
 |===
@@ -119,141 +263,32 @@ See: <<log_record_types,log record types>>
 
 === Log record
 
-A log record consists of:
+A log (WriteBatch) record consists of:
 
-* One or more tagged values
+* value header
 
-Where each tagged values consists of:
+==== Log value header
 
-* A <<log_value_tags,value tag>>
-* Value data
+A log header value is 12 byte in size and consists of:
 
-==== [[log_value_tags]]Log value tags
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 8 | | Sequence number
+| 8 | 4 | | [yellow-background]*Unknown (Count?)*
+|===
+
+==== [[log_value_types]]Log value types
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 1 | kComparator | Comparator +
-See: <<log_comparator_value,comparator value>>
-| 2 | kLogNumber | Log number +
-See: <<log_log_number_value,log number value>>
-| 3 | kNextFileNumber | Next file number +
-See: <<log_next_file_number_value,next file number value>>
-| 4 | kLastSequence | Last sequence number +
-See: <<log_last_sequence_number_value,last sequence number value>>
-| 5 | kCompactPointer | Compact pointer +
-See: <<log_compact_pointer_value,compact pointer value>>
-| 6 | kDeletedFile | Deleted file +
-See: <<log_deleted_file_value,deleted file value>>
-| 7 | kNewFile | New file +
-See: <<log_new_file_value,new file value>>
-| 8 | | [yellow-background]*Unknown (was used for large value references)*
-| 9 | kPrevLogNumber | Previous log number +
-See: <<log_previous_log_number_value,previous log number value>>
+| 0 | kTypeDeletion | Deletion +
+See: <<log_deletion_value,deletion value>>
+| 1 | kTypeValue | Put +
+See: <<log_put_value,put value>>
 |===
 
-==== [[log_comparator_value]]Comparator value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 1 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Name string size
-| ... | ... | | Name string +
-Contains an UTF-8 encoded string without end-of-string character
-|===
-
-==== [[log_log_number_value]]Log number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 2 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Log number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[log_next_file_number_value]]Next file number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 3 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Next file number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[log_last_sequence_number_value]]Last sequence number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 4 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Last sequence number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[log_compact_pointer_value]]Compact pointer value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 5 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Level +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Key +
-Contains a <<log_key_value,key value>>
-|===
-
-==== [[log_deleted_file_value]]Deleted file value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 6 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Level +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Number of files +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[log_new_file_value]]New file value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 7 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Level +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Number of files +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | File size +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Smallest record key +
-Contains a <<log_key_value,key value>>
-| ... | ... | | Largest record key +
-Contains a <<log_key_value,key value>>
-|===
-
-==== [[log_previous_log_number_value]]Previous log number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 9 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<log_value_tags,value tags>>
-| 1 | ... | | Previous log number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[log_key_value]]Key value
+==== [[log_slice_value]]Slice value
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -261,9 +296,29 @@ Contains a <<varint64,variable-size integer>>
 | ... | ... | | Data
 |===
 
+==== [[log_deletion_value]]Deletion value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 0 | Value type
+| 1 | ... | | Key +
+Contains a <<log_slice_value,slice value>>
+|===
+
+==== [[log_put_value]]Put value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 1 | Value type
+| 1 | ... | | Key +
+Contains a <<log_slice_value,slice value>>
+| ... | ... | | Value +
+Contains a <<log_slice_value,slice value>>
+|===
+
 == Sorted tables file (.ldb)
 
-A sorted tables file file consists of:
+A sorted tables file consists of:
 
 * one or more data blocks
 * one or more metadata blocks

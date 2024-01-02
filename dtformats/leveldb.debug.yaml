@@ -15,6 +15,15 @@ attributes:
   description: "Record data"
   format: binary_data
 ---
+data_type_map: leveldb_log_value_header
+attributes:
+- name: sequence_number
+  description: "Sequence number"
+  format: decimal
+- name: count
+  description: "Count"
+  format: decimal
+---
 data_type_map: leveldb_table_footer
 attributes:
 - name: metaindex_block_offset
