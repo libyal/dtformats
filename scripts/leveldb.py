@@ -4,6 +4,7 @@
 
 import argparse
 import logging
+import os
 import sys
 
 from dtformats import file_system
@@ -74,12 +75,15 @@ def Main():
     return False
 
   try:
-    file_signature = file_object.read(4)
+    file_object.seek(-8, os.SEEK_END)
+    file_signature = file_object.read(8)
   finally:
     file_object.close()
 
+  # TODO: add support for descriptor file
+
   if file_signature == b'\x57\xfb\x80\x8b\x24\x75\x47\xdb':
-    leveldb_file = leveldb.LevelDBDatabaseStoredTablesFile(
+    leveldb_file = leveldb.LevelDBDatabaseTableFile(
         debug=options.debug, output_writer=output_writer)
   else:
     leveldb_file = leveldb.LevelDBDatabaseLogFile(

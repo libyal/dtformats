@@ -33,21 +33,6 @@ attributes:
   size: 4
   units: bytes
 ---
-name: leveldb_ldb_footer
-type: structure
-attributes:
-  byte_order: little-endian
-members:
-- name: data
-  type: stream
-  element_data_type: byte
-  elements_data_size: 40
-- name: signature
-  type: stream
-  element_data_type: byte
-  elements_data_size: 8
-  value: "\x57\xfb\x80\x8b\x24\x75\x47\xdb"
----
 name: leveldb_log_block
 type: structure
 attributes:
@@ -63,3 +48,18 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: leveldb_log_block.record_data_size
+---
+name: leveldb_table_footer
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: data
+  type: stream
+  element_data_type: byte
+  elements_data_size: 40
+- name: signature
+  type: stream
+  element_data_type: byte
+  elements_data_size: 8
+  value: "\x57\xfb\x80\x8b\x24\x75\x47\xdb"

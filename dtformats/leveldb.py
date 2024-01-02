@@ -5,8 +5,37 @@ from dtformats import data_format
 from dtformats import errors
 
 
+def _ReadVariableSizeInteger(data):
+  """Reads a variable size integer.
+
+  Args:
+    data (bytes): data.
+
+  Returns:
+    tuple[int, int]: integer value and number of bytes read.
+  """
+  data_size = len(data)
+
+  byte_value = data[0]
+  bytes_read = 1
+  bit_shift = 0
+
+  integer_value = int(byte_value) & 0x7f
+
+  while bytes_read < data_size and byte_value & 0x80:
+    byte_value = data[bytes_read]
+    bytes_read += 1
+    bit_shift += 7
+
+    integer_value |= (int(byte_value) & 0x7f) << bit_shift
+
+    # TODO: check maximum size
+
+  return integer_value, bytes_read
+
+
 class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
-  """LevelDB write ahead log file ([0-9]{6}.log)."""
+  """LevelDB write ahead log (.log) file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric and dtFormats definition files.
@@ -22,6 +51,16 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
       2: 'FIRST',
       3: 'MIDDLE',
       4: 'LAST'}
+
+  _VALUE_TAGS = {
+      1: 'kComparator',
+      2: 'kLogNumber',
+      3: 'kNextFileNumber',
+      4: 'kLastSequence',
+      5: 'kCompactPointer',
+      6: 'kDeletedFile',
+      7: 'kNewFile',
+      9: 'kPrevLogNumber'}
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a LevelDB write ahead log file.
@@ -59,6 +98,168 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
 
     return block, bytes_read
 
+  def _ReadRecord(self, file_offset, data, data_size):
+    """Reads a record.
+
+    Args:
+      file_offset (int): offset of the record relative to the start of the file.
+      data (bytes): record data.
+      data_size (int): record data size.
+
+    Raises:
+      ParseError: if the record cannot be read.
+    """
+    # pylint: disable=unused-variable
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(file_offset)
+      self._DebugPrintValue('Offset', value_string)
+
+    data_offset = 0
+
+    while data_offset < data_size:
+      value_tag, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
+      data_offset += bytes_read
+
+      if self._debug:
+        value_tag_string = self._VALUE_TAGS.get(value_tag, 'UNKNOWN')
+        value_string, _ = self._FormatIntegerAsDecimal(value_tag)
+        self._DebugPrintValue(
+            'Value tag', f'{value_string:s} ({value_tag_string:s})')
+
+      if value_tag not in (1, 2, 3, 4, 5, 6, 7, 9):
+        raise errors.ParseError(f'Unsupported value tag: {value_tag:d}')
+
+      if value_tag == 1:
+        comparator_name, bytes_read = self._ReadRecordValueString(
+            data[data_offset:], 'Name')
+
+      elif value_tag == 2:
+        log_number, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Log number')
+
+      elif value_tag == 3:
+        next_file_number, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Next file number')
+
+      elif value_tag == 4:
+        last_sequence_number, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Last sequence number')
+
+      elif value_tag == 5:
+        level, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Level')
+        data_offset += bytes_read
+
+        key, bytes_read = self._ReadRecordValueKey(data[data_offset:], 'Key')
+
+      elif value_tag == 6:
+        level, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Level')
+        data_offset += bytes_read
+
+        number_of_files, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Number of files')
+
+      elif value_tag == 7:
+        level, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Level')
+        data_offset += bytes_read
+
+        number_of_files, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Number of files')
+        data_offset += bytes_read
+
+        number_of_files, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'File size')
+        data_offset += bytes_read
+
+        smallest_record_key, bytes_read = self._ReadRecordValueKey(
+            data[data_offset:], 'Smallest record key')
+        data_offset += bytes_read
+
+        largest_record_key, bytes_read = self._ReadRecordValueKey(
+            data[data_offset:], 'Largest record key')
+
+      elif value_tag == 9:
+        previous_log_number, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'Previous log number')
+
+      data_offset += bytes_read
+
+  def _ReadRecordValueInteger(self, data, description):
+    """Reads an integer record value.
+
+    Args:
+      data (bytes): value data.
+      description (str): description of the value.
+
+    Returns:
+      tuple[int, int]: integer value and number of bytes read.
+
+    Raises:
+      ParseError: if the value cannot be read.
+    """
+    integer_value, bytes_read = _ReadVariableSizeInteger(data)
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(integer_value)
+      self._DebugPrintValue(description, value_string)
+
+    return integer_value, bytes_read
+
+  def _ReadRecordValueKey(self, data, description):
+    """Reads a key record value.
+
+    Args:
+      data (bytes): value data.
+      description (str): description of the value.
+
+    Returns:
+      tuple[bytes, int]: key value and number of bytes read.
+
+    Raises:
+      ParseError: if the value cannot be read.
+    """
+    data_size, bytes_read = _ReadVariableSizeInteger(data)
+
+    key_data = data[bytes_read:bytes_read + data_size]
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(data_size)
+      self._DebugPrintValue(f'{description:s} key size', value_string)
+
+      self._DebugPrintData(f'{description:s} key', key_data)
+
+    return key_data, bytes_read + data_size
+
+  def _ReadRecordValueString(self, data, description):
+    """Reads a string record value.
+
+    Args:
+      data (bytes): value data.
+      description (str): description of the value.
+
+    Returns:
+      tuple[str, int]: string value and number of bytes read.
+
+    Raises:
+      ParseError: if the value cannot be read.
+    """
+    data_size, bytes_read = _ReadVariableSizeInteger(data)
+
+    string_data = data[bytes_read:bytes_read + data_size]
+
+    string_value = string_data.decode('utf-8')
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(data_size)
+      self._DebugPrintValue(f'{description:s} string size', value_string)
+
+      self._DebugPrintValue(f'{description:s} string', string_value)
+
+    return string_value, bytes_read + data_size
+
   def ReadFileObject(self, file_object):
     """Reads a LevelDB write ahead log file-like object.
 
@@ -70,9 +271,22 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
     """
     file_offset = 0
     page_size = 32 * 1024
+    record_data = b''
+    record_offset = 0
 
     while file_offset < self._file_size:
-      _, bytes_read = self._ReadBlock(file_object, file_offset)
+      log_block, bytes_read = self._ReadBlock(file_object, file_offset)
+
+      if log_block.record_type in (1, 2):
+        record_data = log_block.record_data
+        record_offset = file_offset
+
+      elif log_block.record_type in (3, 4):
+        record_data = b''.join([record_data, log_block.record_data])
+
+      if log_block.record_type in (1, 4):
+        self._ReadRecord(record_offset, record_data, len(record_data))
+
       file_offset += bytes_read
       page_size -= bytes_read
 
@@ -81,9 +295,8 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
         page_size = 32 * 1024
 
 
-
-class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
-  """LevelDB database stored tables file ([0-9]{6}.ldb)."""
+class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
+  """LevelDB database sorted tables (.ldb) file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric and dtFormats definition files.
@@ -100,7 +313,7 @@ class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(LevelDBDatabaseStoredTablesFile, self).__init__(
+    super(LevelDBDatabaseTableFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
 
@@ -158,34 +371,6 @@ class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
 
     return key_prefix, bytes_read
 
-  def _ReadVariableSizeInteger(self, data):
-    """Reads a variable size integer.
-
-    Args:
-      data (bytes): data.
-
-    Returns:
-      tuple[int, int]: integer value and number of bytes read.
-    """
-    data_size = len(data)
-
-    byte_value = data[0]
-    bytes_read = 1
-    bit_shift = 0
-
-    integer_value = int(byte_value) & 0x7f
-
-    while bytes_read < data_size and byte_value & 0x80:
-      byte_value = data[bytes_read]
-      bytes_read += 1
-      bit_shift += 7
-
-      integer_value |= (int(byte_value) & 0x7f) << bit_shift
-
-      # TODO: check maximum size
-
-    return integer_value, bytes_read
-
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
 
@@ -205,18 +390,18 @@ class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     file_footer.metaindex_block_offset, data_offset = (
-        self._ReadVariableSizeInteger(file_footer.data))
+        _ReadVariableSizeInteger(file_footer.data))
 
     file_footer.metaindex_block_size, bytes_read = (
-        self._ReadVariableSizeInteger(file_footer.data[data_offset:]))
+        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
     data_offset += bytes_read
 
     file_footer.index_block_offset, bytes_read = (
-        self._ReadVariableSizeInteger(file_footer.data[data_offset:]))
+        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
     data_offset += bytes_read
 
     file_footer.index_block_size, bytes_read = (
-        self._ReadVariableSizeInteger(file_footer.data[data_offset:]))
+        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
     data_offset += bytes_read
 
     if self._debug:
@@ -228,7 +413,7 @@ class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
     return file_footer
 
   def _ReadIndexBlock(self, file_object, file_footer):
-    """Reads the index block.
+    """Reads an index block.
 
     Args:
       file_object (file): file-like object.
@@ -246,16 +431,13 @@ class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
 
     data_offset = 0
 
-    unknown1, bytes_read = (
-        self._ReadVariableSizeInteger(data[data_offset:]))
+    unknown1, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
     data_offset += bytes_read
 
-    unknown2, bytes_read = (
-        self._ReadVariableSizeInteger(data[data_offset:]))
+    unknown2, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
     data_offset += bytes_read
 
-    unknown3, bytes_read = (
-        self._ReadVariableSizeInteger(data[data_offset:]))
+    unknown3, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
     data_offset += bytes_read
 
     if self._debug:
@@ -269,7 +451,7 @@ class LevelDBDatabaseStoredTablesFile(data_format.BinaryDataFile):
       self._DebugPrintValue('Unknown3', value_string)
 
   def _ReadMetaindexBlock(self, file_object, file_footer):
-    """Reads the metaindex block.
+    """Reads a metaindex block.
 
     Args:
       file_object (file): file-like object.

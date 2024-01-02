@@ -57,15 +57,213 @@ A LevelDB database directory contains the following files:
 * LOG, LOG.old (log with informational messages)
 * MANIFEST-000001 (information about the sorted tables that make up the database)
 
+==== [[varint64]]Variable-size integer
+
+The variable-size integer (varint64) allows encoding an unsigned 64-bit integer
+using 1 upto 10 bytes, where small integer values use fewer bytes.
+
+The MSB of each byte in the variable-size integer is a continuation bit, that
+indicates if the next byte it is part of the integer.
+
+For example:
+
+* integer value 1 is stored as the bytes "01"
+* integer value 150 is stored as the bytes "96 01"
+
 == Current file
 
 ....
 00000000  4d 41 4e 49 46 45 53 54  2d 30 30 30 30 30 31 0a  |MANIFEST-000001.|
 ....
 
-== Ldb file
+== Write ahead log file (.ldb)
 
-A ldb file consists of:
+A write ahead log file consists of:
+
+* one or more 32k pages
+** one or more data blocks
+
+[cols="1,5",options="header"]
+|===
+| Characteristics | Description
+| Byte order | little-endian
+| Date and time values |
+| Character strings |
+|===
+
+=== Log block
+
+A log block is of variable size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Checksum +
+Contains a CRC-32
+| 4 | 2 | | Record data size
+| 5 | 1 | | Record type +
+See: <<log_record_types,log record types>>
+| 6 | record data size | | Record data
+|===
+
+==== [[log_record_types]]Log record types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | FULL | Full record
+| 2 | FIRST | First segment of record data
+| 3 | MIDDLE | Intermediate segment of record data
+| 4 | LAST | Last segment of record data
+|===
+
+=== Log record
+
+A log record consists of:
+
+* One or more tagged values
+
+Where each tagged values consists of:
+
+* A <<log_value_tags,value tag>>
+* Value data
+
+==== [[log_value_tags]]Log value tags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | kComparator | Comparator +
+See: <<log_comparator_value,comparator value>>
+| 2 | kLogNumber | Log number +
+See: <<log_log_number_value,log number value>>
+| 3 | kNextFileNumber | Next file number +
+See: <<log_next_file_number_value,next file number value>>
+| 4 | kLastSequence | Last sequence number +
+See: <<log_last_sequence_number_value,last sequence number value>>
+| 5 | kCompactPointer | Compact pointer +
+See: <<log_compact_pointer_value,compact pointer value>>
+| 6 | kDeletedFile | Deleted file +
+See: <<log_deleted_file_value,deleted file value>>
+| 7 | kNewFile | New file +
+See: <<log_new_file_value,new file value>>
+| 8 | | [yellow-background]*Unknown (was used for large value references)*
+| 9 | kPrevLogNumber | Previous log number +
+See: <<log_previous_log_number_value,previous log number value>>
+|===
+
+==== [[log_comparator_value]]Comparator value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 1 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Name string size
+| ... | ... | | Name string +
+Contains an UTF-8 encoded string without end-of-string character
+|===
+
+==== [[log_log_number_value]]Log number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 2 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Log number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[log_next_file_number_value]]Next file number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 3 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Next file number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[log_last_sequence_number_value]]Last sequence number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 4 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Last sequence number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[log_compact_pointer_value]]Compact pointer value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 5 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Level +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Key +
+Contains a <<log_key_value,key value>>
+|===
+
+==== [[log_deleted_file_value]]Deleted file value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 6 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Level +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Number of files +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[log_new_file_value]]New file value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 7 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Level +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Number of files +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | File size +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Smallest record key +
+Contains a <<log_key_value,key value>>
+| ... | ... | | Largest record key +
+Contains a <<log_key_value,key value>>
+|===
+
+==== [[log_previous_log_number_value]]Previous log number value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | 1 | 9 | Value tag +
+Contains a <<varint64,variable-size integer>> +
+See: <<log_value_tags,value tags>>
+| 1 | ... | | Previous log number +
+Contains a <<varint64,variable-size integer>>
+|===
+
+==== [[log_key_value]]Key value
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | ... | | Data size
+| ... | ... | | Data
+|===
+
+== Sorted tables file (.ldb)
+
+A sorted tables file file consists of:
 
 * one or more data blocks
 * one or more metadata blocks
@@ -81,28 +279,17 @@ A ldb file consists of:
 | Character strings |
 |===
 
-==== [[ldb_varint64]]Variable-size integer
+=== [[table_block_handle]]Block handle
 
-The variable-size integer (varint64) allows encoding an unsigned 64-bit integer
-using 1 upto 10 bytes, where small integer values use fewer bytes.
-
-The MSB of each byte in the variable-size integer is a continuation bit, that
-indicates if the next byte it is part of the integer.
-
-For example:
-
-* integer value 1 is stored as the bytes "01"
-* integer value 150 is stored as the bytes "96 01"
-
-=== [[ldb_block_handle]]Block handle
+A block handle is of variable size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
 | 0 | ... | | Block offset +
-Contains a <<ldb_varint64,variable-size integer>>
+Contains a <<varint64,variable-size integer>>
 | ... | ... | | Block size +
-Contains a <<ldb_varint64,variable-size integer>>
+Contains a <<varint64,variable-size integer>>
 |===
 
 === Key prefix
@@ -170,9 +357,9 @@ An index block contains keyed references to data blocks.
 |===
 | Offset | Size | Value | Description
 | 0 | ... | | Metaindex block handle +
-See section: <<ldb_block_handle,block handle>>
+See section: <<table_block_handle,block handle>>
 | ... | ... | | Index block handle +
-See section: <<ldb_block_handle,block handle>>
+See section: <<table_block_handle,block handle>>
 | ... | ... | 0 | Padding +
 The size of the padding is 40 bytes - size of the metaindex and index block handles
 | 40 | 8 | "\x57\xfb\x80\x8b\x24\x75\x47\xdb" | Signature
