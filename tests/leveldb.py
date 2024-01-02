@@ -8,18 +8,20 @@ from dtformats import leveldb
 from tests import test_lib
 
 
-class LevelDBDatabaseTest(test_lib.BaseTestCase):
-  """LevelDB database files tests."""
+class LevelDBDatabaseFileTest(test_lib.BaseTestCase):
+  """LevelDB database file tests."""
 
   # pylint: disable=protected-access
 
   def testReadVariableSizeInteger(self):
     """Tests the _ReadVariableSizeInteger function."""
-    integer_value, bytes_read = leveldb._ReadVariableSizeInteger(b'\x01')
+    test_file = leveldb.LevelDBDatabaseFile()
+
+    integer_value, bytes_read = test_file._ReadVariableSizeInteger(b'\x01')
     self.assertEqual(integer_value, 1)
     self.assertEqual(bytes_read, 1)
 
-    integer_value, bytes_read = leveldb._ReadVariableSizeInteger(b'\x96\x01')
+    integer_value, bytes_read = test_file._ReadVariableSizeInteger(b'\x96\x01')
     self.assertEqual(integer_value, 150)
     self.assertEqual(bytes_read, 2)
 

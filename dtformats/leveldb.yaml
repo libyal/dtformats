@@ -48,6 +48,14 @@ attributes:
   size: 4
   units: bytes
 ---
+name: uint64le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 8
+  units: bytes
+---
 name: array_of_uint32le
 type: sequence
 element_data_type: uint32le

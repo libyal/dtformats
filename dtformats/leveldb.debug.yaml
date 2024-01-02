@@ -35,18 +35,6 @@ attributes:
 ---
 data_type_map: leveldb_table_footer
 attributes:
-- name: metaindex_block_offset
-  description: "Metaindex block offset"
-  format: hexadecimal_8digits
-- name: metaindex_block_size
-  description: "Metaindex block size"
-  format: decimal
-- name: index_block_offset
-  description: "Index block offset"
-  format: hexadecimal_8digits
-- name: index_block_size
-  description: "Index block size"
-  format: decimal
 - name: padding
   description: "Padding"
   format: binary_data

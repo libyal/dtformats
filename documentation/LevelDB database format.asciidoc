@@ -301,7 +301,8 @@ See: <<log_put_value,put value>>
 
 [cols="1,1,1,5",options="header"]
 |===
-| 0 | 1 | 0 | Value type
+| 0 | 1 | 0 | Value type +
+See: <<log_value_types,log value types>>
 | 1 | ... | | Key +
 Contains a <<log_slice_value,slice value>>
 |===
@@ -310,7 +311,8 @@ Contains a <<log_slice_value,slice value>>
 
 [cols="1,1,1,5",options="header"]
 |===
-| 0 | 1 | 1 | Value type
+| 0 | 1 | 1 | Value type +
+See: <<log_value_types,log value types>>
 | 1 | ... | | Key +
 Contains a <<log_slice_value,slice value>>
 | ... | ... | | Value +
@@ -351,34 +353,7 @@ Contains a <<varint64,variable-size integer>>
 [NOTE]
 The block size does not include the size of the table block trailer.
 
-=== Key prefix
-
-Each key is prefixed with:
-
-* database identifier (database ID)
-* object store identifier
-* index identifier
-
-The key prefix (KeyPrefix) is of variable size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0.0 | 2 bits | | Size of the index identifier +
-Where size is stored as size - 1, hence 0 represents 1 byte
-| 0.2 | 3 bits | | Size of the object store identifier +
-Where size is stored as size - 1, hence 0 represents 1 byte
-| 0.3 | 3 bits | | Size of the database identifier +
-Where size is stored as size - 1, hence 0 represents 1 byte
-| 1.0 | ... | | Database identifier +
-Contains a litte-endian integer
-| ... | ... | | Object store identifier +
-Contains a litte-endian integer
-| ... | ... | | Index identifier +
-Contains a litte-endian integer
-|===
-
-=== Table block
+=== [[table_block]]Table block
 
 A table block consists of:
 
@@ -413,8 +388,8 @@ Contains a CRC-32
 The table contents consists of:
 
 * table entries
-* array of 32-bit entry offset (restart values)
-* 32-bit number of entry offsets (restart values)
+* array of 32-bit restart values
+* 32-bit number of restart values
 
 ==== Table entry
 
@@ -423,45 +398,51 @@ A table entry is of variable size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | 0 | ... | | Shared key data size +
-Contains a <<varint64,variable-size integer>>
+Contains a <<varint64,variable-size integer>> of the size of key data borrowed from the full key of the previous entry
 | ... | ... | | Non-shared key data size +
-Contains a <<varint64,variable-size integer>>
+Contains a <<varint64,variable-size integer>> of the size of entry specific key data
 | ... | ... | | Value data size +
 Contains a <<varint64,variable-size integer>>
-| ... | ... | | [yellow-background]*TODO: describe*
+| ... | ... | | Non-shared key data
+| ... | ... | | Value data
+|===
+
+[NOTE]
+The shared and non-shared key data must be combined to make the full key.
+
+==== Table key
+
+A table key is of variable size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | ... | | Application specific key data
+4+| _Internal key suffix_
+| ... | 1 | | Value type
+| ... | 7 | | Sequence number
 |===
 
 === Data block
 
-A data block contains a sequence of key/value pairs.
+A data block consists of a <<table_block,table block>> where its table entry
+values contain application specific data.
 
 === Metadata block
 
 A metadata block contains information about the data blocks.
 
+[yellow-background]*TODO: complete section*
+
 === Metaindex block
 
 A metaindex block contains keyed references to metadata blocks.
 
-The key of global metadata has the prefix: 0, 0, 0 followed by a byte value
-that contains the metadata type:
-
-[cols="1,1,1,3",options="header"]
-|===
-| Metadata type | Identifier | Description
-| 0 | Int | SchemaVersionKey | Backing store schema version
-| 1 | Int | MaxDatabaseIdKey | Maximum allocated database
-| 2 | Int | DataVersionKey | Data format version
-| 3 | Int | RecoveryBlobJournalKey | Recovery BLOB journal
-| 4 | Int | ActiveBlobJournalKey | Active BLOB journal
-| 5 | Int | EarliestSweepKey | Earliest sweep time in microseconds
-| 100, database ID (VarInt) | DatabaseFreeListKey | Database is in the free list (no longer used)
-| 201, origin (StringWithLength), database name (StringWithLength) | Int | DatabaseNameKey | Database identifier
-|===
+[yellow-background]*TODO: complete section*
 
 === Index block
 
-An index block contains keyed references to data blocks.
+The index block consists of a <<table_block,table block>> where its table entry
+values contain a <<table_block_handle,block handle>> of data blocks.
 
 === Footer
 

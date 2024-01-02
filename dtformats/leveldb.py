@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """LevelDB database files."""
 
+import abc
+
 import snappy
 import zstd
 
@@ -11,37 +13,48 @@ from dtformats import data_format
 from dtformats import errors
 
 
-def _ReadVariableSizeInteger(data):
-  """Reads a variable size integer.
+class LevelDBDatabaseBlockHandle(object):
+  """LevelDB block handle.
 
-  Args:
-    data (bytes): data.
-
-  Returns:
-    tuple[int, int]: integer value and number of bytes read.
+  Attributes:
+    offset (int): block offset.
+    size (int): block size.
   """
-  data_size = len(data)
 
-  byte_value = data[0]
-  bytes_read = 1
-  bit_shift = 0
+  def __init__(self, offset, size):
+    """Initializes a LevelDB block handle.
 
-  integer_value = int(byte_value) & 0x7f
-
-  while bytes_read < data_size and byte_value & 0x80:
-    byte_value = data[bytes_read]
-    bytes_read += 1
-    bit_shift += 7
-
-    integer_value |= (int(byte_value) & 0x7f) << bit_shift
-
-    # TODO: check maximum size
-
-  return integer_value, bytes_read
+    Args:
+      offset (int): block offset.
+      size (int): block size.
+    """
+    super(LevelDBDatabaseBlockHandle, self).__init__()
+    self.offset = offset
+    self.size = size
 
 
-class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
-  """LevelDB write ahead log (.log) file."""
+class LevelDBDatabaseTableEntry(object):
+  """LevelDB table entry.
+
+  Attributes:
+    key (bytes): key.
+    value (bytes): value.
+  """
+
+  def __init__(self, key, value):
+    """Initializes a LevelDB table entry.
+
+    Args:
+      key (bytes): key.
+      value (bytes): value.
+    """
+    super(LevelDBDatabaseTableEntry, self).__init__()
+    self.key = key
+    self.value = value
+
+
+class LevelDBDatabaseFile(data_format.BinaryDataFile):
+  """LevelDB file."""
 
   # Using a class constant significantly speeds up the time required to load
   # the dtFabric and dtFormats definition files.
@@ -50,9 +63,10 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'leveldb.debug.yaml')
 
-  # TODO: add custom formatter to print record type.
+  # TODO: add custom formatter to print log record type.
+  # TODO: add custom formatter to print compression type.
 
-  _RECORD_TYPES = {
+  _LOG_RECORD_TYPES = {
       1: 'FULL',
       2: 'FIRST',
       3: 'MIDDLE',
@@ -63,16 +77,56 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
       1: 'kTypeValue'}
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
-    """Initializes a LevelDB write ahead log file.
+    """Initializes a LevelDB file.
 
     Args:
       debug (Optional[bool]): True if debug information should be written.
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(LevelDBDatabaseLogFile, self).__init__(
+    super(LevelDBDatabaseFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
+
+  def _ReadVariableSizeInteger(self, data):
+    """Reads a variable size integer.
+
+    Args:
+      data (bytes): data.
+
+    Returns:
+      tuple[int, int]: integer value and number of bytes read.
+    """
+    data_size = len(data)
+
+    byte_value = data[0]
+    bytes_read = 1
+    bit_shift = 0
+
+    integer_value = int(byte_value) & 0x7f
+
+    while bytes_read < data_size and byte_value & 0x80:
+      byte_value = data[bytes_read]
+      bytes_read += 1
+      bit_shift += 7
+
+      integer_value |= (int(byte_value) & 0x7f) << bit_shift
+
+      # TODO: check maximum size
+
+    return integer_value, bytes_read
+
+  @abc.abstractmethod
+  def ReadFileObject(self, file_object):
+    """Reads binary data from a file-like object.
+
+    Args:
+      file_object (file): file-like object.
+    """
+
+
+class LevelDBDatabaseLogFile(LevelDBDatabaseFile):
+  """LevelDB write ahead log (.log) file."""
 
   def _ReadBlock(self, file_object, file_offset):
     """Reads a block.
@@ -178,7 +232,7 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the value cannot be read.
     """
-    data_size, bytes_read = _ReadVariableSizeInteger(data)
+    data_size, bytes_read = self._ReadVariableSizeInteger(data)
 
     value_data = data[bytes_read:bytes_read + data_size]
 
@@ -258,7 +312,7 @@ class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
     data_offset = 0
 
     while data_offset < data_size:
-      value_tag, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
+      value_tag, bytes_read = self._ReadVariableSizeInteger(data[data_offset:])
       data_offset += bytes_read
 
       if self._debug:
@@ -340,7 +394,7 @@ class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
     Raises:
       ParseError: if the value cannot be read.
     """
-    integer_value, bytes_read = _ReadVariableSizeInteger(data)
+    integer_value, bytes_read = self._ReadVariableSizeInteger(data)
 
     if self._debug:
       value_string, _ = self._FormatIntegerAsDecimal(integer_value)
@@ -361,7 +415,7 @@ class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
     Raises:
       ParseError: if the value cannot be read.
     """
-    data_size, bytes_read = _ReadVariableSizeInteger(data)
+    data_size, bytes_read = self._ReadVariableSizeInteger(data)
 
     string_data = data[bytes_read:bytes_read + data_size]
 
@@ -376,29 +430,8 @@ class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
     return string_value, bytes_read + data_size
 
 
-class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
+class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
   """LevelDB database sorted tables (.ldb) file."""
-
-  # Using a class constant significantly speeds up the time required to load
-  # the dtFabric and dtFormats definition files.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('leveldb.yaml')
-
-  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
-      'leveldb.debug.yaml')
-
-  # TODO: add custom formatter to print compression type.
-
-  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
-    """Initializes a LevelDB database stored tables file.
-
-    Args:
-      debug (Optional[bool]): True if debug information should be written.
-      file_system_helper (Optional[FileSystemHelper]): file system helper.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(LevelDBDatabaseTableFile, self).__init__(
-        debug=debug, file_system_helper=file_system_helper,
-        output_writer=output_writer)
 
   def _DebugPrintKeyPrefix(self, key_prefix):
     """Prints key prefix information.
@@ -460,6 +493,52 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
 
     return block_data
 
+  def _ReadBlockHandle(self, data, description):
+    """Reads a  block handle.
+
+    Args:
+      data (bytes): value data.
+      description (str): description of the block handle.
+
+    Returns:
+      tuple[LevelDBDatabaseBlockHandle, int]: block handle and number of bytes
+          read.
+
+    Raises:
+      ParseError: if the block handle cannot be read.
+    """
+    block_offset, data_offset = self._ReadVariableSizeInteger(data)
+
+    block_size, bytes_read = self._ReadVariableSizeInteger(data[data_offset:])
+    data_offset += bytes_read
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsHexadecimal8(block_offset)
+      self._DebugPrintValue(f'{description:s} block offset', value_string)
+
+      value_string, _ = self._FormatIntegerAsDecimal(block_size)
+      self._DebugPrintValue(f'{description:s} block size', value_string)
+
+    block_handle = LevelDBDatabaseBlockHandle(block_offset, block_size)
+    return block_handle, data_offset
+
+  def _ReadDataBlock(self, file_object, file_offset, block_data_size):
+    """Reads a data block.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the block containing the data relative to
+         the start of the file.
+      block_data_size (int): size of the block data.
+
+    Raises:
+      ParseError: if the index cannot be read.
+    """
+    # pylint: disable=unused-variable
+
+    table_entries = list(self._ReadTable(
+        file_object, file_offset, block_data_size, 'Data'))
+
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
 
@@ -478,20 +557,18 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
     file_footer, _ = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'file footer')
 
-    file_footer.metaindex_block_offset, data_offset = (
-        _ReadVariableSizeInteger(file_footer.data))
+    block_handle, data_offset = self._ReadBlockHandle(
+        file_footer.data, 'Metaindex')
 
-    file_footer.metaindex_block_size, bytes_read = (
-        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
+    file_footer.metaindex_block_offset = block_handle.offset
+    file_footer.metaindex_block_size = block_handle.size
+
+    block_handle, bytes_read = self._ReadBlockHandle(
+        file_footer.data[data_offset:], 'Index')
     data_offset += bytes_read
 
-    file_footer.index_block_offset, bytes_read = (
-        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
-    data_offset += bytes_read
-
-    file_footer.index_block_size, bytes_read = (
-        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
-    data_offset += bytes_read
+    file_footer.index_block_offset = block_handle.offset
+    file_footer.index_block_size = block_handle.size
 
     if self._debug:
       file_footer.padding = file_footer.data[data_offset:]
@@ -501,143 +578,25 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
 
     return file_footer
 
-  def _ReadTable(self, file_object, file_offset, block_data_size):
-    """Reads a table.
+  def _ReadIndexBlock(self, file_object, file_offset, block_data_size):
+    """Reads the index block.
 
     Args:
       file_object (file): file-like object.
-      file_offset (int): offset of the block containing the tabel relative to
-         the start of the file.
+      file_offset (int): offset of the block containing the index block
+         relative to the start of the file.
       block_data_size (int): size of the block data.
 
-    Yields:
-      bytes: table entry.
-
     Raises:
-      ParseError: if the table cannot be read.
+      ParseError: if the index cannot be read.
     """
-    table_data = self._ReadBlock(file_object, file_offset, block_data_size)
-    table_data_size = len(table_data)
+    table_entries = list(self._ReadTable(
+        file_object, file_offset, block_data_size, 'Index'))
 
-    if self._debug:
-      self._DebugPrintData('Table data', table_data)
+    for table_entry in table_entries:
+      block_handle, _ = self._ReadBlockHandle(table_entry.value, 'Data')
 
-    data_type_map = self._GetDataTypeMap('uint32le')
-    table_data_offset = table_data_size - 4
-
-    number_of_entry_offsets = self._ReadStructureFromByteStream(
-         table_data[-4:], table_data_offset, data_type_map,
-         'number of entry offsets')
-
-    if self._debug:
-      value_string, _ = self._FormatIntegerAsDecimal(number_of_entry_offsets)
-      self._DebugPrintValue('Number of entry offsets', value_string)
-
-    data_type_map = self._GetDataTypeMap('array_of_uint32le')
-    table_data_offset -= 4 * number_of_entry_offsets
-
-    context = dtfabric_data_maps.DataTypeMapContext(values={
-        'number_of_elements': number_of_entry_offsets})
-
-    try:
-      entry_offsets = data_type_map.MapByteStream(
-          table_data[table_data_offset:], context=context)
-
-    except dtfabric_errors.MappingError as exception:
-      raise errors.ParseError((
-          f'Unable to parse array of 32-bit entry offsets with error: '
-          f'{exception!s}'))
-
-    if self._debug:
-      value_string, _ = self._FormatArrayOfIntegersAsDecimals(entry_offsets)
-      self._DebugPrintValue('Entry offsets', value_string)
-
-    for entry_index, entry_offset in enumerate(entry_offsets):
-      next_entry_index = entry_index + 1
-      if next_entry_index < number_of_entry_offsets:
-        entry_end_offset = entry_offsets[next_entry_index]
-      else:
-        entry_end_offset = table_data_offset
-
-      yield table_data[entry_offset:entry_end_offset]
-
-  def _ReadIndexBlock(self, file_object, file_footer):
-    """Reads an index block.
-
-    Args:
-      file_object (file): file-like object.
-      file_footer (leveldb_table_footer): file footer.
-
-    Raises:
-      ParseError: if the index block cannot be read.
-    """
-    table_entries_iterator = self._ReadTable(
-        file_object, file_footer.index_block_offset,
-        file_footer.index_block_size)
-
-    for entry_index, table_entry in enumerate(table_entries_iterator):
-      if self._debug:
-        self._DebugPrintData(
-            f'Index table entry: {entry_index:d} data', table_entry)
-
-      shared_size, data_offset = _ReadVariableSizeInteger(table_entry)
-
-      non_shared_size, bytes_read = _ReadVariableSizeInteger(
-          table_entry[data_offset:])
-      data_offset += bytes_read
-
-      value_size, bytes_read = _ReadVariableSizeInteger(
-          table_entry[data_offset:])
-      data_offset += bytes_read
-
-      if self._debug:
-        value_string, _ = self._FormatIntegerAsDecimal(shared_size)
-        self._DebugPrintValue('Shared key data size', value_string)
-
-        value_string, _ = self._FormatIntegerAsDecimal(non_shared_size)
-        self._DebugPrintValue('Non-shared key data size', value_string)
-
-        value_string, _ = self._FormatIntegerAsDecimal(value_size)
-        self._DebugPrintValue('Value data size', value_string)
-
-  def _ReadKeyPrefix(self, data):
-    """Reads a key prefix.
-
-    Args:
-      data (bytes): data.
-
-    Returns:
-      tuple[tuple[int, int, int], int]: key prefix and number of bytes read.
-    """
-    byte_value = data[0]
-    bytes_read = 1
-
-    database_identifier = 0
-    object_store_identifier = 0
-    index_identifier = 0
-
-    bit_shift = 0
-    for _ in range((byte_value >> 5) + 1):
-      database_identifier |= data[bytes_read] << bit_shift
-      bytes_read += 1
-      bit_shift += 8
-
-    bit_shift = 0
-    for _ in range(((byte_value & 0x1f) >> 2) + 1):
-      object_store_identifier |= data[bytes_read] << bit_shift
-      bytes_read += 1
-      bit_shift += 8
-
-    bit_shift = 0
-    for _ in range((byte_value & 0x03) + 1):
-      index_identifier |= data[bytes_read] << bit_shift
-      bytes_read += 1
-      bit_shift += 8
-
-    key_prefix = (
-        database_identifier, object_store_identifier, index_identifier)
-
-    return key_prefix, bytes_read
+      self._ReadDataBlock(file_object, block_handle.offset, block_handle.size)
 
   def _ReadMetaindexBlock(self, file_object, file_footer):
     """Reads a metaindex block.
@@ -656,32 +615,145 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintData('Metaindex block data', data)
 
-    data_offset = 0
-    data_size = len(data)
+  def _ReadTable(self, file_object, file_offset, block_data_size, description):
+    """Reads a table.
 
-    while data_offset < data_size:
-      key_prefix, bytes_read = self._ReadKeyPrefix(data[data_offset:])
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the block containing the tabel relative to
+         the start of the file.
+      block_data_size (int): size of the block data.
+      description (str): description of the table.
+
+    Yields:
+      LevelDBDatabaseTableEntry: table entry.
+
+    Raises:
+      ParseError: if the table cannot be read.
+    """
+    table_data = self._ReadBlock(file_object, file_offset, block_data_size)
+    table_data_size = len(table_data)
+
+    if self._debug:
+      self._DebugPrintData(f'{description:s} table data', table_data)
+
+    data_type_map = self._GetDataTypeMap('uint32le')
+    table_data_end_offset = table_data_size - 4
+
+    number_of_restart_values = self._ReadStructureFromByteStream(
+         table_data[-4:], table_data_end_offset, data_type_map,
+         'number of restart values')
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(number_of_restart_values)
+      self._DebugPrintValue('Number of restart values', value_string)
+
+    data_type_map = self._GetDataTypeMap('array_of_uint32le')
+    table_data_end_offset -= 4 * number_of_restart_values
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'number_of_elements': number_of_restart_values})
+
+    try:
+      restart_values = data_type_map.MapByteStream(
+          table_data[table_data_end_offset:], context=context)
+
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError((
+          f'Unable to parse array of 32-bit restart values with error: '
+          f'{exception!s}'))
+
+    if self._debug:
+      value_string, _ = self._FormatArrayOfIntegersAsDecimals(restart_values)
+      self._DebugPrintValue('Restart values', value_string)
+
+    data_offset = 0
+    entry_index = 0
+    shared_key_data = b''
+
+    while data_offset < table_data_end_offset:
+      entry_offset = data_offset
+
+      if self._debug:
+        value_string, _ = self._FormatIntegerAsDecimal(entry_offset)
+        self._DebugPrintValue('Offset', value_string)
+
+      shared_key_data_size, bytes_read = self._ReadVariableSizeInteger(
+          table_data[data_offset:])
       data_offset += bytes_read
 
-      metadata_type = int(data[data_offset])
-      data_offset += 1
+      non_shared_key_data_size, bytes_read = self._ReadVariableSizeInteger(
+          table_data[data_offset:])
+      data_offset += bytes_read
+
+      value_data_size, bytes_read = self._ReadVariableSizeInteger(
+          table_data[data_offset:])
+      data_offset += bytes_read
 
       if self._debug:
-        self._DebugPrintKeyPrefix(key_prefix)
+        value_string, _ = self._FormatIntegerAsDecimal(shared_key_data_size)
+        self._DebugPrintValue(
+            f'Entry: {entry_index:d} shared key data size', value_string)
 
-        value_string, _ = self._FormatIntegerAsDecimal(metadata_type)
-        self._DebugPrintValue('Metadata type', value_string)
+        value_string, _ = self._FormatIntegerAsDecimal(non_shared_key_data_size)
+        self._DebugPrintValue(
+            f'Entry: {entry_index:d} non-shared key data size', value_string)
 
-      if key_prefix != (0, 0, 0):
-        raise errors.ParseError(f'Unsupported key prefix: {key_prefix!s}')
+        value_string, _ = self._FormatIntegerAsDecimal(value_data_size)
+        self._DebugPrintValue(
+            f'Entry: {entry_index:d} value data size', value_string)
 
-      if metadata_type not in (0, 1, 2, 3, 4, 5, 201):
-        raise errors.ParseError(f'Unsupported metadata type: {metadata_type:d}')
+      key_data_size = non_shared_key_data_size
+
+      key_data_end_offset = data_offset + key_data_size
+      key_data = table_data[data_offset:key_data_end_offset]
 
       if self._debug:
-        self._DebugPrintData('Metadata', data[data_offset:])
+        self._DebugPrintData(f'Entry: {entry_index:d} key data', key_data)
 
-      break
+      if shared_key_data_size > 0:
+        key_data = b''.join([shared_key_data[:shared_key_data_size], key_data])
+        key_data_size += shared_key_data_size
+
+        if self._debug:
+          self._DebugPrintData(f'Entry: {entry_index:d} key data', key_data)
+
+      shared_key_data = key_data
+
+      if key_data_size < 8:
+        raise errors.ParseError(f'Unsupported key data size: {key_data_size:d}')
+
+      data_type_map = self._GetDataTypeMap('uint64le')
+
+      internal_key_suffix = self._ReadStructureFromByteStream(
+           key_data[-8:], key_data_end_offset - 8, data_type_map,
+           'internal key suffix')
+
+      if self._debug:
+        self._DebugPrintValue('Key', key_data[:-8])
+
+        value_type = internal_key_suffix & 0xff
+        value_type_string = self._VALUE_TYPES.get(value_type, 'UNKNOWN')
+        value_string, _ = self._FormatIntegerAsDecimal(value_type)
+        self._DebugPrintValue(
+            'Value type', f'{value_string:s} ({value_type_string:s})')
+
+        value_string, _ = self._FormatIntegerAsDecimal(internal_key_suffix >> 8)
+        self._DebugPrintValue('Sequence number', value_string)
+
+      data_offset = key_data_end_offset
+
+      value_data_end_offset = data_offset + value_data_size
+      value_data = table_data[data_offset:value_data_end_offset]
+
+      if self._debug:
+        self._DebugPrintData(f'Entry: {entry_index:d} value data', value_data)
+
+      data_offset = value_data_end_offset
+
+      yield LevelDBDatabaseTableEntry(key_data, value_data)
+
+      entry_index += 1
 
   def ReadFileObject(self, file_object):
     """Reads a LevelDB database stored tables file-like object.
@@ -695,4 +767,6 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
     file_footer = self._ReadFileFooter(file_object)
 
     self._ReadMetaindexBlock(file_object, file_footer)
-    self._ReadIndexBlock(file_object, file_footer)
+    self._ReadIndexBlock(
+        file_object, file_footer.index_block_offset,
+        file_footer.index_block_size)
