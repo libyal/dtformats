@@ -1,6 +1,6 @@
 # Script to set up tests on AppVeyor Windows.
 
-$Dependencies = "PyYAML dfdatetime dtfabric libfwps libfwsi libgzipf liblnk libolecf libregf lz4"
+$Dependencies = "PyYAML dfdatetime dtfabric libfwps libfwsi libgzipf liblnk libolecf libregf lz4 snappy zstd"
 
 If ($Dependencies.Length -gt 0)
 {

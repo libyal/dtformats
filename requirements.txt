@@ -8,3 +8,5 @@ liblnk-python >= 20230205
 libolecf-python >= 20151223
 libregf-python >= 20150315
 lz4 >= 0.10.0
+snappy >= 0.6.1
+zstd >= 1.3.0.2

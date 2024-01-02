@@ -266,6 +266,7 @@ See: <<log_record_types,log record types>>
 A log (WriteBatch) record consists of:
 
 * value header
+* one or more values
 
 ==== Log value header
 
@@ -274,7 +275,7 @@ A log header value is 12 byte in size and consists of:
 [cols="1,1,1,5",options="header"]
 |===
 | 0 | 8 | | Sequence number
-| 8 | 4 | | [yellow-background]*Unknown (Count?)*
+| 8 | 4 | | Number of values
 |===
 
 ==== [[log_value_types]]Log value types
@@ -334,9 +335,9 @@ A sorted tables file consists of:
 | Character strings |
 |===
 
-=== [[table_block_handle]]Block handle
+=== [[table_block_handle]]Table block handle
 
-A block handle is of variable size and consists of:
+A table block handle is of variable size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -346,6 +347,9 @@ Contains a <<varint64,variable-size integer>>
 | ... | ... | | Block size +
 Contains a <<varint64,variable-size integer>>
 |===
+
+[NOTE]
+The block size does not include the size of the table block trailer.
 
 === Key prefix
 
@@ -372,6 +376,59 @@ Contains a litte-endian integer
 Contains a litte-endian integer
 | ... | ... | | Index identifier +
 Contains a litte-endian integer
+|===
+
+=== Table block
+
+A table block consists of:
+
+* block data
+* table block trailer
+
+==== Table block trailer
+
+A table block trailer is 5 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 1 | | Compression type +
+See: <<table_compression_types,compression types>>
+| 1 | 4 | | Checksum +
+Contains a CRC-32
+|===
+
+==== [[table_compression_types]]Compression types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | kNoCompression | Uncompressed data
+| 1 | kSnappyCompression | Snappy compressed data
+| 2 | kZstdCompression | zstd compressed data
+|===
+
+=== Table contents
+
+The table contents consists of:
+
+* table entries
+* array of 32-bit entry offset (restart values)
+* 32-bit number of entry offsets (restart values)
+
+==== Table entry
+
+A table entry is of variable size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| 0 | ... | | Shared key data size +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Non-shared key data size +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | Value data size +
+Contains a <<varint64,variable-size integer>>
+| ... | ... | | [yellow-background]*TODO: describe*
 |===
 
 === Data block

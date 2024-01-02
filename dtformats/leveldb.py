@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 """LevelDB database files."""
 
+import snappy
+import zstd
+
+from dtfabric import errors as dtfabric_errors
+from dtfabric.runtime import data_maps as dtfabric_data_maps
+
 from dtformats import data_format
 from dtformats import errors
 
@@ -89,6 +95,8 @@ class LevelDBDatabaseLogFile(data_format.BinaryDataFile):
     if self._debug:
       debug_info = self._DEBUG_INFORMATION.get('leveldb_log_block', None)
       self._DebugPrintStructureObject(block, debug_info)
+
+    # TODO: calculate and validate checksum
 
     return block, bytes_read
 
@@ -378,6 +386,8 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'leveldb.debug.yaml')
 
+  # TODO: add custom formatter to print compression type.
+
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a LevelDB database stored tables file.
 
@@ -404,6 +414,191 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
 
     value_string, _ = self._FormatIntegerAsDecimal(key_prefix[2])
     self._DebugPrintValue('Index identifier', value_string)
+
+  def _ReadBlock(self, file_object, file_offset, block_data_size):
+    """Reads a block.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the block relative to the start of the file.
+      block_data_size (int): size of the block data.
+
+    Returns:
+      bytes: block data.
+
+    Raises:
+      ParseError: if the block cannot be read.
+    """
+    block_data = self._ReadData(
+        file_object, file_offset, block_data_size, 'block data')
+
+    if self._debug:
+      self._DebugPrintData('Block data', block_data)
+
+    data_type_map = self._GetDataTypeMap('leveldb_table_block_trailer')
+    file_offset += block_data_size
+
+    block_trailer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'block trailer')
+
+    if self._debug:
+      debug_info = self._DEBUG_INFORMATION.get(
+          'leveldb_table_block_trailer', None)
+      self._DebugPrintStructureObject(block_trailer, debug_info)
+
+    # TODO: calculate and validate checksum
+
+    if block_trailer.compression_type not in (0, 1, 2):
+      raise errors.ParseError(
+          f'Unsupported compression type: {block_trailer.compression_type!s}')
+
+    if block_trailer.compression_type == 1:
+      block_data = snappy.decompress(block_data)
+
+    elif block_trailer.compression_type == 2:
+      block_data = zstd.decompress(block_data)
+
+    return block_data
+
+  def _ReadFileFooter(self, file_object):
+    """Reads the file footer.
+
+    Args:
+      file_object (file): file-like object.
+
+    Returns:
+      leveldb_table_footer: file footer.
+
+    Raises:
+      ParseError: if the file footer cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('leveldb_table_footer')
+    file_offset = self._file_size - 48
+
+    file_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'file footer')
+
+    file_footer.metaindex_block_offset, data_offset = (
+        _ReadVariableSizeInteger(file_footer.data))
+
+    file_footer.metaindex_block_size, bytes_read = (
+        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
+    data_offset += bytes_read
+
+    file_footer.index_block_offset, bytes_read = (
+        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
+    data_offset += bytes_read
+
+    file_footer.index_block_size, bytes_read = (
+        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
+    data_offset += bytes_read
+
+    if self._debug:
+      file_footer.padding = file_footer.data[data_offset:]
+
+      debug_info = self._DEBUG_INFORMATION.get('leveldb_table_footer', None)
+      self._DebugPrintStructureObject(file_footer, debug_info)
+
+    return file_footer
+
+  def _ReadTable(self, file_object, file_offset, block_data_size):
+    """Reads a table.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the block containing the tabel relative to
+         the start of the file.
+      block_data_size (int): size of the block data.
+
+    Yields:
+      bytes: table entry.
+
+    Raises:
+      ParseError: if the table cannot be read.
+    """
+    table_data = self._ReadBlock(file_object, file_offset, block_data_size)
+    table_data_size = len(table_data)
+
+    if self._debug:
+      self._DebugPrintData('Table data', table_data)
+
+    data_type_map = self._GetDataTypeMap('uint32le')
+    table_data_offset = table_data_size - 4
+
+    number_of_entry_offsets = self._ReadStructureFromByteStream(
+         table_data[-4:], table_data_offset, data_type_map,
+         'number of entry offsets')
+
+    if self._debug:
+      value_string, _ = self._FormatIntegerAsDecimal(number_of_entry_offsets)
+      self._DebugPrintValue('Number of entry offsets', value_string)
+
+    data_type_map = self._GetDataTypeMap('array_of_uint32le')
+    table_data_offset -= 4 * number_of_entry_offsets
+
+    context = dtfabric_data_maps.DataTypeMapContext(values={
+        'number_of_elements': number_of_entry_offsets})
+
+    try:
+      entry_offsets = data_type_map.MapByteStream(
+          table_data[table_data_offset:], context=context)
+
+    except dtfabric_errors.MappingError as exception:
+      raise errors.ParseError((
+          f'Unable to parse array of 32-bit entry offsets with error: '
+          f'{exception!s}'))
+
+    if self._debug:
+      value_string, _ = self._FormatArrayOfIntegersAsDecimals(entry_offsets)
+      self._DebugPrintValue('Entry offsets', value_string)
+
+    for entry_index, entry_offset in enumerate(entry_offsets):
+      next_entry_index = entry_index + 1
+      if next_entry_index < number_of_entry_offsets:
+        entry_end_offset = entry_offsets[next_entry_index]
+      else:
+        entry_end_offset = table_data_offset
+
+      yield table_data[entry_offset:entry_end_offset]
+
+  def _ReadIndexBlock(self, file_object, file_footer):
+    """Reads an index block.
+
+    Args:
+      file_object (file): file-like object.
+      file_footer (leveldb_table_footer): file footer.
+
+    Raises:
+      ParseError: if the index block cannot be read.
+    """
+    table_entries_iterator = self._ReadTable(
+        file_object, file_footer.index_block_offset,
+        file_footer.index_block_size)
+
+    for entry_index, table_entry in enumerate(table_entries_iterator):
+      if self._debug:
+        self._DebugPrintData(
+            f'Index table entry: {entry_index:d} data', table_entry)
+
+      shared_size, data_offset = _ReadVariableSizeInteger(table_entry)
+
+      non_shared_size, bytes_read = _ReadVariableSizeInteger(
+          table_entry[data_offset:])
+      data_offset += bytes_read
+
+      value_size, bytes_read = _ReadVariableSizeInteger(
+          table_entry[data_offset:])
+      data_offset += bytes_read
+
+      if self._debug:
+        value_string, _ = self._FormatIntegerAsDecimal(shared_size)
+        self._DebugPrintValue('Shared key data size', value_string)
+
+        value_string, _ = self._FormatIntegerAsDecimal(non_shared_size)
+        self._DebugPrintValue('Non-shared key data size', value_string)
+
+        value_string, _ = self._FormatIntegerAsDecimal(value_size)
+        self._DebugPrintValue('Value data size', value_string)
 
   def _ReadKeyPrefix(self, data):
     """Reads a key prefix.
@@ -444,91 +639,12 @@ class LevelDBDatabaseTableFile(data_format.BinaryDataFile):
 
     return key_prefix, bytes_read
 
-  def _ReadFileFooter(self, file_object):
-    """Reads the file footer.
-
-    Args:
-      file_object (file): file-like object.
-
-    Returns:
-      leveldb_ldb_footer: file footer.
-
-    Raises:
-      ParseError: if the file footer cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('leveldb_ldb_footer')
-    file_offset = self._file_size - 48
-
-    file_footer, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file footer')
-
-    file_footer.metaindex_block_offset, data_offset = (
-        _ReadVariableSizeInteger(file_footer.data))
-
-    file_footer.metaindex_block_size, bytes_read = (
-        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
-    data_offset += bytes_read
-
-    file_footer.index_block_offset, bytes_read = (
-        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
-    data_offset += bytes_read
-
-    file_footer.index_block_size, bytes_read = (
-        _ReadVariableSizeInteger(file_footer.data[data_offset:]))
-    data_offset += bytes_read
-
-    if self._debug:
-      file_footer.padding = file_footer.data[data_offset:]
-
-      debug_info = self._DEBUG_INFORMATION.get('leveldb_ldb_footer', None)
-      self._DebugPrintStructureObject(file_footer, debug_info)
-
-    return file_footer
-
-  def _ReadIndexBlock(self, file_object, file_footer):
-    """Reads an index block.
-
-    Args:
-      file_object (file): file-like object.
-      file_footer (leveldb_ldb_footer): file footer.
-
-    Raises:
-      ParseError: if the index block cannot be read.
-    """
-    data = self._ReadData(
-        file_object, file_footer.index_block_offset,
-        file_footer.index_block_size, 'index block')
-
-    if self._debug:
-      self._DebugPrintData('Index block data', data)
-
-    data_offset = 0
-
-    unknown1, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
-    data_offset += bytes_read
-
-    unknown2, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
-    data_offset += bytes_read
-
-    unknown3, bytes_read = _ReadVariableSizeInteger(data[data_offset:])
-    data_offset += bytes_read
-
-    if self._debug:
-      value_string, _ = self._FormatIntegerAsHexadecimal8(unknown1)
-      self._DebugPrintValue('Unknown1', value_string)
-
-      value_string, _ = self._FormatIntegerAsHexadecimal8(unknown2)
-      self._DebugPrintValue('Unknown2', value_string)
-
-      value_string, _ = self._FormatIntegerAsHexadecimal8(unknown3)
-      self._DebugPrintValue('Unknown3', value_string)
-
   def _ReadMetaindexBlock(self, file_object, file_footer):
     """Reads a metaindex block.
 
     Args:
       file_object (file): file-like object.
-      file_footer (leveldb_ldb_footer): file footer.
+      file_footer (leveldb_table_footer): file footer.
 
     Raises:
       ParseError: if the metaindex block cannot be read.

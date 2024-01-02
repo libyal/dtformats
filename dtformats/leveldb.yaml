@@ -40,6 +40,19 @@ attributes:
   size: 8
   units: bytes
 ---
+name: uint32le
+type: integer
+attributes:
+  byte_order: little-endian
+  format: unsigned
+  size: 4
+  units: bytes
+---
+name: array_of_uint32le
+type: sequence
+element_data_type: uint32le
+number_of_elements: number_of_elements
+---
 name: leveldb_log_block
 type: structure
 attributes:
@@ -63,7 +76,17 @@ attributes:
 members:
 - name: sequence_number
   data_type: uint64
-- name: count
+- name: number_of_values
+  data_type: uint32
+---
+name: leveldb_table_block_trailer
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: compression_type
+  data_type: uint8
+- name: checksum
   data_type: uint32
 ---
 name: leveldb_table_footer
