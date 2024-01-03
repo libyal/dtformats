@@ -38,18 +38,24 @@ class LevelDBDatabaseTableEntry(object):
 
   Attributes:
     key (bytes): key.
+    sequence_number (int): sequence number.
     value (bytes): value.
+    value_type (int): value type.
   """
 
-  def __init__(self, key, value):
+  def __init__(self, key, sequence_number, value_type, value):
     """Initializes a LevelDB table entry.
 
     Args:
       key (bytes): key.
+      sequence_number (int): sequence number.
+      value_type (int): value type.
       value (bytes): value.
     """
     super(LevelDBDatabaseTableEntry, self).__init__()
     self.key = key
+    self.sequence_number = sequence_number
+    self.value_type = value_type
     self.value = value
 
 
@@ -75,18 +81,6 @@ class LevelDBDatabaseFile(data_format.BinaryDataFile):
   _VALUE_TYPES = {
       0: 'kTypeDeletion',
       1: 'kTypeValue'}
-
-  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
-    """Initializes a LevelDB file.
-
-    Args:
-      debug (Optional[bool]): True if debug information should be written.
-      file_system_helper (Optional[FileSystemHelper]): file system helper.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super(LevelDBDatabaseFile, self).__init__(
-        debug=debug, file_system_helper=file_system_helper,
-        output_writer=output_writer)
 
   def _ReadVariableSizeInteger(self, data):
     """Reads a variable size integer.
@@ -433,28 +427,28 @@ class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
 class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
   """LevelDB database sorted tables (.ldb) file."""
 
-  def _DebugPrintKeyPrefix(self, key_prefix):
-    """Prints key prefix information.
+  def __init__(self, debug=False, file_system_helper=None, output_writer=None):
+    """Initializes a LevelDB file.
 
     Args:
-      key_prefix (tuple[int, int, int]): key prefix.
+      debug (Optional[bool]): True if debug information should be written.
+      file_system_helper (Optional[FileSystemHelper]): file system helper.
+      output_writer (Optional[OutputWriter]): output writer.
     """
-    value_string, _ = self._FormatIntegerAsDecimal(key_prefix[0])
-    self._DebugPrintValue('Database identifier', value_string)
+    super(LevelDBDatabaseTableFile, self).__init__(
+        debug=debug, file_system_helper=file_system_helper,
+        output_writer=output_writer)
+    self._index_block_offset = None
+    self._index_block_size = None
 
-    value_string, _ = self._FormatIntegerAsDecimal(key_prefix[1])
-    self._DebugPrintValue('Object store identifier', value_string)
-
-    value_string, _ = self._FormatIntegerAsDecimal(key_prefix[2])
-    self._DebugPrintValue('Index identifier', value_string)
-
-  def _ReadBlock(self, file_object, file_offset, block_data_size):
+  def _ReadBlock(self, file_object, file_offset, block_data_size, description):
     """Reads a block.
 
     Args:
       file_object (file): file-like object.
       file_offset (int): offset of the block relative to the start of the file.
       block_data_size (int): size of the block data.
+      description (str): description of the table.
 
     Returns:
       bytes: block data.
@@ -466,7 +460,7 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
         file_object, file_offset, block_data_size, 'block data')
 
     if self._debug:
-      self._DebugPrintData('Block data', block_data)
+      self._DebugPrintData(f'{description:s} block data', block_data)
 
     data_type_map = self._GetDataTypeMap('leveldb_table_block_trailer')
     file_offset += block_data_size
@@ -531,13 +525,16 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
          the start of the file.
       block_data_size (int): size of the block data.
 
+    Yields:
+      LevelDBDatabaseTableEntry: table entry.
+
     Raises:
       ParseError: if the index cannot be read.
     """
-    # pylint: disable=unused-variable
-
     table_entries = list(self._ReadTable(
         file_object, file_offset, block_data_size, 'Data'))
+
+    yield from table_entries
 
   def _ReadFileFooter(self, file_object):
     """Reads the file footer.
@@ -567,8 +564,8 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
         file_footer.data[data_offset:], 'Index')
     data_offset += bytes_read
 
-    file_footer.index_block_offset = block_handle.offset
-    file_footer.index_block_size = block_handle.size
+    self._index_block_offset = block_handle.offset
+    self._index_block_size = block_handle.size
 
     if self._debug:
       file_footer.padding = file_footer.data[data_offset:]
@@ -587,16 +584,20 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
          relative to the start of the file.
       block_data_size (int): size of the block data.
 
+    Yields:
+      LevelDBDatabaseTableEntry: table entry.
+
     Raises:
       ParseError: if the index cannot be read.
     """
-    table_entries = list(self._ReadTable(
+    index_table_entries = list(self._ReadTable(
         file_object, file_offset, block_data_size, 'Index'))
 
-    for table_entry in table_entries:
+    for table_entry in index_table_entries:
       block_handle, _ = self._ReadBlockHandle(table_entry.value, 'Data')
 
-      self._ReadDataBlock(file_object, block_handle.offset, block_handle.size)
+      yield from self._ReadDataBlock(
+          file_object, block_handle.offset, block_handle.size)
 
   def _ReadMetaindexBlock(self, file_object, file_footer):
     """Reads a metaindex block.
@@ -631,7 +632,8 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
     Raises:
       ParseError: if the table cannot be read.
     """
-    table_data = self._ReadBlock(file_object, file_offset, block_data_size)
+    table_data = self._ReadBlock(
+        file_object, file_offset, block_data_size, description)
     table_data_size = len(table_data)
 
     if self._debug:
@@ -729,16 +731,19 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
            key_data[-8:], key_data_end_offset - 8, data_type_map,
            'internal key suffix')
 
-      if self._debug:
-        self._DebugPrintValue('Key', key_data[:-8])
+      key_data = key_data[:-8]
+      value_type = internal_key_suffix & 0xff
+      sequence_number = internal_key_suffix >> 8
 
-        value_type = internal_key_suffix & 0xff
+      if self._debug:
+        self._DebugPrintValue('Key', key_data)
+
         value_type_string = self._VALUE_TYPES.get(value_type, 'UNKNOWN')
         value_string, _ = self._FormatIntegerAsDecimal(value_type)
         self._DebugPrintValue(
             'Value type', f'{value_string:s} ({value_type_string:s})')
 
-        value_string, _ = self._FormatIntegerAsDecimal(internal_key_suffix >> 8)
+        value_string, _ = self._FormatIntegerAsDecimal(sequence_number)
         self._DebugPrintValue('Sequence number', value_string)
 
       data_offset = key_data_end_offset
@@ -751,7 +756,8 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
 
       data_offset = value_data_end_offset
 
-      yield LevelDBDatabaseTableEntry(key_data, value_data)
+      yield LevelDBDatabaseTableEntry(
+          key_data, sequence_number, value_type, value_data)
 
       entry_index += 1
 
@@ -767,6 +773,15 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
     file_footer = self._ReadFileFooter(file_object)
 
     self._ReadMetaindexBlock(file_object, file_footer)
-    self._ReadIndexBlock(
-        file_object, file_footer.index_block_offset,
-        file_footer.index_block_size)
+
+  def ReadTableEntries(self):
+    """Reads the table entries.
+
+    Yields:
+      LevelDBDatabaseTableEntry: table entry.
+
+    Raises:
+      ParseError: if the table entries cannot be read.
+    """
+    yield from self._ReadIndexBlock(
+        self._file_object, self._index_block_offset, self._index_block_size)

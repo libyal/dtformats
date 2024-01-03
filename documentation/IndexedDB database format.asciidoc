@@ -1,4 +1,4 @@
-= LevelDB database format
+= IndexedDB database format
 
 :toc:
 :toclevels: 4
@@ -10,15 +10,16 @@
 [preface]
 == Document information
 
-The LevelDB database format is used to store various kinds of application-level
-information such as the Google Chrome local storage.
+IndexedDB is an application level interface built on top of LevelDB and is used
+to store various kinds of application-level information such as the Google Chrome
+web storage.
 
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | This document contains information about the LevelDB database format
+| Abstract: | This document contains information about the IndexedDB database format
 | Classification: | Public
-| Keywords: | LevelDB
+| Keywords: | IndexedDB
 |===
 
 [preface]
@@ -45,430 +46,53 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
-The LevelDB database format is used to store various kinds of application-level
-information such as the Google Chrome local storage.
+IndexedDB is an application level interface built on top of LevelDB and is used
+to store various kinds of application-level information such as the Google Chrome
+web storage.
 
-A LevelDB database consists of a directory that contains the following files:
+=== Key prefix
 
-* `[0-9]{6}.ldb` (sorted tables file)
-* `[0-9]{6}.log` (write ahead log file)
-* CURRENT (contains the name of the current MANIFEST file)
-* LOCK
-* LOG, LOG.old (log with informational messages)
-* MANIFEST-000001 (information about the sorted tables that make up the database)
+Each key is prefixed with:
 
-==== [[varint64]]Variable-size integer
+* database identifier (database ID)
+* object store identifier
+* index identifier
 
-The variable-size integer (varint64) allows encoding an unsigned 64-bit integer
-using 1 upto 10 bytes, where small integer values use fewer bytes.
-
-The MSB of each byte in the variable-size integer is a continuation bit, that
-indicates if the next byte it is part of the integer.
-
-For example:
-
-* integer value 1 is stored as the bytes "01"
-* integer value 150 is stored as the bytes "96 01"
-
-== Current file
-
-....
-00000000  4d 41 4e 49 46 45 53 54  2d 30 30 30 30 30 31 0a  |MANIFEST-000001.|
-....
-
-== Descriptor file
-
-The desriptor file is a <<log_file,write ahead log file>> that consist of:
-
-* one or more descriptor records
-
-=== Descriptor record
-
-A descriptor (VersionEdit) record consists of:
-
-* One or more descriptor values
-
-=== Descriptor value
-
-A descriptor value consists of:
-
-* A <<descriptor_value_tags,value tag>>
-* Value data
-
-==== [[descriptor_value_tags]]Descriptor value tags
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 1 | kComparator | Comparator +
-See: <<descriptor_comparator_value,comparator value>>
-| 2 | kLogNumber | Log number +
-See: <<descriptor_log_number_value,log number value>>
-| 3 | kNextFileNumber | Next file number +
-See: <<descriptor_next_file_number_value,next file number value>>
-| 4 | kLastSequence | Last sequence number +
-See: <<descriptor_last_sequence_number_value,last sequence number value>>
-| 5 | kCompactPointer | Compact pointer +
-See: <<descriptor_compact_pointer_value,compact pointer value>>
-| 6 | kDeletedFile | Deleted file +
-See: <<descriptor_deleted_file_value,deleted file value>>
-| 7 | kNewFile | New file +
-See: <<descriptor_new_file_value,new file value>>
-| 8 | | [yellow-background]*Unknown (was used for large value references)*
-| 9 | kPrevLogNumber | Previous log number +
-See: <<descriptor_previous_log_number_value,previous log number value>>
-|===
-
-==== [[descriptor_comparator_value]]Comparator value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 1 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Name string size
-| ... | ... | | Name string +
-Contains an UTF-8 encoded string without end-of-string character
-|===
-
-==== [[descriptor_log_number_value]]Log number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 2 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Log number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[descriptor_next_file_number_value]]Next file number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 3 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Next file number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[descriptor_last_sequence_number_value]]Last sequence number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 4 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Last sequence number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[descriptor_compact_pointer_value]]Compact pointer value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 5 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Level +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Key +
-Contains a <<log_slice_value,slice value>>
-|===
-
-==== [[descriptor_deleted_file_value]]Deleted file value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 6 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Level +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Number of files +
-Contains a <<varint64,variable-size integer>>
-|===
-
-==== [[descriptor_new_file_value]]New file value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 7 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Level +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Number of files +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | File size +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Smallest record key +
-Contains a <<log_slice_value,slice value>>
-| ... | ... | | Largest record key +
-Contains a <<log_slice_value,slice value>>
-|===
-
-==== [[descriptor_previous_log_number_value]]Previous log number value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 9 | Value tag +
-Contains a <<varint64,variable-size integer>> +
-See: <<descriptor_value_tags,value tags>>
-| 1 | ... | | Previous log number +
-Contains a <<varint64,variable-size integer>>
-|===
-
-== [[log_file]]Write ahead log file (.log)
-
-A write ahead log file consists of:
-
-* one or more 32k pages
-** one or more log blocks
-
-[cols="1,5",options="header"]
-|===
-| Characteristics | Description
-| Byte order | little-endian
-| Date and time values |
-| Character strings |
-|===
-
-=== Log block
-
-A log block is of variable size and consists of:
+The key prefix (KeyPrefix) is of variable size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | Checksum +
-Contains a CRC-32
-| 4 | 2 | | Record data size
-| 5 | 1 | | Record type +
-See: <<log_record_types,log record types>>
-| 6 | record data size | | Record data
+| 0.0 | 2 bits | | Size of the index identifier +
+Where size is stored as size - 1, hence 0 represents 1 byte
+| 0.2 | 3 bits | | Size of the object store identifier +
+Where size is stored as size - 1, hence 0 represents 1 byte
+| 0.3 | 3 bits | | Size of the database identifier +
+Where size is stored as size - 1, hence 0 represents 1 byte
+| 1.0 | ... | | Database identifier +
+Contains a litte-endian integer
+| ... | ... | | Object store identifier +
+Contains a litte-endian integer
+| ... | ... | | Index identifier +
+Contains a litte-endian integer
 |===
 
-==== [[log_record_types]]Log record types
+=== Global metadata keys
 
-[cols="1,1,5",options="header"]
+Global metadata keys have the prefix: 0, 0, 0 and are followed by a byte value
+that contains the metadata type.
+
+[cols="1,1,1,3",options="header"]
 |===
-| Value | Identifier | Description
-| 1 | FULL | Full record
-| 2 | FIRST | First segment of record data
-| 3 | MIDDLE | Intermediate segment of record data
-| 4 | LAST | Last segment of record data
-|===
-
-=== Log record
-
-A log (WriteBatch) record consists of:
-
-* value header
-* one or more values
-
-==== Log value header
-
-A log header value is 12 byte in size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 8 | | Sequence number
-| 8 | 4 | | Number of values
-|===
-
-==== [[log_value_types]]Log value types
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0 | kTypeDeletion | Deletion +
-See: <<log_deletion_value,deletion value>>
-| 1 | kTypeValue | Put +
-See: <<log_put_value,put value>>
-|===
-
-==== [[log_slice_value]]Slice value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | ... | | Data size
-| ... | ... | | Data
-|===
-
-==== [[log_deletion_value]]Deletion value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 0 | Value type +
-See: <<log_value_types,log value types>>
-| 1 | ... | | Key +
-Contains a <<log_slice_value,slice value>>
-|===
-
-==== [[log_put_value]]Put value
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | 1 | 1 | Value type +
-See: <<log_value_types,log value types>>
-| 1 | ... | | Key +
-Contains a <<log_slice_value,slice value>>
-| ... | ... | | Value +
-Contains a <<log_slice_value,slice value>>
-|===
-
-== Sorted tables file (.ldb)
-
-A sorted tables file consists of:
-
-* one or more data blocks
-* one or more metadata blocks
-* metaindex block
-* index block
-* footer
-
-[cols="1,5",options="header"]
-|===
-| Characteristics | Description
-| Byte order |
-| Date and time values |
-| Character strings |
-|===
-
-=== [[table_block_handle]]Table block handle
-
-A table block handle is of variable size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | ... | | Block offset +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Block size +
-Contains a <<varint64,variable-size integer>>
-|===
-
-[NOTE]
-The block size does not include the size of the table block trailer.
-
-=== [[table_block]]Table block
-
-A table block consists of:
-
-* block data
-* table block trailer
-
-==== Table block trailer
-
-A table block trailer is 5 bytes in size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 1 | | Compression type +
-See: <<table_compression_types,compression types>>
-| 1 | 4 | | Checksum +
-Contains a CRC-32
-|===
-
-==== [[table_compression_types]]Compression types
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0 | kNoCompression | Uncompressed data
-| 1 | kSnappyCompression | Snappy compressed data
-| 2 | kZstdCompression | zstd compressed data
-|===
-
-=== Table contents
-
-The table contents consists of:
-
-* table entries
-* array of 32-bit restart values
-* 32-bit number of restart values
-
-[yellow-background]*TODO: describe role of restart values*
-
-==== Table entry
-
-A table entry is of variable size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | ... | | Shared key data size +
-Contains a <<varint64,variable-size integer>> of the size of key data borrowed from the full key of the previous entry
-| ... | ... | | Non-shared key data size +
-Contains a <<varint64,variable-size integer>> of the size of entry specific key data
-| ... | ... | | Value data size +
-Contains a <<varint64,variable-size integer>>
-| ... | ... | | Non-shared key data
-| ... | ... | | Value data
-|===
-
-[NOTE]
-The shared and non-shared key data must be combined to make the full key.
-
-==== Table key
-
-A table key is of variable size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| 0 | ... | | Application specific key data
-4+| _Internal key suffix_
-| ... | 1 | | Value type
-| ... | 7 | | Sequence number
-|===
-
-=== Data block
-
-A data block consists of a <<table_block,table block>> where its table entry
-values contain application specific data.
-
-=== Metadata block
-
-A metadata block contains information about the data blocks.
-
-[yellow-background]*TODO: complete section*
-
-=== Metaindex block
-
-A metaindex block contains keyed references to metadata blocks.
-
-[yellow-background]*TODO: complete section*
-
-....
-x00000000  00 00 00 00 01 00 00 00                           ........
-....
-
-....
-0x00000000  00 22 04 66 69 6c 74 65  72 2e 6c 65 76 65 6c 64  .".filter.leveld
-0x00000010  62 2e 42 75 69 6c 74 69  6e 42 6c 6f 6f 6d 46 69  b.BuiltinBloomFi
-0x00000020  6c 74 65 72 32 8e 44 fe  01 00 00 00 00 01 00 00  lter2.D.........
-0x00000030  00
-....
-
-=== Index block
-
-The index block consists of a <<table_block,table block>> where its table entry
-values contain a <<table_block_handle,block handle>> of data blocks.
-
-=== Footer
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | ... | | Metaindex block handle +
-See section: <<table_block_handle,block handle>>
-| ... | ... | | Index block handle +
-See section: <<table_block_handle,block handle>>
-| ... | ... | 0 | Padding +
-The size of the padding is 40 bytes - size of the metaindex and index block handles
-| 40 | 8 | "\x57\xfb\x80\x8b\x24\x75\x47\xdb" | Signature
+| Metadata type | Value type | Identifier | Description
+| 0 | Int | SchemaVersionKey | Backing store schema version
+| 1 | Int | MaxDatabaseIdKey | Maximum allocated database
+| 2 | Int | DataVersionKey | Data format version
+| 3 | Int | RecoveryBlobJournalKey | Recovery BLOB journal
+| 4 | Int | ActiveBlobJournalKey | Active BLOB journal
+| 5 | Int | EarliestSweepKey | Earliest sweep time in microseconds
+| 100, database ID (VarInt) | DatabaseFreeListKey | Database is in the free list (no longer used)
+| 201, origin (StringWithLength), database name (StringWithLength) | Int | DatabaseNameKey | Database identifier
 |===
 
 :numbered!:
@@ -477,26 +101,8 @@ The size of the padding is 40 bytes - size of the metaindex and index block hand
 
 [cols="1,5",options="header"]
 |===
-| Title: | Protocol Buffers Documentation - Encoding - Base 128 Varints
-| URL: | https://protobuf.dev/programming-guides/encoding/#varints
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | LevelDB - Files
-| URL: | https://github.com/google/leveldb/blob/main/doc/impl.md
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | LevelDB - leveldb File format
-| URL: | https://github.com/google/leveldb/blob/main/doc/table_format.md
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | LevelDB - leveldb Log format
-| URL: | https://github.com/google/leveldb/blob/main/doc/log_format.md
+| Title: | Chromium - LevelDB Coding Scheme
+| URL: | https://github.com/chromium/chromium/blob/master/content/browser/indexed_db/docs/leveldb_coding_scheme.md
 |===
 
 [appendix]

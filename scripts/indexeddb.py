@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script to parse LevelDB database files."""
+"""Script to parse IndexedDB database files."""
 
 import argparse
 import logging
-import os
 import sys
 
 from dtformats import file_system
-from dtformats import leveldb
+from dtformats import indexeddb
 from dtformats import output_writers
 
 try:
@@ -24,7 +23,7 @@ def Main():
     bool: True if successful or False if not.
   """
   argument_parser = argparse.ArgumentParser(description=(
-      'Extracts information from LevelDB database files.'))
+      'Extracts information from IndexedDB database files.'))
 
   argument_parser.add_argument(
       '-d', '--debug', dest='debug', action='store_true', default=False,
@@ -35,7 +34,7 @@ def Main():
 
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='PATH',
-      default=None, help='path of the LevelDB database file.')
+      default=None, help='path of the IndexedDB database file.')
 
   options = argument_parser.parse_args()
 
@@ -68,53 +67,30 @@ def Main():
     print('')
     return False
 
-  file_object = file_system_helper.OpenFileByPath(options.source)
-  if not file_object:
-    print('Unable to open source file.')
-    print('')
-    return False
+  indexeddb_file = indexeddb.IndexedDBDatabaseTableFile(
+      debug=options.debug, output_writer=output_writer)
 
-  try:
-    file_object.seek(-8, os.SEEK_END)
-    file_signature = file_object.read(8)
-  finally:
-    file_object.close()
+  indexeddb_file.Open(options.source)
 
-  path_segments = file_system_helper.SplitPath(options.source)
+  print('IndexedDB database file information:')
 
-  if file_signature == b'\x57\xfb\x80\x8b\x24\x75\x47\xdb':
-    leveldb_file = leveldb.LevelDBDatabaseTableFile(
-        debug=options.debug, output_writer=output_writer)
+  for table_entry in indexeddb_file.ReadEntries():
+    if table_entry.value_type == 0:
+      value_type_string = 'del'
+    elif table_entry.value_type == 1:
+      value_type_string = 'val'
 
-  elif path_segments[-1].startswith('MANIFEST'):
-    leveldb_file = leveldb.LevelDBDatabaseDescriptorFile(
-        debug=options.debug, output_writer=output_writer)
+    key = ', '.join(table_entry.key_segments)
 
-  else:
-    leveldb_file = leveldb.LevelDBDatabaseLogFile(
-        debug=options.debug, output_writer=output_writer)
+    # Print value without leading b
+    value = repr(table_entry.value)[1:]
 
-  leveldb_file.Open(options.source)
-
-  print('LevelDB database file information:')
-
-  if file_signature == b'\x57\xfb\x80\x8b\x24\x75\x47\xdb':
-    for table_entry in leveldb_file.ReadTableEntries():
-      if table_entry.value_type == 0:
-        value_type_string = 'del'
-      elif table_entry.value_type == 1:
-        value_type_string = 'val'
-
-      # Print key and value without leading b
-      key = repr(table_entry.key)[1:]
-      value = repr(table_entry.value)[1:]
-
-      print((f'{key:s} @ {table_entry.sequence_number:d} : '
-             f'{value_type_string:s} => {value:s}'))
+    print((f'<<{key:s}>> @ {table_entry.sequence_number:d} : '
+           f'{value_type_string:s} => {value:s}'))
 
   print('')
 
-  leveldb_file.Close()
+  indexeddb_file.Close()
 
   output_writer.Close()
 
