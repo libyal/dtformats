@@ -29,7 +29,7 @@ clear-cache-post-run=no
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code.
-extension-pkg-allow-list=pyfwsi,pylnk,pyolecf,pyregf,zstd
+extension-pkg-allow-list=pyfwps,pyfwsi,pygzipf,pylnk,pyolecf,pyregf,zstd
 
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
