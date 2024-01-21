@@ -346,19 +346,19 @@ class LevelDBDatabaseDescriptorFile(LevelDBDatabaseLogFile):
             data[data_offset:], 'Level')
         data_offset += bytes_read
 
-        number_of_files, bytes_read = self._ReadRecordValueInteger(
-            data[data_offset:], 'Number of files')
+        file_number, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'File number')
 
       elif value_tag == 7:
         level, bytes_read = self._ReadRecordValueInteger(
             data[data_offset:], 'Level')
         data_offset += bytes_read
 
-        number_of_files, bytes_read = self._ReadRecordValueInteger(
-            data[data_offset:], 'Number of files')
+        file_number, bytes_read = self._ReadRecordValueInteger(
+            data[data_offset:], 'File number')
         data_offset += bytes_read
 
-        number_of_files, bytes_read = self._ReadRecordValueInteger(
+        file_size, bytes_read = self._ReadRecordValueInteger(
             data[data_offset:], 'File size')
         data_offset += bytes_read
 

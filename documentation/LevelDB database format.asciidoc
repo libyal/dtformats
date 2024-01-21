@@ -55,7 +55,68 @@ A LevelDB database consists of a directory that contains the following files:
 * CURRENT (contains the name of the current MANIFEST file)
 * LOCK
 * LOG, LOG.old (log with informational messages)
-* MANIFEST-000001 (information about the sorted tables that make up the database)
+* `MANIFEST-[0-9]{6}` (information about the sorted tables that make up the database)
+
+To reconstruct a LevelDB database:
+
+* use the current file (CURRENT) to the determine the descriptor file.
+* use the descriptor file (MANIFEST) to determine the write ahead log and sorted tables files.
+
+LevelDB stores data in a sequence of levels. First key and value pairs are
+stored in a write ahead log file. When a write ahead log file reaches a certain
+threshold a sorted tables file generated that is level 1. When the threshold
+or number of level 1 files is reached they are merged into level 2 sorted
+tables file, etc.
+
+Level 0 (young-level) may contain overlapping keys. Deletion markers are kept
+around to hide obsolete values present in higher (older) levels.
+
+The keys in the write ahead log and sorted tables files are sorted using the
+comparator. The default comparator is the leveldb.BytewiseComparator that sorts
+keys based on their byte values, where "key10" is smaller than "key9".
+
+A write ahead log or sorted tables file can contain deletion markers, for
+example:
+
+....
+--- offset 525; sequence 261304
+  put 'key87101' 'value87101'
+--- offset 565; sequence 261305
+  del 'key87101'
+--- offset 594; sequence 261306
+  put 'key87101' 'new value87101'
+....
+
+or
+
+....
+'key10004' @ 30015 : val => 'new value10004'
+'key10004' @ 30014 : del => ''
+'key10004' @ 30013 : val => 'value10004'
+....
+
+Where in the last example the key "key10004" was first created with value
+"value10004", next the key was deleted, after which the key was recreated with
+value "new value10004". Here the sequence number 30015 indicates the most
+recent operation.
+
+To resolve a key:
+
+* First check the write ahead log file
+* Next check the sorted tables files in order of their level, from 0 to higher.
+
+For example a sorted tables file "000005.ldb" with level 2 can contain:
+
+....
+'key44912' @ 89825 : val => 'value44912'
+....
+
+Where this key could have been deleted in a more recent level 1 sorted tables
+file "000007.ldb":
+
+....
+'key44912' @ 89826 : del => ''
+....
 
 ==== [[varint64]]Variable-size integer
 
@@ -72,9 +133,8 @@ For example:
 
 == Current file
 
-....
-00000000  4d 41 4e 49 46 45 53 54  2d 30 30 30 30 30 31 0a  |MANIFEST-000001.|
-....
+The current file refers to the active descriptor file, for example
+"MANIFEST-000001".
 
 == Descriptor file
 
@@ -186,8 +246,8 @@ Contains a <<varint64,variable-size integer>> +
 See: <<descriptor_value_tags,value tags>>
 | 1 | ... | | Level +
 Contains a <<varint64,variable-size integer>>
-| ... | ... | | Number of files +
-Contains a <<varint64,variable-size integer>>
+| ... | ... | | File number +
+Contains a <<varint64,variable-size integer>> that represent the number of the corresponding sorted tables file
 |===
 
 ==== [[descriptor_new_file_value]]New file value
@@ -199,8 +259,8 @@ Contains a <<varint64,variable-size integer>> +
 See: <<descriptor_value_tags,value tags>>
 | 1 | ... | | Level +
 Contains a <<varint64,variable-size integer>>
-| ... | ... | | Number of files +
-Contains a <<varint64,variable-size integer>>
+| ... | ... | | File number +
+Contains a <<varint64,variable-size integer>> that represent the number of the corresponding sorted tables file
 | ... | ... | | File size +
 Contains a <<varint64,variable-size integer>>
 | ... | ... | | Smallest record key +
