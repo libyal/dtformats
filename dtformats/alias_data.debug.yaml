@@ -1,0 +1,67 @@
+# dtFormats debug specification.
+---
+data_type_map: alias_data_record_header
+attributes:
+- name: application_information
+  description: "Application information"
+  format: binary_data
+- name: record_size
+  description: "Record size"
+  format: decimal
+- name: format_version
+  description: "Format version"
+  format: decimal
+---
+data_type_map: alias_data_record_v3
+attributes:
+- name: alias_type
+  description: "Alias type"
+  format: decimal
+- name: volume_creation_time
+  description: "Volume creation date and time"
+  format: custom:hfs_time_64bit
+- name: file_system_type
+  description: "File system type"
+  format: binary_data
+- name: disk_type
+  description: "Disk type"
+  format: decimal
+- name: parent_fsid
+  description: "Parent file system identifier"
+  format: decimal
+- name: target_fsid
+  description: "Target file system identifier"
+  format: decimal
+- name: target_creation_time
+  description: "Target creation date and time"
+  format: custom:hfs_time_64bit
+- name: volume_flags
+  description: "Volume flags"
+  format: hexadecimal_4digits
+- name: unknown1
+  description: "Unknown1"
+  format: binary_data
+---
+data_type_map: alias_data_tagged_value
+attributes:
+- name: value_tag
+  description: "Value tag"
+  format: hexadecimal_4digits
+- name: value_data_size
+  description: "Value data size"
+  format: decimal
+- name: value_data
+  description: "Value data"
+  format: binary_data
+- name: integers
+  description: "Integers"
+  format: custom:array_of_decimals
+- name: number_of_characters
+  description: "Number of characters"
+  format: decimal
+- name: string
+  description: "String"
+  format: string
+- name: alignment_padding
+  description: "Alignment padding"
+  format: binary_data

@@ -58,10 +58,10 @@ attributes:
   format: decimal
 - name: eviction_ranks
   description: "Eviction ranks"
-  format: custrom:array_of_decimals
+  format: custom:array_of_decimals
 - name: bucket_usage
   description: "Bucket usage"
-  format: custrom:array_of_decimals
+  format: custom:array_of_decimals
 ---
 data_type_map: firefox_cache1_map_record
 attributes:

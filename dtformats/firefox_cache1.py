@@ -16,7 +16,7 @@ class CacheMapFile(data_format.BinaryDataFile):
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'firefox_cache1.debug.yaml', custom_format_callbacks={
-          'array_of_decimal': '_FormatArrayOfIntegersAsDecimals',
+          'array_of_decimals': '_FormatArrayOfIntegersAsDecimals',
           'cache_location': '_FormatCacheLocation'})
 
   def __init__(self, debug=False, output_writer=None):

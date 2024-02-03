@@ -5,6 +5,7 @@ import abc
 import os
 
 from dfdatetime import filetime as dfdatetime_filetime
+from dfdatetime import hfs_time as dfdatetime_hfs_time
 from dfdatetime import posix_time as dfdatetime_posix_time
 
 from dtfabric import errors as dtfabric_errors
@@ -357,6 +358,25 @@ class BinaryDataFormat(object):
           to indicate there should be no new line after value description.
     """
     return f'0x{integer:08x}', False
+
+  def _FormatIntegerAsHFSTime(self, integer):
+    """Formats an integer as a HFS date and time value.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a HFS date and time value.
+    """
+    if integer == 0:
+      return 'Not set (0)'
+
+    date_time = dfdatetime_hfs_time.HFSTime(timestamp=integer)
+    date_time_string = date_time.CopyToDateTimeString()
+    if not date_time_string:
+      return f'0x{integer:08x}'
+
+    return f'{date_time_string:s} UTC'
 
   def _FormatIntegerAsPosixTime(self, integer):
     """Formats an integer as a POSIX date and time value.

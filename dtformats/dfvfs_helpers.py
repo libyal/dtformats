@@ -233,8 +233,6 @@ def AddDFVFSCLIArguments(argument_parser):
           'as: "1,3..5". The first volume is 1. All volumes can be specified '
           'with: "all".'))
 
-  # TODO: add image path
-
 
 def ParseDFVFSCLIArguments(options):
   """Parses dfVFS command line arguments.

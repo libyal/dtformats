@@ -1,4 +1,4 @@
-= MacOS File System Events Disk Log Stream format
+= Mac OS login item alias data format
 
 :toc:
 :toclevels: 4
@@ -7,28 +7,28 @@
 [abstract]
 == Summary
 
-The MacOS File System Events Disk Log Stream format is used by fseventsd on
-MacOS to store file system events. This specification is based on the
-source code and documentation.
+The Mac OS login item alias data format is used by the 
+com.apple.loginitems.plist file.
 
-This document is intended as a working document for the MacOS File System
-Events Disk Log Stream format specification.
+This document is intended as a working document for the Mac OS login item
+alias data format specification.
 
 [preface]
 == Document information
+
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | MacOS File System Events Disk Log Stream format
+| Abstract: | MacOS Finder Alias and Bookmark file format specification
 | Classification: | Public
-| Keywords: | fseventsd
+| Keywords: | Alias, Bookmark
 |===
 
 [preface]
 == License
 
 ....
-Copyright (C) 2018, Joachim Metz <joachim.metz@gmail.com>.
+Copyright (C) 2024, Joachim Metz <joachim.metz@gmail.com>.
 Permission is granted to copy, distribute and/or modify this document under the
 terms of the GNU Free Documentation License, Version 1.3 or any later version
 published by the Free Software Foundation; with no Invariant Sections, no
@@ -42,129 +42,269 @@ in the section entitled "GNU Free Documentation License".
 [cols="1,1,1,5",options="header"]
 |===
 | Version | Author | Date | Comments
-| 0.0.1 | J.B. Metz | January 2018 | Initial version.
-| 0.0.2 | J.B. Metz | July 2018 | Additional information.
-| 0.0.3 | J.B. Metz | October 2018 | Small changes for asciidoc format.
-| 0.0.4 | J.B. Metz | November 2018 | Updated information about flags.
+| 0.0.1 | J.B. Metz | February 2024 | Initial version.
 |===
 
 :numbered:
 == Overview
 
-An fsevents file System Events Disk Log Stream file is a multi-member GZIP
-file that consists of:
+The Mac OS login item alias data format is used by the 
+com.apple.loginitems.plist file.
 
-* one or more Disk Log Streams
+[NOTE]
+This document used Mac OS to refer to the Macintosh Operating System in general,
+instead of specific versions like Mac OS X or macOS. Mac OS X is used to refer
+to version of Mac OS 10.0 or later.
+
+The alias data is stored in the property of the following keys:
+
+....
+/SessionItems/CustomListItems/CustomItemProperties/Alias
+/SessionItems/CustomListItems/CustomItemProperties/com.apple.loginitem.legacyprefs/AliasData
+....
 
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | little-endian
-| Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string stored with a codepage. +
-Though technically maybe incorrect, this document will use term (extended) ASCII string.
+| Byte order | Big-endian
+| Date and time values | HFS+ date and time
+| Character strings |
 |===
 
-== Disk log stream
+=== Test version
 
-A disk log stream consists of:
+The following version of programs were used to test the information within
+this document:
 
-* a stream header
-* one or more event records
+* Mac OS X 10.7 (Lion)
+* Mac OS X 10.8 (Mountain Lion)
+* Mac OS X 10.9 (Mavericks)
+* macOS 10.12 (Sierra)
 
-=== Stream header
+== Alias data
 
-The stream header is 12 bytes of size and consists of:
+The alias data consists of:
+
+* one or more record
+
+=== Record
+
+A record consists of:
+
+* a <<record_header,record header>>
+* record data
+* optional <<tagged_value,tagged values>>
+
+==== [[record_header]]Record header
+
+The record header is 8 bytes in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | "1SLD" +
-"2SLD" | Signature
-| 4 | 4 | | [yellow-background]*Unknown (padding?)*
-| 8 | 4 | | stream size
+| 0 | 4 | | [yellow-background]*Unknown (creator code / application information)*
+| 4 | 2 | | Record size +
+Contains the size of the record including the size of the header
+| 6 | 2 | | Format version
 |===
 
-[NOTE]
-The signature in little-endian is "DLS1", which presumably represents Disk
-Log(ger) Stream version 1 and version 2 for "DLS2". Format version 1 is used
-in Mac OS X Leopard (10.5) through macOS Sierra (10.12) and format version 2
-in MacOS High Sierra (10.13).
-
-=== Event record version 1
-
-The event record version 1 is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | ... | | Path +
-Contains an extended ASCII string with end-of-string character
-| ... | 8 | | Event identifier
-| ... | 4 | | Event flags +
-See section: <<event_flags,Event flags>>
-|===
-
-=== Record version 2
-
-The event record version 2 is variable of size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | ... | | Path +
-Contains an extended ASCII string with end-of-string character
-| ... | 8 | | Event identifier
-| ... | 4 | | Event flags +
-See section: <<event_flags,Event flags>>
-| ... | 8 | | Node identifier
-|===
-
-=== [[event_flags]]Event flags
-
-[NOTE]
-The include header sys/fsevents.h defines various FSE constants, e.g.
-`#define FSE_CREATE_FILE 0`. The flag values correspond to:
-`FLAG = 1 << CONSTANT`
-
+===== Format versions
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0x00000001 | FSE_CREATE_FILE | Created
-| 0x00000002 | FSE_DELETE | Removed
-| 0x00000004 | FSE_STAT_CHANGED | InodeMetadataModified
-| 0x00000008 | FSE_RENAME | Renamed
-| 0x00000010 | FSE_CONTENT_MODIFIED | Modified
-| 0x00000020 | FSE_EXCHANGE | Exchange
-| 0x00000040 | FSE_FINDER_INFO_CHANGED | FinderInfoModified
-| 0x00000080 | FSE_CREATE_DIR | DirectoryCreated
-| 0x00000100 | FSE_CHOWN | PermissionChanged
-| 0x00000200 | FSE_XATTR_MODIFIED | ExtendedAttributeModified
-| 0x00000400 | FSE_XATTR_REMOVED | ExtendedAttributeRemoved
-| 0x00000800 | FSE_DOCID_CREATED | 
-| 0x00001000 | FSE_DOCID_CHANGED | DocumentRevision
-| 0x00002000 | FSE_UNMOUNT_PENDING | +
-iOS-only: client must respond via FSEVENTS_UNMOUNT_PENDING_ACK
-| 0x00004000 | FSE_CLONE | ItemCloned
+| 2 | | [yellow-background]*Unknown*
+| 3 | | Observed on Mac OS 10.7
+|===
+
+==== [[tagged_value]]Tagged value
+
+The tagged value is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Value tag +
+See section: <<value_tags,Value tags>>
+| 2 | 2 | | Value data size
+| 4 | ... | | Value data
+| ... | ... | | 16-bit alignment padding
+|===
+
+==== [[value_tags]]Value tags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0000 | | [yellow-background]*Unknown (Carbon folder name)* +
+Contains an UTF-8 encoded string without end-of-string character
+| 0x0001 | | [yellow-background]*Unknown (chain of ancestor file system identifier)* +
+Contains an array of file system identifiers, where the first element is the parent of the target, the second the grand parrent, etc.
+| 0x0002 | | [yellow-background]*Unknown (Carbon/HFS path)* +
+Contains an UTF-8 encoded string without end-of-string character
+| 0x0003 | | [yellow-background]*Unknown (AppleShare zone (a string))*
+| 0x0004 | | [yellow-background]*Unknown (AppleShare server name (a string))*
+| 0x0005 | | [yellow-background]*Unknown (AppleShare username (a string))*
+| 0x0006 | | [yellow-background]*Unknown (Driver name)* +
+Contains an UTF-8 encoded string without end-of-string character
 | | |
-| 0x00010000 | FSE_MODE_CLONE | +
-notification is for a clone
-| 0x00020000 | FSE_TRUNCATED_PATH | +
-the path for this item had to be truncated
-| 0x00040000 | FSE_REMOTE_DIR_EVENT | +
-this is a remotely generated directory-level granularity event
-| 0x00080000 | FSE_MODE_LAST_HLINK | LastHardLinkRemoved +
-link count == 0 on a hard-link delete
-| 0x00100000 | FSE_MODE_HLINK | IsHardLink +
-notification is for a hard-link
+| 0x0009 | | [yellow-background]*Unknown (Network mount information)*
+| 0x000a | | [yellow-background]*Unknown (Dial-up connection information)*
 | | |
-| 0x00400000 | | IsSymbolicLink
-| 0x00800000 | | IsFile
-| 0x01000000 | | IsDirectory
-| 0x02000000 | | Mount
-| 0x04000000 | | Unmount
+| 0x000e | | Target file name +
+See section: <<utf16_string_tagged_value_data,UTF-16 string tagged value data>>
+| 0x000f | | Volume name +
+See section: <<utf16_string_tagged_value_data,UTF-16 string tagged value data>>
+| 0x0010 | | [yellow-background]*Unknown (High resolution volume creation date (65536ths of a second since 1904-01-01 00:00:00 UTC))*
+| 0x0011 | | [yellow-background]*Unknown (High resolution creation date (65536ths of a second since 1904-01-01 00:00:00 UTC))*
+| 0x0012 | | (POSIX) target path +
+The path is relative from the mount point +
+Contains an UTF-8 encoded string without end-of-string character
+| 0x0013 | | (POSIX) volume mount point +
+Contains an UTF-8 encoded string without end-of-string character
+| 0x0014 | | [yellow-background]*Unknown (Recursive alias of disk image (an alias record) )*
+| 0x0015 | | [yellow-background]*Unknown (User home length prefix (two-byte integer, says how many directory levels to the user’s home folder))*
 | | |
-| 0x20000000 | | EndOfTransaction
+| 0xfffe | | [yellow-background]*Unknown (None)*
+| 0xffff | | Terminator +
+Indicates the end of the tagged values +
+Contains a value data size of 0
+|===
+
+==== [[utf16_string_tagged_value_data]]UTF-16 string tagged value data
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 2 | | Number of characters
+| 2 | ... | | String data +
+Contains an UTF-16 big-endian encoded string without end-of-string character
+|===
+
+=== Alias data version 2 record
+
+The alias data version 2 record is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Record header_
+| 0 | 4 | 0 | [yellow-background]*Unknown (creator code / application information)*
+| 4 | 2 | | Record size +
+Contains the size of the record including the size of the header
+| 6 | 2 | 2 | Format version
+4+| _Record data_
+| 8 | 2 | | Alias type +
+See section: <<alias_type,Alias types>>
+| 10 | 28 | | Volume name string, where the first byte contains the size of the string
+| 38 | 4 | | Volume creation date +
+Contains a HFS+ date and time in seconds
+| 42 | 2 | | File system type +
+See section: <<file_system_type_v2,File system type - version 2>>
+| 44 | 2 | | Disk type +
+See section: <<disk_types,Disk types>>
+| 46 | 4 | | File system identifier of the parent (directory) +
+Contains -1 (0xffffffff) if not set.
+| 50 | 64 | | Target name string, where the first byte contains the size of the string
+| 114 | 4 | | File system identifier of the target +
+Contains -1 (0xffffffff) if not set.
+| 118 | 4 | | Target creation date +
+Contains a HFS+ date and time in seconds
+| 122 | 4 | | [yellow-background]*Unknown (target creator code)*
+| 126 | 4 | | [yellow-background]*Unknown (target type code)*
+| 130 | 2 | | [yellow-background]*Unknown (Number of directory levels from alias to root (or -1))*
+| 132 | 2 | | [yellow-background]*Unknown (Number of directory levels from root to target (or -1))*
+| 134 | 4 | | [yellow-background]*Unknown (volume attributes/flags)*
+| 138 | 2 | | [yellow-background]*Unknown (volume file system type)*
+| 140 | 10 | | [yellow-background]*Unknown*
+|===
+
+==== [[file_system_type_v2]]File system type - version 2
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "H+" | | HFS+
+| "HX" | | HFSX
+|===
+
+=== Alias data version 3 record
+
+The alias data version 3 record is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+4+| _Record header_
+| 0 | 4 | 0 | [yellow-background]*Unknown (creator code / application information)*
+| 4 | 2 | | Record size +
+Contains the size of the record including the size of the header
+| 6 | 2 | 3 | Format version
+4+| _Record data_
+| 8 | 2 | | Alias type +
+See section: <<alias_type,Alias types>>
+| 10 | 8 | | High resolution volume creation date +
+Contains a HFS+ date and time in 65536ths of a second
+| 18 | 4 | | File system type +
+See section: <<file_system_type_v3,File system type - version 3>>
+| 22 | 2 | | Disk type +
+See section: <<disk_types,Disk types>>
+| 24 | 4 | | File system identifier of the parent (directory)
+| 28 | 4 | | File system identifier of the target
+| 32 | 8 | | High resolution target creation date +
+Contains a HFS+ date and time in 65536ths of a second
+| 40 | 4 | | [yellow-background]*Unknown (volume attributes/flags)*
+| 44 | 14 | | [yellow-background]*Unknown*
+|===
+
+==== [[file_system_type_v3]]File system type - version 3
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| "BDcu" | | UDF
+| "BDIS" | | FAT32
+| "BDxF" | | exFAT
+| "H+\x00\x00" | HFS+
+| "HX\x00\x00" | HFSX
+| "KG\x00\x00" | FTP
+| "NTcu" | | NTFS
+|===
+
+=== [[alias_types]]Alias types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | File
+| 1 | | Directory (or folder)
+|===
+
+=== [[disk_types]]Disk types
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0 | | Fixed disk
+| 1 | | Network drive
+| 2 | | 400Kb floppy disk
+| 3 | | 800Kb floppy disk
+| 4 | | 1.44MB floppy disk
+| 5 | | [yellow-background]*Unknown (removable / ejectable drive)*
+|===
+
+=== [[volume_flags]]Volume flage
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0002 | | Is removable (ejectable)
+| | |
+| 0x0020 | | Is boot volume
+| | |
+| 0x0080 | | Is auto-mounted
+| | |
+| 0x0100 | | Has persistent file system identifiers
 |===
 
 :numbered!:
@@ -173,26 +313,8 @@ notification is for a hard-link
 
 [cols="1,5",options="header"]
 |===
-| Title: | Using the File System Events API
-| URL: | https://developer.apple.com/library/content/documentation/Darwin/Conceptual/FSEvents_ProgGuide/UsingtheFSEventsFramework/UsingtheFSEventsFramework.html
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | FSEventStreamEventFlags
-| URL: | https://developer.apple.com/documentation/coreservices/1455361-fseventstreameventflags
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | The Darwin Kernel (mirror)
-| URL: | https://github.com/apple/darwin-xnu/blob/master/bsd/sys/fsevents.h
-|===
-
-[cols="1,5",options="header"]
-|===
-| Title: | FSEvents.h
-| URL: | file:///System/Library/Frameworks//CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Headers/FSEvents.h
+| Title: | Mac Alias Format
+| URL: | https://mac-alias.readthedocs.io/en/latest/alias_fmt.html
 |===
 
 [appendix]
