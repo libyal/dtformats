@@ -118,7 +118,11 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
   @property
   def tables(self):
-    """list[KeychainDatabaseTable]: tables."""
+    """Retrieves the tables.
+
+    Returns:
+      list[KeychainDatabaseTable]: tables.
+    """
     return self._tables.values()
 
   def _FormatRecordOffsets(self, array_of_integers):

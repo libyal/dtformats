@@ -24,5 +24,7 @@ dtformats (${VERSION}-1) unstable; urgency=low
  -- Joachim Metz <joachim.metz@gmail.com>  ${DPKG_DATE}
 EOT
 
+tox -edocformatter
+
 exit ${EXIT_SUCCESS};
 

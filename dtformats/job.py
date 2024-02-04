@@ -65,7 +65,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     self._task_configuration = WindowsTaskConfiguration()
 
   def _FormatDataStream(self, data_stream):
-    """Formats a data stream structure
+    """Formats a data stream structure.
 
     Args:
       data_stream (job_reserved_data|job_user_data): data stream structure
@@ -124,7 +124,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
     return f'0x{integer:04x} ({major_version:d}.{minor_version:d})'
 
   def _FormatString(self, string):
-    """Formats a string structure
+    """Formats a string structure.
 
     Args:
       string (job_string): string structure

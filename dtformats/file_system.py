@@ -36,7 +36,7 @@ class FileSystemHelper(object):
 
     Args:
       path (str): path.
-  
+
     Returns:
       str: directory name of the path or None.
     """
@@ -128,7 +128,7 @@ class NativeFileSystemHelper(object):
 
     Args:
       path (str): path.
-  
+
     Returns:
       str: directory name of the path or None.
     """
