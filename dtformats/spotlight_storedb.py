@@ -240,7 +240,7 @@ class SpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'spotlight_storedb.debug.yaml', custom_format_callbacks={
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a database streams map header file.
@@ -256,17 +256,6 @@ class SpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
     self.data_size = None
     self.number_of_buckets = None
     self.number_of_offsets = None
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii').replace('\x00', '\\x00')
 
   def ReadFileObject(self, file_object):
     """Reads a database streams map header file-like object.
@@ -401,7 +390,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'spotlight_storedb.debug.yaml', custom_format_callbacks={
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes a store database file.
@@ -643,17 +632,6 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
           f'Unsupported end of LZ4 block marker at offset: 0x{file_offset:08x}')
 
     return b''.join(uncompressed_blocks)
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii').replace('\x00', '\\x00')
 
   def _GetMetadataItemByIdentifier(self, file_object, identifier):
     """Retrieves a specific metadata item.

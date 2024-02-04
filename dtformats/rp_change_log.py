@@ -329,7 +329,8 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
           f'Unable to parse copy of record size with error: {exception!s}')
 
     if self._debug:
-      self._DebugPrintValue('Copy of record size', f'{copy_of_record_size:d}')
+      value_string, _ = self._FormatIntegerAsDecimal(copy_of_record_size)
+      self._DebugPrintValue('Copy of record size', value_string)
 
       self._DebugPrintText('\n')
 

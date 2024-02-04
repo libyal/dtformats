@@ -1,0 +1,61 @@
+# dtFormats debug specification.
+---
+data_type_map: bookmark_data_header
+attributes:
+- name: signature
+  description: "Signature"
+  format: custom:signature
+- name: size
+  description: "Size"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: data_area_offset
+  description: "Data area offset"
+  format: hexadecimal_8digits
+- name: unknown3
+  description: "Unknown3"
+  format: binary_data
+---
+data_type_map: bookmark_data_record
+attributes:
+- name: data_size
+  description: "Data size"
+  format: decimal
+- name: data_type
+  description: "Data type"
+  format: hexadecimal_8digits
+- name: data
+  description: "Data"
+  format: binary_data
+- name: floating_point
+  description: "Floating point"
+  format: floating_point
+- name: integer
+  description: "Integer"
+  format: decimal
+- name: string
+  description: "String"
+  format: string
+---
+data_type_map: bookmark_data_toc
+attributes:
+- name: entries_data_size
+  description: "Entries data size"
+  format: decimal
+- name: unknown1
+  description: "Unknown1"
+  format: hexadecimal_8digits
+- name: identifier
+  description: "Identifier"
+  format: decimal
+- name: next_toc_offset
+  description: "Next TOC offset"
+  format: hexadecimal_8digits
+- name: number_of_tagged_values
+  description: "Number of tagged values"
+  format: decimal
+- name: tagged_values
+  description: "Tagged values"
+  format: custom:array_of_tagged_values

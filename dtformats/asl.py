@@ -16,7 +16,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       'asl.debug.yaml', custom_format_callbacks={
           'posix_time': '_FormatIntegerAsPosixTime',
           'record_flags': '_FormatRecordFlags',
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   # Most significant bit of a 64-bit string offset.
   _STRING_OFFSET_MSB = 1 << 63
@@ -31,17 +31,6 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
       str: integer formatted as record flags.
     """
     return f'0x{integer:04x}'
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii').replace('\x00', '\\x00')
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.

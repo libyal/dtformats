@@ -1955,7 +1955,7 @@ class DSCFile(data_format.BinaryDataFile):
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'aul_dsc.debug.yaml', custom_format_callbacks={
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   _SUPPORTED_FORMAT_VERSIONS = ((1, 0), (2, 0))
 
@@ -1972,17 +1972,6 @@ class DSCFile(data_format.BinaryDataFile):
         output_writer=output_writer)
     self.ranges = []
     self.uuids = []
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii')
 
   def _ReadFileHeader(self, file_object):
     """Reads a file header.
@@ -2244,7 +2233,7 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'aul_timesync.debug.yaml', custom_format_callbacks={
-          'signature': '_FormatStreamAsSignature',
+          'signature': '_FormatStreamAsString',
           'timestamp': '_FormatIntegerAsPosixTimeInNanoseconds'})
 
   _BOOT_RECORD_SIGNATURE = b'\xb0\xbb'
@@ -2355,7 +2344,7 @@ class TraceV3File(data_format.BinaryDataFile):
           'log_type': '_FormatFirehoseTracepointLogType',
           'posix_time': '_FormatIntegerAsPosixTime',
           'record_type': '_FormatFirehoseTracepointRecordType',
-          'signature': '_FormatStreamAsSignature',
+          'signature': '_FormatStreamAsString',
           'stream_type': '_FormatFirehoseStreamType',
           'tracepoint_flags': '_FormatFirehoseTracepointFlags'})
 
@@ -2753,12 +2742,12 @@ class TraceV3File(data_format.BinaryDataFile):
         for string_index, string in enumerate(array_of_strings)])
     return f'{value:s}\n'
 
-  def _FormatArrayOfCatalogSubSystemEntries(self, array_of_entries):
+  def _FormatArrayOfCatalogSubSystemEntries(self, array):
     """Formats an array of catalog sub system entries.
 
     Args:
-      array_of_entries (list[tracev3_catalog_sub_system_entry]): array of
-          catalog sub system entries.
+      array (list[tracev3_catalog_sub_system_entry]): array of catalog sub
+          system entries.
 
     Returns:
       str: formatted array of catalog sub system entries.
@@ -2767,15 +2756,14 @@ class TraceV3File(data_format.BinaryDataFile):
         (f'\tidentifier: {entry.identifier:d}, '
          f'sub_system_offset: {entry.sub_system_offset:d}, '
          f'category_offset: {entry.category_offset:d}')
-        for entry in array_of_entries])
+        for entry in array])
     return f'{value:s}\n'
 
-  def _FormatArrayOfCatalogUUIDEntries(self, array_of_entries):
+  def _FormatArrayOfCatalogUUIDEntries(self, array):
     """Formats an array of catalog UUID entries.
 
     Args:
-      array_of_entries (list[tracev3_catalog_uuid_entry]): array of catalog
-          UUID entries.
+      array (list[tracev3_catalog_uuid_entry]): array of catalog UUID entries.
 
     Returns:
       str: formatted array of catalog UUID entries.
@@ -2784,7 +2772,7 @@ class TraceV3File(data_format.BinaryDataFile):
         (f'\tload address: 0x{entry.load_address_upper:04x}'
          f'{entry.load_address_lower:08x}, size: {entry.size:d}, '
          f'UUID index: {entry.uuid_index:d}, unknown1: 0x{entry.unknown1:x}')
-        for entry in array_of_entries])
+        for entry in array])
     return f'{value:s}\n'
 
   def _FormatArrayOfUUIDS(self, array_of_uuids):
@@ -2941,17 +2929,6 @@ class TraceV3File(data_format.BinaryDataFile):
 
     lines.extend(['', ''])
     return '\n'.join(lines), False
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii')
 
   def _GetCatalogSubSystemStringMap(self, catalog):
     """Retrieves a map of the catalog sub system strings and offsets.
@@ -4809,7 +4786,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'aul_uuidtext.debug.yaml', custom_format_callbacks={
           'array_of_entry_descriptors': '_FormatArrayOfEntryDescriptors',
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   def __init__(self, debug=False, file_system_helper=None, output_writer=None):
     """Initializes an uuidtext file.
@@ -4841,18 +4818,6 @@ class UUIDTextFile(data_format.BinaryDataFile):
         for entry_index, entry_descriptor in enumerate(
             array_of_entry_descriptors)])
     return f'{value:s}\n'
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return (f'\\x{stream[0]:02x}\\x{stream[1]:02x}\\x{stream[2]:02x}'
-            f'\\x{stream[3]:02x}')
 
   def _ReadFileFooter(self, file_object, file_offset):
     """Reads a file footer.

@@ -18,8 +18,6 @@ class KeychainDatabaseFileTest(test_lib.BaseTestCase):
   # TODO: add test for _DebugPrintTablesArray
   # TODO: add test for _DebugPrintTableHeader
 
-  # TODO: add test for _FormatStreamAsSignature
-
   def testReadFileHeader(self):
     """Tests the _ReadFileHeader function."""
     output_writer = test_lib.TestOutputWriter()

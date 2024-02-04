@@ -20,15 +20,6 @@ class AppleSystemLogFileTest(test_lib.BaseTestCase):
     formatted_flags = test_file._FormatRecordFlags(1)
     self.assertEqual(formatted_flags, '0x0001')
 
-  def testFormatStreamAsSignature(self):
-    """Tests the _FormatStreamAsSignature function."""
-    test_file = asl.AppleSystemLogFile()
-
-    formatted_signature = test_file._FormatStreamAsSignature(
-        b'ASL DB\x00\x00\x00\x00\x00\x00')
-    self.assertEqual(
-        formatted_signature, 'ASL DB\\x00\\x00\\x00\\x00\\x00\\x00')
-
   def testFormatString(self):
     """Tests the _FormatString function."""
     test_file = asl.AppleSystemLogFile()

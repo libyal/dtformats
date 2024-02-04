@@ -45,6 +45,14 @@ class BinaryDataFormat(object):
   _HEXDUMP_CHARACTER_MAP = [
       '.' if byte < 0x20 or byte > 0x7e else chr(byte) for byte in range(256)]
 
+  # Byte values that are considered non-printable characters.
+  _NON_PRINTABLE_BYTE_VALUES = {
+      value: f'\\x{value:02x}' for value in range(0, 0x20)}
+  _NON_PRINTABLE_BYTE_VALUES.update({
+      value: f'\\x{value:02x}' for value in range(0x7f, 0xff)})
+  _NON_PRINTABLE_BYTE_VALUES_TRANSLATION_TABLE = str.maketrans(
+      _NON_PRINTABLE_BYTE_VALUES)
+
   def __init__(self, debug=False, output_writer=None):
     """Initializes a binary data format.
 
@@ -445,6 +453,18 @@ class BinaryDataFormat(object):
       str: integer formatted as an offset.
     """
     return f'{integer:d} (0x{integer:08x})'
+
+  def _FormatStreamAsString(self, stream):
+    """Formats a stream.
+
+    Args:
+      stream (bytes): stream.
+
+    Returns:
+      str: formatted stream.
+    """
+    return stream.decode('latin1').translate(
+        self._NON_PRINTABLE_BYTE_VALUES_TRANSLATION_TABLE)
 
   def _FormatString(self, string):
     """Formats a string.

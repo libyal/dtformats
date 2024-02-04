@@ -15,7 +15,7 @@ class FseventsFile(data_format.BinaryDataFile):
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
       'fseventsd.debug.yaml', custom_format_callbacks={
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   # The version 1 format was used in Mac OS X 10.5 (Leopard) through macOS 10.12
   # (Sierra).
@@ -33,17 +33,6 @@ class FseventsFile(data_format.BinaryDataFile):
     """
     super(FseventsFile, self).__init__(
         debug=debug, output_writer=output_writer)
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii')
 
   def _ReadDLSPageHeader(self, file_object, file_offset):
     """Reads a DLS page header.

@@ -13,7 +13,6 @@ class SpotlightStoreDatabaseFileTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
-  # TODO: add test for _FormatStreamAsSignature
   # TODO: add test for _ReadFileHeader
   # TODO: add test for _ReadMapPages
   # TODO: add test for _ReadPropertyPage

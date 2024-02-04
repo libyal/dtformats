@@ -1609,7 +1609,6 @@ class TraceV3FileTest(test_lib.BaseTestCase):
 
   # TODO: add tests for _FormatArrayOfStrings
   # TODO: add tests for _FormatArrayOfUUIDS
-  # TODO: add tests for _FormatStreamAsSignature
 
   def testReadCatalog(self):
     """Tests the _ReadCatalog function."""

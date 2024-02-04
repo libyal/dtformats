@@ -19,7 +19,7 @@ class SystemdJournalFile(data_format.BinaryDataFile):
           'object_flags': '_FormatIntegerAsObjectFlags',
           'object_type': '_FormatIntegerAsObjectType',
           'posix_time': '_FormatIntegerAsPosixTimeInMicroseconds',
-          'signature': '_FormatStreamAsSignature'})
+          'signature': '_FormatStreamAsString'})
 
   _OBJECT_COMPRESSED_XZ = 1
   _OBJECT_COMPRESSED_LZ4 = 2
@@ -137,17 +137,6 @@ class SystemdJournalFile(data_format.BinaryDataFile):
     """
     object_types = self._OBJECT_TYPES.get(integer, 'UNKNOWN')
     return f'{integer:d} ({object_types:s})'
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii')
 
   def _ReadDataObject(self, file_object, file_offset):
     """Reads a data object.

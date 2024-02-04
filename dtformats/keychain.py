@@ -56,7 +56,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       'keychain.debug.yaml', custom_format_callbacks={
           'record_offsets': '_FormatRecordOffsets',
           'record_type': '_FormatIntegerAsRecordType',
-          'signature': '_FormatStreamAsSignature',
+          'signature': '_FormatStreamAsString',
           'table_offsets': '_FormatTableOffsets'})
 
   _RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO = 0x00000000
@@ -163,17 +163,6 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     """
     table_name = self._TABLE_NAMES.get(integer, 'UNKNOWN')
     return f'0x{integer:08x} ({table_name:s})'
-
-  def _FormatStreamAsSignature(self, stream):
-    """Formats a stream as a signature.
-
-    Args:
-      stream (bytes): stream.
-
-    Returns:
-      str: stream formatted as a signature.
-    """
-    return stream.decode('ascii')
 
   def _FormatTableOffsets(self, array_of_integers):
     """Formats the table offsets.

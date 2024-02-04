@@ -142,7 +142,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     self.assertEqual(output_writer.output, expected_output)
 
   # TODO add tests for _DebugPrintFiletimeValue
+  # TODO add tests for _DebugPrintStructureObject
   # TODO add tests for _DebugPrintPosixTimeValue
+  # TODO add tests for _DebugPrintText
 
   def testDebugPrintValue(self):
     """Tests the _DebugPrintValue function."""
@@ -206,6 +208,9 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     formatted_data, _ = test_format._FormatDataInHexadecimal(data)
     self.assertEqual(formatted_data, expected_formatted_data)
 
+  # TODO: add tests for _FormatArrayOfIntegersAsDecimals
+  # TODO: add tests for _FormatArrayOfIntegersAsOffsets
+
   def testFormatArrayOfIntegersAsIPv4Address(self):
     """Tests the _FormatArrayOfIntegersAsIPv4Address function."""
     test_format = TestBinaryDataFormat()
@@ -223,6 +228,30 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
         0x00, 0x42, 0x83, 0x29])
     self.assertEqual(ip_address, '2001:0db8:0000:0000:0000:ff00:0042:8329')
 
+  # TODO: add tests for _FormatFloatingPoint
+  # TODO: add tests for _FormatIntegerAsDecimal
+  # TODO: add tests for _FormatIntegerAsFiletime
+  # TODO: add tests for _FormatIntegerAsHexadecimal2
+  # TODO: add tests for _FormatIntegerAsHexadecimal4
+  # TODO: add tests for _FormatIntegerAsHexadecimal8
+  # TODO: add tests for _FormatIntegerAsHFSTime
+  # TODO: add tests for _FormatIntegerAsPosixTime
+  # TODO: add tests for _FormatIntegerAsPosixTimeInMicroseconds
+  # TODO: add tests for _FormatIntegerAsPosixTimeInNanoseconds
+  # TODO: add tests for _FormatIntegerAsOffset
+
+  def testFormatStreamAsString(self):
+    """Tests the _FormatStreamAsString function."""
+    test_format = TestBinaryDataFormat()
+
+    formatted_stream = test_format._FormatStreamAsString(
+        b'ASL DB\x00\x00\x00\x00\x00\x00')
+    self.assertEqual(formatted_stream, 'ASL DB\\x00\\x00\\x00\\x00\\x00\\x00')
+
+  # TODO: add tests for _FormatString
+  # TODO: add tests for _FormatStructureObject
+  # TODO: add tests for _FormatUUIDAsString
+  # TODO: add tests for _FormatValue
   # TODO: add tests for _GetDataTypeMap
 
   def testReadData(self):
@@ -256,8 +285,6 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
 
     with self.assertRaises(errors.ParseError):
       test_format._ReadData(file_object, 0, data_size, 'point3d')
-
-  # TODO: add tests for _ReadDefinitionFile
 
   def testReadStructureFromByteStream(self):
     """Tests the _ReadStructureFromByteStream function."""
@@ -311,6 +338,10 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     data_type_map = test_format._GetDataTypeMap('shape3d')
     test_format._ReadStructureFromFileObject(
         file_object, 0, data_type_map, 'shape3d')
+
+  # TODO: add tests for _ReadStructureObjectFromFileObject
+  # TODO: add tests for ReadDebugInformationFile
+  # TODO: add tests for ReadDefinitionFile
 
 
 class BinaryDataFileTest(test_lib.BaseTestCase):

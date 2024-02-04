@@ -1,4 +1,4 @@
-= Mac OS login item alias data format
+= Mac OS background item bookmark data format
 
 :toc:
 :toclevels: 4
@@ -7,11 +7,11 @@
 [abstract]
 == Summary
 
-The Mac OS login item alias data format is used by the 
-com.apple.loginitems.plist file.
+The Mac OS background item bookmark data format is used by the 
+backgrounditems.btm file.
 
-This document is intended as a working document for the Mac OS login item
-alias data format specification.
+This document is intended as a working document for the Mac OS background item
+bookmark data format specification.
 
 [preface]
 == Document information
@@ -19,9 +19,9 @@ alias data format specification.
 [cols="1,5"]
 |===
 | Author(s): | Joachim Metz <joachim.metz@gmail.com>
-| Abstract: | Mac OS login item alias data format specification
+| Abstract: | Mac OS background item bookmark data format specification
 | Classification: | Public
-| Keywords: | Login item, Alias, AliasData
+| Keywords: | Background item, Bookmark
 |===
 
 [preface]
@@ -48,27 +48,26 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
-The Mac OS login item alias data format is used by the 
-com.apple.loginitems.plist file.
+The Mac OS background item bookmark data format is used by the
+backgrounditems.btm file.
 
 [NOTE]
 This document used Mac OS to refer to the Macintosh Operating System in general,
 instead of specific versions like Mac OS X or macOS. Mac OS X is used to refer
 to version of Mac OS 10.0 or later.
 
-The alias data is stored in the values of property with the following keys:
+The bookmark data is stored in the values of property with the following keys:
 
 ....
-/SessionItems/CustomListItems/CustomItemProperties/Alias
-/SessionItems/CustomListItems/CustomItemProperties/com.apple.loginitem.legacyprefs/AliasData
+/$objects
 ....
 
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | Big-endian
-| Date and time values | HFS+ date and time in seconds or 65536ths of seconds since January 1, 1904 at 00:00:00 (midnight) UTC
-| Character strings | Unicode strings are stored in UTF-8 or UTF-16 big-endian without the byte order mark (BOM).
+| Byte order | Little-endian
+| Date and time values | Cocoa date and time in number of seconds since 2001-01-01 00:00:00 UTC
+| Character strings | Unicode strings are stored in UTF-8.
 |===
 
 === Test version
@@ -76,235 +75,217 @@ The alias data is stored in the values of property with the following keys:
 The following version of programs were used to test the information within
 this document:
 
-* Mac OS X 10.7 (Lion)
-* Mac OS X 10.8 (Mountain Lion)
-* Mac OS X 10.9 (Mavericks)
-* macOS 10.12 (Sierra)
+* macOS 10.13 (High Sierra)
 
-== Alias data
+== Bookmark data
 
-The alias data consists of:
+The bookmark data consists of:
 
-* one or more record
+* header
+* data area
+* table of contents (TOC)
 
-=== Record
+=== Bookmark header
 
-A record consists of:
-
-* a <<record_header,record header>>
-* record data
-* optional <<tagged_value,tagged values>>
-
-==== [[record_header]]Record header
-
-The record header is 8 bytes in size and consists of:
+The bookmark header is 48 bytes in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 4 | | [yellow-background]*Unknown (creator code / application information)*
-| 4 | 2 | | Record size +
-Contains the size of the record including the size of the header
-| 6 | 2 | | Format version
+| 0 | 4 | "alis" +
+"book" | Signature
+| 4 | 4 | | Size +
+Contains the size of the bookmark including the size of the header
+| 8 | 4 | | [yellow-background]*Unknown (Flags or format version?)*
+| 12 | 4 | | Data area start offset
+| 26 | 32 | 0 | [yellow-background]*Unknown (empty values)*
 |===
 
-===== Format versions
+=== Data area
+
+The data area is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Data area size
+| 4 | ... | | Data records
+|===
+
+==== Data record
+
+The data record is variable in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Data size
+| 4 | 4 | | Data type
+| 8 | ... | | Data
+|===
+
+==== [[data_types]]Data types
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 2 | | [yellow-background]*Unknown*
-| 3 | | Observed on Mac OS 10.7
+| 0x00000101 | | String +
+The data contains an UTF-8 encoded string without end-of-string character
+| | |
+| 0x00000201 | | Binary data
+| | |
+| 0x00000301 | | Integer 8-bit signed
+| 0x00000302 | | Integer 16-bit signed
+| 0x00000303 | | Integer 32-bit signed
+| 0x00000304 | | Integer 64-bit signed
+| 0x00000305 | | Floating point single precision (32-bit)
+| 0x00000306 | | Floating point double precision (64-bit)
+| | |
+| 0x00000400 | | Cocoa date and time +
+The data contains a floating point double precision (64-bit)
+| | |
+| 0x00000500 | | Boolean false +
+The data record contains no additional data
+| 0x00000501 | | Boolean true +
+The data record contains no additional data
+| | |
+| 0x00000601 | | Array +
+The data contains 32-bit offsets to the array elements
+| | |
+| 0x00000701 | | Dictionary +
+The data contains 32-bit key-value pairs of the dictionary elements
+| | |
+| 0x00000801 | | UUID (128-bit)
+| | |
+| 0x00000901 | | URL +
+The data contains an UTF-8 encoded string without end-of-string character
+| 0x00000902 | | URL (relative) +
+The data contains a 32-bit offset to base URL, a 32-bit offset to UTF-8 string
 |===
 
-==== [[tagged_value]]Tagged value
+=== Table of contents
 
-The tagged value is variable in size and consists of:
+The table of contents consists of:
+
+* table of contents header
+* metadata entry
+* key entries
+
+==== Table of contents header
+
+The table of contents header is 8 bytes in size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
 | Offset | Size | Value | Description
-| 0 | 2 | | Value tag +
+| 0 | 4 | | Entries data size
+| 4 | 4 | 0xfffffffe | [yellow-background]*Unknown (signature or marker?)*
+|===
+
+==== Table of contents metadata entry
+
+The table of contents metadata entry is 12 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | TOC identifier
+| 4 | 4 | | Next TOC header offset or 0 if not set
+| 8 | 4 | | Number of tagged value entries in this TOC
+|===
+
+==== Table of contents tagged value entry
+
+The table of contents tagged value entry is 12 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Value tag +
 See section: <<value_tags,Value tags>>
-| 2 | 2 | | Value data size
-| 4 | ... | | Value data
-| ... | ... | | 16-bit alignment padding
+| 4 | 4 | | Value data record offset +
+The offset is relative to the start of the data area
+| 8 | 4 | 0 | [yellow-background]*Unknown (emtpy value)*
 |===
 
 ==== [[value_tags]]Value tags
 
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x0000 | | [yellow-background]*Unknown (Carbon folder name)* +
-Contains an UTF-8 encoded string without end-of-string character
-| 0x0001 | | [yellow-background]*Unknown (chain of ancestor file system identifier)* +
-Contains an array of file system identifiers, where the first element is the parent of the target, the second the grand parrent, etc.
-| 0x0002 | | [yellow-background]*Unknown (Carbon/HFS path)* +
-Contains an UTF-8 encoded string without end-of-string character
-| 0x0003 | | [yellow-background]*Unknown (AppleShare zone (a string))*
-| 0x0004 | | [yellow-background]*Unknown (AppleShare server name (a string))*
-| 0x0005 | | [yellow-background]*Unknown (AppleShare username (a string))*
-| 0x0006 | | [yellow-background]*Unknown (Driver name)* +
-Contains an UTF-8 encoded string without end-of-string character
-| | |
-| 0x0009 | | [yellow-background]*Unknown (Network mount information)*
-| 0x000a | | [yellow-background]*Unknown (Dial-up connection information)*
-| | |
-| 0x000e | | Target file name +
-See section: <<utf16_string_tagged_value_data,UTF-16 string tagged value data>>
-| 0x000f | | Volume name +
-See section: <<utf16_string_tagged_value_data,UTF-16 string tagged value data>>
-| 0x0010 | | [yellow-background]*Unknown (High resolution volume creation date (65536ths of a second since 1904-01-01 00:00:00 UTC))*
-| 0x0011 | | [yellow-background]*Unknown (High resolution creation date (65536ths of a second since 1904-01-01 00:00:00 UTC))*
-| 0x0012 | | (POSIX) target path +
-The path is relative from the mount point +
-Contains an UTF-8 encoded string without end-of-string character
-| 0x0013 | | (POSIX) volume mount point +
-Contains an UTF-8 encoded string without end-of-string character
-| 0x0014 | | [yellow-background]*Unknown (Recursive alias of disk image (an alias record) )*
-| 0x0015 | | [yellow-background]*Unknown (User home length prefix (two-byte integer, says how many directory levels to the user’s home folder))*
-| | |
-| 0xfffe | | [yellow-background]*Unknown (None)*
-| 0xffff | | Terminator +
-Indicates the end of the tagged values +
-Contains a value data size of 0
-|===
-
-==== [[utf16_string_tagged_value_data]]UTF-16 string tagged value data
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-| 0 | 2 | | Number of characters
-| 2 | ... | | String data +
-Contains an UTF-16 big-endian encoded string without end-of-string character
-|===
-
-=== Alias data version 2 record
-
-The alias data version 2 record is variable in size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-4+| _Record header_
-| 0 | 4 | 0 | [yellow-background]*Unknown (creator code / application information)*
-| 4 | 2 | | Record size +
-Contains the size of the record including the size of the header
-| 6 | 2 | 2 | Format version
-4+| _Record data_
-| 8 | 2 | | Alias type +
-See section: <<alias_type,Alias types>>
-| 10 | 28 | | Volume name string, where the first byte contains the size of the string
-| 38 | 4 | | Volume creation date +
-Contains a HFS+ date and time in seconds
-| 42 | 2 | | File system type +
-See section: <<file_system_type_v2,File system type - version 2>>
-| 44 | 2 | | Disk type +
-See section: <<disk_types,Disk types>>
-| 46 | 4 | | File system identifier of the parent (directory) +
-Contains -1 (0xffffffff) if not set.
-| 50 | 64 | | Target name string, where the first byte contains the size of the string
-| 114 | 4 | | File system identifier of the target +
-Contains -1 (0xffffffff) if not set.
-| 118 | 4 | | Target creation date +
-Contains a HFS+ date and time in seconds
-| 122 | 4 | | [yellow-background]*Unknown (target creator code)*
-| 126 | 4 | | [yellow-background]*Unknown (target type code)*
-| 130 | 2 | | [yellow-background]*Unknown (Number of directory levels from alias to root (or -1))*
-| 132 | 2 | | [yellow-background]*Unknown (Number of directory levels from root to target (or -1))*
-| 134 | 4 | | [yellow-background]*Unknown (volume attributes/flags)*
-| 138 | 2 | | [yellow-background]*Unknown (volume file system type)*
-| 140 | 10 | | [yellow-background]*Unknown*
-|===
-
-==== [[file_system_type_v2]]File system type - version 2
+If the MSB of the value tag is set the remaining value (0x7fffffff) contains
+the offset of the name of a custom value, otherwise the value tag is predefined.
+Below is a list of known predefined value tags.
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| "H+" | | HFS+
-| "HX" | | HFSX
-|===
-
-=== Alias data version 3 record
-
-The alias data version 3 record is variable in size and consists of:
-
-[cols="1,1,1,5",options="header"]
-|===
-| Offset | Size | Value | Description
-4+| _Record header_
-| 0 | 4 | 0 | [yellow-background]*Unknown (creator code / application information)*
-| 4 | 2 | | Record size +
-Contains the size of the record including the size of the header
-| 6 | 2 | 3 | Format version
-4+| _Record data_
-| 8 | 2 | | Alias type +
-See section: <<alias_type,Alias types>>
-| 10 | 8 | | High resolution volume creation date +
-Contains a HFS+ date and time in 65536ths of a second
-| 18 | 4 | | File system type +
-See section: <<file_system_type_v3,File system type - version 3>>
-| 22 | 2 | | Disk type +
-See section: <<disk_types,Disk types>>
-| 24 | 4 | | File system identifier of the parent (directory)
-| 28 | 4 | | File system identifier of the target
-| 32 | 8 | | High resolution target creation date +
-Contains a HFS+ date and time in 65536ths of a second
-| 40 | 4 | | [yellow-background]*Unknown (volume attributes/flags)*
-| 44 | 14 | | [yellow-background]*Unknown*
-|===
-
-==== [[file_system_type_v3]]File system type - version 3
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| "BDcu" | | UDF
-| "BDIS" | | FAT32
-| "BDxF" | | exFAT
-| "H+\x00\x00" | HFS+
-| "HX\x00\x00" | HFSX
-| "KG\x00\x00" | FTP
-| "NTcu" | | NTFS
-|===
-
-=== [[alias_types]]Alias types
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0 | | File
-| 1 | | Directory (or folder)
-|===
-
-=== [[disk_types]]Disk types
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0 | | Fixed disk
-| 1 | | Network drive
-| 2 | | 400Kb floppy disk
-| 3 | | 800Kb floppy disk
-| 4 | | 1.44MB floppy disk
-| 5 | | [yellow-background]*Unknown (removable / ejectable drive)*
-|===
-
-=== [[volume_flags]]Volume flage
-
-[cols="1,1,5",options="header"]
-|===
-| Value | Identifier | Description
-| 0x0002 | | Is removable (ejectable)
+| 0x00001003 | | Target URL
+| 0x00001004 | | Target path
+| 0x00001005 | | Target CNID path
 | | |
-| 0x0020 | | Is boot volume
+| 0x00001010 | | Target flags
 | | |
-| 0x0080 | | Is auto-mounted
+| 0x00001020 | | Target filename
 | | |
-| 0x0100 | | Has persistent file system identifiers
+| 0x00001030 | | Target CNID
+| | |
+| 0x00001040 | | Target creation date and time
+| | |
+| 0x00001054 | | [yellow-background]*Unknown*
+| 0x00001055 | | [yellow-background]*Unknown*
+| 0x00001056 | | [yellow-background]*Unknown*
+| | |
+| 0x00001101 | | [yellow-background]*Unknown*
+| 0x00001102 | | [yellow-background]*Unknown*
+| | |
+| 0x00002000 | | TOC path
+| | |
+| 0x00002002 | | Volume path
+| | |
+| 0x00002005 | | Volume URL
+| | |
+| 0x00002010 | | Volume name
+| 0x00002011 | | Volume identifier (UUID)
+| 0x00002012 | | Volume size
+| 0x00002013 | | Volume creation date and time
+| | |
+| 0x00002020 | | Volume flags
+| | |
+| 0x00002030 | | Volume root flag +
+True if the volume was the filesystem root
+| | |
+| 0x00002040 | | Volume bookmark +
+Contains a TOC identifier for disk image
+| | |
+| 0x00002050 | | Volume mount point URL
+| | |
+| 0x00002070 | | [yellow-background]*Unknown*
+| | |
+| 0x0000c001 | | Containing folder index +
+Contains an integer index of containing folder in target path array
+| | |
+| 0x0000c011 | | Creator username +
+Name of user that created bookmark
+| 0x0000c012 | | Creator user identifier (UID) +
+UID of user that created bookmark
+| | |
+| 0x0000d001 | | File reference flag +
+True if creating URL was a file reference URL
+| | |
+| 0x0000d010 | | Creation options
+| | |
+| 0x0000e003 | | URL length array
+| | |
+| 0x0000f017 | | Display name
+| | |
+| 0x0000f020 | | Icon data +
+Contains icns data
+| 0x0000f021 | | Icon image
+| 0x0000f022 | | Type binding info +
+Contains dnib data
+| | |
+| 0x0000f030 | | Bookmark creation date and time
+| | |
+| 0x0000f080 | | Sandbox RW extension
+| 0x0000f081 | | Sandbox RO extension
 |===
 
 :numbered!:
@@ -313,8 +294,8 @@ Contains a HFS+ date and time in 65536ths of a second
 
 [cols="1,5",options="header"]
 |===
-| Title: | Mac Alias Format
-| URL: | https://mac-alias.readthedocs.io/en/latest/alias_fmt.html
+| Title: | Mac Bookmark Format
+| URL: | https://mac-alias.readthedocs.io/en/latest/bookmark_fmt.html
 |===
 
 [appendix]

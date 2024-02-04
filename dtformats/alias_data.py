@@ -144,7 +144,7 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
     record_offset = 8
 
     if record_header.record_size != self._file_size:
-      raise errors.ParseError('Unsupported AliasData record size')
+      raise errors.ParseError('Unsupported alias data record size')
 
     if record_header.format_version == 3:
       _ = self._ReadRecordV3(file_object, record_offset)
