@@ -7,7 +7,7 @@
 [abstract]
 == Summary
 
-The Mac OS login item alias data format is used by the 
+The Mac OS login item alias data format is used by the
 com.apple.loginitems.plist file.
 
 This document is intended as a working document for the Mac OS login item
@@ -48,7 +48,7 @@ in the section entitled "GNU Free Documentation License".
 :numbered:
 == Overview
 
-The Mac OS login item alias data format is used by the 
+The Mac OS login item alias data format is used by the
 com.apple.loginitems.plist file.
 
 [NOTE]
@@ -138,8 +138,8 @@ See section: <<value_tags,Value tags>>
 | Value | Identifier | Description
 | 0x0000 | | [yellow-background]*Unknown (Carbon folder name)* +
 Contains an UTF-8 encoded string without end-of-string character
-| 0x0001 | | [yellow-background]*Unknown (chain of ancestor file system identifier)* +
-Contains an array of file system identifiers, where the first element is the parent of the target, the second the grand parrent, etc.
+| 0x0001 | | [yellow-background]*Unknown (chain of ancestor file system identifiers)* +
+Contains an array of file system identifiers, where the first element is the parent of the target, the second the grand parent, etc.
 | 0x0002 | | [yellow-background]*Unknown (Carbon/HFS path)* +
 Contains an UTF-8 encoded string without end-of-string character
 | 0x0003 | | [yellow-background]*Unknown (AppleShare zone (a string))*

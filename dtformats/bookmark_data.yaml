@@ -73,6 +73,13 @@ attributes:
   size: 8
   units: bytes
 ---
+name: float64be
+type: floating-point
+attributes:
+  byte_order: big-endian
+  size: 8
+  units: bytes
+---
 name: uint32le
 type: integer
 attributes:
@@ -101,6 +108,18 @@ members:
   type: stream
   element_data_type: byte
   elements_data_size: 32
+---
+name: bookmark_data_property_flags
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: flags
+  data_type: uint64
+- name: valid_flags_bitmask
+  data_type: uint64
+- name: unknown1
+  data_type: uint64
 ---
 name: bookmark_data_record_base
 type: structure
@@ -154,7 +173,7 @@ members:
   data_type: uint32
 - name: data_type
   data_type: uint32
-  values: [0x00000306, 0x00000400]
+  value: 0x00000306
 - name: floating_point
   data_type: float64
 ---
@@ -210,6 +229,21 @@ members:
 - name: integer
   data_type: int64
 ---
+name: bookmark_data_record_with_uint32_array
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: data_size
+  data_type: uint32
+- name: data_type
+  data_type: uint32
+  value: 0x00000601
+- name: integers
+  type: sequence
+  element_data_type: uint32
+  elements_data_size: bookmark_data_record_with_uint32_array.data_size
+---
 name: bookmark_data_record_with_utf8_string
 type: structure
 attributes:
@@ -238,6 +272,7 @@ members:
 - bookmark_data_record_with_int16
 - bookmark_data_record_with_int32
 - bookmark_data_record_with_int64
+- bookmark_data_record_with_uint32_array
 - bookmark_data_record_with_utf8_string
 ---
 name: bookmark_data_tagged_value

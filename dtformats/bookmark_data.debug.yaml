@@ -18,6 +18,18 @@ attributes:
   description: "Unknown3"
   format: binary_data
 ---
+data_type_map: bookmark_data_property_flags
+attributes:
+- name: flags
+  description: "Flags"
+  format: hexadecimal_8digits
+- name: valid_flags_bitmask
+  description: "Valid flags bitmask"
+  format: hexadecimal_8digits
+- name: unknown1
+  description: "Unknown"
+  format: hexadecimal_8digits
+---
 data_type_map: bookmark_data_record
 attributes:
 - name: data_size
@@ -35,6 +47,9 @@ attributes:
 - name: integer
   description: "Integer"
   format: decimal
+- name: integers
+  description: "Integers"
+  format: custom:array_of_decimals
 - name: string
   description: "String"
   format: string

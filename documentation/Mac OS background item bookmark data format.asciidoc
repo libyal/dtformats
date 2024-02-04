@@ -7,7 +7,7 @@
 [abstract]
 == Summary
 
-The Mac OS background item bookmark data format is used by the 
+The Mac OS background item bookmark data format is used by the
 backgrounditems.btm file.
 
 This document is intended as a working document for the Mac OS background item
@@ -142,7 +142,7 @@ The data contains an UTF-8 encoded string without end-of-string character
 | 0x00000306 | | Floating point double precision (64-bit)
 | | |
 | 0x00000400 | | Cocoa date and time +
-The data contains a floating point double precision (64-bit)
+The data contains a big-endian floating point double precision (64-bit)
 | | |
 | 0x00000500 | | Boolean false +
 The data record contains no additional data
@@ -150,7 +150,8 @@ The data record contains no additional data
 The data record contains no additional data
 | | |
 | 0x00000601 | | Array +
-The data contains 32-bit offsets to the array elements
+The data contains 32-bit offsets to the array elements +
+The offsets are relative to the start of the data area
 | | |
 | 0x00000701 | | Dictionary +
 The data contains 32-bit key-value pairs of the dictionary elements
@@ -162,6 +163,33 @@ The data contains an UTF-8 encoded string without end-of-string character
 | 0x00000902 | | URL (relative) +
 The data contains a 32-bit offset to base URL, a 32-bit offset to UTF-8 string
 |===
+
+===== Notes
+
+....
+potential NULL type 0x0a01
+....
+
+....
+0x00000300 corresponds to CFNumberType and values to:
+
+kCFNumberSInt8Type = 1
+kCFNumberSInt16Type = 2
+kCFNumberSInt32Type = 3
+kCFNumberSInt64Type = 4
+kCFNumberFloat32Type = 5
+kCFNumberFloat64Type = 6
+kCFNumberCharType = 7
+kCFNumberShortType = 8
+kCFNumberIntType = 9
+kCFNumberLongType = 10
+kCFNumberLongLongType = 11
+kCFNumberFloatType = 12
+kCFNumberDoubleType = 13
+kCFNumberCFIndexType = 14
+kCFNumberNSIntegerType = 15
+kCFNumberCGFloatType = 16
+....
 
 === Table of contents
 
@@ -218,14 +246,18 @@ Below is a list of known predefined value tags.
 |===
 | Value | Identifier | Description
 | 0x00001003 | | Target URL
-| 0x00001004 | | Target path
-| 0x00001005 | | Target CNID path
+| 0x00001004 | | Target path +
+Contains an array of strings containing path segments +
+The path is relative from the mount point
+| 0x00001005 | | [yellow-background]*Unknown (chain of ancestor file system identifiers)* +
+Contains an array of integers containing file system identifiers, where the last element is the parent of the target, the second last the grand parent, etc.
 | | |
-| 0x00001010 | | Target flags
+| 0x00001010 | | Target (or resource) property flags +
+See section: <<property_flags,property flags>>
 | | |
 | 0x00001020 | | Target filename
 | | |
-| 0x00001030 | | Target CNID
+| 0x00001030 | | Target file system identifier (FSID)
 | | |
 | 0x00001040 | | Target creation date and time
 | | |
@@ -247,7 +279,8 @@ Below is a list of known predefined value tags.
 | 0x00002012 | | Volume size
 | 0x00002013 | | Volume creation date and time
 | | |
-| 0x00002020 | | Volume flags
+| 0x00002020 | | Volume property flags +
+See section: <<property_flags,property flags>>
 | | |
 | 0x00002030 | | Volume root flag +
 True if the volume was the filesystem root
@@ -288,9 +321,115 @@ Contains dnib data
 | 0x0000f081 | | Sandbox RO extension
 |===
 
+==== [[property_flags]]Property flags
+
+The property flags are 24 bytes in size and consists of:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 8 | | Flags
+| 8 | 8 | | Valid flags bitmask
+| 16 | 8 | 0 | [yellow-background]*Unknown (empty values)*
+|===
+
+===== Target (or resource) property flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0000000000000001 | kCFURLResourceIsRegularFile | Is regular file
+| 0x0000000000000002 | kCFURLResourceIsDirectory | Is directory
+| 0x0000000000000004 | kCFURLResourceIsSymbolicLink | Is symbolic link
+| 0x0000000000000008 | kCFURLResourceIsVolume | Is volume
+| 0x0000000000000010 | kCFURLResourceIsPackage | Is package
+| 0x0000000000000020 | kCFURLResourceIsSystemImmutable | Is system immutable
+| 0x0000000000000040 | kCFURLResourceIsUserImmutable | Is user immutable
+| 0x0000000000000080 | kCFURLResourceIsHidden | Is hidden
+| 0x0000000000000100 | kCFURLResourceHasHiddenExtension | Has hidden extension
+| 0x0000000000000200 | kCFURLResourceIsApplication | Is application
+| 0x0000000000000400 | kCFURLResourceIsCompressed +
+kCFURLResourceIsSystemCompressed | Is compressed
+| 0x0000000000000800 | kCFURLCanSetHiddenExtension | Can set hidden extension
+| 0x0000000000001000 | kCFURLResourceIsReadable | Is readable
+| 0x0000000000002000 | kCFURLResourceIsWriteable | Is writeable
+| 0x0000000000004000 | kCFURLResourceIsExecutable | Is executable
+| 0x0000000000008000 | kCFURLIsAliasFile | Is alias file
+| 0x0000000000010000 | kCFURLIsMountTrigger | Is mount trigger
+|===
+
+===== Volume property flags
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 0x0000000000000001 | kCFURLVolumeIsLocal | Is local volume
+| 0x0000000000000002 | kCFURLVolumeIsAutomount | Is mounted by the auto-mounter
+| 0x0000000000000004 | kCFURLVolumeDontBrowse | Is hidden from user browsing
+| 0x0000000000000008 | kCFURLVolumeIsReadOnly | Is read-only
+| 0x0000000000000010 | kCFURLVolumeIsQuarantined | Is mounted with quarantine bit
+| 0x0000000000000020 | kCFURLVolumeIsEjectable | Is ejectable
+| 0x0000000000000040 | kCFURLVolumeIsRemovable | Is removable
+| 0x0000000000000080 | kCFURLVolumeIsInternal | Is internal
+| 0x0000000000000100 | kCFURLVolumeIsExternal | Is exteranal
+| 0x0000000000000200 | kCFURLVolumeIsDiskImage | Is disk image
+| 0x0000000000000400 | kCFURLVolumeIsFileVault | Is FileVault encrypted
+| 0x0000000000000800 | kCFURLVolumeIsLocaliDiskMirror | Is local iDisk mirror
+| 0x0000000000001000 | kCFURLVolumeIsiPod | Is iPod
+| 0x0000000000002000 | kCFURLVolumeIsiDisk | Is iDisk
+| 0x0000000000004000 | kCFURLVolumeIsCD | Is CD
+| 0x0000000000008000 | kCFURLVolumeIsDVD | Is DVD
+| 0x0000000000010000 | kCFURLVolumeIsDeviceFileSystem | Is device file system
+| 0x0000000000020000 | kCFURLVolumeIsTimeMachine | Is time machine
+| 0x0000000000040000 | kCFURLVolumeIsAirport | Is Airport
+| 0x0000000000080000 | kCFURLVolumeIsVideoDisk | Is video disk
+| 0x0000000000100000 | kCFURLVolumeIsDVDVideo | Is video DVD
+| 0x0000000000200000 | kCFURLVolumeIsBDVideo | Is video DB
+| 0x0000000000400000 | kCFURLVolumeIsMobileTimeMachine | Is mobile time machine
+| 0x0000000000800000 | kCFURLVolumeIsNetworkOptical | Is optical network
+| 0x0000000001000000 | kCFURLVolumeIsBeingRepaired | Is being repaired
+| 0x0000000002000000 | kCFURLVolumeIsBeingUnmounted | Is being unmounted
+| | |
+| 0x0000000100000000 | kCFURLVolumeSupportsPersistentIDs |
+| 0x0000000200000000 | kCFURLVolumeSupportsSearchFS |
+| 0x0000000400000000 | kCFURLVolumeSupportsExchange |
+| | |
+| 0x0000001000000000 | kCFURLVolumeSupportsSymbolicLinks |
+| 0x0000002000000000 | kCFURLVolumeSupportsDenyModes |
+| 0x0000004000000000 | kCFURLVolumeSupportsCopyFile |
+| 0x0000008000000000 | kCFURLVolumeSupportsReadDirAttr |
+| 0x0000010000000000 | kCFURLVolumeSupportsJournaling |
+| 0x0000020000000000 | kCFURLVolumeSupportsRename |
+| 0x0000040000000000 | kCFURLVolumeSupportsFastStatFS |
+| 0x0000080000000000 | kCFURLVolumeSupportsCaseSensitiveNames |
+| 0x0000100000000000 | kCFURLVolumeSupportsCasePreservedNames |
+| 0x0000200000000000 | kCFURLVolumeSupportsFLock |
+| 0x0000400000000000 | kCFURLVolumeHasNoRootDirectoryTimes |
+| 0x0000800000000000 | kCFURLVolumeSupportsExtendedSecurity |
+| 0x0001000000000000 | kCFURLVolumeSupports2TBFileSize |
+| 0x0002000000000000 | kCFURLVolumeSupportsHardLinks |
+| 0x0004000000000000 | kCFURLVolumeSupportsMandatoryByteRangeLocks |
+| 0x0008000000000000 | kCFURLVolumeSupportsPathFromID |
+| | |
+| 0x0020000000000000 | kCFURLVolumeIsJournaling |
+| 0x0040000000000000 | kCFURLVolumeSupportsSparseFiles |
+| 0x0080000000000000 | kCFURLVolumeSupportsZeroRuns |
+| 0x0100000000000000 | kCFURLVolumeSupportsVolumeSizes |
+| 0x0200000000000000 | kCFURLVolumeSupportsRemoteEvents |
+| 0x0400000000000000 | kCFURLVolumeSupportsHiddenFiles |
+| 0x0800000000000000 | kCFURLVolumeSupportsDecmpFSCompression |
+| 0x1000000000000000 | kCFURLVolumeHas64BitObjectIDs |
+|===
+
 :numbered!:
 [appendix]
 == References
+
+[cols="1,5",options="header"]
+|===
+| Title: | CFURLPriv.h
+| URL: | https://opensource.apple.com/source/CF/CF-1153.18/CFURLPriv.h.auto.html
+|===
 
 [cols="1,5",options="header"]
 |===
