@@ -56,12 +56,6 @@ This document used Mac OS to refer to the Macintosh Operating System in general,
 instead of specific versions like Mac OS X or macOS. Mac OS X is used to refer
 to version of Mac OS 10.0 or later.
 
-The bookmark data is stored in the values of property with the following keys:
-
-....
-/$objects
-....
-
 [NOTE]
 Note that not all binary data values contain bookmark data.
 
@@ -78,11 +72,193 @@ Note that not all binary data values contain bookmark data.
 The following version of programs were used to test the information within
 this document:
 
-* macOS 10.13 (High Sierra) - backgrounditems.btm
-* macOS 12 (Ventura) - BackgroundItems-v8.btm
+* macOS 10.13 (High Sierra)
+* macOS 12 (Monterey)
+* macOS 13 (Ventura)
 
-Other sources mention BackgroundItems-v3.btm, BackgroundItems-v4.btm and
-BackgroundItems-v7.btm
+== Schemas
+
+The background item plists are encoded using NSKeyedArchiver.
+
+=== Schema versions
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Filename | Description
+| 2 | backgrounditems.btm | Observed in macOS 10.13 (High Sierra)
+| 3 | BackgroundItems-v3.btm | Mentioned by third party sources, not confirmed presumed to be used in the macOS 13 pre-release given macOS 12.7 (Monterey) uses version 2.
+| 4 | BackgroundItems-v4.btm | Observed in macOS 13.0 (Ventura)
+| | |
+| 7 | BackgroundItems-v7.btm | Observed in macOS 13.1 (Ventura)
+| 8 | BackgroundItems-v8.btm | Observed in macOS 13.3 (Ventura)
+|===
+
+=== Schema version 2
+
+....
+{
+  "root": {
+    "version": 2,
+    "backgroundItems": {
+      "allContainers": [
+        {
+          "bookmark": null,
+          "internalItems": {
+            "bookmark": {
+              "data": "...",  # Contains bookmark data
+              "identifier": "01234567-89ab-cdef-0123-456789abcdef"
+            },
+            "type": 3,
+            "loginItemType": 1
+          },
+          "identifier": "01234567-89ab-cdef-0123-456789abcdef"
+        }
+      ]
+    }
+  }
+}
+....
+
+=== Schema version 4
+
+....
+{
+  "version": 4,
+  "store": {
+    "itemsByUserIdentifier": {
+      "01234567-89AB-CDEF-0123-456789ABCDEF": [
+        {
+          "uuid": "01234567-89ab-cdef-0123-456789abcdef",
+          "teamIdentifier": null,
+          "lightweightRequirement": null,  # Contains binary data
+          "disposition": 10,
+          "generation": 7,
+          "associatedBundleIdentifiers": null,
+          "url": "https://example.com/myurl",
+          "bundleIdentifier": null,
+          "type": 32,
+          "identifier": "My identifier",
+          "executablePath": "/Library/MyTools/my_binary",
+          "container": "My container name",
+          "developerName": "My developer name",
+          "items": [
+            "com.domain.MyItem"
+          ],
+          "bookmark": null,
+          "name": "My name"
+        },
+      ],
+      ...
+    }
+    "mdmPaloadsByIdentifier": {},
+    "userSettingsByUserIdentifier": {
+      "01234567-89AB-CDEF-0123-456789ABCDEF": {
+        "generation": 1,
+        "serviceManagementLoginItemsMigrated": true
+      },
+      ...
+    }
+  }
+}
+....
+
+Presumed changes since schema version 2
+
+* "root" has been replaced by "store"
+
+=== Schema version 7
+
+....
+{
+  "version": 7,
+  "store": {
+    "itemsByUserIdentifier": {
+      "01234567-89AB-CDEF-0123-456789ABCDEF": [
+        {
+          "uuid": "01234567-89ab-cdef-0123-456789abcdef",
+          "teamIdentifier": null,
+          "lightweightRequirement": null,  # Contains binary data
+          "disposition": 10,
+          "generation": 7,
+          "modificationDate": 724772435.0,
+          "associatedBundleIdentifiers": null,
+          "url": "https://example.com/myurl",
+          "bundleIdentifier": null,
+          "type": 32,
+          "identifier": "My identifier",
+          "executablePath": "/Library/MyTools/my_binary",
+          "container": "My container name",
+          "developerName": "My developer name",
+          "executableModificationDate": 724772450.0,
+          "items": [
+            "com.domain.MyItem"
+          ],
+          "bookmark": null,
+          "name": "My name"
+        },
+      ],
+      ...
+    }
+    "mdmPaloadsByIdentifier": {},
+    "userSettingsByUserIdentifier": {
+      "01234567-89AB-CDEF-0123-456789ABCDEF": {
+        "generation": 1,
+        "serviceManagementLoginItemsMigrated": true
+      },
+      ...
+    }
+  }
+}
+....
+
+Presumed changes since schema version 4
+
+* "modificationDate" and "executableModificationDate" were added
+
+=== Schema version 8
+
+....
+{
+  "version": 8,
+  "store": {
+    "itemsByUserIdentifier": {
+      "01234567-89AB-CDEF-0123-456789ABCDEF": [
+        {
+          "uuid": "01234567-89ab-cdef-0123-456789abcdef",
+          "teamIdentifier": null,
+          "lightweightRequirement": null,  # Contains binary data
+          "disposition": 10,
+          "generation": 7,
+          "modificationDate": 724772435.0,
+          "associatedBundleIdentifiers": null,
+          "url": "https://example.com/myurl",
+          "bundleIdentifier": null,
+          "type": 32,
+          "identifier": "My identifier",
+          "executablePath": "/Library/MyTools/my_binary",
+          "container": "My container name",
+          "developerName": "My developer name",
+          "executableModificationDate": 724772450.0,
+          "items": [
+            "com.domain.MyItem"
+          ],
+          "bookmark": null,
+          "name": "My name"
+        },
+      ],
+      ...
+    }
+    "mdmPaloadsByIdentifier": {},
+    "userSettingsByUserIdentifier": {
+      "01234567-89AB-CDEF-0123-456789ABCDEF": {
+        "generation": 1,
+        "serviceManagementLoginItemsMigrated": true
+      },
+      ...
+    }
+  }
+}
+....
 
 == Bookmark data
 
@@ -442,6 +618,12 @@ kCFURLResourceIsSystemCompressed | Is compressed
 |===
 | Title: | Mac Bookmark Format
 | URL: | https://mac-alias.readthedocs.io/en/latest/bookmark_fmt.html
+|===
+
+[cols="1,5",options="header"]
+|===
+| Title: | NSKeyedArchiver
+| URL: | https://developer.apple.com/documentation/foundation/nskeyedarchiver
 |===
 
 [appendix]
