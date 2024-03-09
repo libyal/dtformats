@@ -79,6 +79,31 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
 
     return record_header
 
+  def _ReadRecordV2(self, file_object, file_offset):
+    """Reads a version 2 record.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the record data relative to the start of the
+          file.
+
+    Returns:
+      alias_data_record_v2: record.
+
+    Raises:
+      ParseError: if the record cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('alias_data_record_v2')
+
+    record, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'record data')
+
+    if self._debug:
+      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_v2', None)
+      self._DebugPrintStructureObject(record, debug_info)
+
+    return record
+
   def _ReadRecordV3(self, file_object, file_offset):
     """Reads a version 3 record.
 
@@ -146,7 +171,11 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
     if record_header.record_size != self._file_size:
       raise errors.ParseError('Unsupported alias data record size')
 
-    if record_header.format_version == 3:
+    if record_header.format_version == 2:
+      _ = self._ReadRecordV2(file_object, record_offset)
+      record_offset += 142
+
+    elif record_header.format_version == 3:
       _ = self._ReadRecordV3(file_object, record_offset)
       record_offset += 50
 

@@ -48,6 +48,38 @@ members:
   data_type: uint16
   values: [2, 3]
 ---
+name: alias_data_record_v2
+type: structure
+attributes:
+  byte_order: big-endian
+members:
+- name: alias_type
+  data_type: uint16
+- name: volume_name
+  type: stream
+  element_data_type: byte
+  elements_data_size: 28
+- name: volume_creation_time
+  data_type: uint32
+- name: file_system_type
+  type: stream
+  element_data_type: byte
+  elements_data_size: 2
+- name: disk_type
+  type: stream
+  element_data_type: byte
+  elements_data_size: 2
+- name: parent_fsid
+  data_type: uint32
+- name: target_name
+  type: stream
+  element_data_type: byte
+  elements_data_size: 64
+- name: target_fsid
+  data_type: uint32
+- name: target_creation_time
+  data_type: uint32
+---
 name: alias_data_record_v3
 type: structure
 attributes:

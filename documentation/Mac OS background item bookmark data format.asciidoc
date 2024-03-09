@@ -97,27 +97,28 @@ The background item plists are encoded using NSKeyedArchiver.
 
 ....
 {
-  "root": {
-    "version": 2,
-    "backgroundItems": {
-      "allContainers": [
-        {
-          "bookmark": null,
-          "internalItems": {
-            "bookmark": {
-              "data": "...",  # Contains bookmark data
-              "identifier": "01234567-89ab-cdef-0123-456789abcdef"
-            },
-            "type": 3,
-            "loginItemType": 1
+  "version": 2,
+  "backgroundItems": {
+    "allContainers": [
+      {
+        "bookmark": null,
+        "internalItems": {
+          "bookmark": {
+            "data": "...",  # Contains bookmark data
+            "identifier": "01234567-89ab-cdef-0123-456789abcdef"
           },
-          "identifier": "01234567-89ab-cdef-0123-456789abcdef"
-        }
-      ]
-    }
+          "type": 3,
+          "loginItemType": 1
+        },
+        "identifier": "01234567-89ab-cdef-0123-456789abcdef",
+        "userElection": 0
+      }
+    ]
   }
 }
 ....
+
+The bookmark property can be null or a dict with data and identifier keys.
 
 === Schema version 4
 
@@ -164,7 +165,33 @@ The background item plists are encoded using NSKeyedArchiver.
 
 Presumed changes since schema version 2
 
-* "root" has been replaced by "store"
+* "backgroundItems" has been replaced by "store"
+
+Notes:
+
+....
+sfltool dumpbtm
+....
+
+....
+type:
+0x2     app
+0x4     login item
+0x20    developer
+0x10008 legacy agent
+0x10010 legacy daemon
+0x80020 curated developer
+0x90008 curated legacy agent
+0x90010 curated legacy daemon
+....
+
+....
+disposition:
+2  [disabled, allowed, visible, not notified]
+9  [enabled, disallowed, visible, notified]
+10 [disabled, allowed, visible, notified]
+11 [enabled, allowed, visible, notified]
+....
 
 === Schema version 7
 

@@ -12,6 +12,36 @@ attributes:
   description: "Format version"
   format: decimal
 ---
+data_type_map: alias_data_record_v2
+attributes:
+- name: alias_type
+  description: "Alias type"
+  format: decimal
+- name: volume_name
+  description: "Volume name"
+  format: binary_data
+- name: volume_creation_time
+  description: "Volume creation date and time"
+  format: custom:hfs_time
+- name: file_system_type
+  description: "File system type"
+  format: binary_data
+- name: disk_type
+  description: "Disk type"
+  format: binary_data
+- name: parent_fsid
+  description: "Parent file system identifier"
+  format: decimal
+- name: target_name
+  description: "Target name"
+  format: binary_data
+- name: target_fsid
+  description: "Target file system identifier"
+  format: decimal
+- name: target_creation_time
+  description: "Target creation date and time"
+  format: custom:hfs_time
+---
 data_type_map: alias_data_record_v3
 attributes:
 - name: alias_type
