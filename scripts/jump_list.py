@@ -107,6 +107,8 @@ class StdoutWriter(output_writers.StdoutWriter):
         elif fwps_record.value_type == 0x0042:
           # TODO: add support
           value_string = '<VT_STREAM>'
+        elif fwps_record.value_type == 0x0048:
+          value_string = fwps_record.get_data_as_guid()
         elif fwps_record.value_type & 0xf000 == 0x1000:
           # TODO: add support
           value_string = '<VT_VECTOR>'
@@ -214,9 +216,7 @@ class StdoutWriter(output_writers.StdoutWriter):
 
             self.WriteValue('\t\t\tFile reference', file_reference)
 
-        # TODO: add support for 0xbeef0000
-        # TODO: add support for 0xbeef0019
-        # TODO: add support for 0xbeef0025
+        # TODO: add support for other extension blocks
 
     self.WriteText('\n')
 
@@ -422,10 +422,11 @@ class StdoutWriter(output_writers.StdoutWriter):
     Args:
       lnk_data_block (pylnk.data_block): Windows Shortcut data block.
     """
-    fwps_store = pyfwps.store()
-    fwps_store.copy_from_byte_stream(lnk_data_block.data)
+    if lnk_data_block.data:
+      fwps_store = pyfwps.store()
+      fwps_store.copy_from_byte_stream(lnk_data_block.data)
 
-    self._WritePropertyStore(fwps_store)
+      self._WritePropertyStore(fwps_store)
 
   def WriteShortcut(self, lnk_file):
     """Writes a Windows Shortcut file to stdout.

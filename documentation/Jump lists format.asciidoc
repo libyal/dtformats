@@ -227,7 +227,7 @@ directory and have the extension .customDestinations-ms.
 The custom destinations file consists of:
 
 * File header
-* One or more categories
+* Zero or more categories
 
 === File header
 
@@ -249,27 +249,39 @@ A custom destinations category is of variable size and consists of:
 | 0 | 4 | | Category type +
 See section: <<category_types,Category types>>
 4+| _If category type == 0_
-| 4 | 2 | | String number of characters
-| 6 | ... | | Title string +
+| 4 | 2 | | Number of characters in category name string
+| 6 | ... | | Category name string +
 Contains an UTF-16 little-endian string without an end-of-string character
-4+| _Common_
 | ... | 4 | | Number of entries
-| ... | ... | | Entries +
+| ... | Number of entries | | Entries +
 Contains an array shell object entries
+4+| _If category type == 1_
+| ... | 4 | | Category identifier
+4+| _If category type == 2_
+| ... | 4 | | Number of entries
+| ... | Number of entries | | Entries +
+Contains an array shell object entries
+4+| _Common_
 | ... | 4 | 0xbabffbab | Footer signature
 |===
-
-[NOTE]
-The number of entries is not reliable.
 
 ==== [[category_types]]Category types
 
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
-| 0 | | Custom destinations
-| 1 | | Known destinations
-| 2 | | Custom tasks
+| 0 | | Custom category
+| 1 | | Known category
+| 2 | | User tasks
+|===
+
+==== [[category_identifier]]Category identifier
+
+[cols="1,1,5",options="header"]
+|===
+| Value | Identifier | Description
+| 1 | KDC_FREQUENT | Frequent category
+| 2 | KDC_RECENT | Recent category
 |===
 
 ==== Shell object entry
@@ -356,6 +368,12 @@ Where %ID% a 64-bit CRC of full path of executable file of the corresponding app
 :numbered!:
 [appendix]
 == References
+
+[cols="1,5",options="header"]
+|===
+| Title: | ICustomDestinationList interface (shobjidl_core.h)
+| URL: | https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-icustomdestinationlist
+|===
 
 `[LIBLNK]`
 

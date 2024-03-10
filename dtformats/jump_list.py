@@ -249,12 +249,14 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       'jump_list.debug.yaml', custom_format_callbacks={
           'category_type': '_FormatIntegerAsCategoryType'})
 
+  # TODO: add callback for known category identifier.
+
   _CATEGORY_FOOTER_SIGNATURE = b'\xab\xfb\xbf\xba'
 
   _CATEGORY_TYPES = {
-      0: 'Custom destinations',
-      1: 'Known destinations',
-      2: 'Custom tasks'}
+      0: 'Custom category',
+      1: 'Known category',
+      2: 'User tasks'}
 
   _LNK_GUID = (
       b'\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46')
@@ -334,12 +336,8 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     file_offset += bytes_read
     total_bytes_read = bytes_read
 
-    if category_header.category_type == 0:
-      data_type_map_name = 'custom_category_header_type_0'
-    else:
-      data_type_map_name = 'custom_category_header_type_1_or_2'
-
-    data_type_map = self._GetDataTypeMap(data_type_map_name)
+    data_type_map = self._GetDataTypeMap(
+        f'custom_category_header_type_{category_header.category_type:d}')
 
     category_header_value, bytes_read = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'category header values')
@@ -347,10 +345,15 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     if category_header.category_type == 0:
       setattr(category_header, 'number_of_characters',
               category_header_value.number_of_characters)
-      setattr(category_header, 'title', category_header_value.title)
+      setattr(category_header, 'category_name',
+              category_header_value.category_name)
 
-    setattr(category_header, 'number_of_entries',
-            category_header_value.number_of_entries)
+    if category_header.category_type in (0, 2):
+      setattr(category_header, 'number_of_entries',
+              category_header_value.number_of_entries)
+    else:
+      setattr(category_header, 'category_identifier',
+              category_header_value.category_identifier)
 
     if self._debug:
       debug_info = self._DEBUG_INFORMATION.get('custom_category_header', None)
@@ -444,7 +447,8 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
       file_offset += bytes_read
 
-      for entry_index in range(category_header.number_of_entries):
+      number_of_entries = getattr(category_header, 'number_of_entries', 0)
+      for entry_index in range(number_of_entries):
         if self._file_size - file_offset < 16:
           break
 

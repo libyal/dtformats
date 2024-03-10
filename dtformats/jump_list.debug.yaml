@@ -14,9 +14,12 @@ attributes:
 - name: number_of_characters
   description: "Number of characters"
   format: decimal
-- name: title
-  description: "Title"
+- name: cateogy_name
+  description: "Category name"
   format: string
+- name: category_identifier
+  description: "Category identifier"
+  format: decimal
 - name: number_of_entries
   description: "Number of entries"
   format: decimal
