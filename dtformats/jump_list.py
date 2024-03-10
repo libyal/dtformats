@@ -4,11 +4,8 @@
 * .customDestinations-ms
 """
 
-import logging
 import os
 
-import pyfwps
-import pyfwsi
 import pylnk
 import pyolecf
 
@@ -40,34 +37,6 @@ class JumpListEntry(object):
     if self.lnk_file:
       self.lnk_file.close()
       self.lnk_file = None
-
-  def GetProperties(self):
-    """Retrieves the propertirs.
-
-    Yields:
-      tuple[str, pyfwps.record]: property set identifier and property record.
-    """
-    for lnk_data_block in iter(self.lnk_file.data_blocks):
-      if lnk_data_block.signature == 0xa0000009:
-        fwps_store = pyfwps.store()
-        fwps_store.copy_from_byte_stream(lnk_data_block.data)
-
-        for fwps_set in iter(fwps_store.sets):
-          for fwps_record in iter(fwps_set.records):
-            yield fwps_set.identifier, fwps_record
-
-  def GetShellItems(self):
-    """Retrieves the shell items.
-
-    Yields:
-      pyfswi.item: shell item.
-    """
-    if self.lnk_file.link_target_identifier_data:  # pylint: disable=using-constant-test
-      fwsi_item_list = pyfwsi.item_list()
-      fwsi_item_list.copy_from_byte_stream(
-          self.lnk_file.link_target_identifier_data)
-
-      yield from iter(fwsi_item_list.items)
 
   def ReadFileObject(self, file_object):
     """Reads the LNK file from a file-like object.
@@ -277,9 +246,15 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
   _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('jump_list.yaml')
 
   _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
-      'jump_list.debug.yaml', custom_format_callbacks={})
+      'jump_list.debug.yaml', custom_format_callbacks={
+          'category_type': '_FormatIntegerAsCategoryType'})
 
-  _FILE_FOOTER_SIGNATURE = 0xbabffbab
+  _CATEGORY_FOOTER_SIGNATURE = b'\xab\xfb\xbf\xba'
+
+  _CATEGORY_TYPES = {
+      0: 'Custom destinations',
+      1: 'Known destinations',
+      2: 'Custom tasks'}
 
   _LNK_GUID = (
       b'\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46')
@@ -295,29 +270,95 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     super(CustomDestinationsFile, self).__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
+    self._entries = []
 
-  def _ReadFileFooter(self, file_object):
-    """Reads the file footer.
+  def _FormatIntegerAsCategoryType(self, integer):
+    """Formats an integer as a category type.
+
+    Args:
+      integer (int): integer.
+
+    Returns:
+      str: integer formatted as a category type .
+    """
+    category_type_string = self._CATEGORY_TYPES.get(integer, 'UNKNOWN')
+    return f'{integer:d} ({category_type_string:s})'
+
+  def _ReadCategoryFooter(self, file_object):
+    """Reads the category footer.
 
     Args:
       file_object (file): file-like object.
 
     Raises:
-      ParseError: if the file footer cannot be read.
+      ParseError: if the category footer cannot be read.
     """
     file_offset = file_object.tell()
-    data_type_map = self._GetDataTypeMap('custom_file_footer')
+    data_type_map = self._GetDataTypeMap('custom_category_footer')
 
-    file_footer, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'file footer')
+    category_footer, _ = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'category footer')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('custom_file_footer', None)
-      self._DebugPrintStructureObject(file_footer, debug_info)
+      debug_info = self._DEBUG_INFORMATION.get('custom_category_footer', None)
+      self._DebugPrintStructureObject(category_footer, debug_info)
 
-    if file_footer.signature != self._FILE_FOOTER_SIGNATURE:
+    if category_footer.signature != self._CATEGORY_FOOTER_SIGNATURE:
       raise errors.ParseError(
           f'Invalid footer signature at offset: 0x{file_offset:08x}.')
+
+  def _ReadCategoryHeader(self, file_object, file_offset):
+    """Reads a category header.
+
+    Args:
+      file_object (file): file-like object.
+      file_offset (int): offset of the category header relative to the start of
+          the file.
+
+    Returns:
+      tuple[custom_category_header, int]: category header and the number of
+          bytes read.
+
+    Raises:
+      ParseError: if the category header cannot be read.
+    """
+    data_type_map = self._GetDataTypeMap('custom_category_header')
+
+    category_header, bytes_read = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'category header')
+
+    if category_header.category_type > 2:
+      raise errors.ParseError(
+          f'Unsupported category type: {category_header.category_type:d}.')
+
+    file_offset += bytes_read
+    total_bytes_read = bytes_read
+
+    if category_header.category_type == 0:
+      data_type_map_name = 'custom_category_header_type_0'
+    else:
+      data_type_map_name = 'custom_category_header_type_1_or_2'
+
+    data_type_map = self._GetDataTypeMap(data_type_map_name)
+
+    category_header_value, bytes_read = self._ReadStructureFromFileObject(
+        file_object, file_offset, data_type_map, 'category header values')
+
+    if category_header.category_type == 0:
+      setattr(category_header, 'number_of_characters',
+              category_header_value.number_of_characters)
+      setattr(category_header, 'title', category_header_value.title)
+
+    setattr(category_header, 'number_of_entries',
+            category_header_value.number_of_entries)
+
+    if self._debug:
+      debug_info = self._DEBUG_INFORMATION.get('custom_category_header', None)
+      self._DebugPrintStructureObject(category_header, debug_info)
+
+    total_bytes_read += bytes_read
+
+    return category_header, total_bytes_read
 
   def _ReadFileHeader(self, file_object):
     """Reads the file header.
@@ -325,48 +366,22 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     Args:
       file_object (file): file-like object.
 
+    Returns:
+      tuple[custom_file_header, int]: file header and the number of bytes read.
+
     Raises:
       ParseError: if the file header cannot be read.
     """
     data_type_map = self._GetDataTypeMap('custom_file_header')
 
-    file_header, file_offset = self._ReadStructureFromFileObject(
+    file_header, bytes_read = self._ReadStructureFromFileObject(
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
       debug_info = self._DEBUG_INFORMATION.get('custom_file_header', None)
       self._DebugPrintStructureObject(file_header, debug_info)
 
-    if file_header.unknown1 != 2:
-      raise errors.ParseError(
-          f'Unsupported unknown1: {file_header.unknown1:d}.')
-
-    if file_header.header_values_type > 2:
-      raise errors.ParseError(
-          f'Unsupported header value type: {file_header.header_values_type:d}.')
-
-    if file_header.header_values_type == 0:
-      data_type_map_name = 'custom_file_header_value_type_0'
-    else:
-      data_type_map_name = 'custom_file_header_value_type_1_or_2'
-
-    data_type_map = self._GetDataTypeMap(data_type_map_name)
-
-    file_header_value, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'custom file header value')
-
-    if self._debug:
-      if file_header.header_values_type == 0:
-        self._DebugPrintValue(
-            'Number of characters',
-            f'{file_header_value.number_of_characters:d}')
-
-        # TODO: print string.
-
-      self._DebugPrintValue(
-          'Number of entries', f'{file_header_value.number_of_entries:d}')
-
-      self._DebugPrintText('\n')
+    return file_header, bytes_read
 
   def _ReadJumpListEntry(self, file_object):
     """Reads a jump list entry.
@@ -408,61 +423,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the jump list entries cannot be read.
     """
-    file_offset = self._file_object.tell()
-    remaining_file_size = self._file_size - file_offset
-    data_type_map = self._GetDataTypeMap('custom_entry_header')
-
-    # The Custom Destination file does not have a unique signature in the file
-    # header that is why we use the first LNK class identifier (GUID) as
-    # a signature.
-    first_guid_checked = False
-    while remaining_file_size > 4:
-      try:
-        entry_header, _ = self._ReadStructureFromFileObject(
-            self._file_object, file_offset, data_type_map, 'entry header')
-
-      except errors.ParseError as exception:
-        error_message = (
-            f'Unable to parse file entry header at offset: 0x{file_offset:08x} '
-            f'with error: {exception!s}')
-
-        if not first_guid_checked:
-          raise errors.ParseError(error_message)
-
-        logging.warning(error_message)
-        break
-
-      if entry_header.guid != self._LNK_GUID:
-        error_message = f'Invalid entry header at offset: 0x{file_offset:08x}.'
-
-        if not first_guid_checked:
-          raise errors.ParseError(error_message)
-
-        self._file_object.seek(-16, os.SEEK_CUR)
-        self._ReadFileFooter(self._file_object)
-
-        self._file_object.seek(-4, os.SEEK_CUR)
-        break
-
-      first_guid_checked = True
-      file_offset += 16
-      remaining_file_size -= 16
-
-      data_range_file_object = data_range.DataRange(
-          self._file_object, data_offset=file_offset,
-          data_size=remaining_file_size)
-
-      yield self._ReadJumpListEntry(data_range_file_object)
-
-      # We cannot trust the file size in the LNK data so we get the last offset
-      # that was read instead. Because of DataRange the offset will be relative
-      # to the start of the LNK data.
-      data_size = data_range_file_object.get_offset()
-
-      file_offset += data_size
-      remaining_file_size -= data_size
-
-      self._file_object.seek(file_offset, os.SEEK_SET)
+    yield from self._entries
 
   def ReadFileObject(self, file_object):
     """Reads a Custom Destinations Jump List file-like object.
@@ -473,4 +434,59 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the file cannot be read.
     """
-    self._ReadFileHeader(file_object)
+    file_header, file_offset = self._ReadFileHeader(file_object)
+
+    data_type_map = self._GetDataTypeMap('custom_entry_header')
+
+    for _ in range(file_header.number_of_categories):
+      category_header, bytes_read = self._ReadCategoryHeader(
+          file_object, file_offset)
+
+      file_offset += bytes_read
+
+      for entry_index in range(category_header.number_of_entries):
+        if self._file_size - file_offset < 16:
+          break
+
+        try:
+          entry_header, _ = self._ReadStructureFromFileObject(
+              file_object, file_offset, data_type_map, 'entry header')
+
+        except errors.ParseError as exception:
+          raise errors.ParseError((
+              f'Unable to parse entry: {entry_index:d}  at offset: '
+              f'0x{file_offset:08x} with error: {exception!s}'))
+
+        if entry_header.guid == self._LNK_GUID:
+          file_offset += 16
+
+          remaining_file_size = self._file_size - file_offset
+          data_range_file_object = data_range.DataRange(
+              file_object, data_offset=file_offset,
+              data_size=remaining_file_size)
+
+          jump_list_entry = self._ReadJumpListEntry(data_range_file_object)
+
+          self._entries.append(jump_list_entry)
+
+          # We cannot trust the file size in the LNK data so we get the last
+          # offset that was read instead. Because of DataRange the offset will
+          # be relative to the start of the LNK data.
+          entry_data_size = data_range_file_object.get_offset()
+
+          file_offset += entry_data_size
+
+        elif entry_header.guid[:4] != self._CATEGORY_FOOTER_SIGNATURE:
+          raise errors.ParseError((
+              f'Unsupported entry: {entry_index:d} at offset: '
+              f'0x{file_offset:08x}'))
+
+        file_object.seek(file_offset, os.SEEK_SET)
+
+      self._ReadCategoryFooter(file_object)
+
+      file_offset += 4
+
+    if self._debug and file_offset < self._file_size:
+      trailing_data = file_object.read(self._file_size - file_offset)
+      self._DebugPrintData('Trailing data', trailing_data)

@@ -31,6 +31,15 @@ class OutputWriter(object):
       text (str): text to write.
     """
 
+  @abc.abstractmethod
+  def WriteValue(self, description, value):
+    """Writes a value.
+
+    Args:
+      description (str): description.
+      value (str): value to write.
+    """
+
 
 class StdoutWriter(OutputWriter):
   """Stdout output writer."""
@@ -50,3 +59,15 @@ class StdoutWriter(OutputWriter):
       text (str): text to write.
     """
     print(text, end='')
+
+  def WriteValue(self, description, value):
+    """Writes a value.
+
+    Args:
+      description (str): description.
+      value (object): value.
+    """
+    description_no_tabs = description.replace('\t', ' ' * 8)
+    alignment, _ = divmod(len(description_no_tabs), 8)
+    alignment_string = '\t' * (8 - alignment + 1)
+    self.WriteText(f'{description:s}{alignment_string:s}: {value!s}\n')
