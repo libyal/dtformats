@@ -123,7 +123,7 @@ Field definition use the following prefixes:
 | cs-bytes | HTTP_LOG_FIELD_BYTES_RECV | Number of bytes received and processed by the server
 | cs(Cookie) | HTTP_LOG_FIELD_COOKIE | Content of a sent or received cookie
 | cs-host | HTTP_LOG_FIELD_HOST | HTTP host header name
-| cs-method | HTTP_LOG_FIELD_METHOD | HTTP request method, such as GET or POST.
+| cs-method | HTTP_LOG_FIELD_METHOD | HTTP request method, such as GET or POST. Note that the underscore (_) character has been observed to be used.
 | cs(Referrer) | HTTP_LOG_FIELD_REFERRER | Site that referred to the requested site
 | cs-uri-query | HTTP_LOG_FIELD_URI_QUERY | URI query that was requested
 | cs-uri-stem | HTTP_LOG_FIELD_URI_STEM | File requested, such as index.php or Default.htm
@@ -143,6 +143,27 @@ Field definition use the following prefixes:
 | time | HTTP_LOG_FIELD_TIME | Time, in UTC, at which the logged activity occurred
 | time-taken | HTTP_LOG_FIELD_TIME_TAKEN | Time taken, in milliseconds, to process the request
 |===
+
+===== URI fields definitions
+
+The following characters have been observed to be used URI fields besides URL
+encoded characters (percent-encoding).
+
+* {
+* }
+* |
+* \
+* ^
+* ~
+* [
+* ]
+* `
+* '
+* "
+* <
+* >
+* @
+* $
 
 ===== Username field definitions
 
