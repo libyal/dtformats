@@ -56,6 +56,10 @@ def Main():
   elif filename.startswith('_CACHE_00'):
     cache_file = firefox_cache1.CacheBlockFile(
         debug=options.debug, output_writer=output_writer)
+  else:
+    print('Unsupported Firefox cache version 1 file name.')
+    print('')
+    return False
 
   cache_file.Open(options.source)
 

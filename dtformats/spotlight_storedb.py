@@ -1174,6 +1174,9 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the property page values cannot be read.
     """
+    data_type_map = None
+    debug_info = None
+
     if page_header.property_table_type == 0x00000011:
       data_type_map = self._GetDataTypeMap(
           'spotlight_store_db_property_value11')
@@ -1276,6 +1279,9 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       ParseError: if the metadata attribute streams map cannot be read.
     """
     stream_values = self._ReadStreamsMap(streams_map_number)
+
+    data_type_map = None
+    debug_info = None
 
     if streams_map_number == 1:
       data_type_map = self._GetDataTypeMap(

@@ -169,6 +169,8 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       data_type_map = self._GetDataTypeMap('cpio_portable_ascii_file_entry')
     elif self.file_format in ('crc', 'newc'):
       data_type_map = self._GetDataTypeMap('cpio_new_ascii_file_entry')
+    else:
+      data_type_map = None
 
     file_entry, file_entry_data_size = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'file entry')

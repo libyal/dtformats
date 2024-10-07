@@ -79,6 +79,8 @@ def Main():
       value_type_string = 'del'
     elif table_entry.value_type == 1:
       value_type_string = 'val'
+    else:
+      value_type_string = 'UNKNOWN'
 
     key = ', '.join(table_entry.key_segments)
 

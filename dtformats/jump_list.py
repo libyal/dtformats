@@ -135,6 +135,10 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       data_type_map = self._GetDataTypeMap('dest_list_entry_v2')
       description = 'dest list entry v2'
 
+    else:
+      data_type_map = None
+      description = None
+
     dest_list_entry, entry_data_size = self._ReadStructureFromFileObject(
         olecf_item, stream_offset, data_type_map, description)
 

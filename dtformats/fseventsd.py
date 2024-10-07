@@ -80,6 +80,8 @@ class FseventsFile(data_format.BinaryDataFile):
       data_type_map = self._GetDataTypeMap('dls_record_v1')
     elif format_version == 2:
       data_type_map = self._GetDataTypeMap('dls_record_v2')
+    else:
+      data_type_map = None
 
     dls_record, bytes_read = self._ReadStructureFromFileObject(
         file_object, file_offset, data_type_map, 'DLS record')

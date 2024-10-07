@@ -739,10 +739,6 @@ class ChromeCacheParser(object):
         raise errors.ParseError(
             f'Unable to signature with error: {exception!s}')
 
-      if signature not in (DataBlockFile.SIGNATURE, IndexFile.SIGNATURE):
-        raise errors.ParseError(
-            f'Unsupported signature: 0x{signature:08x}')
-
       if signature == DataBlockFile.SIGNATURE:
         chrome_cache_file = DataBlockFile(
             debug=self._debug, output_writer=self._output_writer)
@@ -750,5 +746,8 @@ class ChromeCacheParser(object):
       elif signature == IndexFile.SIGNATURE:
         chrome_cache_file = IndexFile(
             debug=self._debug, output_writer=self._output_writer)
+
+      else:
+        raise errors.ParseError(f'Unsupported signature: 0x{signature:08x}')
 
       chrome_cache_file.ReadFileObject(file_object)

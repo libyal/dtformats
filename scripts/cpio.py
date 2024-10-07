@@ -86,6 +86,8 @@ class CPIOArchiveFileHasher(object):
             f'Unsupported file type at offset: 0x{file_offset:08x}.\n')
         return
 
+      cpio_file_object = None
+
       if file_type == 'cpio':
         file_object.seek(file_offset, os.SEEK_SET)
         cpio_file_object = file_object

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Shared test case."""
 
+import abc
 import os
 import unittest
 
@@ -70,3 +71,12 @@ class TestOutputWriter(output_writers.OutputWriter):
       text (str): text to write.
     """
     self.output.append(text)
+
+  @abc.abstractmethod
+  def WriteValue(self, description, value):
+    """Writes a value.
+
+    Args:
+      description (str): description.
+      value (str): value to write.
+    """
