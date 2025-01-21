@@ -165,7 +165,7 @@ members:
 - name: property_sheet
   type: stream
   element_data_type: byte
-  element_data_size: dest_list_entry_v2.property_sheet_size
+  elements_data_size: dest_list_entry_v2.property_sheet_size
 ---
 name: custom_file_header
 type: structure
