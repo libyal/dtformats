@@ -160,8 +160,12 @@ members:
   encoding: utf-16-le
   element_data_type: wchar16
   number_of_elements: dest_list_entry_v2.path_size
-- name: unknown7
+- name: property_sheet_size
   data_type: uint32
+- name: property_sheet
+  type: stream
+  element_data_type: byte
+  element_data_size: dest_list_entry_v2.property_sheet_size
 ---
 name: custom_file_header
 type: structure
