@@ -44,7 +44,7 @@ in the section entitled "GNU Free Documentation License".
 |===
 | Version | Author | Date | Comments
 | 0.0.1 | J.B. Metz | July 2014 | Initial version based on earlier notes.
-| 0.0.2 | J.B. Metz | November 2014 | Switched to asccidoc format.
+| 0.0.2 | J.B. Metz | November 2014 | Switched to asciidoc format.
 | 0.0.3 | J.B. Metz | August 2015 | Additional information about Jump lists stored in the Windows Registry.
 | 0.0.4 | J.B. Metz | February 2016 | Additional information about format version 3 automatic destinations jump lists with thanks to E. Zimmerman.
 | 0.0.5 | J.B. Metz | March 2016 | Additional information about format version 4 automatic destinations jump lists with thanks to E. Zimmerman.
@@ -120,13 +120,14 @@ See section: <<destlist_format_versions,Format versions>>
 
 ===== [[destlist_format_versions]]Format versions
 
-[cols="1,1,5",options="header"]
+[cols="1,5",options="header"]
 |===
 | Value | Description
-| 1 | | Used in Windows 7
-| 3 | | Used in Windows 10
-| 4 | | Used in Windows 10 +
-[yellow-background]*Seen in combination with Edit Pad Pro*
+| 1 | Used in Windows 7
+| 3 | Used in Windows 10
+| 4 | Used in Windows 10 & Windows 11 21H2
+| 5 | Used in Windows 11 22H2
+| 6 | Used in Windows 11 23H2 & 24H2
 |===
 
 ==== DestList entry
@@ -205,7 +206,9 @@ Where a value of -1 (0xffffffff) indicates unpinned and a value of 0 or greater 
 Contains the number of characters
 | *130* | ... | | Path +
 Contains a UTF-16 little-endian string without an end-of-string character
-| ... | *4* | | [yellow-background]*Unknown (alignment padding?)*
+| ... | *4* | | [yellow-background]*Property sheet size* +
+Contains the size of optional property sheet, will be 0 if there isn't one
+| ... | ... | | *(Optional) Property sheet*
 |===
 
 The differences between the version 1 and 3 have been highlighted in bold.
