@@ -66,7 +66,7 @@ A Linux libc6 utmp file consists of:
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | litte-endian
+| Byte order | native
 | Date and time values | POSIX timestamp with microseconds in UTC
 | Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string encoded with th system codepage. +
 Though technically maybe incorrect, this document will use term (extended) ASCII string. +
