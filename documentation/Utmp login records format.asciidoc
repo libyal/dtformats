@@ -53,7 +53,8 @@ The utmp login records format is used by the btmp, utmp and wtmp files.
 There are multiple utmp file formats:
 
 * Linux libc5 utmp
-* Linux libc6 utmp
+* Linux libc6 utmp (32-bit or with 32-bit compatibility enabled)
+* Linux libc6 utmp (64-bit)
 * Mac OS X utmp
 * Mac OS X 10.5 utmpx
 
@@ -66,7 +67,7 @@ A Linux libc6 utmp file consists of:
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | litte-endian
+| Byte order | native
 | Date and time values | POSIX timestamp with microseconds in UTC
 | Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string encoded with th system codepage. +
 Though technically maybe incorrect, this document will use term (extended) ASCII string. +
@@ -75,7 +76,9 @@ On modern versions of Linux the system encoding will be UTF-8.
 
 === Record
 
-The Linux libc6 utmp recordd is 384 bytes in size and consists of:
+The Linux libc6 utmp record is 384 bytes in size for 32-bit builds or for
+64-bit builds with 32-bit compatibility enabled (`__WORDSIZE_TIME64_COMPAT32`)
+and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -104,6 +107,35 @@ Contains a signed integer
 | 348 | 16 | | IP address +
 Contains a packed IPv4 or IPv6 address
 | 364 | 20 | | [yellow-background]*Unknown (reserved for future usage)*
+|===
+
+The Linux libc6 record is 400 bytes in size for 64-bit builds:
+
+[cols="1,1,1,5",options="header"]
+|===
+| Offset | Size | Value | Description
+| 0 | 4 | | Type of login +
+Contains a signed integer +
+See section: <<linux_libc6_types,Types of login>>
+| 4 | 4 | | Process identifier (PID)
+| 8 | 32 | | Terminal +
+Contains an encoded string, which can be "\~" in combination with an username of "shutdown", "reboot" or "runlevel"
+| 40 | 4 | | Terminal indentifier
+| 44 | 32 | | Username +
+Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS)
+| 76 | 256 | | Hostname +
+Contains an encoded string, which can be empty (seein in combination with LOGIN_PROCESS) or contain other data such as "4.15.3-300.fc27.x86_64" or "/dev/tty2"
+| 332 | 2 | | Termination status +
+Contains a signed integer
+| 334 | 2 | | Exit status +
+Contains a signed integer
+| 336 | 8 | | Session +
+Contains a signed integer
+| 344 | 16 | | Timestamp +
+Contains a timeval struct with two 8-bytes fields for seconds and microseconds.
+| 360 | 16 | | IP address +
+Contains a packed IPv4 or IPv6 address
+| 376 | 20 | | [yellow-background]*Unknown (reserved for future usage)*
 |===
 
 === [[linux_libc6_types]]Types of login
