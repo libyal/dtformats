@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Script to parse Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
