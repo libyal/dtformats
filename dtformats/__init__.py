@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 """Data formats."""
 
-__version__ = '20251124'
+__version__ = '20251126'

@@ -1,3 +1,47 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "dtformats"
+version = "20251126"
+description = "Data formats (dtformats)"
+maintainers = [
+    { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
+]
+license = "Apache-2.0"
+license-files = ["ACKNOWLEDGEMENTS", "AUTHORS", "LICENSE"]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "PyYAML >= 3.10",
+    "dfdatetime >= 20180510",
+    "dtfabric >= 20230518",
+    "libfwps-python >= 20230131",
+    "libfwsi-python >= 20150606",
+    "libgzipf-python >= 20221229",
+    "liblnk-python >= 20230205",
+    "libolecf-python >= 20151223",
+    "libregf-python >= 20150315",
+    "lz4 >= 0.10.0",
+    "python-snappy >= 0.6.1",
+    "zstd >= 1.3.0.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/libyal/dtformats"
+Repository = "https://github.com/libyal/dtformats"
+
+[tool.setuptools.package-data]
+dtformats = [
+    "*.yaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dtformats"]
+exclude = ["docs", "tests", "tests.*", "utils"]
