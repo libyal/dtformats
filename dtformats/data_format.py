@@ -477,6 +477,17 @@ class BinaryDataFormat(object):
     """
     return string.rstrip('\x00')
 
+  def _FormatByteAsString(self, bytes_object):
+    """Formats a bytes object as a string.
+
+    Args:
+      bytes_object (bytes): bytes object
+
+    Returns:
+      str: a string decoded from bytes
+    """
+    return bytes_object.decode('utf-8')
+
   def _FormatStructureObject(self, structure_object, debug_info):
     """Formats a structure object debug information.
 
