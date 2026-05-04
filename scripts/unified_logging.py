@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to parse Apple Unified Logging and Activity Tracing files."""
 
 import argparse
@@ -20,12 +19,12 @@ except ImportError:
   dfvfs_helpers = None
 
 
-class LogEntriesHeap(object):
+class LogEntriesHeap:
   """Log entries heap."""
 
   def __init__(self):
     """Initializes a log entries heap."""
-    super(LogEntriesHeap, self).__init__()
+    super().__init__()
     self._heap = []
 
   def PopLogEntries(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Mac OS com.apple.loginitems.plist Alias data."""
 
 from dfdatetime import hfs_time as dfdatetime_hfs_time
@@ -27,7 +26,7 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(MacOSLoginItemAliasData, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
 
   def _FormatIntegerAsHFSTime64bit(self, integer):

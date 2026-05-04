@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """USN change journal records."""
 
 import os

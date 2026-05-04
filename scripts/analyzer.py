@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to analyze a data format using a dtFabric definition."""
 
 import argparse
@@ -29,7 +28,7 @@ class BinaryDataFormatAnalyzer(data_format.BinaryDataFormat):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(BinaryDataFormatAnalyzer, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._debug_info_per_data_type = {}
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Windows Jump List files:
 * .automaticDestinations-ms
 * .customDestinations-ms
@@ -14,7 +13,7 @@ from dtformats import data_range
 from dtformats import errors
 
 
-class JumpListEntry(object):
+class JumpListEntry:
   """Jump list entry.
 
   Attributes:
@@ -28,7 +27,7 @@ class JumpListEntry(object):
     Args:
       identifier (str): identifier.
     """
-    super(JumpListEntry, self).__init__()
+    super().__init__()
     self.identifier = identifier
     self.lnk_file = None
 
@@ -70,7 +69,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(AutomaticDestinationsFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._format_version = None
@@ -213,7 +212,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
       self._olecf_file.close()
       self._olecf_file = None
 
-    super(AutomaticDestinationsFile, self).Close()
+    super().Close()
 
   def GetJumpListEntries(self):
     """Retrieves jump list entries.
@@ -273,7 +272,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CustomDestinationsFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._entries = []

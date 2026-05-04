@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Output writer."""
 
 import abc
 
 
-class OutputWriter(object):
+class OutputWriter:
   """Output writer."""
 
   @abc.abstractmethod

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Apple System Log (ASL) files."""
 
 from dtformats import data_format

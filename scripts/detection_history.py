@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to parse Windows Defender scan DetectionHistory files."""
 
 import argparse

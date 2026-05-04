@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Data range file-like object."""
 
 import os
 
 
-class DataRange(object):
+class DataRange:
   """In-file data range file-like object.
 
   Attributes:
@@ -20,7 +19,7 @@ class DataRange(object):
       data_offset (Optional[int]): offset of the data.
       data_size (Optional[int]): size of the data.
     """
-    super(DataRange, self).__init__()
+    super().__init__()
     self._current_offset = 0
     self._file_object = file_object
 

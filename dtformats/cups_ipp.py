@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """CUPS Internet Printing Protocol (IPP) files."""
 
 import os
@@ -106,7 +105,7 @@ class CupsIppFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CupsIppFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._last_charset_attribute = 'ascii'
 

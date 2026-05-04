@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utmp files."""
 
 from dtformats import data_format

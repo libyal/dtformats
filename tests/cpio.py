@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for copy in and out (CPIO) archive format files."""
 
 import io

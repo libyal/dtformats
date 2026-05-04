@@ -91,7 +91,7 @@ See section: <<linux_libc6_types,Types of login>>
 Contains an encoded string, which can be "\~" in combination with an username of "shutdown", "reboot" or "runlevel"
 | 40 | 4 | | Terminal indentifier
 | 44 | 32 | | Username +
-Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS)
+Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS and INIT_PROCESS)
 | 76 | 256 | | Hostname +
 Contains an encoded string, which can be empty (seein in combination with LOGIN_PROCESS) or contain other data such as "4.15.3-300.fc27.x86_64" or "/dev/tty2"
 | 332 | 2 | | Termination status +

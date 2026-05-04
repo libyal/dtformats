@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Copy in and out (CPIO) archive format files."""
 
 import os
@@ -32,7 +31,7 @@ class CPIOArchiveFileEntry(data_range.DataRange):
       data_offset (Optional[int]): offset of the data.
       data_size (Optional[int]): size of the data.
     """
-    super(CPIOArchiveFileEntry, self).__init__(
+    super().__init__(
         file_object, data_offset=data_offset, data_size=data_size)
     self.group_identifier = None
     self.inode_number = None
@@ -82,7 +81,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CPIOArchiveFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._file_entries = None
 
@@ -313,7 +312,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
 
   def Close(self):
     """Closes the CPIO archive file."""
-    super(CPIOArchiveFile, self).Close()
+    super().Close()
     self._file_entries = None
 
   def FileEntryExistsByPath(self, path):

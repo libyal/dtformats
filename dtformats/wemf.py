@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Windows (Enhanced) Metafile Format (WMF and EMF) files."""
 
 import os
@@ -9,7 +8,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class Record(object):
+class Record:
   """Windows (Enhanced) Metafile Format (WMF and EMF) record.
 
   Attributes:
@@ -28,7 +27,7 @@ class Record(object):
       data_offset (int): record data offset.
       data_size (int): record data size.
     """
-    super(Record, self).__init__()
+    super().__init__()
     self.data_offset = data_offset
     self.data_size = data_size
     self.record_type = record_type

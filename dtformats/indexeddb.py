@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """IndexedDB database files."""
 
 from dtformats import leveldb
 
 
-class IndexedDBDatabaseEntry(object):
+class IndexedDBDatabaseEntry:
   """IndexedDB entry.
 
   Attributes:
@@ -23,7 +22,7 @@ class IndexedDBDatabaseEntry(object):
       value_type (int): value type.
       value (bytes): value.
     """
-    super(IndexedDBDatabaseEntry, self).__init__()
+    super().__init__()
     self.key_segments = key_segments
     self.sequence_number = sequence_number
     self.value_type = value_type
@@ -81,8 +80,7 @@ class IndexedDBDatabaseTableFile(leveldb.LevelDBDatabaseTableFile):
     Raises:
       ParseError: if the entries cannot be read.
     """
-    table_entries_iterator = super(
-        IndexedDBDatabaseTableFile, self).ReadTableEntries()
+    table_entries_iterator = super().ReadTableEntries()
 
     for table_entry in table_entries_iterator:
       key_prefix, bytes_read = self._ReadKeyPrefix(table_entry.key)

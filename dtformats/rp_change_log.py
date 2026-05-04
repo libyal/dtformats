@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Windows Restore Point change.log files."""
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps
@@ -7,7 +6,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class ChangeLogEntry(object):
+class ChangeLogEntry:
   """Windows Restore Point change log entry.
 
   Attributes:
@@ -20,7 +19,7 @@ class ChangeLogEntry(object):
 
   def __init__(self):
     """Initializes a change log entry."""
-    super(ChangeLogEntry, self).__init__()
+    super().__init__()
     self.entry_type = None
     self.entry_flags = None
     self.file_attribute_flags = None
@@ -80,7 +79,7 @@ class RestorePointChangeLogFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(RestorePointChangeLogFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self.entries = []
     self.volume_path = None

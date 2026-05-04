@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Apple Unified Logging and Activity Tracing files."""
 
 import abc
@@ -20,7 +19,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class DSCRange(object):
+class DSCRange:
   """Shared-Cache Strings (dsc) range.
 
   Attributes:
@@ -36,7 +35,7 @@ class DSCRange(object):
 
   def __init__(self):
     """Initializes a Shared-Cache Strings (dsc) range."""
-    super(DSCRange, self).__init__()
+    super().__init__()
     self.data_offset = None
     self.image_identifier = None
     self.image_path = None
@@ -47,7 +46,7 @@ class DSCRange(object):
     self.uuid_index = None
 
 
-class DSCUUID(object):
+class DSCUUID:
   """Shared-Cache Strings (dsc) UUID.
 
   Attributes:
@@ -59,14 +58,14 @@ class DSCUUID(object):
 
   def __init__(self):
     """Initializes a Shared-Cache Strings (dsc) UUID."""
-    super(DSCUUID, self).__init__()
+    super().__init__()
     self.image_identifier = None
     self.image_path = None
     self.text_offset = None
     self.text_size = None
 
 
-class ImageValues(object):
+class ImageValues:
   """Image values.
 
   Attributes:
@@ -86,7 +85,7 @@ class ImageValues(object):
       string (Optional[str]): the string.
       text_offset (Optional[int]): the offset of the text.
     """
-    super(ImageValues, self).__init__()
+    super().__init__()
     self._string_formatter = None
     self.identifier = identifier
     self.path = path
@@ -106,7 +105,7 @@ class ImageValues(object):
     return self._string_formatter
 
 
-class BacktraceFrame(object):
+class BacktraceFrame:
   """Backtrace frame.
 
   Attributes:
@@ -116,12 +115,12 @@ class BacktraceFrame(object):
 
   def __init__(self):
     """Initializes a backtrace frame."""
-    super(BacktraceFrame, self).__init__()
+    super().__init__()
     self.image_identifier = None
     self.image_offset = None
 
 
-class LogEntry(object):
+class LogEntry:
   """Log entry.
 
   Attributes:
@@ -166,7 +165,7 @@ class LogEntry(object):
 
   def __init__(self):
     """Initializes a log entry."""
-    super(LogEntry, self).__init__()
+    super().__init__()
     self.activity_identifier = None
     self.backtrace_frames = None
     self.boot_identifier = None
@@ -215,7 +214,7 @@ class LogEntry(object):
     return self.timestamp < other.timestamp
 
 
-class FormatStringOperator(object):
+class FormatStringOperator:
   """Format string operator.
 
   Attributes:
@@ -249,7 +248,7 @@ class FormatStringOperator(object):
       specifier (Optional[str]): conversion specifier.
       width (Optional[str]): width.
     """
-    super(FormatStringOperator, self).__init__()
+    super().__init__()
     self._format_string = None
     self.flags = flags
     self.precision = precision
@@ -313,7 +312,7 @@ class FormatStringOperator(object):
     return self._format_string
 
 
-class StringFormatter(object):
+class StringFormatter:
   """String formatter."""
 
   _DECODERS_TO_IGNORE = (
@@ -363,7 +362,7 @@ class StringFormatter(object):
 
   def __init__(self):
     """Initializes a string formatter."""
-    super(StringFormatter, self).__init__()
+    super().__init__()
     self._decoders = []
     self._format_string = None
     self._operators = []
@@ -486,7 +485,7 @@ class StringFormatter(object):
       self._format_string = self._format_string.replace('}}', '}')
 
 
-class BaseFormatStringDecoder(object):
+class BaseFormatStringDecoder:
   """Format string decoder interface."""
 
   @abc.abstractmethod
@@ -513,7 +512,7 @@ class BooleanFormatStringDecoder(BaseFormatStringDecoder):
       false_value (Optional[str]): value that represents False.
       true_value (Optional[str]): value that represents True.
     """
-    super(BooleanFormatStringDecoder, self).__init__()
+    super().__init__()
     self._false_value = false_value
     self._true_value = true_value
 
@@ -1624,7 +1623,7 @@ class SignpostDescriptionTimeFormatStringDecoder(BaseFormatStringDecoder):
     Args:
       time (Optional[str]): Signpost description time.
     """
-    super(SignpostDescriptionTimeFormatStringDecoder, self).__init__()
+    super().__init__()
     self._time = time
 
   def FormatValue(self, value, format_string_operator=None):
@@ -1656,7 +1655,7 @@ class SignpostTelemetryNumberFormatStringDecoder(BaseFormatStringDecoder):
     Args:
       number (Optional[int]): Signpost telemetry number.
     """
-    super(SignpostTelemetryNumberFormatStringDecoder, self).__init__()
+    super().__init__()
     self._number = number
 
   def _GetStringValue(self, value, format_string_operator=None):
@@ -1758,7 +1757,7 @@ class SignpostTelemetryStringFormatStringDecoder(BaseFormatStringDecoder):
     Args:
       number (Optional[int]): Signpost telemetry number.
     """
-    super(SignpostTelemetryStringFormatStringDecoder, self).__init__()
+    super().__init__()
     self._number = number
 
   def FormatValue(self, value, format_string_operator=None):
@@ -1967,7 +1966,7 @@ class DSCFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(DSCFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self.ranges = []
@@ -2247,7 +2246,7 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(TimesyncDatabaseFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._boot_record_data_type_map = self._GetDataTypeMap(
@@ -2523,7 +2522,7 @@ class TraceV3File(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(TraceV3File, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._boot_identifier = None
@@ -4602,7 +4601,7 @@ class TraceV3File(data_format.BinaryDataFile):
       if uuidtext_file:
         uuidtext_file.Close()
 
-    super(TraceV3File, self).Close()
+    super().Close()
 
   def ReadFileObject(self, file_object):
     """Reads a tracev3 file-like object.
@@ -4796,7 +4795,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(UUIDTextFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._entry_descriptors = []

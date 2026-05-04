@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Mac OS backgrounditems.btm bookmark data."""
 
 from dtformats import data_format
@@ -25,7 +24,7 @@ class MacOSBackgroundItemBookmarkData(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(MacOSBackgroundItemBookmarkData, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
 
   def _FormatArrayOfTaggedValues(self, array):

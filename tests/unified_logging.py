@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Apple Unified Logging and Activity Tracing files."""
 
 import collections

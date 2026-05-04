@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to parse Mac OS com.apple.loginitems.plist Alias value."""
 
 import argparse

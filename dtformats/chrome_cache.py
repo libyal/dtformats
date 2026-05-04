@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Chrome Cache files."""
 
 import datetime
@@ -72,7 +71,7 @@ def SuperFastHash(key):
   return hash_value
 
 
-class CacheAddress(object):
+class CacheAddress:
   """Cache address.
 
   Attributes:
@@ -109,7 +108,7 @@ class CacheAddress(object):
     Args:
       cache_address (int): cache address.
     """
-    super(CacheAddress, self).__init__()
+    super().__init__()
     self.block_number = None
     self.block_offset = None
     self.block_size = None
@@ -161,7 +160,7 @@ class CacheAddress(object):
         f'0x{self.block_offset:08x}, block size: {self.block_size:d})')
 
 
-class CacheEntry(object):
+class CacheEntry:
   """Cache entry.
 
   Attributes:
@@ -175,7 +174,7 @@ class CacheEntry(object):
 
   def __init__(self):
     """Initializes a cache entry."""
-    super(CacheEntry, self).__init__()
+    super().__init__()
     self.creation_time = None
     self.hash = None
     self.key = None
@@ -213,7 +212,7 @@ class DataBlockFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(DataBlockFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self.block_size = None
     self.format_version = None
@@ -447,7 +446,7 @@ class IndexFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(IndexFile, self).__init__(debug=debug, output_writer=output_writer)
+    super().__init__(debug=debug, output_writer=output_writer)
     self.creation_time = None
     self.format_version = None
     self.index_table = {}
@@ -607,7 +606,7 @@ class IndexFile(data_format.BinaryDataFile):
     self._ReadIndexTable(file_object)
 
 
-class ChromeCacheParser(object):
+class ChromeCacheParser:
   """Chrome Cache parser."""
 
   # Using a class constant significantly speeds up the time required to load
@@ -627,7 +626,7 @@ class ChromeCacheParser(object):
     if not file_system_helper:
       file_system_helper = file_system.NativeFileSystemHelper()
 
-    super(ChromeCacheParser, self).__init__()
+    super().__init__()
     self._debug = debug
     self._file_system_helper = file_system_helper
     self._output_writer = output_writer

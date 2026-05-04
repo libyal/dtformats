@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to decodes a NSKeyedArchiver encoded plist."""
 
 import argparse
@@ -10,7 +9,7 @@ import sys
 import uuid
 
 
-class NSKeyedArchiverDecoder(object):
+class NSKeyedArchiverDecoder:
   """Decodes a NSKeyedArchiver encoded plist."""
 
   # TODO: add support for NSAttributedString

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """YAML-based debug definitions file."""
 
 import collections
@@ -7,7 +6,7 @@ import yaml
 from dtformats import errors
 
 
-class DebugDefinitionAttribute(object):
+class DebugDefinitionAttribute:
   """Debug definition attribute.
 
   Attributes:
@@ -22,13 +21,13 @@ class DebugDefinitionAttribute(object):
     Args:
       name (Optional[str]): name of the corresponding attribute.
     """
-    super(DebugDefinitionAttribute, self).__init__()
+    super().__init__()
     self.description = None
     self.format = None
     self.name = name
 
 
-class DebugDefinition(object):
+class DebugDefinition:
   """Debug definition.
 
   Attributes:
@@ -43,12 +42,12 @@ class DebugDefinition(object):
     Args:
       data_type_map (str): name of the corresponding dtFabric data type map.
     """
-    super(DebugDefinition, self).__init__()
+    super().__init__()
     self.attributes = collections.OrderedDict()
     self.data_type_map = data_type_map
 
 
-class YAMLDebugDefinitionsFile(object):
+class YAMLDebugDefinitionsFile:
   """YAML-based debug definitions file.
 
   A YAML-based debug definitions file contains one or more debug definitions.

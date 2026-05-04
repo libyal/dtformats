@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Basic Security Module (BSM) event auditing files."""
 
 from dtformats import data_format

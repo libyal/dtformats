@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Apple Spotlight store database files."""
 
 import unittest

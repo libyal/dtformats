@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Systemd journal files."""
 
 from dtformats import data_format
@@ -66,7 +65,7 @@ class SystemdJournalFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(SystemdJournalFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._format_version = None
 

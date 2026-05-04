@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for CUPS Internet Printing Protocol (IPP) files."""
 
 import unittest

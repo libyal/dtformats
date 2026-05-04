@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Mac OS com.apple.loginitems.plist Alias value data."""
 
 import unittest

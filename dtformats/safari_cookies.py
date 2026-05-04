@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Safari Cookies (Cookies.binarycookies) files."""
 
 import datetime
@@ -23,7 +22,7 @@ class BinaryCookiesFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(BinaryCookiesFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._page_sizes = []
 

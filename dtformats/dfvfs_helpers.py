@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """dfVFS helpers."""
 
 from dfvfs.helpers import command_line as dfvfs_command_line
@@ -20,7 +19,7 @@ class DFVFSFileSystemHelper(
     Args:
       mediator (dfvfs.VolumeScannerMediator): mediator.
     """
-    super(DFVFSFileSystemHelper, self).__init__()
+    super().__init__()
     self._file_system = None
     self._parent_path_spec = None
     self._mediator = mediator

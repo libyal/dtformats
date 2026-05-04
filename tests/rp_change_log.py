@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Windows Restore Point change.log files."""
 
 import unittest

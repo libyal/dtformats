@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """LevelDB database files."""
 
 import abc
@@ -13,7 +12,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class LevelDBDatabaseBlockHandle(object):
+class LevelDBDatabaseBlockHandle:
   """LevelDB block handle.
 
   Attributes:
@@ -28,12 +27,12 @@ class LevelDBDatabaseBlockHandle(object):
       offset (int): block offset.
       size (int): block size.
     """
-    super(LevelDBDatabaseBlockHandle, self).__init__()
+    super().__init__()
     self.offset = offset
     self.size = size
 
 
-class LevelDBDatabaseTableEntry(object):
+class LevelDBDatabaseTableEntry:
   """LevelDB table entry.
 
   Attributes:
@@ -52,7 +51,7 @@ class LevelDBDatabaseTableEntry(object):
       value_type (int): value type.
       value (bytes): value.
     """
-    super(LevelDBDatabaseTableEntry, self).__init__()
+    super().__init__()
     self.key = key
     self.sequence_number = sequence_number
     self.value_type = value_type
@@ -435,7 +434,7 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(LevelDBDatabaseTableFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._index_block_offset = None

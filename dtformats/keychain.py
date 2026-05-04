@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """MacOS keychain database files."""
 
 import collections
@@ -9,7 +8,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class KeychainDatabaseColumn(object):
+class KeychainDatabaseColumn:
   """MacOS keychain database column.
 
   Attributes:
@@ -20,13 +19,13 @@ class KeychainDatabaseColumn(object):
 
   def __init__(self):
     """Initializes a MacOS keychain database column."""
-    super(KeychainDatabaseColumn, self).__init__()
+    super().__init__()
     self.attribute_data_type = None
     self.attribute_identifier = None
     self.attribute_name = None
 
 
-class KeychainDatabaseTable(object):
+class KeychainDatabaseTable:
   """MacOS keychain database table.
 
   Attributes:
@@ -38,7 +37,7 @@ class KeychainDatabaseTable(object):
 
   def __init__(self):
     """Initializes a MacOS keychain database table."""
-    super(KeychainDatabaseTable, self).__init__()
+    super().__init__()
     self.columns = []
     self.records = []
     self.relation_identifier = None
@@ -112,7 +111,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(KeychainDatabaseFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._tables = collections.OrderedDict()
 

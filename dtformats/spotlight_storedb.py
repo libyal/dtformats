@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Apple Spotlight store database files."""
 
 import os
@@ -15,7 +14,7 @@ from dtformats import data_format
 from dtformats import errors
 
 
-class SpotlightStoreIndexValue(object):
+class SpotlightStoreIndexValue:
   """Index value.
 
   Attributes:
@@ -25,12 +24,12 @@ class SpotlightStoreIndexValue(object):
 
   def __init__(self):
     """Initializes an index value."""
-    super(SpotlightStoreIndexValue, self).__init__()
+    super().__init__()
     self.table_index = None
     self.values_list = []
 
 
-class SpotlightStoreMetadataAttribute(object):
+class SpotlightStoreMetadataAttribute:
   """Metadata attribute.
 
   Attributes:
@@ -42,14 +41,14 @@ class SpotlightStoreMetadataAttribute(object):
 
   def __init__(self):
     """Initializes a metadata attribute."""
-    super(SpotlightStoreMetadataAttribute, self).__init__()
+    super().__init__()
     self.key = None
     self.property_type = None
     self.value = None
     self.value_type = None
 
 
-class SpotlightStoreMetadataItem(object):
+class SpotlightStoreMetadataItem:
   """Metadata item.
 
   Attributes:
@@ -62,7 +61,7 @@ class SpotlightStoreMetadataItem(object):
 
   def __init__(self):
     """Initializes a record."""
-    super(SpotlightStoreMetadataItem, self).__init__()
+    super().__init__()
     self.attributes = {}
     self.identifier = 0
     self.item_identifier = 0
@@ -70,7 +69,7 @@ class SpotlightStoreMetadataItem(object):
     self.parent_identifier = 0
 
 
-class SpotlightStoreRecordDescriptor(object):
+class SpotlightStoreRecordDescriptor:
   """Record descriptor.
 
   Attributes:
@@ -93,7 +92,7 @@ class SpotlightStoreRecordDescriptor(object):
       page_value_offset (int): offset of the page value containing the record,
           relative to the start of the page.
     """
-    super(SpotlightStoreRecordDescriptor, self).__init__()
+    super().__init__()
     self.identifier = 0
     self.item_identifier = 0
     self.last_update_time = 0
@@ -102,7 +101,7 @@ class SpotlightStoreRecordDescriptor(object):
     self.parent_identifier = 0
 
 
-class SpotlightStoreRecordHeader(object):
+class SpotlightStoreRecordHeader:
   """Record header.
 
   Attributes:
@@ -116,7 +115,7 @@ class SpotlightStoreRecordHeader(object):
 
   def __init__(self):
     """Initializes a record header."""
-    super(SpotlightStoreRecordHeader, self).__init__()
+    super().__init__()
     self.data_size = 0
     self.flags = 0
     self.identifier = 0
@@ -153,7 +152,7 @@ class SpotlightStreamsMapDataFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(SpotlightStreamsMapDataFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._data_size = data_size
@@ -250,7 +249,7 @@ class SpotlightStreamsMapHeaderFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(SpotlightStreamsMapHeaderFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self.data_size = None
@@ -314,7 +313,7 @@ class SpotlightStreamsMapOffsetsFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(SpotlightStreamsMapOffsetsFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._data_size = data_size
@@ -400,7 +399,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       file_system_helper (Optional[FileSystemHelper]): file system helper.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(SpotlightStoreDatabaseFile, self).__init__(
+    super().__init__(
         debug=debug, file_system_helper=file_system_helper,
         output_writer=output_writer)
     self._map_values = []

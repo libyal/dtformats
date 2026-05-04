@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to parse Apple Spotlight store database files."""
 
 import argparse
@@ -83,7 +82,7 @@ def GetDateTimeString(timestamp):
       iso8601_string[33:35]])
 
 
-class TableView(object):
+class TableView:
   """Table view."""
 
   def __init__(self, header=None):
@@ -92,7 +91,7 @@ class TableView(object):
     Args:
       header (Optional[str]): table header.
     """
-    super(TableView, self).__init__()
+    super().__init__()
     self._header = header
     self._number_of_values = 0
     self._rows = []

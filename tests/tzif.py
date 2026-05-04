@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Time zone information files (TZif)."""
 
 import unittest

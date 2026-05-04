@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for WMI Common Information Model (CIM) repository files."""
 
 import os

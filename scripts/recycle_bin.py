@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to parse Windows Recycle.Bin metadata ($I) files."""
 
 import argparse

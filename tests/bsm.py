@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for BSM event auditing files."""
 
 import unittest

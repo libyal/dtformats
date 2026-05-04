@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Script to calculate Windows Prefetch hashes."""
 
 

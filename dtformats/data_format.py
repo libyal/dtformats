@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Binary data format."""
 
 import abc
@@ -17,7 +16,7 @@ from dtformats import file_system
 from dtformats import yaml_definitions_file
 
 
-class BinaryDataFormat(object):
+class BinaryDataFormat:
   """Binary data format."""
 
   _DEBUG_FORMAT_CALLBACKS = {
@@ -60,7 +59,7 @@ class BinaryDataFormat(object):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(BinaryDataFormat, self).__init__()
+    super().__init__()
     self._data_type_maps = {}
     self._debug = debug
     self._output_writer = output_writer
@@ -832,7 +831,7 @@ class BinaryDataFile(BinaryDataFormat):
     if not file_system_helper:
       file_system_helper = file_system.NativeFileSystemHelper()
 
-    super(BinaryDataFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._file_object = None
     self._file_object_opened_in_object = False

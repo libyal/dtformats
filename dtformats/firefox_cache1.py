@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Firefox cache version 1 files."""
 
 import os
@@ -26,7 +25,7 @@ class CacheMapFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CacheMapFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
 
   def _FormatCacheLocation(self, integer):
@@ -132,7 +131,7 @@ class CacheBlockFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CacheBlockFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._block_size = None
 

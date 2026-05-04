@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Windows Recycler INFO2 files."""
 
 import unittest

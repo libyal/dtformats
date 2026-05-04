@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script to parse copy in and out (CPIO) archive files."""
 
 import argparse
@@ -23,7 +22,7 @@ from dtformats import data_range
 from dtformats import output_writers
 
 
-class CPIOArchiveFileHasher(object):
+class CPIOArchiveFileHasher:
   """CPIO archive file hasher."""
 
   _BZIP_SIGNATURE = b'BZ'
@@ -43,7 +42,7 @@ class CPIOArchiveFileHasher(object):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(CPIOArchiveFileHasher, self).__init__()
+    super().__init__()
     self._debug = debug
     self._output_writer = output_writer
     self._path = path

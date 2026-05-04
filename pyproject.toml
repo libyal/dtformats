@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dtformats"
-version = "20260413"
+version = "20260501"
 description = "Data formats (dtformats)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
@@ -36,12 +36,10 @@ dependencies = [
 Homepage = "https://github.com/libyal/dtformats"
 Repository = "https://github.com/libyal/dtformats"
 
+[tool.setuptools]
+package-dir = {"dtformats" = "dtformats"}
+
 [tool.setuptools.package-data]
 dtformats = [
     "*.yaml",
 ]
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["dtformats"]
-exclude = ["docs", "tests", "tests.*", "utils"]

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Safari Cookies (Cookies.binarycookies) files."""
 
 import io

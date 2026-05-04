@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Windows Task Scheduler job files."""
 
 from dtformats import data_format
 
 
-class WindowsTaskConfiguration(object):
+class WindowsTaskConfiguration:
   """Windows Task configuration.
 
   Attributes:
@@ -21,7 +20,7 @@ class WindowsTaskConfiguration(object):
 
   def __init__(self):
     """Initializes a Windows Task configuration."""
-    super(WindowsTaskConfiguration, self).__init__()
+    super().__init__()
     self.application_name = None
     self.author = None
     self.comment = None
@@ -60,7 +59,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(WindowsTaskSchedulerJobFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._task_configuration = WindowsTaskConfiguration()
 

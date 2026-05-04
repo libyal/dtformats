@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for GZip files."""
 
 # Note: do not rename file to gzip.py this can cause the exception:

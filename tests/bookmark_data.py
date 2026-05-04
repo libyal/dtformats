@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Mac OS backgrounditems.btm bookmark data."""
 
 import unittest

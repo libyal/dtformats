@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Windows Defender scan DetectionHistory files."""
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps

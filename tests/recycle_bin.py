@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Windows Recycle.Bin metadata ($I) files."""
 
 import unittest

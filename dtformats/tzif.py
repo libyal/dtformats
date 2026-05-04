@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Time zone information files (TZif)."""
 
 from dtfabric.runtime import data_maps as dtfabric_data_maps
@@ -29,7 +28,7 @@ class TimeZoneInformationFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(TimeZoneInformationFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self.format_version = None
 

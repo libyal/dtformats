@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the data range file-like object."""
 
 import io

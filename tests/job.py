@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for Windows Task Scheduler job files."""
 
 import unittest

@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """File system helper."""
 
 import abc
 import os
 
 
-class FileSystemHelper(object):
+class FileSystemHelper:
   """File system helper interface."""
 
   @abc.abstractmethod
@@ -98,7 +97,7 @@ class FileSystemHelper(object):
     """
 
 
-class NativeFileSystemHelper(object):
+class NativeFileSystemHelper:
   """Python native system helper."""
 
   def BasenamePath(self, path):

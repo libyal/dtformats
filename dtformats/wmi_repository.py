@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """WMI Common Information Model (CIM) repository files."""
 
 import glob
@@ -14,7 +13,7 @@ from dtformats import errors
 from dtformats import file_system
 
 
-class ClassDefinitionProperty(object):
+class ClassDefinitionProperty:
   """Class definition property.
 
   Attributes:
@@ -27,7 +26,7 @@ class ClassDefinitionProperty(object):
 
   def __init__(self):
     """Initializes a class property."""
-    super(ClassDefinitionProperty, self).__init__()
+    super().__init__()
     self.index = None
     self.name = None
     self.qualifiers = {}
@@ -35,7 +34,7 @@ class ClassDefinitionProperty(object):
     self.value_data_type = None
 
 
-class ClassValueDataMap(object):
+class ClassValueDataMap:
   """Class value data map.
 
   Attributes:
@@ -64,7 +63,7 @@ class ClassValueDataMap(object):
 
   def __init__(self):
     """Initializes a class value data map."""
-    super(ClassValueDataMap, self).__init__()
+    super().__init__()
     self.class_name = None
     self.derivation = []
     self.dynasty = None
@@ -135,7 +134,7 @@ class ClassValueDataMap(object):
           largest_property_map.offset + largest_property_map.size)
 
 
-class IndexBinaryTreePage(object):
+class IndexBinaryTreePage:
   """Index binary-tree page.
 
   Attributes:
@@ -151,7 +150,7 @@ class IndexBinaryTreePage(object):
 
   def __init__(self):
     """Initializes an index binary-tree page."""
-    super(IndexBinaryTreePage, self).__init__()
+    super().__init__()
     self.keys = []
     self.number_of_keys = None
     self.page_key_segments = []
@@ -162,7 +161,7 @@ class IndexBinaryTreePage(object):
     self.sub_pages = []
 
 
-class MappingTable(object):
+class MappingTable:
   """Mapping table."""
 
   def __init__(self, mapping_table):
@@ -171,7 +170,7 @@ class MappingTable(object):
     Args:
       mapping_table (mapping_table): mapping table.
     """
-    super(MappingTable, self).__init__()
+    super().__init__()
     self._mapping_table = mapping_table
 
   def ResolveMappedPageNumber(self, mapped_page_number):
@@ -187,7 +186,7 @@ class MappingTable(object):
     return mapping_table_entry.page_number
 
 
-class ObjectsDataPage(object):
+class ObjectsDataPage:
   """An objects data page.
 
   Attributes:
@@ -200,7 +199,7 @@ class ObjectsDataPage(object):
     Args:
       page_offset (int): offset of the page relative to the start of the file.
     """
-    super(ObjectsDataPage, self).__init__()
+    super().__init__()
     self._object_descriptors = []
 
     self.page_offset = page_offset
@@ -240,7 +239,7 @@ class ObjectsDataPage(object):
     return object_descriptor_match
 
 
-class ObjectRecord(object):
+class ObjectRecord:
   """Object record.
 
   Attributes:
@@ -257,13 +256,13 @@ class ObjectRecord(object):
       data (bytes): object record data.
       offset (int): offset of the record data.
     """
-    super(ObjectRecord, self).__init__()
+    super().__init__()
     self.data = data
     self.data_type = data_type
     self.offset = offset
 
 
-class PropertyValueDataMap(object):
+class PropertyValueDataMap:
   """Property value data map.
 
   Attributes:
@@ -283,7 +282,7 @@ class PropertyValueDataMap(object):
       offset (int): offset of the property in value data.
       size (int): size of the property in value data.
     """
-    super(PropertyValueDataMap, self).__init__()
+    super().__init__()
     self.data_type = data_type
     self.name = name
     self.offset = offset
@@ -320,7 +319,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(IndexBinaryTreeFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._unavailable_page_numbers = set([0, 0xffffffff])
 
@@ -638,7 +637,7 @@ class MappingFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(MappingFile, self).__init__(debug=debug, output_writer=output_writer)
+    super().__init__(debug=debug, output_writer=output_writer)
     self._mapping_table1 = None
     self._mapping_table2 = None
     self._unavailable_page_numbers = set([0xffffffff])
@@ -1073,7 +1072,7 @@ class RepositoryFile(data_format.BinaryDataFile):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(RepositoryFile, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self._root_namespace_node_offset = None
     self._system_class_definition_root_node_offset = None
@@ -2171,7 +2170,7 @@ class ClassDefinition(CIMObject):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(ClassDefinition, self).__init__(
+    super().__init__(
         debug=debug, output_writer=output_writer)
     self.name = None
     self.super_class_name = None
@@ -2634,7 +2633,7 @@ class ClassDefinitionReference(CIMObject):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(ClassDefinitionReference, self).__init__()
+    super().__init__()
     self.data = None
     self.offset = None
     self.super_class_name = None
@@ -2696,7 +2695,7 @@ class InstanceReference(CIMObject):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(InstanceReference, self).__init__()
+    super().__init__()
     self._format_version = format_version
     self.class_name = None
     self.class_name_hash = None
@@ -2782,7 +2781,7 @@ class Instance(CIMObject):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(Instance, self).__init__(debug=debug, output_writer=output_writer)
+    super().__init__(debug=debug, output_writer=output_writer)
     self.class_name = None
     self.class_name_hash = None
     self.namespace = None
@@ -3036,7 +3035,7 @@ class Registration(CIMObject):
       debug (Optional[bool]): True if debug information should be written.
       output_writer (Optional[OutputWriter]): output writer.
     """
-    super(Registration, self).__init__(debug=debug, output_writer=output_writer)
+    super().__init__(debug=debug, output_writer=output_writer)
     self.name = None
 
   def ReadObjectRecord(self, object_record_data):
@@ -3170,7 +3169,7 @@ class CIMRepository(data_format.BinaryDataFormat):
     if not file_system_helper:
       file_system_helper = file_system.NativeFileSystemHelper()
 
-    super(CIMRepository, self).__init__()
+    super().__init__()
     self._debug = debug
     self._class_definitions_by_hash = {}
     self._class_value_data_map_by_hash = {}
