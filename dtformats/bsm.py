@@ -955,8 +955,8 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
       raise errors.ParseError(f'Unsupported token type: {token_type:d}')
 
     if self._debug:
-      debug_info_name = self._DEBUG_INFO_NAME.get(token.token_type, None)
-      debug_info = self._DEBUG_INFORMATION.get(debug_info_name, None)
+      debug_info_name = self._DEBUG_INFO_NAME.get(token.token_type)
+      debug_info = self._DEBUG_INFORMATION.get(debug_info_name)
       self._DebugPrintStructureObject(token, debug_info)
 
     return token

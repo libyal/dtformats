@@ -206,7 +206,7 @@ def Main():
 
   try:
     output_writer.Open()
-  except IOError as exception:
+  except OSError as exception:
     print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False
@@ -295,7 +295,7 @@ def Main():
 
         for name in names:
           lookup_name = LOOKUP_ATTRIBUTE_NAMES.get(name, name)
-          metadata_attribute = metadata_item.attributes.get(lookup_name, None)
+          metadata_attribute = metadata_item.attributes.get(lookup_name)
           if not metadata_attribute:
             value_string = '(null)'
 

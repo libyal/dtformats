@@ -90,7 +90,7 @@ class GZipFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'member footer')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('gzip_member_footer', None)
+      debug_info = self._DEBUG_INFORMATION.get('gzip_member_footer')
       self._DebugPrintStructureObject(member_footer, debug_info)
 
   def _ReadMemberHeader(self, file_object):
@@ -109,7 +109,7 @@ class GZipFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'member header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('gzip_member_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('gzip_member_header')
       self._DebugPrintStructureObject(member_header, debug_info)
 
     if member_header.signature != self._GZIP_SIGNATURE:

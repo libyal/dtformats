@@ -55,7 +55,7 @@ class NSKeyedArchiverDecoder:
       if key == '$class':
         continue
 
-      encoded_value = encoded_object.get(key, None)
+      encoded_value = encoded_object.get(key)
       if encoded_value:
         decoded_value = self._DecodeObject(encoded_value, objects_list)
 
@@ -79,7 +79,7 @@ class NSKeyedArchiverDecoder:
       if key in ('$class', 'container'):
         continue
 
-      encoded_value = encoded_object.get(key, None)
+      encoded_value = encoded_object.get(key)
       if encoded_value:
         decoded_value = self._DecodeObject(encoded_value, objects_list)
 
@@ -265,16 +265,16 @@ class NSKeyedArchiverDecoder:
       return encoded_object
 
     if isinstance(encoded_object, dict):
-      encoded_class = encoded_object.get('$class', None)
+      encoded_class = encoded_object.get('$class')
       if not encoded_class:
         return encoded_object
 
       decoded_class = self._DecodeObject(encoded_class, objects_list)
-      class_name = decoded_class.get('$classname', None)
+      class_name = decoded_class.get('$classname')
       if not class_name:
         return encoded_object
 
-      callback_method = self._CALLBACKS.get(class_name, None)
+      callback_method = self._CALLBACKS.get(class_name)
       if not callback_method:
         raise RuntimeError(f'Missing callback for class: {class_name:s}')
 

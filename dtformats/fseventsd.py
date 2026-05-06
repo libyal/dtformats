@@ -54,7 +54,7 @@ class FseventsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'DLS page header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('dls_page_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('dls_page_header')
       self._DebugPrintStructureObject(dls_page_header, debug_info)
 
     return dls_page_header, bytes_read
@@ -86,7 +86,7 @@ class FseventsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'DLS record')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('dls_record', None)
+      debug_info = self._DEBUG_INFORMATION.get('dls_record')
       self._DebugPrintStructureObject(dls_record, debug_info)
 
     return dls_record, bytes_read

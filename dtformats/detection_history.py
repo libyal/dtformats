@@ -96,7 +96,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
           the start of the file.
 
     Raises:
-      IOError: if the threat tracking data cannot be read.
+      OSError: if the threat tracking data cannot be read.
     """
     if self._debug:
       self._DebugPrintText((
@@ -133,7 +133,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
       threat_tracking_header: threat tracking header.
 
     Raises:
-      IOError: if the threat tracking header cannot be read.
+      OSError: if the threat tracking header cannot be read.
     """
     data_type_map = self._GetDataTypeMap('threat_tracking_header')
 
@@ -141,7 +141,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         threat_tracking_data, 0, data_type_map, 'threat tracking header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('threat_tracking_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('threat_tracking_header')
       self._DebugPrintStructureObject(threat_tracking_header, debug_info)
 
     if threat_tracking_header.header_size > 20:
@@ -162,7 +162,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
       tuple[threat_tracking_value, int]: threat tracking value and data size.
 
     Raises:
-      IOError: if the threat tracking value cannot be read.
+      OSError: if the threat tracking value cannot be read.
     """
     data_type_map = self._GetDataTypeMap('threat_tracking_value')
 
@@ -173,7 +173,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         'threat tracking value', context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('threat_tracking_value', None)
+      debug_info = self._DEBUG_INFORMATION.get('threat_tracking_value')
       self._DebugPrintStructureObject(threat_tracking_value, debug_info)
 
     return threat_tracking_value, context.byte_size
@@ -189,7 +189,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
       object: value.
 
     Raises:
-      IOError: if the value cannot be read.
+      OSError: if the value cannot be read.
     """
     data_type_map = self._GetDataTypeMap('detection_history_value')
 
@@ -197,7 +197,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'value')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('detection_history_value', None)
+      debug_info = self._DEBUG_INFORMATION.get('detection_history_value')
       self._DebugPrintStructureObject(value, debug_info)
 
     value_object = None

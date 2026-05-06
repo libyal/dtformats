@@ -49,7 +49,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('asl_file_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('asl_file_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
@@ -83,7 +83,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('asl_record', None)
+      debug_info = self._DEBUG_INFORMATION.get('asl_record')
       self._DebugPrintStructureObject(record, debug_info)
 
     hostname = self._ReadRecordString(
@@ -167,7 +167,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           f'with error: {exception!s}'))
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('asl_record_extra_field', None)
+      debug_info = self._DEBUG_INFORMATION.get('asl_record_extra_field')
       self._DebugPrintStructureObject(record_extra_field, debug_info)
 
     return record_extra_field
@@ -231,7 +231,7 @@ class AppleSystemLogFile(data_format.BinaryDataFile):
           f'with error: {exception!s}'))
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('asl_record_string', None)
+      debug_info = self._DEBUG_INFORMATION.get('asl_record_string')
       self._DebugPrintStructureObject(record_string, debug_info)
 
     return record_string.string.rstrip('\x00')

@@ -69,10 +69,9 @@ class ErrorBytesIO(io.BytesIO):
       bytes: bytes read.
 
     Raises:
-      IOError: for testing.
       OSError: for testing.
     """
-    raise IOError('Unable to read for testing purposes.')
+    raise OSError('Unable to read for testing purposes.')
 
 
 class ErrorDataTypeMap(dtfabric_data_maps.DataTypeMap):
@@ -278,7 +277,7 @@ class BinaryDataFormatTest(test_lib.BaseTestCase):
     with self.assertRaises(errors.ParseError):
       test_format._ReadData(file_object, 0, data_size, 'point3d')
 
-    # Test with file-like object that raises an IOError.
+    # Test with file-like object that raises an OSError.
     file_object = ErrorBytesIO(
         b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00')
 
@@ -355,12 +354,12 @@ class BinaryDataFileTest(test_lib.BaseTestCase):
 
     test_file.Open(test_file_path)
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_file.Open(test_file_path)
 
     test_file.Close()
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_file.Close()
 
 

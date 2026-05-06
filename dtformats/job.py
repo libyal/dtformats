@@ -196,7 +196,7 @@ class WindowsTaskSchedulerJobFile(data_format.BinaryDataFile):
       # TODO: refactor job_trigger debug info into
       # job_variable_length_data_section debug info?
       for trigger in data_section.triggers.triggers_array:
-        debug_info = self._DEBUG_INFORMATION.get('job_trigger', None)
+        debug_info = self._DEBUG_INFORMATION.get('job_trigger')
         self._DebugPrintStructureObject(trigger, debug_info)
 
     self._task_configuration.application_name = (

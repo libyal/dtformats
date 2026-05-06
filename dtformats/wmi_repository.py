@@ -97,7 +97,7 @@ class ClassValueDataMap:
 
     for class_definition in class_definitions:
       for name, property_definition in class_definition.properties.items():
-        type_qualifier = property_definition.qualifiers.get('type', None)
+        type_qualifier = property_definition.qualifiers.get('type')
         if not type_qualifier:
           name_lower = property_definition.name.lower()
           if name_lower in self.properties:
@@ -497,7 +497,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         page_header_data, file_offset, data_type_map, 'page header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_page_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_page_header')
       self._DebugPrintStructureObject(page_header, debug_info)
 
     return page_header
@@ -657,7 +657,7 @@ class MappingFile(data_format.BinaryDataFile):
     self._DebugPrintText('\n')
 
     for index, mapping_table_entry in enumerate(mapping_table.entries):
-      debug_info = self._DEBUG_INFORMATION.get('cim_map_table_entry', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_map_table_entry')
       self._DebugPrintText(f'  Entry: {index:d}:\n')
       self._DebugPrintStructureObject(mapping_table_entry, debug_info)
 
@@ -732,7 +732,7 @@ class MappingFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_map_footer', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_map_footer')
       self._DebugPrintStructureObject(file_footer, debug_info)
 
     return file_footer
@@ -761,7 +761,7 @@ class MappingFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_map_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_map_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
@@ -928,7 +928,7 @@ class ObjectsDataFile(data_format.BinaryDataFile):
             file_offset + object_descriptor.data_offset)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_object_descriptor', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_object_descriptor')
       self._DebugPrintStructureObject(object_descriptor, debug_info)
 
     return object_descriptor
@@ -1428,7 +1428,7 @@ class RepositoryFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_rep_file_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_file_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
@@ -1582,7 +1582,7 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'name node')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_rep_name_node', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_name_node')
       self._DebugPrintStructureObject(name_node, debug_info)
 
     return name_node
@@ -1607,7 +1607,7 @@ class RepositoryFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'node bin header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_bin_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_bin_header')
       self._DebugPrintStructureObject(node_bin_header, debug_info)
 
     return node_bin_header
@@ -1643,7 +1643,7 @@ class RepositoryFile(data_format.BinaryDataFile):
         value_string, _ = self._FormatIntegerAsDecimal(cell_number)
         self._DebugPrintValue('Node cell number', value_string)
 
-      debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_cell', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_node_cell')
       self._DebugPrintStructureObject(node_cell, debug_info)
 
     return node_cell
@@ -1673,7 +1673,7 @@ class RepositoryFile(data_format.BinaryDataFile):
         block_data, file_offset, data_type_map, 'unknown node 5')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cim_rep_unknown_node5', None)
+      debug_info = self._DEBUG_INFORMATION.get('cim_rep_unknown_node5')
       self._DebugPrintStructureObject(unknown_node, debug_info)
 
     return unknown_node
@@ -1933,7 +1933,7 @@ class RepositoryFile(data_format.BinaryDataFile):
       instance = self._ReadInstance(
           file_object, root_node.instance_branch_node_offset)
 
-      name_property = instance.properties.get('Name', None)
+      name_property = instance.properties.get('Name')
 
       namespace_segments = list(parent_namespace_segments)
       namespace_segments.append(name_property)
@@ -3884,17 +3884,17 @@ class CIMRepository(data_format.BinaryDataFormat):
     for _ in range(5):
       unresolved_namespaces = set()
       for parent_namespace_hash in parent_namespaces:
-        parent_namespace = namespaces_by_hash.get(parent_namespace_hash, None)
+        parent_namespace = namespaces_by_hash.get(parent_namespace_hash)
         if not parent_namespace:
           unresolved_namespaces.add(parent_namespace_hash)
           continue
 
-        instances = instances_per_namespace.get(parent_namespace_hash, None)
+        instances = instances_per_namespace.get(parent_namespace_hash)
         if not instances:
           continue
 
         for instance in instances:
-          name_property = instance.properties.get('Name', None)
+          name_property = instance.properties.get('Name')
 
           namespace = '\\'.join([parent_namespace, name_property])
 

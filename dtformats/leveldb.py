@@ -140,7 +140,7 @@ class LevelDBDatabaseLogFile(LevelDBDatabaseFile):
         file_object, file_offset, data_type_map, 'block')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('leveldb_log_block', None)
+      debug_info = self._DEBUG_INFORMATION.get('leveldb_log_block')
       self._DebugPrintStructureObject(block, debug_info)
 
     # TODO: calculate and validate checksum
@@ -207,7 +207,7 @@ class LevelDBDatabaseLogFile(LevelDBDatabaseFile):
         data, file_offset, data_type_map, 'Value header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('leveldb_log_value_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('leveldb_log_value_header')
       self._DebugPrintStructureObject(value_header, debug_info)
 
     return value_header, 12
@@ -569,7 +569,7 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
     if self._debug:
       file_footer.padding = file_footer.data[data_offset:]
 
-      debug_info = self._DEBUG_INFORMATION.get('leveldb_table_footer', None)
+      debug_info = self._DEBUG_INFORMATION.get('leveldb_table_footer')
       self._DebugPrintStructureObject(file_footer, debug_info)
 
     return file_footer

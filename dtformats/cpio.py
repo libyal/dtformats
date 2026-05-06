@@ -355,7 +355,7 @@ class CPIOArchiveFile(data_format.BinaryDataFile):
     if not self._file_entries:
       return False
 
-    return self._file_entries.get(path, None)
+    return self._file_entries.get(path)
 
   def ReadFileObject(self, file_object):
     """Reads binary data from a file-like object.

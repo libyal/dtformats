@@ -142,7 +142,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
         olecf_item, stream_offset, data_type_map, description)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('dest_list_entry', None)
+      debug_info = self._DEBUG_INFORMATION.get('dest_list_entry')
       self._DebugPrintStructureObject(dest_list_entry, debug_info)
 
     return entry_data_size
@@ -163,7 +163,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
         olecf_item, stream_offset, data_type_map, 'dest list header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('dest_list_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('dest_list_header')
       self._DebugPrintStructureObject(dest_list_header, debug_info)
 
     if dest_list_header.format_version not in (1, 2, 3, 4):
@@ -191,7 +191,7 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
 
     try:
       jump_list_entry.ReadFileObject(olecf_item)
-    except IOError as exception:
+    except OSError as exception:
       raise errors.ParseError((
           f'Unable to parse LNK file from stream: {olecf_item.name:s} '
           f'with error: {exception!s}'))
@@ -205,7 +205,6 @@ class AutomaticDestinationsFile(data_format.BinaryDataFile):
     """Closes an Automatic Destinations Jump List file.
 
     Raises:
-      IOError: if the file is not opened.
       OSError: if the file is not opened.
     """
     if self._olecf_file:
@@ -305,7 +304,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'category footer')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('custom_category_footer', None)
+      debug_info = self._DEBUG_INFORMATION.get('custom_category_footer')
       self._DebugPrintStructureObject(category_footer, debug_info)
 
     if category_footer.signature != self._CATEGORY_FOOTER_SIGNATURE:
@@ -359,7 +358,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
               category_header_value.category_identifier)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('custom_category_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('custom_category_header')
       self._DebugPrintStructureObject(category_header, debug_info)
 
     total_bytes_read += bytes_read
@@ -384,7 +383,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('custom_file_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('custom_file_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header, bytes_read
@@ -410,7 +409,7 @@ class CustomDestinationsFile(data_format.BinaryDataFile):
 
     try:
       jump_list_entry.ReadFileObject(file_object)
-    except IOError as exception:
+    except OSError as exception:
       raise errors.ParseError((
           f'Unable to parse LNK file at offset: 0x{file_offset:08x} '
           f'with error: {exception!s}'))

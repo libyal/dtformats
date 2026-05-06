@@ -37,7 +37,7 @@ class USNRecords(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'USN record (version 2)')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('usn_record_v2', None)
+      debug_info = self._DEBUG_INFORMATION.get('usn_record_v2')
       self._DebugPrintStructureObject(usn_record, debug_info)
 
     return usn_record, data_size

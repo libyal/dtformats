@@ -42,7 +42,7 @@ def Main():
 
   try:
     output_writer.Open()
-  except IOError as exception:
+  except OSError as exception:
     print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False

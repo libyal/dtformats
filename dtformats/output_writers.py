@@ -11,7 +11,7 @@ class OutputWriter:
     """Closes the output writer object.
 
     Raises:
-      IOError: if the output writer cannot be closed.
+      OSError: if the output writer cannot be closed.
     """
 
   @abc.abstractmethod
@@ -19,7 +19,7 @@ class OutputWriter:
     """Opens the output writer object.
 
     Raises:
-      IOError: if the output writer cannot be opened.
+      OSError: if the output writer cannot be opened.
     """
 
   @abc.abstractmethod

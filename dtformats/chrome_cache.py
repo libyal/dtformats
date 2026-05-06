@@ -277,7 +277,7 @@ class DataBlockFile(data_format.BinaryDataFile):
     Args:
       cache_entry (chrome_cache_entry): cache entry.
     """
-    debug_info = self._DEBUG_INFORMATION.get('chrome_cache_entry', None)
+    debug_info = self._DEBUG_INFORMATION.get('chrome_cache_entry')
     self._DebugPrintStructureObject(cache_entry, debug_info)
 
     self._DebugPrintCacheEntryDataStreamSizes(cache_entry.data_stream_sizes)
@@ -677,7 +677,7 @@ class ChromeCacheParser:
                 'Maximum allowed cache address chain length reached.')
             break
 
-          data_file = data_block_files.get(cache_address.filename, None)
+          data_file = data_block_files.get(cache_address.filename)
           if not data_file:
             logging.warning(
                 f'Cache address: 0x{cache_address.value:08x} missing filename.')

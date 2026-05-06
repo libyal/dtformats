@@ -178,7 +178,7 @@ class EMFFile(data_format.BinaryDataFile):
       self._DebugPrintData('Record data', record_data)
 
     # TODO: use lookup dict with callback.
-    data_type_map = self._EMF_RECORD_DATA_STRUCT_TYPES.get(record_type, None)
+    data_type_map = self._EMF_RECORD_DATA_STRUCT_TYPES.get(record_type)
     if not data_type_map:
       return
 
@@ -719,7 +719,7 @@ class WMFFile(data_format.BinaryDataFile):
       self._DebugPrintData('Record data', record_data)
 
     # TODO: use lookup dict with callback.
-    data_type_map = self._WMF_RECORD_DATA_STRUCT_TYPES.get(record_type, None)
+    data_type_map = self._WMF_RECORD_DATA_STRUCT_TYPES.get(record_type)
     if not data_type_map:
       return
 
@@ -793,7 +793,7 @@ class WMFFile(data_format.BinaryDataFile):
     try:
       signature = file_object.read(4)
       file_object.seek(-4, os.SEEK_CUR)
-    except IOError as exception:
+    except OSError as exception:
       raise errors.ParseError(
           f'Unable to read file signature with error: {exception!s}')
 

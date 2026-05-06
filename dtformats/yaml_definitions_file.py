@@ -100,11 +100,11 @@ class YAMLDebugDefinitionsFile:
       different_keys = ', '.join(different_keys)
       raise errors.ParseError(f'Undefined keys: {different_keys:s}')
 
-    data_type_map = definition_values.get('data_type_map', None)
+    data_type_map = definition_values.get('data_type_map')
     if not data_type_map:
       raise errors.ParseError('Invalid debug definition missing data type map.')
 
-    attributes = definition_values.get('attributes', None)
+    attributes = definition_values.get('attributes')
     if not attributes:
       raise errors.ParseError(
           f'Invalid debug definition: {data_type_map:s} missing attributes.')
@@ -112,7 +112,7 @@ class YAMLDebugDefinitionsFile:
     debug_definition = DebugDefinition(data_type_map=data_type_map)
 
     for attribute_index, attribute_values in enumerate(attributes):
-      attribute_name = attribute_values.get('name', None)
+      attribute_name = attribute_values.get('name')
       if not attribute_name:
         raise errors.ParseError((
             f'Invalid debug definition: {data_type_map:s} name missing of '
@@ -123,13 +123,13 @@ class YAMLDebugDefinitionsFile:
             f'Invalid debug definition: {data_type_map:s} attribute: '
             f'{attribute_name:s} already set.'))
 
-      attribute_description = attribute_values.get('description', None)
+      attribute_description = attribute_values.get('description')
       if not attribute_description:
         raise errors.ParseError((
             f'Invalid debug definition: {data_type_map:s} description '
             f'missing of attribute: {attribute_name:s}.'))
 
-      attribute_format = attribute_values.get('format', None)
+      attribute_format = attribute_values.get('format')
       if not attribute_format:
         raise errors.ParseError((
             f'Invalid debug definition: {data_type_map:s} format '

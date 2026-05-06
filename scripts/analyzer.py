@@ -128,7 +128,7 @@ class BinaryDataFormatAnalyzer(data_format.BinaryDataFormat):
     Returns:
       str: structure object debug information.
     """
-    debug_info = self._debug_info_per_data_type.get(name, None)
+    debug_info = self._debug_info_per_data_type.get(name)
     if not debug_info:
       debug_info = self._DetermineDebugInfo(data_type_definition)
       self._debug_info_per_data_type[name] = debug_info
@@ -206,7 +206,7 @@ def Main():
 
   try:
     output_writer.Open()
-  except IOError as exception:
+  except OSError as exception:
     print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False

@@ -70,7 +70,7 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_header')
       self._DebugPrintStructureObject(record_header, debug_info)
 
     if record_header.application_information != b'\x00\x00\x00\x00':
@@ -98,7 +98,7 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record data')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_v2', None)
+      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_v2')
       self._DebugPrintStructureObject(record, debug_info)
 
     return record
@@ -123,7 +123,7 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'record data')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_v3', None)
+      debug_info = self._DEBUG_INFORMATION.get('alias_data_record_v3')
       self._DebugPrintStructureObject(record, debug_info)
 
     return record
@@ -149,7 +149,7 @@ class MacOSLoginItemAliasData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'tagged value')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('alias_data_tagged_value', None)
+      debug_info = self._DEBUG_INFORMATION.get('alias_data_tagged_value')
       self._DebugPrintStructureObject(tagged_value, debug_info)
 
     return tagged_value, bytes_read

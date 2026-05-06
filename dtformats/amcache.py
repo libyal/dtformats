@@ -73,7 +73,7 @@ class WindowsAMCacheFile(data_format.BinaryDataFile):
       else:
         value_data = value.data
 
-    except (IOError, OverflowError) as exception:
+    except (OSError, OverflowError) as exception:
       raise errors.ParseError((
           f'Unable to read data from value: {value.name:s} with error: '
           f'{exception!s}'))

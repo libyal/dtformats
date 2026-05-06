@@ -137,7 +137,7 @@ class CupsIppFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'attribute')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cups_ipp_attribute', None)
+      debug_info = self._DEBUG_INFORMATION.get('cups_ipp_attribute')
       self._DebugPrintStructureObject(attribute, debug_info)
 
     value = None
@@ -302,7 +302,7 @@ class CupsIppFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cups_ipp_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('cups_ipp_header')
       self._DebugPrintStructureObject(header, debug_info)
 
   def ReadFileObject(self, file_object):

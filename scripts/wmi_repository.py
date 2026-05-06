@@ -16,7 +16,7 @@ def PrintInstance(instance):
   Args:
     instance (Instance): instance.
   """
-  name_property = instance.properties.get('Name', None)
+  name_property = instance.properties.get('Name')
 
   genus = '2'
   super_class_name = instance.super_class_name or ''
@@ -111,7 +111,7 @@ def Main():
 
   try:
     output_writer.Open()
-  except IOError as exception:
+  except OSError as exception:
     print(f'Unable to open output writer with error: {exception!s}')
     print('')
     return False

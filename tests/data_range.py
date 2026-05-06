@@ -31,14 +31,14 @@ class DataRangeTest(test_lib.BaseTestCase):
 
     test_range.data_offset = -1
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_range.read()
 
     test_range.data_offset = 32
 
     test_range.data_size = -1
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_range.read()
 
     test_range.data_offset = 64
@@ -65,15 +65,15 @@ class DataRangeTest(test_lib.BaseTestCase):
     offset = test_range.get_offset()
     self.assertEqual(offset, 128)
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_range.seek(0, -1)
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_range.seek(-256, os.SEEK_CUR)
 
     test_range.data_size = -1
 
-    with self.assertRaises(IOError):
+    with self.assertRaises(OSError):
       test_range.seek(0, os.SEEK_SET)
 
     test_range.data_offset = 64

@@ -454,7 +454,7 @@ class StringFormatter:
             value not in self._DECODERS_TO_IGNORE and value[:5] != 'name=')]
 
         if not decoder_names:
-          internal_decoder = self._INTERNAL_DECODERS.get(specifier, None)
+          internal_decoder = self._INTERNAL_DECODERS.get(specifier)
           if internal_decoder:
             decoder_names = [internal_decoder]
 
@@ -1550,7 +1550,7 @@ class SignpostDescriptionAttributeFormatStringDecoder(BaseFormatStringDecoder):
       else:
         float_value = struct.unpack('<d', value)
 
-      string_value = '{0:.16g}'.format(float_value[0])
+      string_value = f'{float_value[0]:.16g}'
 
     elif specifier in ('c', 'C', 'o', 'O', 'p', 'u', 'U', 'x', 'X'):
       if value_size not in (1, 2, 4, 8):
@@ -1684,7 +1684,7 @@ class SignpostTelemetryNumberFormatStringDecoder(BaseFormatStringDecoder):
       else:
         float_value = struct.unpack('<d', value)
 
-      string_value = '{0:.16g}'.format(float_value[0])
+      string_value = f'{float_value[0]:.16g}'
 
     elif specifier in ('c', 'C', 'o', 'O', 'p', 'u', 'U', 'x', 'X'):
       if value_size not in (1, 2, 4, 8):
@@ -1990,7 +1990,7 @@ class DSCFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('dsc_file_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('dsc_file_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     if file_header.signature != b'hcsd':
@@ -2067,7 +2067,7 @@ class DSCFile(data_format.BinaryDataFile):
       file_offset += record_size
 
       if self._debug:
-        debug_info = self._DEBUG_INFORMATION.get('dsc_range_descriptor', None)
+        debug_info = self._DEBUG_INFORMATION.get('dsc_range_descriptor')
         self._DebugPrintStructureObject(range_descriptor, debug_info)
 
       dsc_range = DSCRange()
@@ -2137,7 +2137,7 @@ class DSCFile(data_format.BinaryDataFile):
       file_offset += record_size
 
       if self._debug:
-        debug_info = self._DEBUG_INFORMATION.get('dsc_uuid_descriptor', None)
+        debug_info = self._DEBUG_INFORMATION.get('dsc_uuid_descriptor')
         self._DebugPrintStructureObject(uuid_descriptor, debug_info)
 
       dsc_uuid = DSCUUID()
@@ -2273,12 +2273,12 @@ class TimesyncDatabaseFile(data_format.BinaryDataFile):
     if signature == self._BOOT_RECORD_SIGNATURE:
       data_type_map = self._boot_record_data_type_map
       description = 'boot record'
-      debug_info = self._DEBUG_INFORMATION.get('timesync_boot_record', None)
+      debug_info = self._DEBUG_INFORMATION.get('timesync_boot_record')
 
     elif signature == self._SYNC_RECORD_SIGNATURE:
       data_type_map = self._sync_record_data_type_map
       description = 'sync record'
-      debug_info = self._DEBUG_INFORMATION.get('timesync_sync_record', None)
+      debug_info = self._DEBUG_INFORMATION.get('timesync_sync_record')
 
     else:
       signature = repr(signature)
@@ -2715,7 +2715,7 @@ class TraceV3File(data_format.BinaryDataFile):
     if not decoder_names:
       return '<decode: missing decoder>'
 
-    decoder_object = self._FORMAT_STRING_DECODERS.get(decoder_names[0], None)
+    decoder_object = self._FORMAT_STRING_DECODERS.get(decoder_names[0])
     if not decoder_object:
       return f'<decode: unsupported decoder: {decoder_names[0]:s}>'
 
@@ -2797,7 +2797,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as chunk tag.
     """
-    description = self._CHUNK_TAG_DESCRIPTIONS.get(integer, None)
+    description = self._CHUNK_TAG_DESCRIPTIONS.get(integer)
     if description:
       return f'0x{integer:08x} ({description:s})'
 
@@ -2823,7 +2823,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as firehose stream type.
     """
-    description = self._STREAM_TYPE_DESCRIPTIONS.get(integer, None)
+    description = self._STREAM_TYPE_DESCRIPTIONS.get(integer)
     if description:
       return f'0x{integer:02x} ({description:s})'
 
@@ -2888,7 +2888,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as firehose tracepoint log type.
     """
-    description = self._LOG_TYPE_DESCRIPTIONS.get(integer, None)
+    description = self._LOG_TYPE_DESCRIPTIONS.get(integer)
     if description:
       return f'0x{integer:02x} ({description:s})'
 
@@ -2903,7 +2903,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       str: integer formatted as firehose tracepoint record type.
     """
-    description = self._RECORD_TYPE_DESCRIPTIONS.get(integer, None)
+    description = self._RECORD_TYPE_DESCRIPTIONS.get(integer)
     if description:
       return f'0x{integer:02x} ({description:s})'
 
@@ -2970,7 +2970,7 @@ class TraceV3File(data_format.BinaryDataFile):
       return data_items, values_data, private_data
 
     lookup_key = f'{proc_id:s}:{data_reference:04x}'
-    oversize_chunk = oversize_chunks.get(lookup_key, None)
+    oversize_chunk = oversize_chunks.get(lookup_key)
     if oversize_chunk:
       return (oversize_chunk.data_items, oversize_chunk.values_data,
               oversize_chunk.private_data)
@@ -2988,7 +2988,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       DSCFile: a shared-cache strings (DSC) file or None if not available.
     """
-    dsc_file = self._cached_dsc_files.get(uuid_string, None)
+    dsc_file = self._cached_dsc_files.get(uuid_string)
     if not dsc_file:
       dsc_file = self._OpenDSCFile(uuid_string)
       if len(self._cached_dsc_files) >= self._MAXIMUM_CACHED_FILES:
@@ -3067,7 +3067,7 @@ class TraceV3File(data_format.BinaryDataFile):
     uuid_string = strings_file_identifier.hex.upper()
 
     lookup_key = f'{uuid_string:s}:0x{string_reference:x}'
-    image_values = self._cached_image_values.get(lookup_key, None)
+    image_values = self._cached_image_values.get(lookup_key)
     if not image_values:
       large_offset_data = getattr(
           tracepoint_data_object, 'large_offset_data', None) or 0
@@ -3276,7 +3276,7 @@ class TraceV3File(data_format.BinaryDataFile):
     Returns:
       UUIDTextFile: an uuidtext file or None if not available.
     """
-    uuidtext_file = self._cached_uuidtext_files.get(uuid_string, None)
+    uuidtext_file = self._cached_uuidtext_files.get(uuid_string)
     if not uuidtext_file:
       uuidtext_file = self._OpenUUIDTextFile(uuid_string)
       if len(self._cached_uuidtext_files) >= self._MAXIMUM_CACHED_FILES:
@@ -3397,7 +3397,7 @@ class TraceV3File(data_format.BinaryDataFile):
     file_offset += bytes_read
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_catalog', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_catalog')
       self._DebugPrintStructureObject(catalog, debug_info)
       self._GetTimestamp(
           catalog.earliest_firehose_timestamp,
@@ -3463,7 +3463,7 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'chunk header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_chunk_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_chunk_header')
       self._DebugPrintStructureObject(chunk_header, debug_info)
 
     return chunk_header
@@ -3494,7 +3494,7 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'LZ4 block header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_lz4_block_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_lz4_block_header')
       self._DebugPrintStructureObject(lz4_block_header, debug_info)
 
     # TODO: add support for multi block compressed data.
@@ -3535,7 +3535,7 @@ class TraceV3File(data_format.BinaryDataFile):
       data_offset += 16
 
       if self._debug:
-        debug_info = self._DEBUG_INFORMATION.get('tracev3_chunk_header', None)
+        debug_info = self._DEBUG_INFORMATION.get('tracev3_chunk_header')
         self._DebugPrintStructureObject(chunkset_chunk_header, debug_info)
 
       data_end_offset = data_offset + chunkset_chunk_header.chunk_data_size
@@ -3676,7 +3676,7 @@ class TraceV3File(data_format.BinaryDataFile):
       if self._debug:
         data_item.value_data = value_data
 
-        debug_info = self._DEBUG_INFORMATION.get('tracev3_data_item', None)
+        debug_info = self._DEBUG_INFORMATION.get('tracev3_data_item')
         self._DebugPrintStructureObject(data_item, debug_info)
 
         if data_item.value_type not in (
@@ -3731,7 +3731,7 @@ class TraceV3File(data_format.BinaryDataFile):
         chunk_data, data_offset, data_type_map, 'firehose header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_firehose_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_firehose_header')
       self._DebugPrintStructureObject(firehose_header, debug_info)
       self._GetTimestamp(
           firehose_header.base_continuous_time,
@@ -3744,7 +3744,7 @@ class TraceV3File(data_format.BinaryDataFile):
       process_information_entry = None
     else:
       process_information_entry = (
-          self._catalog_process_information_entries.get(proc_id, None))
+          self._catalog_process_information_entries.get(proc_id))
       if not process_information_entry:
         raise errors.ParseError((
             f'Unable to retrieve process information entry: {proc_id:s} from '
@@ -4317,7 +4317,7 @@ class TraceV3File(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'header chunk')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_header_chunk', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_header_chunk')
       self._DebugPrintStructureObject(header_chunk, debug_info)
 
       debug_info = self._DEBUG_INFORMATION.get(
@@ -4369,7 +4369,7 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_oversize_chunk', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_oversize_chunk')
       self._DebugPrintStructureObject(oversize_chunk, debug_info)
 
     data_offset = context.byte_size
@@ -4410,7 +4410,7 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_simpledump_chunk', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_simpledump_chunk')
       self._DebugPrintStructureObject(simpledump_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
@@ -4420,7 +4420,7 @@ class TraceV3File(data_format.BinaryDataFile):
     proc_id = (f'{simpledump_chunk.proc_id_upper:d}@'
                f'{simpledump_chunk.proc_id_lower:d}')
     process_information_entry = (
-        self._catalog_process_information_entries.get(proc_id, None))
+        self._catalog_process_information_entries.get(proc_id))
     if not process_information_entry:
       self._RaiseParserWarning((
           f'Unable to retrieve process information entry: {proc_id:s} from '
@@ -4480,7 +4480,7 @@ class TraceV3File(data_format.BinaryDataFile):
         context=context)
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('tracev3_statedump_chunk', None)
+      debug_info = self._DEBUG_INFORMATION.get('tracev3_statedump_chunk')
       self._DebugPrintStructureObject(statedump_chunk, debug_info)
 
     if self._debug and context.byte_size < chunk_data_size:
@@ -4490,7 +4490,7 @@ class TraceV3File(data_format.BinaryDataFile):
     proc_id = (f'{statedump_chunk.proc_id_upper:d}@'
                f'{statedump_chunk.proc_id_lower:d}')
     process_information_entry = (
-        self._catalog_process_information_entries.get(proc_id, None))
+        self._catalog_process_information_entries.get(proc_id))
     if not process_information_entry:
       self._RaiseParserWarning((
           f'Unable to retrieve process information entry: {proc_id:s} from '
@@ -4506,7 +4506,7 @@ class TraceV3File(data_format.BinaryDataFile):
       decoder_type = decoder_type_data.decode('utf8')
 
       decoder_name = f'{library:s}:{decoder_type:s}'
-      decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_name, None)
+      decoder_class = self._FORMAT_STRING_DECODERS.get(decoder_name)
       if not decoder_class:
         value = f'<decode: unsupported decoder: {decoder_name:s}>'
       else:
@@ -4590,7 +4590,6 @@ class TraceV3File(data_format.BinaryDataFile):
     """Closes a tracev3 file.
 
     Raises:
-      IOError: if the file is not opened.
       OSError: if the file is not opened.
     """
     for dsc_file in self._cached_dsc_files.values():
@@ -4838,7 +4837,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'file footer')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('uuidtext_file_footer', None)
+      debug_info = self._DEBUG_INFORMATION.get('uuidtext_file_footer')
       self._DebugPrintStructureObject(file_footer, debug_info)
 
     return file_footer
@@ -4861,7 +4860,7 @@ class UUIDTextFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('uuidtext_file_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('uuidtext_file_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     format_version = (

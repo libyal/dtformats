@@ -570,7 +570,7 @@ class BinaryDataFormat:
     if not getattr(self, '_FABRIC', None):
       raise RuntimeError('Missing _FABRIC value')
 
-    data_type_map = self._data_type_maps.get(name, None)
+    data_type_map = self._data_type_maps.get(name)
     if not data_type_map:
       data_type_map = self._FABRIC.CreateDataTypeMap(name)
       self._data_type_maps[name] = data_type_map
@@ -609,7 +609,7 @@ class BinaryDataFormat:
         read_error = (
             f'missing data (read: {read_count:d}, requested: {data_size:d})')
 
-    except IOError as exception:
+    except OSError as exception:
       read_error = f'{exception!s}'
 
     if read_error:
@@ -750,7 +750,7 @@ class BinaryDataFormat:
 
     if self._debug:
       if not debug_info:
-        debug_info = self._DEBUG_INFORMATION.get(data_type_map_name, None)
+        debug_info = self._DEBUG_INFORMATION.get(data_type_map_name)
 
       self._DebugPrintStructureObject(structure_object, debug_info)
 
@@ -782,9 +782,9 @@ class BinaryDataFormat:
       debug_information = []
       for attribute in debug_definition.attributes.values():
         if attribute.format.startswith('custom:'):
-          callback = custom_format_callbacks.get(attribute.format[7:], None)
+          callback = custom_format_callbacks.get(attribute.format[7:])
         else:
-          callback = cls._DEBUG_FORMAT_CALLBACKS.get(attribute.format, None)
+          callback = cls._DEBUG_FORMAT_CALLBACKS.get(attribute.format)
 
         debug_information_tuple = (
             attribute.name, attribute.description, callback)
@@ -843,11 +843,10 @@ class BinaryDataFile(BinaryDataFormat):
     """Closes a binary data file.
 
     Raises:
-      IOError: if the file is not opened.
       OSError: if the file is not opened.
     """
     if not self._file_object:
-      raise IOError('File not opened')
+      raise OSError('File not opened')
 
     if self._file_object_opened_in_object:
       self._file_object.close()
@@ -862,11 +861,10 @@ class BinaryDataFile(BinaryDataFormat):
       path (str): path to the file.
 
     Raises:
-      IOError: if the file is already opened.
       OSError: if the file is already opened.
     """
     if self._file_object:
-      raise IOError('File already opened')
+      raise OSError('File already opened')
 
     self._file_size = self._file_system_helper.GetFileSizeByPath(path)
     self._path = path

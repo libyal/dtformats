@@ -175,7 +175,7 @@ class CacheBlockFile(data_format.BinaryDataFile):
       return
 
     if self._debug and cache_entry.major_format_version == 1:
-      debug_info = self._DEBUG_INFORMATION.get('firefox_cache1_entry', None)
+      debug_info = self._DEBUG_INFORMATION.get('firefox_cache1_entry')
       self._DebugPrintStructureObject(cache_entry, debug_info)
 
     _, trailing_data_size = divmod(cache_entry_data_size, self._block_size)

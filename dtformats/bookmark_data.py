@@ -63,7 +63,7 @@ class MacOSBackgroundItemBookmarkData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'data record')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('bookmark_data_record', None)
+      debug_info = self._DEBUG_INFORMATION.get('bookmark_data_record')
       self._DebugPrintStructureObject(data_record, debug_info)
 
     return data_record
@@ -87,7 +87,7 @@ class MacOSBackgroundItemBookmarkData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('bookmark_data_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('bookmark_data_header')
       self._DebugPrintStructureObject(header, debug_info)
 
     return header
@@ -158,7 +158,7 @@ class MacOSBackgroundItemBookmarkData(data_format.BinaryDataFile):
         file_object, file_offset, data_type_map, 'table of contents (TOC)')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('bookmark_data_toc', None)
+      debug_info = self._DEBUG_INFORMATION.get('bookmark_data_toc')
       self._DebugPrintStructureObject(table_of_contents, debug_info)
 
     if table_of_contents.next_toc_offset != 0:

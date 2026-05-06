@@ -348,7 +348,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, 0, data_type_map, 'file header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('keychain_file_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_file_header')
       self._DebugPrintStructureObject(file_header, debug_info)
 
     return file_header
@@ -367,7 +367,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     Raises:
       ParseError: if the record cannot be read.
     """
-    table = tables.get(record_type, None)
+    table = tables.get(record_type)
     if not table:
       raise errors.ParseError(
           f'Missing table for relation identifier: 0x{record_type:08x}')
@@ -499,7 +499,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, record_header_offset, data_type_map, 'record header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('keychain_record_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_record_header')
       self._DebugPrintStructureObject(record_header, debug_info)
 
     return record_header
@@ -592,7 +592,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
     if self._debug:
       self._DebugPrintText('\n')
 
-    table = tables.get(relation_identifier, None)
+    table = tables.get(relation_identifier)
     if not table:
       raise errors.ParseError(
           f'Missing table for relation identifier: 0x{relation_identifier:08x}')
@@ -612,7 +612,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     table.columns.append(column)
 
-    table = tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_ATTRIBUTES, None)
+    table = tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_ATTRIBUTES)
     if not table:
       raise errors.ParseError('Missing CSSM_DL_DB_SCHEMA_ATTRIBUTES table.')
 
@@ -673,7 +673,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
           'CSSM_DL_DB_SCHEMA_INDEXES defines relation identifier not defined '
           'in CSSM_DL_DB_SCHEMA_INFO.')
 
-    table = tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_INDEXES, None)
+    table = tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_INDEXES)
     if not table:
       raise errors.ParseError('Missing CSSM_DL_DB_SCHEMA_INDEXES table.')
 
@@ -741,7 +741,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
 
     tables[table.relation_identifier] = table
 
-    table = tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO, None)
+    table = tables.get(self._RECORD_TYPE_CSSM_DL_DB_SCHEMA_INFO)
     if not table:
       raise errors.ParseError('Missing CSSM_DL_DB_SCHEMA_INFO table.')
 
@@ -811,7 +811,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, table_header_offset, data_type_map, 'table header')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('keychain_table_header', None)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_table_header')
       self._DebugPrintStructureObject(table_header, debug_info)
 
     return table_header
@@ -839,7 +839,7 @@ class KeychainDatabaseFile(data_format.BinaryDataFile):
         file_object, tables_array_offset, data_type_map, 'tables array')
 
     if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('keychain_tables_array', None)
+      debug_info = self._DEBUG_INFORMATION.get('keychain_tables_array')
       self._DebugPrintStructureObject(tables_array, debug_info)
 
     tables = collections.OrderedDict()

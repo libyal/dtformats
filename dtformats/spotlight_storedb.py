@@ -643,7 +643,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       SpotlightStoreMetadataItem: metadata item matching the identifier or None
           if no such item.
     """
-    record_descriptor = self._record_descriptors.get(identifier, None)
+    record_descriptor = self._record_descriptors.get(identifier)
     if not record_descriptor:
       return None
 
@@ -756,7 +756,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       values_list = []
       for metadata_value_index in index_values:
-        metadata_value = self._metadata_values.get(metadata_value_index, None)
+        metadata_value = self._metadata_values.get(metadata_value_index)
         value_string = getattr(metadata_value, 'value_name', '')
         values_list.append(value_string)
 
@@ -770,7 +770,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintText('\n')
 
         for metadata_value_index in index_values:
-          metadata_value = self._metadata_values.get(metadata_value_index, None)
+          metadata_value = self._metadata_values.get(metadata_value_index)
           value_string = getattr(metadata_value, 'value_name', '')
           self._DebugPrintValue(
               f'Value: {metadata_value_index:d}', value_string)
@@ -837,7 +837,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
 
       values_list = []
       for metadata_value_index in index_values:
-        metadata_value = self._metadata_values.get(metadata_value_index, None)
+        metadata_value = self._metadata_values.get(metadata_value_index)
         value_string = getattr(metadata_value, 'value_name', '')
         values_list.append(value_string)
 
@@ -852,7 +852,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         self._DebugPrintText('\n')
 
         for metadata_value_index in index_values:
-          metadata_value = self._metadata_values.get(metadata_value_index, None)
+          metadata_value = self._metadata_values.get(metadata_value_index)
           value_string = getattr(metadata_value, 'value_name', '')
           self._DebugPrintValue(
               f'Value: {metadata_value_index:d}', value_string)
@@ -1253,14 +1253,14 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
       if self._debug:
         self._DebugPrintDecimalValue('Values list table index', table_index)
 
-      metadata_list = self._metadata_lists.get(table_index, None)
+      metadata_list = self._metadata_lists.get(table_index)
       value = getattr(metadata_list, 'values_list', [])
 
     else:
       if self._debug:
         self._DebugPrintDecimalValue('Values table index', table_index)
 
-      metadata_value = self._metadata_values.get(table_index, None)
+      metadata_value = self._metadata_values.get(table_index)
       value = getattr(metadata_value, 'value_name', '(null)')
 
     return value, bytes_read
@@ -1573,7 +1573,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
             f'Metadata attribute: {metadata_attribute_index:d} type index')
         self._DebugPrintDecimalValue(description, metadata_type_index)
 
-      metadata_type = self._metadata_types.get(metadata_type_index, None)
+      metadata_type = self._metadata_types.get(metadata_type_index)
       metadata_attribute, bytes_read = self._ReadMetadataAttribute(
           metadata_type, page_data[page_data_offset:record_data_end_offset])
 
