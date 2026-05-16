@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dtformats"
-version = "20260506"
+version = "20260516"
 description = "Data formats (dtformats)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
@@ -35,6 +35,16 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/libyal/dtformats"
 Repository = "https://github.com/libyal/dtformats"
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+include = "\\.pyi?$"
+
+[tool.docformatter]
+black = true
+non-cap = ["dfVFS", "int:", "mDNS"]
+non-strict = true
 
 [tool.setuptools]
 package-dir = {"dtformats" = "dtformats"}

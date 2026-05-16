@@ -11,119 +11,136 @@ from dtformats import leveldb
 from dtformats import output_writers
 
 try:
-  from dtformats import dfvfs_helpers
+    from dtformats import dfvfs_helpers
 except ImportError:
-  dfvfs_helpers = None
+    dfvfs_helpers = None
 
 
 def Main():
-  """The main program function.
+    """The main program function.
 
-  Returns:
-    bool: True if successful or False if not.
-  """
-  argument_parser = argparse.ArgumentParser(description=(
-      'Extracts information from LevelDB database files.'))
+    Returns:
+      bool: True if successful or False if not.
+    """
+    argument_parser = argparse.ArgumentParser(
+        description=("Extracts information from LevelDB database files.")
+    )
 
-  argument_parser.add_argument(
-      '-d', '--debug', dest='debug', action='store_true', default=False,
-      help='enable debug output.')
+    argument_parser.add_argument(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=False,
+        help="enable debug output.",
+    )
 
-  if dfvfs_helpers:
-    dfvfs_helpers.AddDFVFSCLIArguments(argument_parser)
+    if dfvfs_helpers:
+        dfvfs_helpers.AddDFVFSCLIArguments(argument_parser)
 
-  argument_parser.add_argument(
-      'source', nargs='?', action='store', metavar='PATH',
-      default=None, help='path of the LevelDB database file.')
+    argument_parser.add_argument(
+        "source",
+        nargs="?",
+        action="store",
+        metavar="PATH",
+        default=None,
+        help="path of the LevelDB database file.",
+    )
 
-  options = argument_parser.parse_args()
+    options = argument_parser.parse_args()
 
-  logging.basicConfig(
-      level=logging.INFO, format='[%(levelname)s] %(message)s')
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
-  if dfvfs_helpers and getattr(options, 'image', None):
-    file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
-    if not file_system_helper:
-      print('No supported file system found in storage media image.')
-      print('')
-      return False
+    if dfvfs_helpers and getattr(options, "image", None):
+        file_system_helper = dfvfs_helpers.ParseDFVFSCLIArguments(options)
+        if not file_system_helper:
+            print("No supported file system found in storage media image.")
+            print("")
+            return False
 
-  else:
-    if not options.source:
-      print('Source file missing.')
-      print('')
-      argument_parser.print_help()
-      print('')
-      return False
+    else:
+        if not options.source:
+            print("Source file missing.")
+            print("")
+            argument_parser.print_help()
+            print("")
+            return False
 
-    file_system_helper = file_system.NativeFileSystemHelper()
+        file_system_helper = file_system.NativeFileSystemHelper()
 
-  output_writer = output_writers.StdoutWriter()
+    output_writer = output_writers.StdoutWriter()
 
-  try:
-    output_writer.Open()
-  except OSError as exception:
-    print(f'Unable to open output writer with error: {exception!s}')
-    print('')
-    return False
+    try:
+        output_writer.Open()
+    except OSError as exception:
+        print(f"Unable to open output writer with error: {exception!s}")
+        print("")
+        return False
 
-  file_object = file_system_helper.OpenFileByPath(options.source)
-  if not file_object:
-    print('Unable to open source file.')
-    print('')
-    return False
+    file_object = file_system_helper.OpenFileByPath(options.source)
+    if not file_object:
+        print("Unable to open source file.")
+        print("")
+        return False
 
-  try:
-    file_object.seek(-8, os.SEEK_END)
-    file_signature = file_object.read(8)
-  finally:
-    file_object.close()
+    try:
+        file_object.seek(-8, os.SEEK_END)
+        file_signature = file_object.read(8)
+    finally:
+        file_object.close()
 
-  path_segments = file_system_helper.SplitPath(options.source)
+    path_segments = file_system_helper.SplitPath(options.source)
 
-  if file_signature == b'\x57\xfb\x80\x8b\x24\x75\x47\xdb':
-    leveldb_file = leveldb.LevelDBDatabaseTableFile(
-        debug=options.debug, output_writer=output_writer)
+    if file_signature == b"\x57\xfb\x80\x8b\x24\x75\x47\xdb":
+        leveldb_file = leveldb.LevelDBDatabaseTableFile(
+            debug=options.debug, output_writer=output_writer
+        )
 
-  elif path_segments[-1].startswith('MANIFEST'):
-    leveldb_file = leveldb.LevelDBDatabaseDescriptorFile(
-        debug=options.debug, output_writer=output_writer)
+    elif path_segments[-1].startswith("MANIFEST"):
+        leveldb_file = leveldb.LevelDBDatabaseDescriptorFile(
+            debug=options.debug, output_writer=output_writer
+        )
 
-  else:
-    leveldb_file = leveldb.LevelDBDatabaseLogFile(
-        debug=options.debug, output_writer=output_writer)
+    else:
+        leveldb_file = leveldb.LevelDBDatabaseLogFile(
+            debug=options.debug, output_writer=output_writer
+        )
 
-  leveldb_file.Open(options.source)
+    leveldb_file.Open(options.source)
 
-  print('LevelDB database file information:')
+    print("LevelDB database file information:")
 
-  if file_signature == b'\x57\xfb\x80\x8b\x24\x75\x47\xdb':
-    for table_entry in leveldb_file.ReadTableEntries():
-      if table_entry.value_type == 0:
-        value_type_string = 'del'
-      elif table_entry.value_type == 1:
-        value_type_string = 'val'
-      else:
-        value_type_string = 'UNKNOWN'
+    if file_signature == b"\x57\xfb\x80\x8b\x24\x75\x47\xdb":
+        for table_entry in leveldb_file.ReadTableEntries():
+            if table_entry.value_type == 0:
+                value_type_string = "del"
+            elif table_entry.value_type == 1:
+                value_type_string = "val"
+            else:
+                value_type_string = "UNKNOWN"
 
-      # Print key and value without leading b
-      key = repr(table_entry.key)[1:]
-      value = repr(table_entry.value)[1:]
+            # Print key and value without leading b
+            key = repr(table_entry.key)[1:]
+            value = repr(table_entry.value)[1:]
 
-      print((f'{key:s} @ {table_entry.sequence_number:d} : '
-             f'{value_type_string:s} => {value:s}'))
+            print(
+                (
+                    f"{key:s} @ {table_entry.sequence_number:d} : "
+                    f"{value_type_string:s} => {value:s}"
+                )
+            )
 
-  print('')
+    print("")
 
-  leveldb_file.Close()
+    leveldb_file.Close()
 
-  output_writer.Close()
+    output_writer.Close()
 
-  return True
+    return True
 
 
-if __name__ == '__main__':
-  if not Main():
-    sys.exit(1)
-  else:
-    sys.exit(0)
+if __name__ == "__main__":
+    if not Main():
+        sys.exit(1)
+    else:
+        sys.exit(0)

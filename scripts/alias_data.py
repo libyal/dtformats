@@ -10,65 +10,79 @@ from dtformats import output_writers
 
 
 def Main():
-  """The main program function.
+    """The main program function.
 
-  Returns:
-    bool: True if successful or False if not.
-  """
-  argument_parser = argparse.ArgumentParser(description=(
-      'Extracts information from Mac OS com.apple.loginitems.plist Alias '
-      'values.'))
+    Returns:
+      bool: True if successful or False if not.
+    """
+    argument_parser = argparse.ArgumentParser(
+        description=(
+            "Extracts information from Mac OS com.apple.loginitems.plist Alias "
+            "values."
+        )
+    )
 
-  argument_parser.add_argument(
-      '-d', '--debug', dest='debug', action='store_true', default=False,
-      help='enable debug output.')
+    argument_parser.add_argument(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=False,
+        help="enable debug output.",
+    )
 
-  argument_parser.add_argument(
-      'source', nargs='?', action='store', metavar='PATH', default=None, help=(
-          'path of the Mac OS com.apple.loginitems.plist Alias or AliasData '
-          'value data.'))
+    argument_parser.add_argument(
+        "source",
+        nargs="?",
+        action="store",
+        metavar="PATH",
+        default=None,
+        help=(
+            "path of the Mac OS com.apple.loginitems.plist Alias or AliasData "
+            "value data."
+        ),
+    )
 
-  options = argument_parser.parse_args()
+    options = argument_parser.parse_args()
 
-  if not options.source:
-    print('Source file missing.')
-    print('')
-    argument_parser.print_help()
-    print('')
-    return False
+    if not options.source:
+        print("Source file missing.")
+        print("")
+        argument_parser.print_help()
+        print("")
+        return False
 
-  logging.basicConfig(
-      level=logging.INFO, format='[%(levelname)s] %(message)s')
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
-  output_writer = output_writers.StdoutWriter()
+    output_writer = output_writers.StdoutWriter()
 
-  try:
-    output_writer.Open()
-  except OSError as exception:
-    print(f'Unable to open output writer with error: {exception!s}')
-    print('')
-    return False
+    try:
+        output_writer.Open()
+    except OSError as exception:
+        print(f"Unable to open output writer with error: {exception!s}")
+        print("")
+        return False
 
-  alias = alias_data.MacOSLoginItemAliasData(
-      debug=options.debug, output_writer=output_writer)
-  alias.Open(options.source)
+    alias = alias_data.MacOSLoginItemAliasData(
+        debug=options.debug, output_writer=output_writer
+    )
+    alias.Open(options.source)
 
-  output_writer.WriteText(
-      'Mac OS com.apple.loginitems.plist Alias information:\n')
+    output_writer.WriteText("Mac OS com.apple.loginitems.plist Alias information:\n")
 
-  # TODO: print more information.
+    # TODO: print more information.
 
-  output_writer.WriteText('\n')
+    output_writer.WriteText("\n")
 
-  alias.Close()
+    alias.Close()
 
-  output_writer.Close()
+    output_writer.Close()
 
-  return True
+    return True
 
 
-if __name__ == '__main__':
-  if not Main():
-    sys.exit(1)
-  else:
-    sys.exit(0)
+if __name__ == "__main__":
+    if not Main():
+        sys.exit(1)
+    else:
+        sys.exit(0)

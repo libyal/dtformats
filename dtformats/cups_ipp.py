@@ -9,312 +9,331 @@ from dtformats import errors
 
 
 class CupsIppFile(data_format.BinaryDataFile):
-  """CUPS Internet Printing Protocol (IPP) file."""
-
-  # Using a class constant significantly speeds up the time required to load
-  # the dtFabric and dtFormats definition files.
-  _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile('cups_ipp.yaml')
-
-  _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
-      'cups_ipp.debug.yaml', custom_format_callbacks={
-          'tag_value': '_FormatTagValue'})
-
-  _DELIMITER_TAG_OPERATION_ATTRIBUTES = 0x01
-  _DELIMITER_TAG_JOB_ATTRIBUTES = 0x02
-  _DELIMITER_TAG_END_OF_ATTRIBUTES = 0x03
-  _DELIMITER_TAG_PRINTER_ATTRIBUTES = 0x04
-  _DELIMITER_TAG_UNSUPPORTED_ATTRIBUTES = 0x05
-
-  _DELIMITER_TAGS = frozenset([
-      _DELIMITER_TAG_OPERATION_ATTRIBUTES,
-      _DELIMITER_TAG_JOB_ATTRIBUTES,
-      _DELIMITER_TAG_PRINTER_ATTRIBUTES,
-      _DELIMITER_TAG_UNSUPPORTED_ATTRIBUTES])
-
-  _TAG_VALUE_NONE = 0x13
-
-  _TAG_VALUE_INTEGER = 0x21
-  _TAG_VALUE_BOOLEAN = 0x22
-  _TAG_VALUE_ENUM = 0x23
-
-  _TAG_VALUE_DATE_TIME = 0x31
-  _TAG_VALUE_RESOLUTION = 0x32
-
-  _TAG_VALUE_TEXT_WITHOUT_LANGUAGE = 0x41
-  _TAG_VALUE_NAME_WITHOUT_LANGUAGE = 0x42
-
-  _TAG_VALUE_KEYWORD = 0x44
-  _TAG_VALUE_URI = 0x45
-  _TAG_VALUE_URI_SCHEME = 0x46
-  _TAG_VALUE_CHARSET = 0x47
-  _TAG_VALUE_NATURAL_LANGUAGE = 0x48
-  _TAG_VALUE_MEDIA_TYPE = 0x49
-
-  _ASCII_STRING_VALUES = frozenset([
-      _TAG_VALUE_KEYWORD,
-      _TAG_VALUE_URI,
-      _TAG_VALUE_URI_SCHEME,
-      _TAG_VALUE_CHARSET,
-      _TAG_VALUE_NATURAL_LANGUAGE,
-      _TAG_VALUE_MEDIA_TYPE])
-
-  _INTEGER_TAG_VALUES = frozenset([
-      _TAG_VALUE_INTEGER, _TAG_VALUE_ENUM])
-
-  _STRING_WITHOUT_LANGUAGE_VALUES = frozenset([
-      _TAG_VALUE_TEXT_WITHOUT_LANGUAGE,
-      _TAG_VALUE_NAME_WITHOUT_LANGUAGE])
-
-  _TAG_VALUE_STRINGS = {
-      0x01: 'operation-attributes-tag',
-      0x02: 'job-attributes-tag',
-      0x03: 'end-of-attributes-tag',
-      0x04: 'printer-attributes-tag',
-      0x05: 'unsupported-attributes-tag',
-
-      0x0f: 'chunking-end-of-attributes-tag',
-
-      0x13: 'no-value',
-
-      0x21: 'integer',
-      0x22: 'boolean',
-      0x23: 'enum',
-
-      0x30: 'octetString',
-      0x31: 'dateTime',
-      0x32: 'resolution',
-      0x33: 'rangeOfInteger',
+    """CUPS Internet Printing Protocol (IPP) file."""
+
+    # Using a class constant significantly speeds up the time required to load
+    # the dtFabric and dtFormats definition files.
+    _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile("cups_ipp.yaml")
+
+    _DEBUG_INFORMATION = data_format.BinaryDataFile.ReadDebugInformationFile(
+        "cups_ipp.debug.yaml", custom_format_callbacks={"tag_value": "_FormatTagValue"}
+    )
+
+    _DELIMITER_TAG_OPERATION_ATTRIBUTES = 0x01
+    _DELIMITER_TAG_JOB_ATTRIBUTES = 0x02
+    _DELIMITER_TAG_END_OF_ATTRIBUTES = 0x03
+    _DELIMITER_TAG_PRINTER_ATTRIBUTES = 0x04
+    _DELIMITER_TAG_UNSUPPORTED_ATTRIBUTES = 0x05
+
+    _DELIMITER_TAGS = frozenset(
+        [
+            _DELIMITER_TAG_OPERATION_ATTRIBUTES,
+            _DELIMITER_TAG_JOB_ATTRIBUTES,
+            _DELIMITER_TAG_PRINTER_ATTRIBUTES,
+            _DELIMITER_TAG_UNSUPPORTED_ATTRIBUTES,
+        ]
+    )
+
+    _TAG_VALUE_NONE = 0x13
+
+    _TAG_VALUE_INTEGER = 0x21
+    _TAG_VALUE_BOOLEAN = 0x22
+    _TAG_VALUE_ENUM = 0x23
+
+    _TAG_VALUE_DATE_TIME = 0x31
+    _TAG_VALUE_RESOLUTION = 0x32
+
+    _TAG_VALUE_TEXT_WITHOUT_LANGUAGE = 0x41
+    _TAG_VALUE_NAME_WITHOUT_LANGUAGE = 0x42
+
+    _TAG_VALUE_KEYWORD = 0x44
+    _TAG_VALUE_URI = 0x45
+    _TAG_VALUE_URI_SCHEME = 0x46
+    _TAG_VALUE_CHARSET = 0x47
+    _TAG_VALUE_NATURAL_LANGUAGE = 0x48
+    _TAG_VALUE_MEDIA_TYPE = 0x49
+
+    _ASCII_STRING_VALUES = frozenset(
+        [
+            _TAG_VALUE_KEYWORD,
+            _TAG_VALUE_URI,
+            _TAG_VALUE_URI_SCHEME,
+            _TAG_VALUE_CHARSET,
+            _TAG_VALUE_NATURAL_LANGUAGE,
+            _TAG_VALUE_MEDIA_TYPE,
+        ]
+    )
+
+    _INTEGER_TAG_VALUES = frozenset([_TAG_VALUE_INTEGER, _TAG_VALUE_ENUM])
+
+    _STRING_WITHOUT_LANGUAGE_VALUES = frozenset(
+        [_TAG_VALUE_TEXT_WITHOUT_LANGUAGE, _TAG_VALUE_NAME_WITHOUT_LANGUAGE]
+    )
+
+    _TAG_VALUE_STRINGS = {
+        0x01: "operation-attributes-tag",
+        0x02: "job-attributes-tag",
+        0x03: "end-of-attributes-tag",
+        0x04: "printer-attributes-tag",
+        0x05: "unsupported-attributes-tag",
+        0x0F: "chunking-end-of-attributes-tag",
+        0x13: "no-value",
+        0x21: "integer",
+        0x22: "boolean",
+        0x23: "enum",
+        0x30: "octetString",
+        0x31: "dateTime",
+        0x32: "resolution",
+        0x33: "rangeOfInteger",
+        0x35: "textWithLanguage",
+        0x36: "nameWithLanguage",
+        0x41: "textWithoutLanguage",
+        0x42: "nameWithoutLanguage",
+        0x44: "keyword",
+        0x45: "uri",
+        0x46: "uriScheme",
+        0x47: "charset",
+        0x48: "naturalLanguage",
+        0x49: "mimeMediaType",
+    }
+
+    def __init__(self, debug=False, output_writer=None):
+        """Initializes a CUPS Internet Printing Protocol (IPP) file.
+
+        Args:
+          debug (Optional[bool]): True if debug information should be written.
+          output_writer (Optional[OutputWriter]): output writer.
+        """
+        super().__init__(debug=debug, output_writer=output_writer)
+        self._last_charset_attribute = "ascii"
+
+    def _FormatTagValue(self, integer):
+        """Formats a tag value.
+
+        Args:
+          integer (int): integer.
 
-      0x35: 'textWithLanguage',
-      0x36: 'nameWithLanguage',
+        Returns:
+          str: integer formatted as a tag value.
+        """
+        tag_value_string = self._TAG_VALUE_STRINGS.get(integer, "UNKNOWN")
+        return f"0x{integer:02x} ({tag_value_string:s})"
 
-      0x41: 'textWithoutLanguage',
-      0x42: 'nameWithoutLanguage',
+    def _ReadAttribute(self, file_object):
+        """Reads an attribute.
 
-      0x44: 'keyword',
-      0x45: 'uri',
-      0x46: 'uriScheme',
-      0x47: 'charset',
-      0x48: 'naturalLanguage',
-      0x49: 'mimeMediaType'}
+        Args:
+          file_object (file): file-like object.
 
-  def __init__(self, debug=False, output_writer=None):
-    """Initializes a CUPS Internet Printing Protocol (IPP) file.
+        Raises:
+          ParseError: if the attribute cannot be read.
+        """
+        file_offset = file_object.tell()
+        data_type_map = self._GetDataTypeMap("cups_ipp_attribute")
 
-    Args:
-      debug (Optional[bool]): True if debug information should be written.
-      output_writer (Optional[OutputWriter]): output writer.
-    """
-    super().__init__(
-        debug=debug, output_writer=output_writer)
-    self._last_charset_attribute = 'ascii'
+        attribute, _ = self._ReadStructureFromFileObject(
+            file_object, file_offset, data_type_map, "attribute"
+        )
 
-  def _FormatTagValue(self, integer):
-    """Formats a tag value.
+        if self._debug:
+            debug_info = self._DEBUG_INFORMATION.get("cups_ipp_attribute")
+            self._DebugPrintStructureObject(attribute, debug_info)
 
-    Args:
-      integer (int): integer.
+        value = None
+        if attribute.tag_value in self._INTEGER_TAG_VALUES:
+            # TODO: correct file offset to point to the start of value_data.
+            value = self._ReadIntegerValue(attribute.value_data, file_offset)
 
-    Returns:
-      str: integer formatted as a tag value.
-    """
-    tag_value_string = self._TAG_VALUE_STRINGS.get(integer, 'UNKNOWN')
-    return f'0x{integer:02x} ({tag_value_string:s})'
+            if self._debug:
+                self._DebugPrintValue("Value", f"{value:d}")
 
-  def _ReadAttribute(self, file_object):
-    """Reads an attribute.
+        elif attribute.tag_value == self._TAG_VALUE_BOOLEAN:
+            value = self._ReadBooleanValue(attribute.value_data)
 
-    Args:
-      file_object (file): file-like object.
+            if self._debug:
+                self._DebugPrintValue("Value", f"{value!s}")
 
-    Raises:
-      ParseError: if the attribute cannot be read.
-    """
-    file_offset = file_object.tell()
-    data_type_map = self._GetDataTypeMap('cups_ipp_attribute')
+        elif attribute.tag_value == self._TAG_VALUE_DATE_TIME:
+            # TODO: correct file offset to point to the start of value_data.
+            value = self._ReadDateTimeValue(attribute.value_data, file_offset)
 
-    attribute, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'attribute')
+            if self._debug:
+                self._DebugPrintValue("Value", value.CopyToDateTimeString())
 
-    if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cups_ipp_attribute')
-      self._DebugPrintStructureObject(attribute, debug_info)
+        elif attribute.tag_value == self._TAG_VALUE_RESOLUTION:
+            # TODO: add support for resolution
+            pass
 
-    value = None
-    if attribute.tag_value in self._INTEGER_TAG_VALUES:
-      # TODO: correct file offset to point to the start of value_data.
-      value = self._ReadIntegerValue(attribute.value_data, file_offset)
+        elif attribute.tag_value in self._STRING_WITHOUT_LANGUAGE_VALUES:
+            value = attribute.value_data.decode(self._last_charset_attribute)
 
-      if self._debug:
-        self._DebugPrintValue('Value', f'{value:d}')
+            if self._debug:
+                self._DebugPrintValue("Value", value)
 
-    elif attribute.tag_value == self._TAG_VALUE_BOOLEAN:
-      value = self._ReadBooleanValue(attribute.value_data)
-
-      if self._debug:
-        self._DebugPrintValue('Value', f'{value!s}')
-
-    elif attribute.tag_value == self._TAG_VALUE_DATE_TIME:
-      # TODO: correct file offset to point to the start of value_data.
-      value = self._ReadDateTimeValue(attribute.value_data, file_offset)
-
-      if self._debug:
-        self._DebugPrintValue('Value', value.CopyToDateTimeString())
-
-    elif attribute.tag_value == self._TAG_VALUE_RESOLUTION:
-      # TODO: add support for resolution
-      pass
-
-    elif attribute.tag_value in self._STRING_WITHOUT_LANGUAGE_VALUES:
-      value = attribute.value_data.decode(self._last_charset_attribute)
-
-      if self._debug:
-        self._DebugPrintValue('Value', value)
-
-    elif attribute.tag_value in self._ASCII_STRING_VALUES:
-      value = attribute.value_data.decode('ascii')
-
-      if self._debug:
-        self._DebugPrintValue('Value', value)
-
-      if attribute.tag_value == self._TAG_VALUE_CHARSET:
-        self._last_charset_attribute = value
-
-    if self._debug:
-      self._DebugPrintText('\n')
-
-  def _ReadAttributesGroup(self, file_object):
-    """Reads an attributes group.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the attributes group cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('int8')
-    tag_value = 0
-
-    while tag_value != self._DELIMITER_TAG_END_OF_ATTRIBUTES:
-      file_offset = file_object.tell()
-
-      tag_value, _ = self._ReadStructureFromFileObject(
-          file_object, file_offset, data_type_map, 'tag value')
-
-      if tag_value >= 0x10:
-        file_object.seek(file_offset, os.SEEK_SET)
-
-        self._ReadAttribute(file_object)
-
-      elif (tag_value != self._DELIMITER_TAG_END_OF_ATTRIBUTES and
-            tag_value not in self._DELIMITER_TAGS):
-        raise errors.ParseError((
-            f'Unsupported attributes groups start tag value: '
-            f'0x{tag_value:02x}.'))
-
-  def _ReadBooleanValue(self, byte_stream):
-    """Reads a boolean value.
-
-    Args:
-      byte_stream (bytes): byte stream.
-
-    Returns:
-      bool: boolean value.
-
-    Raises:
-      ParseError: when the boolean value cannot be read.
-    """
-    if byte_stream == b'\x00':
-      return False
-
-    if byte_stream == b'\x01':
-      return True
-
-    raise errors.ParseError('Unsupported boolean value.')
-
-  def _ReadDateTimeValue(self, byte_stream, file_offset):
-    """Reads a RFC2579 date-time value.
-
-    Args:
-      byte_stream (bytes): byte stream.
-      file_offset (int): offset of the attribute data relative to the start of
-          the file-like object.
-
-    Returns:
-      dfdatetime.RFC2579DateTime: RFC2579 date-time stored in the value.
-
-    Raises:
-      ParseError: when the date-time value cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('cups_ipp_datetime_value')
-
-    try:
-      value = self._ReadStructureFromByteStream(
-          byte_stream, file_offset, data_type_map, 'date-time value')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError(
-          f'Unable to parse date-time value with error: {exception!s}')
-
-    direction_from_utc = chr(value.direction_from_utc)
-    rfc2579_date_time_tuple = (
-        value.year, value.month, value.day_of_month,
-        value.hours, value.minutes, value.seconds, value.deciseconds,
-        direction_from_utc, value.hours_from_utc, value.minutes_from_utc)
-    return dfdatetime_rfc2579_date_time.RFC2579DateTime(
-        rfc2579_date_time_tuple=rfc2579_date_time_tuple)
-
-  def _ReadIntegerValue(self, byte_stream, file_offset):
-    """Reads an integer value.
-
-    Args:
-      byte_stream (bytes): byte stream.
-      file_offset (int): offset of the attribute data relative to the start of
-          the file-like object.
-
-    Returns:
-      int: integer value.
-
-    Raises:
-      ParseError: when the integer value cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('int32be')
-
-    try:
-      return self._ReadStructureFromByteStream(
-          byte_stream, file_offset, data_type_map, 'integer value')
-    except (ValueError, errors.ParseError) as exception:
-      raise errors.ParseError(
-          f'Unable to parse integer value with error: {exception!s}')
-
-  def _ReadHeader(self, file_object):
-    """Reads the header.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the header cannot be read.
-    """
-    data_type_map = self._GetDataTypeMap('cups_ipp_header')
-
-    file_offset = file_object.tell()
-    header, _ = self._ReadStructureFromFileObject(
-        file_object, file_offset, data_type_map, 'header')
-
-    if self._debug:
-      debug_info = self._DEBUG_INFORMATION.get('cups_ipp_header')
-      self._DebugPrintStructureObject(header, debug_info)
-
-  def ReadFileObject(self, file_object):
-    """Reads a CUPS Internet Printing Protocol (IPP) file-like object.
-
-    Args:
-      file_object (file): file-like object.
-
-    Raises:
-      ParseError: if the file cannot be read.
-    """
-    self._ReadHeader(file_object)
-    self._ReadAttributesGroup(file_object)
-
-    # TODO: read data.
+        elif attribute.tag_value in self._ASCII_STRING_VALUES:
+            value = attribute.value_data.decode("ascii")
+
+            if self._debug:
+                self._DebugPrintValue("Value", value)
+
+            if attribute.tag_value == self._TAG_VALUE_CHARSET:
+                self._last_charset_attribute = value
+
+        if self._debug:
+            self._DebugPrintText("\n")
+
+    def _ReadAttributesGroup(self, file_object):
+        """Reads an attributes group.
+
+        Args:
+          file_object (file): file-like object.
+
+        Raises:
+          ParseError: if the attributes group cannot be read.
+        """
+        data_type_map = self._GetDataTypeMap("int8")
+        tag_value = 0
+
+        while tag_value != self._DELIMITER_TAG_END_OF_ATTRIBUTES:
+            file_offset = file_object.tell()
+
+            tag_value, _ = self._ReadStructureFromFileObject(
+                file_object, file_offset, data_type_map, "tag value"
+            )
+
+            if tag_value >= 0x10:
+                file_object.seek(file_offset, os.SEEK_SET)
+
+                self._ReadAttribute(file_object)
+
+            elif (
+                tag_value != self._DELIMITER_TAG_END_OF_ATTRIBUTES
+                and tag_value not in self._DELIMITER_TAGS
+            ):
+                raise errors.ParseError(
+                    (
+                        f"Unsupported attributes groups start tag value: "
+                        f"0x{tag_value:02x}."
+                    )
+                )
+
+    def _ReadBooleanValue(self, byte_stream):
+        """Reads a boolean value.
+
+        Args:
+          byte_stream (bytes): byte stream.
+
+        Returns:
+          bool: boolean value.
+
+        Raises:
+          ParseError: when the boolean value cannot be read.
+        """
+        if byte_stream == b"\x00":
+            return False
+
+        if byte_stream == b"\x01":
+            return True
+
+        raise errors.ParseError("Unsupported boolean value.")
+
+    def _ReadDateTimeValue(self, byte_stream, file_offset):
+        """Reads a RFC2579 date-time value.
+
+        Args:
+          byte_stream (bytes): byte stream.
+          file_offset (int): offset of the attribute data relative to the start of
+              the file-like object.
+
+        Returns:
+          dfdatetime.RFC2579DateTime: RFC2579 date-time stored in the value.
+
+        Raises:
+          ParseError: when the date-time value cannot be read.
+        """
+        data_type_map = self._GetDataTypeMap("cups_ipp_datetime_value")
+
+        try:
+            value = self._ReadStructureFromByteStream(
+                byte_stream, file_offset, data_type_map, "date-time value"
+            )
+        except (ValueError, errors.ParseError) as exception:
+            raise errors.ParseError(
+                f"Unable to parse date-time value with error: {exception!s}"
+            )
+
+        direction_from_utc = chr(value.direction_from_utc)
+        rfc2579_date_time_tuple = (
+            value.year,
+            value.month,
+            value.day_of_month,
+            value.hours,
+            value.minutes,
+            value.seconds,
+            value.deciseconds,
+            direction_from_utc,
+            value.hours_from_utc,
+            value.minutes_from_utc,
+        )
+        return dfdatetime_rfc2579_date_time.RFC2579DateTime(
+            rfc2579_date_time_tuple=rfc2579_date_time_tuple
+        )
+
+    def _ReadIntegerValue(self, byte_stream, file_offset):
+        """Reads an integer value.
+
+        Args:
+          byte_stream (bytes): byte stream.
+          file_offset (int): offset of the attribute data relative to the start of
+              the file-like object.
+
+        Returns:
+          int: integer value.
+
+        Raises:
+          ParseError: when the integer value cannot be read.
+        """
+        data_type_map = self._GetDataTypeMap("int32be")
+
+        try:
+            return self._ReadStructureFromByteStream(
+                byte_stream, file_offset, data_type_map, "integer value"
+            )
+        except (ValueError, errors.ParseError) as exception:
+            raise errors.ParseError(
+                f"Unable to parse integer value with error: {exception!s}"
+            )
+
+    def _ReadHeader(self, file_object):
+        """Reads the header.
+
+        Args:
+          file_object (file): file-like object.
+
+        Raises:
+          ParseError: if the header cannot be read.
+        """
+        data_type_map = self._GetDataTypeMap("cups_ipp_header")
+
+        file_offset = file_object.tell()
+        header, _ = self._ReadStructureFromFileObject(
+            file_object, file_offset, data_type_map, "header"
+        )
+
+        if self._debug:
+            debug_info = self._DEBUG_INFORMATION.get("cups_ipp_header")
+            self._DebugPrintStructureObject(header, debug_info)
+
+    def ReadFileObject(self, file_object):
+        """Reads a CUPS Internet Printing Protocol (IPP) file-like object.
+
+        Args:
+          file_object (file): file-like object.
+
+        Raises:
+          ParseError: if the file cannot be read.
+        """
+        self._ReadHeader(file_object)
+        self._ReadAttributesGroup(file_object)
+
+        # TODO: read data.

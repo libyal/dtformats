@@ -4,128 +4,126 @@ import os
 
 
 class DataRange:
-  """In-file data range file-like object.
+    """In-file data range file-like object.
 
-  Attributes:
-    data_offset (int): offset of the data.
-    data_size (int): size of the data.
-  """
-
-  def __init__(self, file_object, data_offset=0, data_size=0):
-    """Initializes a file-like object.
-
-    Args:
-      file_object (file): parent file-like object.
-      data_offset (Optional[int]): offset of the data.
-      data_size (Optional[int]): size of the data.
+    Attributes:
+      data_offset (int): offset of the data.
+      data_size (int): size of the data.
     """
-    super().__init__()
-    self._current_offset = 0
-    self._file_object = file_object
 
-    self.data_offset = data_offset
-    self.data_size = data_size
+    def __init__(self, file_object, data_offset=0, data_size=0):
+        """Initializes a file-like object.
 
-  # The following methods are part of the file-like object interface.
-  # pylint: disable=invalid-name
+        Args:
+          file_object (file): parent file-like object.
+          data_offset (Optional[int]): offset of the data.
+          data_size (Optional[int]): size of the data.
+        """
+        super().__init__()
+        self._current_offset = 0
+        self._file_object = file_object
 
-  def read(self, size=None):
-    """Reads a byte string from the file-like object at the current offset.
+        self.data_offset = data_offset
+        self.data_size = data_size
 
-    The function will read a byte string of the specified size or
-    all of the remaining data if no size was specified.
+    # The following methods are part of the file-like object interface.
+    # pylint: disable=invalid-name
 
-    Args:
-      size (Optional[int]): number of bytes to read, where None represents
-          all remaining data.
+    def read(self, size=None):
+        """Reads a byte string from the file-like object at the current offset.
 
-    Returns:
-      bytes: data read.
+        The function will read a byte string of the specified size or
+        all of the remaining data if no size was specified.
 
-    Raises:
-      OSError: if the read failed.
-    """
-    if self.data_offset < 0:
-      raise OSError(
-          f'Invalid data offset: {self.data_offset:d} value out of bounds.')
+        Args:
+          size (Optional[int]): number of bytes to read, where None represents
+              all remaining data.
 
-    if self.data_size < 0:
-      raise OSError(
-          f'Invalid data size: {self.data_size:d} value out of bounds.')
+        Returns:
+          bytes: data read.
 
-    if self._current_offset >= self.data_size:
-      return b''
+        Raises:
+          OSError: if the read failed.
+        """
+        if self.data_offset < 0:
+            raise OSError(
+                f"Invalid data offset: {self.data_offset:d} value out of bounds."
+            )
 
-    if size is None:
-      size = self.data_size
-    if self._current_offset + size > self.data_size:
-      size = self.data_size - self._current_offset
+        if self.data_size < 0:
+            raise OSError(f"Invalid data size: {self.data_size:d} value out of bounds.")
 
-    self._file_object.seek(
-        self.data_offset + self._current_offset, os.SEEK_SET)
+        if self._current_offset >= self.data_size:
+            return b""
 
-    data = self._file_object.read(size)
+        if size is None:
+            size = self.data_size
+        if self._current_offset + size > self.data_size:
+            size = self.data_size - self._current_offset
 
-    self._current_offset += len(data)
+        self._file_object.seek(self.data_offset + self._current_offset, os.SEEK_SET)
 
-    return data
+        data = self._file_object.read(size)
 
-  def seek(self, offset, whence=os.SEEK_SET):
-    """Seeks an offset within the file-like object.
+        self._current_offset += len(data)
 
-    Args:
-      offset (int): offset to seek.
-      whence (Optional[int]): indicates whether offset is an absolute
-          or relative position within the file.
+        return data
 
-    Raises:
-      OSError: if the seek failed.
-    """
-    if self.data_size < 0:
-      raise OSError(
-          f'Invalid data size: {self.data_size:d} value out of bounds.')
+    def seek(self, offset, whence=os.SEEK_SET):
+        """Seeks an offset within the file-like object.
 
-    if whence == os.SEEK_CUR:
-      offset += self._current_offset
-    elif whence == os.SEEK_END:
-      offset += self.data_size
-    elif whence != os.SEEK_SET:
-      raise OSError('Unsupported whence.')
+        Args:
+          offset (int): offset to seek.
+          whence (Optional[int]): indicates whether offset is an absolute
+              or relative position within the file.
 
-    if offset < 0:
-      raise OSError('Invalid offset value less than zero.')
+        Raises:
+          OSError: if the seek failed.
+        """
+        if self.data_size < 0:
+            raise OSError(f"Invalid data size: {self.data_size:d} value out of bounds.")
 
-    self._current_offset = offset
+        if whence == os.SEEK_CUR:
+            offset += self._current_offset
+        elif whence == os.SEEK_END:
+            offset += self.data_size
+        elif whence != os.SEEK_SET:
+            raise OSError("Unsupported whence.")
 
-  def get_offset(self):
-    """Retrieves the current offset into the file-like object.
+        if offset < 0:
+            raise OSError("Invalid offset value less than zero.")
 
-    Returns:
-      int: offset.
-    """
-    return self._current_offset
+        self._current_offset = offset
 
-  # Pythonesque alias for get_offset().
-  def tell(self):
-    """Retrieves the current offset into the file-like object.
+    def get_offset(self):
+        """Retrieves the current offset into the file-like object.
 
-    Returns:
-      int: offset.
-    """
-    return self.get_offset()
+        Returns:
+          int: offset.
+        """
+        return self._current_offset
 
-  def get_size(self):
-    """Retrieves the size of the file-like object.
+    # Pythonesque alias for get_offset().
+    def tell(self):
+        """Retrieves the current offset into the file-like object.
 
-    Returns:
-      int: size.
-    """
-    return self.data_size
+        Returns:
+          int: offset.
+        """
+        return self.get_offset()
 
-  def seekable(self):
-    """Determines if a file-like object is seekable.
+    def get_size(self):
+        """Retrieves the size of the file-like object.
 
-    Returns:
-      bool: True if seekable.
-    """
-    return True
+        Returns:
+          int: size.
+        """
+        return self.data_size
+
+    def seekable(self):
+        """Determines if a file-like object is seekable.
+
+        Returns:
+          bool: True if seekable.
+        """
+        return True

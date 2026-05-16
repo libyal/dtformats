@@ -8,24 +8,23 @@ from tests import test_lib
 
 
 class WindowsAMCacheFileTest(test_lib.BaseTestCase):
-  """Windows AMCache (AMCache.hve) file tests."""
+    """Windows AMCache (AMCache.hve) file tests."""
 
-  # pylint: disable=protected-access
+    # pylint: disable=protected-access
 
-  # TODO: add test for _ReadFileKey
-  # TODO: add test for _ReadFileReferenceKey
+    # TODO: add test for _ReadFileKey
+    # TODO: add test for _ReadFileReferenceKey
 
-  def testReadFileObject(self):
-    """Tests the ReadFileObject function."""
-    test_file_path = self._GetTestFilePath(['Amcache.hve'])
-    self._SkipIfPathNotExists(test_file_path)
+    def testReadFileObject(self):
+        """Tests the ReadFileObject function."""
+        test_file_path = self._GetTestFilePath(["Amcache.hve"])
+        self._SkipIfPathNotExists(test_file_path)
 
-    output_writer = test_lib.TestOutputWriter()
-    test_file = amcache.WindowsAMCacheFile(
-        debug=True, output_writer=output_writer)
+        output_writer = test_lib.TestOutputWriter()
+        test_file = amcache.WindowsAMCacheFile(debug=True, output_writer=output_writer)
 
-    test_file.Open(test_file_path)
+        test_file.Open(test_file_path)
 
 
-if __name__ == '__main__':
-  unittest.main()
+if __name__ == "__main__":
+    unittest.main()
