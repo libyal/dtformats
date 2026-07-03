@@ -93,7 +93,7 @@ Contains an encoded string, which can be "\~" in combination with an username of
 | 44 | 32 | | Username +
 Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS and INIT_PROCESS)
 | 76 | 256 | | Hostname +
-Contains an encoded string, which can be empty (seein in combination with LOGIN_PROCESS) or contain other data such as "4.15.3-300.fc27.x86_64" or "/dev/tty2"
+Contains an encoded string, which can be empty (seen in combination with LOGIN_PROCESS) or contain other data such as "4.15.3-300.fc27.x86_64" or "/dev/tty2"
 | 332 | 2 | | Termination status +
 Contains a signed integer
 | 334 | 2 | | Exit status +
@@ -124,18 +124,20 @@ Contains an encoded string, which can be "\~" in combination with an username of
 | 44 | 32 | | Username +
 Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS)
 | 76 | 256 | | Hostname +
-Contains an encoded string, which can be empty (seein in combination with LOGIN_PROCESS) or contain other data such as "4.15.3-300.fc27.x86_64" or "/dev/tty2"
+Contains an encoded string, which can be empty (seen in combination with LOGIN_PROCESS) or contain other data such as "4.15.3-300.fc27.x86_64" or "/dev/tty2"
 | 332 | 2 | | Termination status +
 Contains a signed integer
 | 334 | 2 | | Exit status +
 Contains a signed integer
 | 336 | 8 | | Session +
 Contains a signed integer
-| 344 | 16 | | Timestamp +
-Contains a timeval struct with two 8-bytes fields for seconds and microseconds.
+| 344 | 8 | | Timestamp +
+Contains a signed integer
+| 352 | 8 | | Microseconds +
+Contains a signed integer
 | 360 | 16 | | IP address +
 Contains a packed IPv4 or IPv6 address
-| 376 | 20 | | [yellow-background]*Unknown (reserved for future usage)*
+| 376 | 24 | | [yellow-background]*Unknown (reserved for future usage)*
 |===
 
 === [[linux_libc6_types]]Types of login

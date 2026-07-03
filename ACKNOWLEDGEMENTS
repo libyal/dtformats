@@ -1,4 +1,11 @@
 Acknowledgements: dtformats
 
-Copyright (c) 2016-2021, Joachim Metz <joachim.metz@gmail.com>
+Copyright (c) 2016-2026, Joachim Metz <joachim.metz@gmail.com>
 
+Copied with permission from [the Greendale data set](https://github.com/dfirlabs/greendale-specimens):
+* automaticDestinations-ms/student-pc1/1b4dd67f29cb1962.automaticDestinations-ms
+* customDestinations-ms/student-pc1/5afe4de1b92fc382.customDestinations-ms
+
+Generated with the help of the [utmp-specimens project](https://github.com/dfirlabs/utmp-specimens):
+* test_data/utmp-aarch64
+* test_data/utmp-x86_64

@@ -36,7 +36,6 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
         self._DebugPrintValue(
             "Type of login", f"0x{entry.type:08x} ({type_of_login_string:s})"
         )
-
         self._DebugPrintValue("PID", f"{entry.pid:d}")
 
         value_string = entry.terminal.replace(b"\0", b"")
@@ -96,15 +95,26 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
 
         Args:
           file_object (file): file-like object.
+
+        Raises:
+          ParseError: if the entries cannot be read.
         """
         file_offset = 0
-        data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry")
+
+        is_32bit = self._file_size % 384 == 0
+        is_64bit = self._file_size % 400 == 0
+
+        if is_32bit and not is_64bit:
+            data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry_32bit")
+        elif not is_32bit and is_64bit:
+            data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry_64bit")
+        else:
+            raise errors.ParseError("Unable to determine if libc6 utmp format.")
 
         while file_offset < self._file_size:
             entry, entry_data_size = self._ReadStructureFromFileObject(
                 file_object, file_offset, data_type_map, "entry"
             )
-
             if self._debug:
                 self._DebugPrintEntry(entry)
 
@@ -165,7 +175,6 @@ class MacOSXUtmpxFile(data_format.BinaryDataFile):
         self._DebugPrintValue(
             "Type of login", f"0x{entry.type:04x} ({type_of_login_string:s})"
         )
-
         self._DebugPrintValue("Unknown1", f"0x{entry.unknown1:04x}")
 
         self._DebugPrintPosixTimeValue("Timestamp", entry.timestamp)
@@ -210,7 +219,6 @@ class MacOSXUtmpxFile(data_format.BinaryDataFile):
         entry, entry_data_size = self._ReadStructureFromFileObject(
             file_object, file_offset, data_type_map, "entry"
         )
-
         if self._debug:
             self._DebugPrintEntry(entry)
 
@@ -226,7 +234,6 @@ class MacOSXUtmpxFile(data_format.BinaryDataFile):
             entry, entry_data_size = self._ReadStructureFromFileObject(
                 file_object, file_offset, data_type_map, "entry"
             )
-
             if self._debug:
                 self._DebugPrintEntry(entry)
 
