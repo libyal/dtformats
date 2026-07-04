@@ -101,15 +101,17 @@ class LinuxLibc6UtmpFile(data_format.BinaryDataFile):
         """
         file_offset = 0
 
+        # Note this is a very naive approach
         is_32bit = self._file_size % 384 == 0
         is_64bit = self._file_size % 400 == 0
 
+        # TODO: add byte order detection
         if is_32bit and not is_64bit:
-            data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry_32bit")
+            data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry_32bit_le")
         elif not is_32bit and is_64bit:
-            data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry_64bit")
+            data_type_map = self._GetDataTypeMap("linux_libc6_utmp_entry_64bit_le")
         else:
-            raise errors.ParseError("Unable to determine if libc6 utmp format.")
+            raise errors.ParseError("Unable to determine libc6 utmp format.")
 
         while file_offset < self._file_size:
             entry, entry_data_size = self._ReadStructureFromFileObject(

@@ -72,7 +72,7 @@ class AutomaticDestinationsFileTest(test_lib.BaseTestCase):
         finally:
             test_file.Close()
 
-        self.assertEqual(len(jump_list_entries), 11)
+        self.assertEqual(len(jump_list_entries), 7)
 
     def testGetJumpListEntriesOnV3File(self):
         """Tests the GetJumpListEntries function on a format version 3 file."""

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dtformats"
-version = "20260516"
+version = "20260704"
 description = "Data formats (dtformats)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
@@ -45,6 +45,13 @@ include = "\\.pyi?$"
 black = true
 non-cap = ["dfVFS", "int:", "mDNS"]
 non-strict = true
+
+[tool.l2tdevtools]
+name = "dtFormats"
+status = "alpha"
+description = """
+dtFormats is a collection of various file formats. \
+"""
 
 [tool.setuptools]
 package-dir = {"dtformats" = "dtformats"}

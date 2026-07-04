@@ -17,7 +17,7 @@ class LinuxLibc6UtmpFileTest(test_lib.BaseTestCase):
         output_writer = test_lib.TestOutputWriter()
         test_file = utmp.LinuxLibc6UtmpFile(output_writer=output_writer)
 
-        data_type_map = test_file._GetDataTypeMap("linux_libc6_utmp_entry")
+        data_type_map = test_file._GetDataTypeMap("linux_libc6_utmp_entry_32bit_le")
 
         entry = data_type_map.CreateStructureValues(
             ip_address=test_file._EMPTY_IP_ADDRESS,
@@ -34,7 +34,6 @@ class LinuxLibc6UtmpFileTest(test_lib.BaseTestCase):
             unknown1=b"unknown",
             username=b"user",
         )
-
         test_file._DebugPrintEntry(entry)
 
     def testDecodeString(self):
@@ -53,6 +52,7 @@ class LinuxLibc6UtmpFileTest(test_lib.BaseTestCase):
         self._SkipIfPathNotExists(test_file_path)
 
         with open(test_file_path, "rb") as file_object:
+            test_file._file_size = 5376
             test_file._ReadEntries(file_object)
 
     def testReadFileObject(self):
@@ -90,7 +90,6 @@ class MacOSXUtmpxFileTest(test_lib.BaseTestCase):
             unknown2=b"unknown",
             username=b"user",
         )
-
         test_file._DebugPrintEntry(entry)
 
     def testDecodeString(self):

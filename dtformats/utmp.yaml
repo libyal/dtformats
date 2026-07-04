@@ -40,7 +40,7 @@ attributes:
   size: 8
   units: bytes
 ---
-name: linux_libc6_utmp_entry_32bit
+name: linux_libc6_utmp_entry_32bit_le
 type: structure
 attributes:
   byte_order: little-endian
@@ -82,7 +82,7 @@ members:
   element_data_type: byte
   elements_data_size: 20
 ---
-name: linux_libc6_utmp_entry_64bit
+name: linux_libc6_utmp_entry_64bit_le
 type: structure
 attributes:
   byte_order: little-endian
