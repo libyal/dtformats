@@ -3492,7 +3492,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         # Unsure how reliable this method is since multiple index[1-3].map files
         # can have the same sequence number but contain different mappings.
         for mapping_file_number in range(1, 4):
-            filename_as_glob, _ = self._FormatFilenameAsGlob(
+            filename_as_glob = self._FormatFilenameAsGlob(
                 f"mapping{mapping_file_number:d}.map"
             )
             path_with_glob = self._file_system_helper.JoinPath([path, filename_as_glob])
@@ -3851,7 +3851,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         Returns:
           IndexBinaryTreeFile: index binary tree file or None if not available.
         """
-        filename_as_glob, _ = self._FormatFilenameAsGlob("index.btr")
+        filename_as_glob = self._FormatFilenameAsGlob("index.btr")
         index_binary_tree_file_glob = self._file_system_helper.JoinPath(
             [path, filename_as_glob]
         )
@@ -3880,7 +3880,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         Returns:
           MappingFile: mapping file or None if not available.
         """
-        filename_as_glob, _ = self._FormatFilenameAsGlob(filename)
+        filename_as_glob = self._FormatFilenameAsGlob(filename)
         mapping_file_glob = self._file_system_helper.JoinPath([path, filename_as_glob])
 
         mapping_file_path = glob.glob(mapping_file_glob)
@@ -3904,7 +3904,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         Returns:
           file: file-like object or None if not available.
         """
-        filename_as_glob, _ = self._FormatFilenameAsGlob("mapping.ver")
+        filename_as_glob = self._FormatFilenameAsGlob("mapping.ver")
         mapping_version_file_glob = self._file_system_helper.JoinPath(
             [path, filename_as_glob]
         )
@@ -3925,7 +3925,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         Returns:
           ObjectsDataFile: objects data file or None if not available.
         """
-        filename_as_glob, _ = self._FormatFilenameAsGlob("objects.data")
+        filename_as_glob = self._FormatFilenameAsGlob("objects.data")
         objects_data_file_glob = self._file_system_helper.JoinPath(
             [path, filename_as_glob]
         )
@@ -3953,7 +3953,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         Returns:
           RepositoryFile: repository file or None if not available.
         """
-        filename_as_glob, _ = self._FormatFilenameAsGlob("cim.rep")
+        filename_as_glob = self._FormatFilenameAsGlob("cim.rep")
         repository_file_glob = self._file_system_helper.JoinPath(
             [path, filename_as_glob]
         )
