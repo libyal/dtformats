@@ -157,7 +157,5 @@ class CIMRepositoryTest(test_lib.BaseTestCase):
             test_repository.Close()
 
 
-
-
 if __name__ == "__main__":
     unittest.main()
