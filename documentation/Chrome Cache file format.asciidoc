@@ -178,7 +178,7 @@ The value represents the value of # in pass:[f_######]
 | 32 | 4 | | [yellow-background]*Signals a previous crash*
 | 36 | 4 | | [yellow-background]*Identifier of an ongoing test or experiment*
 | 40 | 8 | | Creation time
-| 48 | 52 x 8 = 208 | | Padding +
+| 48 | 52 x 4 = 208 | | Padding +
 Contains 0-byte values
 |===
 

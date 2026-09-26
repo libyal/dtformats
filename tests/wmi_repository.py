@@ -1,6 +1,7 @@
 """Tests for WMI Common Information Model (CIM) repository files."""
 
 import os
+import sys
 import unittest
 
 from dtformats import wmi_repository
@@ -139,7 +140,23 @@ class ObjectsDataFileTest(test_lib.BaseTestCase):
         test_file.Open(test_file_path)
 
 
-# TODO: add tests for CIMRepository
+class CIMRepositoryTest(test_lib.BaseTestCase):
+    """CIM repository tests."""
+
+    @unittest.skipIf(sys.platform.startswith("win"), "Windows not supported")
+    def testOpenAndClose(self):
+        """Tests the Open and Close functions."""
+        test_directory_path = self._GetTestFilePath(["cim"])
+        self._SkipIfPathNotExists(test_directory_path)
+
+        test_repository = wmi_repository.CIMRepository()
+
+        test_repository.Open(test_directory_path)
+
+        try:
+            self.assertIsNotNone(test_repository.format_version)
+        finally:
+            test_repository.Close()
 
 
 if __name__ == "__main__":

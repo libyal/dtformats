@@ -3,6 +3,10 @@
 :toc:
 :toclevels: 4
 
+This document is kept for historical purposes. The latest version of a
+comparable format working doc can be found at
+https://keramics.github.io/cpio.html
+
 :numbered!:
 [abstract]
 == Summary
