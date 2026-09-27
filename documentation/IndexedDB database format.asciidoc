@@ -70,11 +70,11 @@ Where size is stored as size - 1, hence 0 represents 1 byte
 | 0.3 | 3 bits | | Size of the database identifier +
 Where size is stored as size - 1, hence 0 represents 1 byte
 | 1.0 | ... | | Database identifier +
-Contains a litte-endian integer
+Contains a little-endian integer
 | ... | ... | | Object store identifier +
-Contains a litte-endian integer
+Contains a little-endian integer
 | ... | ... | | Index identifier +
-Contains a litte-endian integer
+Contains a little-endian integer
 |===
 
 === Global metadata keys

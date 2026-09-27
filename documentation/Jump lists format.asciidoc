@@ -363,7 +363,7 @@ Where %ID% a 64-bit CRC of full path of executable file of the corresponding app
 
 * convert path to upper case UTF-16 little-endian
 * path normalization using KNOWNFOLDERIDs
-* polinomial 0x92c64265d32139a4
+* polynomial 0x92c64265d32139a4
 
 :numbered!:
 [appendix]

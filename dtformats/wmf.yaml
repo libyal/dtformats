@@ -866,4 +866,4 @@ members:
   data_type: uint16
 - name: destination_y_coordinate
   data_type: uint16
-# TODO: add device_indepent_bitmap stream.
+# TODO: add device_independent_bitmap stream.

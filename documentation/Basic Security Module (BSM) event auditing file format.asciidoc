@@ -342,7 +342,7 @@ Contain a string with an end-of-string character
 | 0 | 1 | 0x24 | Token type +
 See section: <<token_types,Token types>>
 | 1 | 4 | | Audit user identifier (UID) +
-Contains a signed integer, where -1 respresents [yellow-background]*TODO*
+Contains a signed integer, where -1 represents [yellow-background]*TODO*
 | 5 | 4 | | Effective user identifier (UID) +
 Contains a signed integer
 | 9 | 4 | | Effective group identifier (GID) +

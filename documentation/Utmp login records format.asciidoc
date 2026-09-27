@@ -90,7 +90,7 @@ See section: <<linux_libc6_types,Types of login>>
 | 4 | 4 | | Process identifier (PID)
 | 8 | 32 | | Terminal +
 Contains an encoded string, which can be "\~" in combination with an username of "shutdown", "reboot" or "runlevel"
-| 40 | 4 | | Terminal indentifier
+| 40 | 4 | | Terminal identifier
 | 44 | 32 | | Username +
 Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS and INIT_PROCESS)
 | 76 | 256 | | Hostname +
@@ -121,7 +121,7 @@ See section: <<linux_libc6_types,Types of login>>
 | 4 | 4 | | Process identifier (PID)
 | 8 | 32 | | Terminal +
 Contains an encoded string, which can be "\~" in combination with an username of "shutdown", "reboot" or "runlevel"
-| 40 | 4 | | Terminal indentifier
+| 40 | 4 | | Terminal identifier
 | 44 | 32 | | Username +
 Contains an encoded string, which can be empty (seen in combination with DEAD_PROCESS)
 | 76 | 256 | | Hostname +
@@ -169,7 +169,7 @@ A Mac OS X 10.5 utmpx file consists of:
 [cols="1,5",options="header"]
 |===
 | Characteristics | Description
-| Byte order | litte-endian
+| Byte order | little-endian
 | Date and time values | POSIX timestamp with microseconds in UTC
 | Character strings | ASCII strings are Single Byte Character (SBC) or Multi Byte Character (MBC) string encoded with th system codepage. +
 Though technically maybe incorrect, this document will use term (extended) ASCII string.
@@ -199,7 +199,7 @@ The Mac OS X 10.5 utmpx record is 628 bytes in size and consists of:
 | Offset | Size | Value | Description
 | 0 | 256 | | Username +
 Contains an encoded string
-| 256 | 4 | | Terminal indentifier
+| 256 | 4 | | Terminal identifier
 | 260 | 32 | | Terminal (tty name or line) +
 Contains an encoded string
 | 292 | 4 | | Process identifier (PID)

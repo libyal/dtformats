@@ -2,7 +2,7 @@
 ---
 name: avrf
 type: format
-decription: Application verifier resource enumeration format
+description: Application verifier resource enumeration format
 urls: ['https://msdn.microsoft.com/en-us/library/bb432418(v=vs.85).aspx']
 layout:
 - file_header

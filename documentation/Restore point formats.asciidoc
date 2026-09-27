@@ -320,6 +320,7 @@ The debug information record data is variable of size and consists of:
 
 *TODO: need sample.*
 
+// typos:disable
 ....
 typedef struct _SR_LOG_DEBUG_INFO {
     RECORD_HEADER Header;         // log entry header
@@ -329,6 +330,7 @@ typedef struct _SR_LOG_DEBUG_INFO {
     CHAR ProcesName[13];          // process name
 } SR_LOG_DEBUG_INFO, *PSR_LOG_DEBUG_INFO;
 ....
+// typos:enable
 
 === Short filename record data
 The short filename record data is variable of size and consists of:
@@ -457,6 +459,7 @@ Files Contained in Each RP#Folder
 00000200  a8 51 11 00 24 f0 ad 00  76 60 2d 7d 18 6c 3a 7d  |.Q..$...v`-}.l:}|
 ....
 
+// typos:disable
 ....
 00000000  64 00 00 00 07 00 00 00  88 61 07 07 64 fa b2 00  |d........a..d...|
 
@@ -495,6 +498,7 @@ Files Contained in Each RP#Folder
 000001f0  5c 08 00 00 00 00 00 00  00 00 00 00 78 fe b2 00  |\...........x...|
 00000200  6b 0f 13 75 5c 08 00 00  00 00 00 00 00 00 00 00  |k..u\...........|
 ....
+// typos:enable
 
 === Corresponding Registry keys
 ....

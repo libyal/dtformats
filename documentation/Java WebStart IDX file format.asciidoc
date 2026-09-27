@@ -7,7 +7,7 @@
 [abstract]
 == Summary
 The Java WebStart Cache IDX file format is used by Java Webstart to track
-information about donwloaded Java archives. This specification is based on the
+information about downloaded Java archives. This specification is based on the
 source code and documentation.
 
 This document is intended as a working document for the Java WebStart Cache

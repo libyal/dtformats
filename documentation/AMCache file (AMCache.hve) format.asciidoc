@@ -187,6 +187,7 @@ Values:
 
 Values:
 
+// typos:disable
 [cols="1,1,5",options="header"]
 |===
 | Value | Data type | Description
@@ -196,6 +197,7 @@ Values:
 | InternalBatteryNumberOfCharges | REG_BINARY |
 | IsAlwaysOnAlwaysConnectedCapable | REG_BINARY |
 |===
+// typos:enable
 
 === Camera sub key
 
@@ -373,7 +375,7 @@ Contains a date and time string in the format: "2020-07-04T14:45:53.190"
 | OSTimeZoneBiasInMins | |
 | OSUILocale | |
 | ProductActivationResult | |
-| ProductActivationTime | REG_QWORD_LITTLE_ENDIAN | Product activiation date and time +
+| ProductActivationTime | REG_QWORD_LITTLE_ENDIAN | Product activation date and time +
 Contains a FILETIME
 | ProductKeyID2 | |
 | RACw7Id | |
@@ -547,7 +549,7 @@ Seen: 0 (PE/COFF information is also present), 1
 Contains a FILETIME
 3+|
 | 100 | REG_SZ | Program identifier (ProgramId)
-| 101 | REG_SZ | SHA-1 of the excutable file +
+| 101 | REG_SZ | SHA-1 of the executable file +
 The string consists of 4 leading zeros followed by a SHA-1
 |===
 

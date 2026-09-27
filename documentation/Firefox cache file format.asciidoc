@@ -291,6 +291,7 @@ struct CacheIndexRecord {
 ....
 
 https://dxr.mozilla.org/mozilla-central/source/netwerk/cache2/CacheIndex.h
+// typos:disable
 ....
 00000000  00 00 00 05 5b 61 3f 86  00 00 00 00              |....[a?.....R/.6|
 
@@ -320,6 +321,7 @@ mFlags
 00000060  80 00 00 10 9b 45 ce 47  ee 0b 5d 54 8b fa 84 c6  |.....E.G..]T....|
 00000070  96 2b 40 49 09 05 44 b2  3f 56 f4 04 da 39 a3 ee  |.+@I..D.?V...9..|
 ....
+// typos:enable
 
 ....
 struct CacheIndexRecord {

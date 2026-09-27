@@ -67,7 +67,7 @@ The alias data is stored in the values of property with the following keys:
 |===
 | Characteristics | Description
 | Byte order | Big-endian
-| Date and time values | HFS+ date and time in seconds or 65536ths of seconds since January 1, 1904 at 00:00:00 (midnight) UTC
+| Date and time values | HFS+ date and time in seconds or 65536th of seconds since January 1, 1904 at 00:00:00 (midnight) UTC
 | Character strings | Unicode strings are stored in UTF-8 or UTF-16 big-endian without the byte order mark (BOM).
 |===
 
@@ -155,8 +155,8 @@ Contains an UTF-8 encoded string without end-of-string character
 See section: <<utf16_string_tagged_value_data,UTF-16 string tagged value data>>
 | 0x000f | | Volume name +
 See section: <<utf16_string_tagged_value_data,UTF-16 string tagged value data>>
-| 0x0010 | | [yellow-background]*Unknown (High resolution volume creation date (65536ths of a second since 1904-01-01 00:00:00 UTC))*
-| 0x0011 | | [yellow-background]*Unknown (High resolution creation date (65536ths of a second since 1904-01-01 00:00:00 UTC))*
+| 0x0010 | | [yellow-background]*Unknown (High resolution volume creation date (65536th of a second since 1904-01-01 00:00:00 UTC))*
+| 0x0011 | | [yellow-background]*Unknown (High resolution creation date (65536th of a second since 1904-01-01 00:00:00 UTC))*
 | 0x0012 | | (POSIX) target path +
 The path is relative from the mount point +
 Contains an UTF-8 encoded string without end-of-string character
@@ -244,7 +244,7 @@ Contains the size of the record including the size of the header
 | 8 | 2 | | Alias type +
 See section: <<alias_type,Alias types>>
 | 10 | 8 | | High resolution volume creation date +
-Contains a HFS+ date and time in 65536ths of a second
+Contains a HFS+ date and time in 65536th of a second
 | 18 | 4 | | File system type +
 See section: <<file_system_type_v3,File system type - version 3>>
 | 22 | 2 | | Disk type +
@@ -252,7 +252,7 @@ See section: <<disk_types,Disk types>>
 | 24 | 4 | | File system identifier of the parent (directory)
 | 28 | 4 | | File system identifier of the target
 | 32 | 8 | | High resolution target creation date +
-Contains a HFS+ date and time in 65536ths of a second
+Contains a HFS+ date and time in 65536th of a second
 | 40 | 4 | | [yellow-background]*Unknown (volume attributes/flags)*
 | 44 | 14 | | [yellow-background]*Unknown*
 |===
@@ -293,7 +293,7 @@ Contains a HFS+ date and time in 65536ths of a second
 | 5 | | [yellow-background]*Unknown (removable / ejectable drive)*
 |===
 
-=== [[volume_flags]]Volume flage
+=== [[volume_flags]]Volume flags
 
 [cols="1,1,5",options="header"]
 |===

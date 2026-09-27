@@ -443,7 +443,7 @@ The table of contents tagged value entry is 12 bytes in size and consists of:
 See section: <<value_tags,Value tags>>
 | 4 | 4 | | Value data record offset +
 The offset is relative to the start of the data area
-| 8 | 4 | 0 | [yellow-background]*Unknown (emtpy value)*
+| 8 | 4 | 0 | [yellow-background]*Unknown (empty value)*
 |===
 
 ==== [[value_tags]]Value tags
@@ -545,6 +545,7 @@ The property flags are 24 bytes in size and consists of:
 
 ===== Target (or resource) property flags
 
+// typos:disable
 [cols="1,1,5",options="header"]
 |===
 | Value | Identifier | Description
@@ -562,11 +563,12 @@ The property flags are 24 bytes in size and consists of:
 kCFURLResourceIsSystemCompressed | Is compressed
 | 0x0000000000000800 | kCFURLCanSetHiddenExtension | Can set hidden extension
 | 0x0000000000001000 | kCFURLResourceIsReadable | Is readable
-| 0x0000000000002000 | kCFURLResourceIsWriteable | Is writeable
+| 0x0000000000002000 | kCFURLResourceIsWriteable | Is writable
 | 0x0000000000004000 | kCFURLResourceIsExecutable | Is executable
 | 0x0000000000008000 | kCFURLIsAliasFile | Is alias file
 | 0x0000000000010000 | kCFURLIsMountTrigger | Is mount trigger
 |===
+// typos:enable
 
 ===== Volume property flags
 

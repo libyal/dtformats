@@ -138,7 +138,7 @@ The current file refers to the active descriptor file, for example
 
 == Descriptor file
 
-The desriptor file is a <<log_file,write ahead log file>> that consist of:
+The descriptor file is a <<log_file,write ahead log file>> that consist of:
 
 * one or more descriptor records
 

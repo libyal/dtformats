@@ -1104,7 +1104,7 @@ The most-significant bit (MSB) of the string reference lower 32-bit is
 a "dynamic" flag. If set (and the string reference <= 0xffffffff) the string
 is "%s". In a Shared-Cache Strings (dsc) file the corresponding image
 identifier and offset can be found comparing the remaining value of the string
-referrence with the dsc text offset.
+reference with the dsc text offset.
 
 To calculate a format string reference:
 
@@ -1119,6 +1119,7 @@ To calculate a name string reference:
 
 ===== Invalid shared cache code pointer offset
 
+// typos:disable
 ....
 tp 2872 + 117:      log info (has_current_aid, has_large_offset, large_shared_cache, has_subsystem)
     thread:         00000000000009ba
@@ -1141,6 +1142,7 @@ Strings file identifier                                                 : cc386f
 Image identifier                                                        : cc386fb1-8c26-3cb7-8329-cc63095fca7d
 Load address                                                            : 0x8008ecf707e9
 ....
+// typos:enable
 
 Observed behavior:
 
@@ -1217,7 +1219,7 @@ The built-in value type decoders are:
 | "uuid_t" | | Formatted as an UUID, for example "10742E39-0657-41F8-AB99-878C5EC2DCAA"
 |===
 
-Other observerd value type decoders are:
+Other observed value type decoders are:
 
 [cols="1,1,5",options="header"]
 |===
@@ -1343,8 +1345,8 @@ The types are defined as:
 | "S" | | Wide character string value, equivalent to "ls"
 | "u" | | Unsigned decimal integer value
 | "U" | | Long unsigned decimal integer value, equivalent to "lu"
-| "x" | | Hexadecimal interger value, formatter in lower case
-| "X" | | Hexadecimal interger value, formatter in upper case
+| "x" | | Hexadecimal integer value, formatter in lower case
+| "X" | | Hexadecimal integer value, formatter in upper case
 |===
 
 ===== Notes
@@ -1398,7 +1400,7 @@ the values are formatted as "<decode: missing data>".
 === Oversize chunk
 
 Oversize chunks contain data that is too large to fit into a single log entry,
-hence it is stored seperately and referenced by firehose tracepoints.
+hence it is stored separately and referenced by firehose tracepoints.
 
 The Oversize chunk is variable of size and consists of:
 
@@ -1844,7 +1846,7 @@ timebase = numerator / denominator
 
 * find the timesync sync record that corresponds to the continuous time, if none applicable the timesync boot record is used
 
-* determine the base continous time from the record, for timesync boot record the base is 0
+* determine the base continuous time from the record, for timesync boot record the base is 0
 
 * calculate the wall clock time from the continuous time
 
@@ -2050,9 +2052,11 @@ Contains a boolean value where false if 0 or true otherwise
 
 The value is formatted as:
 
+// typos:disable
 ....
 {"previousAuthorizationStatusValid":false,"paused":false,"requestingLocation":false,"updatingVehicleSpeed":false,"desiredAccuracy":100,"allowsBackgroundLocationUpdates":false,"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,"allowsLocationPrompts":true,"activityType":0,"groundAltitudeEnabled":false,"pausesLocationUpdatesAutomatially":1,"fusionInfoEnabled":false,"isAuthorizedForWidgetUpdates":false,"updatingVehicleHeading":false,"batchingLocation":false,"showsBackgroundLocationIndicator":false,"updatingLocation":false,"requestingRanging":false,"updatingHeading":false,"previousAuthorizationStatus":0,"allowsMapCorrection":true,"matchInfoEnabled":false,"allowsAlteredAccessoryLoctions":false,"updatingRanging":false,"limitsPrecision":false,"courtesyPromptNeeded":false,"headingFilter":1}
 ....
+// typos:enable
 
 === [[locationd_core_location_sub_harvester_identifier]]locationd Core Location sub harvester identifier
 

@@ -245,7 +245,7 @@ class BSMEventAuditingFile(data_format.BinaryDataFile):
         248: "putmsg-connect",
         249: "putmsg-send",
         250: "getmsg-receive",
-        251: "acl(2) - SETACL comand",
+        251: "acl(2) - SETACL command",
         252: "facl(2) - SETACL command",
         253: "doorfs(2) - system call place holder",
         254: "doorfs(2) - DOOR_CALL",

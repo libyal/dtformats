@@ -10,7 +10,7 @@ attributes:
   format: decimal
 - name: location
   description: "Location"
-  format: custom:cache_lcation
+  format: custom:cache_location
 - name: fetch_count
   description: "Fetch count"
   format: decimal
@@ -73,7 +73,7 @@ attributes:
   format: decimal
 - name: data_location
   description: "Data location"
-  format: custom:cache_lcation
+  format: custom:cache_location
 - name: metadata_location
   description: "Metadata location"
-  format: custom:cache_lcation
+  format: custom:cache_location

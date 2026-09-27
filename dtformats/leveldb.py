@@ -647,7 +647,7 @@ class LevelDBDatabaseTableFile(LevelDBDatabaseFile):
 
         Args:
           file_object (file): file-like object.
-          file_offset (int): offset of the block containing the tabel relative to
+          file_offset (int): offset of the block containing the table relative to
              the start of the file.
           block_data_size (int): size of the block data.
           description (str): description of the table.

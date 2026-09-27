@@ -404,7 +404,7 @@ See section: <<property_definition,Property definition>>
 
 ===== [[property_definition]]Property definition
 
-The property defintion is variable of size and consists of:
+The property definition is variable of size and consists of:
 
 [cols="1,1,1,5",options="header"]
 |===

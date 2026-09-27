@@ -855,45 +855,45 @@ class LocationLocationManagerStateFormatStringDecoderTest(test_lib.BaseTestCase)
         test_decoder = unified_logging.LocationLocationManagerStateFormatStringDecoder()
 
         formatted_value = test_decoder.FormatValue(self._VALUE_DATA_V1)
-        self.assertEqual(
-            formatted_value,
-            (
-                '{"previousAuthorizationStatusValid":false,"paused":false,'
-                '"requestingLocation":false,"desiredAccuracy":100,'
-                '"allowsBackgroundLocationUpdates":false,'
-                '"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,'
-                '"allowsLocationPrompts":true,"activityType":72057594037927937,'
-                '"pausesLocationUpdatesAutomatially":0,'
-                '"showsBackgroundLocationIndicator":false,"updatingLocation":false,'
-                '"requestingRanging":false,"updatingHeading":false,'
-                '"previousAuthorizationStatus":0,"allowsMapCorrection":false,'
-                '"allowsAlteredAccessoryLoctions":false,"updatingRanging":false,'
-                '"limitsPrecision":false,"headingFilter":1}'
-            ),
+        # typos:disable
+        expected_formatted_value = (
+            '{"previousAuthorizationStatusValid":false,"paused":false,'
+            '"requestingLocation":false,"desiredAccuracy":100,'
+            '"allowsBackgroundLocationUpdates":false,'
+            '"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,'
+            '"allowsLocationPrompts":true,"activityType":72057594037927937,'
+            '"pausesLocationUpdatesAutomatially":0,'
+            '"showsBackgroundLocationIndicator":false,"updatingLocation":false,'
+            '"requestingRanging":false,"updatingHeading":false,'
+            '"previousAuthorizationStatus":0,"allowsMapCorrection":false,'
+            '"allowsAlteredAccessoryLoctions":false,"updatingRanging":false,'
+            '"limitsPrecision":false,"headingFilter":1}'
         )
+        # typos:enable
+        self.assertEqual(formatted_value, expected_formatted_value)
 
         test_decoder = unified_logging.LocationLocationManagerStateFormatStringDecoder()
 
         formatted_value = test_decoder.FormatValue(self._VALUE_DATA_V2)
-        self.assertEqual(
-            formatted_value,
-            (
-                '{"previousAuthorizationStatusValid":false,"paused":false,'
-                '"requestingLocation":false,"updatingVehicleSpeed":false,'
-                '"desiredAccuracy":100,"allowsBackgroundLocationUpdates":false,'
-                '"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,'
-                '"allowsLocationPrompts":true,"activityType":0,'
-                '"groundAltitudeEnabled":false,"pausesLocationUpdatesAutomatially":1,'
-                '"fusionInfoEnabled":false,"isAuthorizedForWidgetUpdates":false,'
-                '"updatingVehicleHeading":false,"batchingLocation":false,'
-                '"showsBackgroundLocationIndicator":false,"updatingLocation":false,'
-                '"requestingRanging":false,"updatingHeading":false,'
-                '"previousAuthorizationStatus":0,"allowsMapCorrection":true,'
-                '"matchInfoEnabled":false,"allowsAlteredAccessoryLoctions":false,'
-                '"updatingRanging":false,"limitsPrecision":false,'
-                '"courtesyPromptNeeded":false,"headingFilter":1}'
-            ),
+        # typos:disable
+        expected_formatted_value = (
+            '{"previousAuthorizationStatusValid":false,"paused":false,'
+            '"requestingLocation":false,"updatingVehicleSpeed":false,'
+            '"desiredAccuracy":100,"allowsBackgroundLocationUpdates":false,'
+            '"dynamicAccuracyReductionEnabled":false,"distanceFilter":-1,'
+            '"allowsLocationPrompts":true,"activityType":0,'
+            '"groundAltitudeEnabled":false,"pausesLocationUpdatesAutomatially":1,'
+            '"fusionInfoEnabled":false,"isAuthorizedForWidgetUpdates":false,'
+            '"updatingVehicleHeading":false,"batchingLocation":false,'
+            '"showsBackgroundLocationIndicator":false,"updatingLocation":false,'
+            '"requestingRanging":false,"updatingHeading":false,'
+            '"previousAuthorizationStatus":0,"allowsMapCorrection":true,'
+            '"matchInfoEnabled":false,"allowsAlteredAccessoryLoctions":false,'
+            '"updatingRanging":false,"limitsPrecision":false,'
+            '"courtesyPromptNeeded":false,"headingFilter":1}'
         )
+        # typos:enable
+        self.assertEqual(formatted_value, expected_formatted_value)
 
 
 class LocationEscapeOnlyFormatStringDecoderTest(test_lib.BaseTestCase):

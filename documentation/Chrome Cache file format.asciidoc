@@ -402,7 +402,7 @@ uint32_t SuperFastHash(
     uint32_t hash_value = 0;
     uint32_t temp_value = 0;
 
-    if( ( key == NULL ) || ( key_siz 0 ) )
+    if( ( key == NULL ) || ( key_size 0 ) )
     {
        return( 0 );
     }
@@ -472,7 +472,7 @@ struct SparseHeader {
   uint32 magic;             // Structure identifier (equal to kIndexMagic).
   int32 parent_key_len;     // Key length for the parent entry.
   int32 last_block;         // Index of the last written block.
-  int32 last_block_len;     // Lenght of the last written block.
+  int32 last_block_len;     // Length of the last written block.
   int32 dummy[10];
 };
 // The SparseHeader will be followed by a bitmap, as described by this

@@ -105,9 +105,11 @@ class CustomDestinationsFileTest(test_lib.BaseTestCase):
 
     def testGetJumpListEntries(self):
         """Tests the GetJumpListEntries function."""
+        # typos:disable
         test_file_path = self._GetTestFilePath(
             ["5afe4de1b92fc382.customDestinations-ms"]
         )
+        # typos:enable
         self._SkipIfPathNotExists(test_file_path)
 
         output_writer = test_lib.TestOutputWriter()

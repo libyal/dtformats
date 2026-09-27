@@ -58,7 +58,7 @@ A CUPS IPP file consists of:
 | Character strings | Strings are stored either as 7-bit ASCII or in a format defined encoding such as UTF-8
 |===
 
-== Request or reponse
+== Request or response
 
 A CUPP IPP request or response consists of:
 
@@ -97,7 +97,7 @@ sequences:
 
 ==== Attributes sequence
 
-An attribute squence starts with a delimiter tag.
+An attribute sequence starts with a delimiter tag.
 
 [cols="1,1,1,5",options="header"]
 |===

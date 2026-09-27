@@ -40,7 +40,7 @@ class ClassValueDataMap:
     Attributes:
       class_name (str): name of the class.
       derivation (list[str]): name of the classes this class is derived from.
-      dynasty (str): name of the parent class of the parent clas or None if not
+      dynasty (str): name of the parent class of the parent class or None if not
           available.
       properties (dict[str, PropertyValueDataMap]): value data maps of
           the properties.
@@ -1891,7 +1891,7 @@ class RepositoryFile(data_format.BinaryDataFile):
         leaf_node = self._ReadInstanceLeafNode(
             node_cell.data, instance_branch_node.instance_leaf_node_offset
         )
-        # TODO: read class definition hierarcy
+        # TODO: read class definition hierarchy
         class_definitions = [class_definition]
 
         class_value_data_map = ClassValueDataMap()

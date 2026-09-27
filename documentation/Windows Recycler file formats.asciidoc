@@ -59,7 +59,7 @@ C:\Recycler\%SID%\
 The files stored in this directory are:
 
 * INFO2; contains metadata of the original files
-* other files; contains data of the orignal file
+* other files; contains data of the original file
 
 [cols="1,5",options="header"]
 |===

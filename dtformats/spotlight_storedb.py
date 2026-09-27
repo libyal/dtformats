@@ -1218,7 +1218,7 @@ class SpotlightStoreDatabaseFile(data_format.BinaryDataFile):
         return value, bytes_read
 
     def _ReadMetadataAttributePageValues(self, page_header, page_data, property_table):
-        """Reads the metadata atribute page values.
+        """Reads the metadata attribute page values.
 
         Args:
           page_header (spotlight_store_db_property_page_header): page header.

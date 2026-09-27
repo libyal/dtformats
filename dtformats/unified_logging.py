@@ -834,6 +834,7 @@ class LocationLocationManagerStateFormatStringDecoder(
     # the dtFabric definition file.
     _FABRIC = data_format.BinaryDataFile.ReadDefinitionFile("macos_core_location.yaml")
 
+    # typos:disable
     _VALUE_MAPPINGS = [
         ("previousAuthorizationStatusValid", "previous_authorization_status_valid"),
         ("paused", "paused"),
@@ -846,7 +847,7 @@ class LocationLocationManagerStateFormatStringDecoder(
         ("allowsLocationPrompts", "allows_location_prompts"),
         ("activityType", "activity_type"),
         ("groundAltitudeEnabled", "ground_altitude_enabled"),
-        ("pausesLocationUpdatesAutomatially", "pauses_location_updates_automatially"),
+        ("pausesLocationUpdatesAutomatially", "pauses_location_updates_automatically"),
         ("fusionInfoEnabled", "fusion_information_enabled"),
         ("isAuthorizedForWidgetUpdates", "is_authorized_for_widget_updates"),
         ("updatingVehicleHeading", "updating_vehicle_heading"),
@@ -864,6 +865,7 @@ class LocationLocationManagerStateFormatStringDecoder(
         ("courtesyPromptNeeded", "courtesy_prompt_needed"),
         ("headingFilter", "heading_filter"),
     ]
+    # typos:enable
 
     def FormatValue(self, value, format_string_operator=None):
         """Formats a location location manager state value.
@@ -1091,8 +1093,8 @@ class BaseMDNSDNSStructureFormatStringDecoder(
         Returns:
           str: formatted flags value.
         """
-        reponse_code = flags & self._RESPONSE_CODE_BITMASK
-        reponse_code = self._RESPONSE_CODES.get(reponse_code, "?")
+        response_code = flags & self._RESPONSE_CODE_BITMASK
+        response_code = self._RESPONSE_CODES.get(response_code, "?")
 
         flag_names = []
 
@@ -1109,7 +1111,7 @@ class BaseMDNSDNSStructureFormatStringDecoder(
 
         return (
             f"{query_or_response:s}/{operation_name:s}, {flag_names:s}, "
-            f"{reponse_code:s}"
+            f"{response_code:s}"
         )
 
 
@@ -2953,7 +2955,7 @@ class TraceV3File(data_format.BinaryDataFile):
         lines = [f"0x{integer:04x}"]
 
         if integer & 0x0001:
-            lines.append("\tHas current activity identfier (0x0001)")
+            lines.append("\tHas current activity identifier (0x0001)")
 
         strings_file_type = integer & 0x000E
         if strings_file_type == 0x0002:

@@ -63,7 +63,7 @@ class WindowsDefenderScanDetectionHistoryFile(data_format.BinaryDataFile):
         44: "UNKNOWN",
         45: "SPP",
         46: "BEHAVIOR",
-        47: "VULNERABILTIY",
+        47: "VULNERABILITY",
         48: "POLICY",
         49: "EUS",
         50: "RANSOM",

@@ -171,7 +171,7 @@ A record consist of:
 
 * record header
 * attribute value offsets
-* [yellow-background]*Unknown (Opional key data?)*
+* [yellow-background]*Unknown (Optional key data?)*
 * attribute values data
 * [yellow-background]*Unknown (padding)*
 
@@ -252,7 +252,7 @@ See section: <<attribute_data_types,Attribute data types>>
 |===
 
 [NOTE]
-The data type of AttributeName is depedent on AttributeNameFormat
+The data type of AttributeName is dependent on AttributeNameFormat
 
 === CSSM_DL_DB_SCHEMA_PARSING_MODULE attribute values
 

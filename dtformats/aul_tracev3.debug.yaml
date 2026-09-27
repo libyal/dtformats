@@ -201,10 +201,10 @@ attributes:
   description: "Thread identifier"
   format: decimal
 - name: continuous_time_lower
-  description: "Continous time (lower 32-bit)"
+  description: "Continuoustime (lower 32-bit)"
   format: decimal
 - name: continuous_time_upper
-  description: "Continous time (upper 16-bit)"
+  description: "Continuoustime (upper 16-bit)"
   format: decimal
 - name: data_size
   description: "Data size"
@@ -510,7 +510,7 @@ attributes:
   description: "Unknown2"
   format: hexadecimal_4digits
 - name: continuous_time
-  description: "Continous time"
+  description: "Continuoustime"
   format: decimal
 - name: data_reference
   description: "Data reference"
@@ -546,7 +546,7 @@ attributes:
   description: "Unknown1"
   format: hexadecimal_4digits
 - name: continuous_time
-  description: "Continous time"
+  description: "Continuoustime"
   format: decimal
 - name: thread_identifier
   description: "Thread identifier"
@@ -594,7 +594,7 @@ attributes:
   description: "Unknown2"
   format: hexadecimal_4digits
 - name: continuous_time
-  description: "Continous time"
+  description: "Continuoustime"
   format: decimal
 - name: activity_identifier
   description: "Activity identifier"
@@ -612,7 +612,7 @@ attributes:
   description: "Library"
   format: binary_data
 - name: decoder_type
-  description: "Decocder type"
+  description: "Decoder type"
   format: binary_data
 - name: title
   description: "Title"

@@ -154,7 +154,7 @@ Seen: 0x0c
 The file header is stored in the first 4096 bytes
 
 [NOTE]
-The signature is "dst8" in little-endian, which cloud represention something
+The signature is "dst8" in little-endian, which could represent something
 in line of "data store".
 
 ==== [[file_header_flags]]File header flags
@@ -198,7 +198,7 @@ The map page header is 20 bytes in size and consists of:
 |===
 
 [NOTE]
-The signature is "dbm1" or "dbm2" in little-endian, which cloud represention
+The signature is "dbm1" or "dbm2" in little-endian, which could represent
 something in line of "database map".
 
 ==== Map page value
@@ -245,7 +245,7 @@ Contains the size of the uncompressed page, which includes this header, or 0 if 
 |===
 
 [NOTE]
-The signature is "dbp2" in little-endian, which cloud represention something
+The signature is "dbp2" in little-endian, which could represent something
 in line of "database property".
 
 ==== [[property_table_types]]Property table types

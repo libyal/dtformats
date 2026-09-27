@@ -92,7 +92,7 @@ class IndexedDBDatabaseTableFile(leveldb.LevelDBDatabaseTableFile):
 
                 key_segments.append(f"{metadata_type:d}")
 
-            # Represent the reamaining key as a string without leading b
+            # Represent the remaining key as a string without leading b
             if bytes_read < len(table_entry.key):
                 remaining_key = repr(table_entry.key[bytes_read:])[1:]
                 key_segments.append(remaining_key)

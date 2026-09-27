@@ -55,7 +55,7 @@ C:\$Recycle.Bin\%SID%\
 The files stored in this directory are:
 
 * $I file; contains metadata of the original file
-* $R file; contains data of the orignal file
+* $R file; contains data of the original file
 
 [cols="1,5",options="header"]
 |===
