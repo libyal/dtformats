@@ -40,8 +40,7 @@ class ClassValueDataMap:
     Attributes:
       class_name (str): name of the class.
       derivation (list[str]): name of the classes this class is derived from.
-      dynasty (str): name of the parent class of the parent class or None if not
-          available.
+      dynasty (str): name of the top-level class of the class hierarchy.
       properties (dict[str, PropertyValueDataMap]): value data maps of
           the properties.
       properties_size (int): size of the properties in value data.
@@ -88,11 +87,11 @@ class ClassValueDataMap:
         ]
         self.derivation.reverse()
 
-        derivation_length = len(self.derivation)
-        if derivation_length >= 1:
+        if self.derivation:
             self.super_class_name = self.derivation[0]
-        if derivation_length >= 2:
-            self.dynasty = self.derivation[1]
+            self.dynasty = self.derivation[-1]
+        else:
+            self.dynasty = self.class_name
 
         largest_offset = None
         largest_property_map = None
@@ -344,13 +343,13 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             self._DebugPrintDecimalValue(f"Unknown2: {index:d}", value)
 
         for index, page_number in enumerate(page_body.sub_pages):
-            value_string, _ = self._FormatIntegerAsPageNumber(page_number)
+            value_string = self._FormatIntegerAsPageNumber(page_number)
             self._DebugPrintValue(
                 f"Sub page: {index:d} mapped page number", value_string
             )
 
         for index, key_offset in enumerate(page_body.key_offsets):
-            value_string, _ = self._FormatIntegerAsOffset(key_offset)
+            value_string = self._FormatIntegerAsOffset(key_offset)
             self._DebugPrintValue(f"Key: {index:d} offset", value_string)
 
         number_of_bytes = page_body.key_data_size * 2
@@ -362,7 +361,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         self._DebugPrintDecimalValue("Number of values", page_body.number_of_values)
 
         for index, offset in enumerate(page_body.value_offsets):
-            value_string, _ = self._FormatIntegerAsOffset(offset)
+            value_string = self._FormatIntegerAsOffset(offset)
             self._DebugPrintValue(f"Value: {index:d} offset", value_string)
 
         number_of_bytes = page_body.value_data_size * 2
@@ -532,7 +531,7 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
             page_key_offset = key_offset * 2
 
             if self._debug:
-                value_string, _ = self._FormatIntegerAsOffset(page_key_offset)
+                value_string = self._FormatIntegerAsOffset(page_key_offset)
                 self._DebugPrintValue(
                     f"Page key: {page_key_index:d} offset", value_string
                 )
@@ -697,7 +696,7 @@ class MappingFile(data_format.BinaryDataFile):
             "  Number of entries", unknown_table.number_of_entries
         )
         for index, page_number in enumerate(unknown_table.entries):
-            value_string, _ = self._FormatIntegerAsPageNumber(page_number)
+            value_string = self._FormatIntegerAsPageNumber(page_number)
             self._DebugPrintValue(f"  Entry: {index:d} page number", value_string)
 
         self._DebugPrintText("\n")
@@ -1697,10 +1696,10 @@ class RepositoryFile(data_format.BinaryDataFile):
             file_object, file_offset, data_type_map, "node cell"
         )
         if self._debug:
-            value_string, _ = self._FormatIntegerAsOffset(file_offset)
+            value_string = self._FormatIntegerAsOffset(file_offset)
             self._DebugPrintValue("Node cell offset", value_string)
 
-            value_string, _ = self._FormatIntegerAsOffset(file_offset + 4)
+            value_string = self._FormatIntegerAsOffset(file_offset + 4)
             self._DebugPrintValue("Data offset", value_string)
 
             if cell_number is not None:
@@ -1904,7 +1903,6 @@ class RepositoryFile(data_format.BinaryDataFile):
             leaf_node.instance_block_data,
             record_data_offset=instance_branch_node.instance_leaf_node_offset,
         )
-        # pylint: disable=attribute-defined-outside-init
         instance.class_name = class_value_data_map.class_name
         instance.derivation = class_value_data_map.derivation
         instance.dynasty = class_value_data_map.dynasty
@@ -2146,6 +2144,20 @@ class CIMObject(data_format.BinaryDataFormat):
 
     _CIM_DATA_TYPES = _FABRIC.CreateDataTypeMap("cim_data_types")
 
+    # Data type maps shared by all CIM objects, since creating a data type map
+    # is expensive and a CIM repository contains thousands of CIM objects.
+    _SHARED_DATA_TYPE_MAPS = {}
+
+    def __init__(self, debug=False, output_writer=None):
+        """Initializes a CIM object.
+
+        Args:
+          debug (Optional[bool]): True if debug information should be written.
+          output_writer (Optional[OutputWriter]): output writer.
+        """
+        super().__init__(debug=debug, output_writer=output_writer)
+        self._data_type_maps = self._SHARED_DATA_TYPE_MAPS
+
     def _DebugPrintCIMString(self, cim_string, description):
         """Prints CIM string information.
 
@@ -2209,7 +2221,10 @@ class ClassDefinition(CIMObject):
     """Class definition.
 
     Attributes:
+      date_time (int): date and time of the class definition object record,
+          as a FILETIME timestamp, or None if not available.
       name (str): name of the class.
+      namespace (str): name of the namespace or None if not available.
       properties (dict[str, ClassDefinitionProperty]): properties.
       qualifiers (dict[str, object]): qualifiers.
       super_class_name (str): name of the parent class.
@@ -2290,10 +2305,12 @@ class ClassDefinition(CIMObject):
           output_writer (Optional[OutputWriter]): output writer.
         """
         super().__init__(debug=debug, output_writer=output_writer)
+        self.date_time = None
         self.name = None
-        self.super_class_name = None
+        self.namespace = None
         self.properties = {}
         self.qualifiers = {}
+        self.super_class_name = None
 
     def _FormatArrayOfPropertyDescriptors(self, array_of_property_descriptors):
         """Formats an array of property descriptors.
@@ -2307,18 +2324,16 @@ class ClassDefinition(CIMObject):
         """
         lines = []
         for index, property_descriptor in enumerate(array_of_property_descriptors):
-            value_string, _ = self._FormatIntegerAsOffset(
-                property_descriptor.name_offset
-            )
-            line, _ = self._FormatValue(
+            value_string = self._FormatIntegerAsOffset(property_descriptor.name_offset)
+            line = self._FormatValue(
                 f"    Property descriptor: {index:d} name offset", value_string
             )
             lines.append(line)
 
-            value_string, _ = self._FormatIntegerAsOffset(
+            value_string = self._FormatIntegerAsOffset(
                 property_descriptor.definition_offset
             )
-            line, _ = self._FormatValue(
+            line = self._FormatValue(
                 f"    Property descriptor: {index:d} definition offset", value_string
             )
             lines.append(line)
@@ -2679,7 +2694,7 @@ class ClassDefinition(CIMObject):
             )
             self._DebugPrintValue("        Index", value_string)
 
-            value_string, _ = self._FormatIntegerAsOffset(
+            value_string = self._FormatIntegerAsOffset(
                 class_definition_property.value_data_offset
             )
             self._DebugPrintValue("        Value data offset", value_string)
@@ -2796,8 +2811,9 @@ class ClassDefinitionReference(CIMObject):
     """Class definition reference.
 
     Attributes:
-      data (bytes): instance block data.
-      offset (int): offset of the instance block data.
+      data (bytes): class definition block data.
+      date_time (int): date and time, as a FILETIME timestamp.
+      offset (int): offset of the class definition block data.
       super_class_name (str): name of the parent class.
     """
 
@@ -2824,8 +2840,9 @@ class ClassDefinitionReference(CIMObject):
           debug (Optional[bool]): True if debug information should be written.
           output_writer (Optional[OutputWriter]): output writer.
         """
-        super().__init__()
+        super().__init__(debug=debug, output_writer=output_writer)
         self.data = None
+        self.date_time = None
         self.offset = None
         self.super_class_name = None
 
@@ -2860,6 +2877,7 @@ class ClassDefinitionReference(CIMObject):
             )
 
         self.data = class_definition_object_record.class_definition_block_data
+        self.date_time = class_definition_object_record.date_time
         self.offset = context.byte_size
         self.super_class_name = class_definition_object_record.super_class_name
 
@@ -2871,6 +2889,8 @@ class InstanceReference(CIMObject):
       class_name(str): class name.
       class_name_hash (str): hash of the class name.
       data (bytes): instance block data.
+      date_time1 (int): first date and time, as a FILETIME timestamp.
+      date_time2 (int): second date and time, as a FILETIME timestamp.
       offset (int): offset of the instance block data.
     """
 
@@ -2890,11 +2910,13 @@ class InstanceReference(CIMObject):
           debug (Optional[bool]): True if debug information should be written.
           output_writer (Optional[OutputWriter]): output writer.
         """
-        super().__init__()
+        super().__init__(debug=debug, output_writer=output_writer)
         self._format_version = format_version
         self.class_name = None
         self.class_name_hash = None
         self.data = None
+        self.date_time1 = None
+        self.date_time2 = None
         self.offset = None
 
     def ReadObjectRecord(self, object_record_data):
@@ -2930,6 +2952,8 @@ class InstanceReference(CIMObject):
 
         self.class_name_hash = instance_object_record.class_name_hash
         self.data = instance_object_record.instance_block_data
+        self.date_time1 = instance_object_record.date_time1
+        self.date_time2 = instance_object_record.date_time2
 
 
 class Instance(CIMObject):
@@ -2938,8 +2962,15 @@ class Instance(CIMObject):
     Attributes:
       class_name (str): class name.
       class_name_hash (str): hash of the class name.
+      date_time1 (int): first date and time of the instance object record, as
+          a FILETIME timestamp, or None if not available.
+      date_time2 (int): second date and time of the instance object record, as
+          a FILETIME timestamp, or None if not available.
+      derivation (list[str]): name of the classes the class is derived from.
+      dynasty (str): name of the top-level class of the class hierarchy.
       namespace (str): namespace.
       properties (dict[str, object]): instance property names and values.
+      super_class_name (str): name of the parent class or None if not available.
     """
 
     _DEBUG_INFO_INSTANCE_BLOCK = [
@@ -2982,6 +3013,9 @@ class Instance(CIMObject):
         ]
     )
 
+    # Only CIM-ARRAY-UINT8 is supported, since CIM-ARRAY-SINT8 was not observed.
+    _INTEGER_ARRAY_8BIT_VALUE_DATA_TYPES = frozenset([0x00002011])
+
     _STRING_VALUE_DATA_TYPES = frozenset([0x00000008, 0x00000065, 0x00000066])
 
     def __init__(self, debug=False, output_writer=None):
@@ -2994,8 +3028,13 @@ class Instance(CIMObject):
         super().__init__(debug=debug, output_writer=output_writer)
         self.class_name = None
         self.class_name_hash = None
+        self.date_time1 = None
+        self.date_time2 = None
+        self.derivation = []
+        self.dynasty = None
         self.namespace = None
         self.properties = {}
+        self.super_class_name = None
 
     def DebugPrint(self):
         """Prints instance information."""
@@ -3116,7 +3155,7 @@ class Instance(CIMObject):
             "unknown offset",
         )
         if self._debug:
-            value_string, _ = self._FormatIntegerAsOffset(unknown_offset)
+            value_string = self._FormatIntegerAsOffset(unknown_offset)
             self._DebugPrintValue("Unknown offset", value_string)
 
         data_offset += 4
@@ -3239,6 +3278,29 @@ class Instance(CIMObject):
                 )
                 if self._debug:
                     self._DebugPrintValue(description, array_offset)
+
+                # An array offset of 0 appears to indicate not set.
+                if (
+                    property_value_data_map.data_type
+                    in self._INTEGER_ARRAY_8BIT_VALUE_DATA_TYPES
+                    and array_offset > 0
+                ):
+                    description = (
+                        f"Property: {property_value_data_map.name:s} value: unsigned "
+                        f"8-bit integer array"
+                    )
+                    data_type_map = self._GetDataTypeMap("cim_integer_array_8bit")
+
+                    integer_array = self._ReadStructureFromByteStream(
+                        values_data[array_offset:],
+                        data_offset + array_offset,
+                        data_type_map,
+                        description,
+                    )
+                    property_value = list(integer_array.integers)
+
+                    if self._debug:
+                        self._DebugPrintData(description, integer_array.integers)
 
             self.properties[property_value_data_map.name] = property_value
 
@@ -3412,17 +3474,21 @@ class CIMRepository(data_format.BinaryDataFormat):
 
         super().__init__()
         self._debug = debug
-        self._class_definitions_by_hash = {}
-        self._class_value_data_map_by_hash = {}
+        self._class_definition_keys = None
+        self._class_definitions = {}
+        self._class_value_data_maps = {}
         self._file_system_helper = file_system_helper
         self._index_binary_tree_file = None
+        self._index_keys = None
         self._index_mapping_table = None
         self._index_root_page = None
-        self._namespace_instances = []
+        self._namespace_instances = None
+        self._namespaces_by_hash = None
         self._objects_data_file = None
         self._objects_mapping_table = None
         self._output_writer = output_writer
         self._repository_file = None
+        self._system_namespace_hash = None
 
         self.format_version = None
 
@@ -3530,76 +3596,132 @@ class CIMRepository(data_format.BinaryDataFormat):
 
         return active_mapping_file
 
-    def _GetClassDefinitionByName(self, class_name):
-        """Retrieves a class definition by name.
+    def _GetClassDefinition(self, namespace_hash, class_name_hash):
+        """Retrieves a class definition.
+
+        If the class definition is not defined in the namespace, the class
+        definition is looked up in the "__SystemClass" namespace, which contains
+        the system classes, such as "__EventFilter".
 
         Args:
-          class_name (str): name of the class definition.
-
-        Returns:
-          ClassDefinition: class definitions or None.
-        """
-        class_name_hash = self._GetHashFromString(class_name)
-        return self._GetClassDefinitionByHash(class_name_hash)
-
-    def _GetClassDefinitionByHash(self, class_name_hash):
-        """Retrieves a class definition by hash of the name.
-
-        Args:
+          namespace_hash (str): hash of the name of the namespace.
           class_name_hash (str): hash of the class name.
 
         Returns:
-          ClassDefinition: class definitions or None.
-        """
-        # TODO: change to resolve on demand and cache the resulting class
-        # definition.
-        class_definition = self._class_definitions_by_hash.get(
-            class_name_hash.lower(), None
-        )
-        return class_definition
-
-    def _GetClassValueMapByHash(self, class_name_hash):
-        """Retrieves a class value map by hash of the name.
-
-        Args:
-          class_name_hash (str): hash of the class name.
-
-        Returns:
-          ClassValueMap: class value map or None.
+          tuple[str, ClassDefinition]: hash of the name of the namespace that
+              defines the class and the class definition or (None, None) if not
+              available.
 
         Raises:
-          RuntimeError: if a class definition cannot be found.
+          ParseError: if the class definition cannot be read.
         """
-        lookup_key = class_name_hash.lower()
+        class_definition_keys = self._GetClassDefinitionKeys()
 
-        class_value_data_map = self._class_value_data_map_by_hash.get(lookup_key, None)
+        for lookup_namespace_hash in (namespace_hash, self._system_namespace_hash):
+            lookup_key = (lookup_namespace_hash, class_name_hash.lower())
+
+            class_definition = self._class_definitions.get(lookup_key, None)
+            if class_definition:
+                return lookup_namespace_hash, class_definition
+
+            key_values = class_definition_keys.get(lookup_key, None)
+            if key_values:
+                class_definition = self._ReadClassDefinition(*key_values)
+                self._class_definitions[lookup_key] = class_definition
+
+                return lookup_namespace_hash, class_definition
+
+        return None, None
+
+    def _GetClassDefinitionKeys(self):
+        """Retrieves the object record values of the class definitions.
+
+        Returns:
+          dict[tuple[str, str], tuple[int, int, int]]: mapped page number, record
+              identifier and record data size of the class definition object
+              records per hash of the name of the namespace and hash of the class
+              name.
+        """
+        if self._class_definition_keys is None:
+            self._class_definition_keys = {}
+
+            for key in self._GetIndexKeys():
+                key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+                if len(key_segments) != 3 or not key_segments[1].startswith("NS_"):
+                    continue
+
+                (
+                    data_type,
+                    name_hash,
+                    mapped_page_number,
+                    record_identifier,
+                    data_size,
+                ) = self._GetObjectRecordValuesFromKey(key_segments[2])
+                if data_type != "CD":
+                    continue
+
+                namespace_hash = key_segments[1][3:].lower()
+                self._class_definition_keys[(namespace_hash, name_hash)] = (
+                    mapped_page_number,
+                    record_identifier,
+                    data_size,
+                )
+
+        return self._class_definition_keys
+
+    def _GetClassValueDataMap(self, namespace_hash, class_name_hash):
+        """Retrieves a class value data map.
+
+        Args:
+          namespace_hash (str): hash of the name of the namespace.
+          class_name_hash (str): hash of the class name.
+
+        Returns:
+          ClassValueDataMap: class value data map.
+
+        Raises:
+          ParseError: if the class definition or one of its parent class
+              definitions cannot be found.
+        """
+        lookup_key = (namespace_hash, class_name_hash.lower())
+
+        class_value_data_map = self._class_value_data_maps.get(lookup_key, None)
         if not class_value_data_map:
-            class_definition = self._GetClassDefinitionByHash(class_name_hash)
+            defining_namespace_hash, class_definition = self._GetClassDefinition(
+                namespace_hash, class_name_hash
+            )
             if not class_definition:
-                raise RuntimeError(
-                    (
-                        f"Unable to retrieve definition of class with hash: "
-                        f"{class_name_hash:s}"
-                    )
+                raise errors.ParseError(
+                    f"Unable to retrieve definition of class with hash: "
+                    f"{class_name_hash:s}"
                 )
 
             class_definitions = [class_definition]
+            class_names = set([class_definition.name.lower()])
+
             while class_definition.super_class_name:
-                class_definition = self._GetClassDefinitionByName(
-                    class_definition.super_class_name
+                super_class_name = class_definition.super_class_name
+                if super_class_name.lower() in class_names:
+                    raise errors.ParseError(
+                        f"Class hierarchy loop detected for class: "
+                        f"{super_class_name:s}"
+                    )
+
+                super_class_name_hash = self._GetHashFromString(super_class_name)
+                defining_namespace_hash, class_definition = self._GetClassDefinition(
+                    defining_namespace_hash, super_class_name_hash
                 )
                 if not class_definition:
-                    raise RuntimeError(
-                        (
-                            f"Unable to retrieve definition of class with name: "
-                            f"{class_definition.super_class_name:s}"
-                        )
+                    raise errors.ParseError(
+                        f"Unable to retrieve definition of class with name: "
+                        f"{super_class_name:s}"
                     )
 
                 class_definitions.append(class_definition)
+                class_names.add(super_class_name.lower())
 
             # The ClassValueDataMap.Build functions want the class definitions
-            # starting the with the base class first.
+            # starting with the base class first.
             class_definitions.reverse()
 
             if self._debug:
@@ -3609,7 +3731,7 @@ class CIMRepository(data_format.BinaryDataFormat):
             class_value_data_map = ClassValueDataMap()
             class_value_data_map.Build(class_definitions)
 
-            self._class_value_data_map_by_hash[lookup_key] = class_value_data_map
+            self._class_value_data_maps[lookup_key] = class_value_data_map
 
         return class_value_data_map
 
@@ -3675,6 +3797,21 @@ class CIMRepository(data_format.BinaryDataFormat):
 
         return index_page
 
+    def _GetIndexKeys(self):
+        """Retrieves the index keys.
+
+        The index keys are cached since reading them from the index binary-tree
+        is relatively expensive.
+
+        Returns:
+          list[str]: index key paths.
+        """
+        if self._index_keys is None:
+            index_page = self._GetIndexRootPage()
+            self._index_keys = list(self._GetKeysFromIndexPage(index_page))
+
+        return self._index_keys
+
     def _GetIndexRootPage(self):
         """Retrieves the index root page.
 
@@ -3716,6 +3853,17 @@ class CIMRepository(data_format.BinaryDataFormat):
                     mapped_page_number
                 )
                 yield from self._GetKeysFromIndexPage(sub_index_page)
+
+    def _GetNamespacesByHash(self):
+        """Retrieves the namespaces per hash of their name.
+
+        Returns:
+          dict[str, str]: namespaces per hash of their name.
+        """
+        if self._namespaces_by_hash is None:
+            self._ReadNamespaces()
+
+        return self._namespaces_by_hash
 
     def _GetObjectsPageByMappedPageNumber(self, mapped_page_number, is_data_page):
         """Retrieves a specific objects page by mapped page number.
@@ -3971,218 +4119,197 @@ class CIMRepository(data_format.BinaryDataFormat):
 
         return repository_file
 
-    def _ReadClassDefinitionObjectRecords(self):
-        """Reads class definition object records.
+    def _ReadClassDefinition(self, mapped_page_number, record_identifier, data_size):
+        """Reads a class definition.
 
-        Yields:
-          tuple[str, ObjectRecord]: name hash and class definition object record.
+        Args:
+          mapped_page_number (int): mapped page number.
+          record_identifier (int): record identifier.
+          data_size (int): data size.
+
+        Returns:
+          ClassDefinition: class definition.
+
+        Raises:
+          ParseError: if the class definition cannot be read.
         """
-        index_page = self._GetIndexRootPage()
-        for key in self._GetKeysFromIndexPage(index_page):
-            key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+        object_record = self._GetObjectRecord(
+            "CD", mapped_page_number, record_identifier, data_size
+        )
 
-            data_type, name_hash, mapped_page_number, record_identifier, data_size = (
-                self._GetObjectRecordValuesFromKey(key_segments[-1])
-            )
-            if data_type != "CD":
-                continue
+        class_definition_reference = ClassDefinitionReference(
+            debug=self._debug, output_writer=self._output_writer
+        )
+        class_definition_reference.ReadObjectRecord(object_record.data)
 
-            object_record = self._GetObjectRecord(
-                data_type, mapped_page_number, record_identifier, data_size
-            )
-            yield name_hash, object_record
+        class_definition = ClassDefinition(
+            debug=self._debug, output_writer=self._output_writer
+        )
+        class_definition.ReadClassDefinitionBlock(
+            class_definition_reference.data,
+            record_data_offset=class_definition_reference.offset,
+        )
+        class_definition.date_time = class_definition_reference.date_time
 
-    def _ReadClassDefinitionsFromObjectRecords(self):
-        """Reads the class definitions from object records."""
-        for name_hash, object_record in self._ReadClassDefinitionObjectRecords():
-            class_definition_reference = ClassDefinitionReference(
-                debug=self._debug, output_writer=self._output_writer
-            )
-            class_definition_reference.ReadObjectRecord(object_record.data)
+        return class_definition
 
-            class_definition = ClassDefinition(
-                debug=self._debug, output_writer=self._output_writer
-            )
-            class_definition.ReadClassDefinitionBlock(
-                class_definition_reference.data,
-                record_data_offset=class_definition_reference.offset,
-            )
-            self._class_definitions_by_hash[name_hash] = class_definition
-
-        if self._debug:
-            self._DebugPrintText("Class definitions:\n")
-            for class_definition in self._class_definitions_by_hash.values():
-                class_definition.DebugPrint()
-
-    def _ReadInstance(self, instance_reference):
+    def _ReadInstance(
+        self, namespace_hash, mapped_page_number, record_identifier, data_size
+    ):
         """Reads an instance.
 
         Args:
-          instance_reference (InstanceReference): instance reference.
+          namespace_hash (str): hash of the name of the namespace.
+          mapped_page_number (int): mapped page number.
+          record_identifier (int): record identifier.
+          data_size (int): data size.
 
         Returns:
           Instance: instance.
+
+        Raises:
+          ParseError: if the instance cannot be read.
         """
-        class_name_hash = instance_reference.class_name_hash
-        if not class_name_hash:
-            class_name_hash = self._GetHashFromString(instance_reference.class_name)
-
-        class_value_data_map = self._GetClassValueMapByHash(class_name_hash)
-
-        instance = Instance(debug=self._debug, output_writer=self._output_writer)
-
-        instance.ReadInstanceBlockData(
-            class_value_data_map,
-            instance_reference.data,
-            record_data_offset=instance_reference.offset,
+        object_record = self._GetObjectRecord(
+            "I", mapped_page_number, record_identifier, data_size
         )
-        # pylint: disable=attribute-defined-outside-init
-        instance.class_name = class_value_data_map.class_name
-        instance.derivation = class_value_data_map.derivation
-        instance.dynasty = class_value_data_map.dynasty
-        instance.super_class_name = class_value_data_map.super_class_name
 
-        if self._debug:
-            instance.DebugPrint()
-
-        return instance
-
-    # TODO: remove after refactor
-    def _ReadInstanceFromObjectRecord(self, object_record):
-        """Reads an instance.
-
-        Args:
-          object_record (ObjectRecord): object record.
-
-        Returns:
-          Instance: instance or None.
-        """
         instance_reference = InstanceReference(
             self.format_version, debug=self._debug, output_writer=self._output_writer
         )
         instance_reference.ReadObjectRecord(object_record.data)
 
+        class_value_data_map = self._GetClassValueDataMap(
+            namespace_hash, instance_reference.class_name_hash
+        )
+
         instance = Instance(debug=self._debug, output_writer=self._output_writer)
 
-        class_value_data_map = self._GetClassValueMapByHash(
-            instance_reference.class_name_hash
-        )
         instance.ReadInstanceBlockData(
             class_value_data_map,
             instance_reference.data,
             record_data_offset=instance_reference.offset,
         )
-        if self._debug:
-            instance.DebugPrint()
-
-        # pylint: disable=attribute-defined-outside-init
         instance.class_name = class_value_data_map.class_name
+        instance.class_name_hash = instance_reference.class_name_hash
+        instance.date_time1 = instance_reference.date_time1
+        instance.date_time2 = instance_reference.date_time2
         instance.derivation = class_value_data_map.derivation
         instance.dynasty = class_value_data_map.dynasty
         instance.super_class_name = class_value_data_map.super_class_name
 
+        if self._debug:
+            instance.DebugPrint()
+
         return instance
 
-    def _ReadInstanceObjectRecords(self):
-        """Reads instance object records.
+    def _ReadInstanceKeys(self, class_name=None):
+        """Reads the instance keys.
+
+        Args:
+          class_name (Optional[str]): name of the class of which to read
+              the instance keys, where None represents all classes.
 
         Yields:
-          tuple[str, ObjectRecord]: name hash and instance object record.
+          tuple[str, int, int, int]: hash of the name of the namespace, mapped page
+              number, record identifier and record data size of an instance
+              object record.
         """
-        index_page = self._GetIndexRootPage()
-        for key in self._GetKeysFromIndexPage(index_page):
-            key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+        class_name_hash = None
+        if class_name:
+            class_name_hash = self._GetHashFromString(class_name)
 
-            data_type, name_hash, mapped_page_number, record_identifier, data_size = (
-                self._GetObjectRecordValuesFromKey(key_segments[-1])
-            )
-            if data_type not in ("I", "IL"):
+        # Every instance is referenced by both a "CI_" (class instance) with "IL_"
+        # (instance location) and a "KI_" (class instance with key) with "I_"
+        # (instance) index key. Only the former are used to prevent duplicates.
+        for key in self._GetIndexKeys():
+            key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
+            if (
+                len(key_segments) != 4
+                or not key_segments[1].startswith("NS_")
+                or not key_segments[2].startswith("CI_")
+            ):
                 continue
 
-            object_record = self._GetObjectRecord(
-                data_type, mapped_page_number, record_identifier, data_size
-            )
-            yield name_hash, object_record
-
-    def _ReadNamespacesFromObjectRecords(self):
-        """Reads namespaces from object records."""
-        class_name_hash = self._GetHashFromString("__NAMESPACE")
-
-        object_record_values = set()
-        instances_per_namespace = {}
-        parent_namespaces = set()
-
-        index_page = self._GetIndexRootPage()
-        for key in self._GetKeysFromIndexPage(index_page):
-            key_segments = key.split(self._KEY_SEGMENT_SEPARATOR)
-
-            key_segment = key_segments[1]
-            if not key_segment.startswith("NS_"):
-                continue
-
-            namespace_hash = key_segment[3:].lower()
-            parent_namespaces.add(namespace_hash)
-
-            _, _, key_segment = key_segments[2].partition("_")
-            if key_segment.lower() != class_name_hash:
+            if class_name_hash and key_segments[2][3:].lower() != class_name_hash:
                 continue
 
             data_type, _, mapped_page_number, record_identifier, data_size = (
-                self._GetObjectRecordValuesFromKey(key_segments[-1])
+                self._GetObjectRecordValuesFromKey(key_segments[3])
             )
-            if data_type not in ("I", "IL"):
+            if data_type != "IL":
                 continue
 
-            if (mapped_page_number, record_identifier) in object_record_values:
-                continue
+            namespace_hash = key_segments[1][3:].lower()
 
-            object_record = self._GetObjectRecord(
-                data_type, mapped_page_number, record_identifier, data_size
+            yield namespace_hash, mapped_page_number, record_identifier, data_size
+
+    def _ReadNamespaces(self):
+        """Reads the namespaces.
+
+        In format version 2.1 and 2.2 the name of a namespace is derived from
+        the name of its parent namespace and the "Name" property of the
+        corresponding "__NAMESPACE" instance, which is stored in the parent
+        namespace.
+        """
+        self._namespaces_by_hash = {}
+        self._namespace_instances = []
+
+        instances_per_namespace = {}
+        for (
+            namespace_hash,
+            mapped_page_number,
+            record_identifier,
+            data_size,
+        ) in self._ReadInstanceKeys(class_name="__NAMESPACE"):
+            instance = self._ReadInstance(
+                namespace_hash, mapped_page_number, record_identifier, data_size
             )
-            object_record_values.add((mapped_page_number, record_identifier))
-
-            instance = self._ReadInstanceFromObjectRecord(object_record)
-
             if namespace_hash not in instances_per_namespace:
                 instances_per_namespace[namespace_hash] = []
 
             instances_per_namespace[namespace_hash].append(instance)
 
-        namespaces_by_hash = {}
         for namespace in self._COMMON_NAMESPACES:
             namespace_hash = self._GetHashFromString(namespace)
-            namespaces_by_hash[namespace_hash] = namespace
+            self._namespaces_by_hash[namespace_hash] = namespace
 
-        for _ in range(5):
-            unresolved_namespaces = set()
-            for parent_namespace_hash in parent_namespaces:
-                parent_namespace = namespaces_by_hash.get(parent_namespace_hash)
-                if not parent_namespace:
-                    unresolved_namespaces.add(parent_namespace_hash)
+        # Resolve the namespace names starting with the root namespace.
+        parent_namespaces = [self._GetHashFromString("ROOT")]
+        resolved_namespaces = set(parent_namespaces)
+
+        while parent_namespaces:
+            parent_namespace_hash = parent_namespaces.pop(0)
+            parent_namespace = self._namespaces_by_hash[parent_namespace_hash]
+
+            for instance in instances_per_namespace.get(parent_namespace_hash, []):
+                name_property = instance.properties.get("Name", None)
+                if not name_property:
                     continue
 
-                instances = instances_per_namespace.get(parent_namespace_hash)
-                if not instances:
+                namespace = self._KEY_SEGMENT_SEPARATOR.join(
+                    [parent_namespace, name_property]
+                )
+                namespace_hash = self._GetHashFromString(namespace)
+                if namespace_hash in resolved_namespaces:
                     continue
 
-                for instance in instances:
-                    name_property = instance.properties.get("Name")
+                self._namespaces_by_hash[namespace_hash] = namespace
 
-                    namespace = "\\".join([parent_namespace, name_property])
+                instance.namespace = namespace
+                self._namespace_instances.append(instance)
 
-                    namespace_hash = self._GetHashFromString(namespace)
-                    namespaces_by_hash[namespace_hash] = namespace
-
-                    instance.namespace = namespace
-                    self._namespace_instances.append(instance)
-
-            parent_namespaces = unresolved_namespaces
+                parent_namespaces.append(namespace_hash)
+                resolved_namespaces.add(namespace_hash)
 
     def Close(self):
         """Closes the CIM repository."""
-        self._class_definitions_by_hash = {}
-        self._class_value_data_map_by_hash = {}
-        self._namespace_instances = []
+        self._class_definition_keys = None
+        self._class_definitions = {}
+        self._class_value_data_maps = {}
+        self._index_keys = None
+        self._namespace_instances = None
+        self._namespaces_by_hash = None
 
         self._index_mapping_table = None
         self._index_root_page = None
@@ -4196,25 +4323,87 @@ class CIMRepository(data_format.BinaryDataFormat):
             self._index_binary_tree_file.Close()
             self._index_binary_tree_file = None
 
-    def GetInstances(self):
+    def GetClassDefinitions(self):
+        """Retrieves class definitions.
+
+        Yields:
+          ClassDefinition: a class definition.
+
+        Raises:
+          ParseError: if a class definition cannot be read.
+        """
+        if self._repository_file:
+            return
+
+        namespaces_by_hash = self._GetNamespacesByHash()
+
+        for (namespace_hash, class_name_hash), key_values in sorted(
+            self._GetClassDefinitionKeys().items()
+        ):
+            lookup_key = (namespace_hash, class_name_hash)
+
+            class_definition = self._class_definitions.get(lookup_key, None)
+            if not class_definition:
+                class_definition = self._ReadClassDefinition(*key_values)
+                self._class_definitions[lookup_key] = class_definition
+
+            class_definition.namespace = namespaces_by_hash.get(namespace_hash, None)
+
+            yield class_definition
+
+    def GetIndexKeys(self):
+        """Retrieves the index keys.
+
+        Yields:
+          str: an index key path.
+        """
+        if self._index_binary_tree_file:
+            yield from self._GetIndexKeys()
+
+    def GetInstances(self, class_name=None):
         """Retrieves instances.
+
+        Args:
+          class_name (Optional[str]): name of the class of which to retrieve
+              the instances, where None represents all classes. The class name
+              is matched case-insensitive and instances of sub classes are not
+              included.
 
         Yields:
           Instance: an instance.
         """
         if self._repository_file:
-            yield from self._repository_file.ReadInstances()
+            for instance in self._repository_file.ReadInstances():
+                if (
+                    not class_name
+                    or (instance.class_name or "").lower() == class_name.lower()
+                ):
+                    yield instance
 
         else:
-            for _, object_record in self._ReadInstanceObjectRecords():
-                instance_reference = InstanceReference(
-                    self.format_version,
-                    debug=self._debug,
-                    output_writer=self._output_writer,
-                )
-                instance_reference.ReadObjectRecord(object_record.data)
+            namespaces_by_hash = self._GetNamespacesByHash()
 
-                yield self._ReadInstance(instance_reference)
+            for (
+                namespace_hash,
+                mapped_page_number,
+                record_identifier,
+                data_size,
+            ) in self._ReadInstanceKeys(class_name=class_name):
+                try:
+                    instance = self._ReadInstance(
+                        namespace_hash, mapped_page_number, record_identifier, data_size
+                    )
+                except errors.ParseError as exception:
+                    logging.warning(
+                        f"Unable to read instance: {mapped_page_number:d}."
+                        f"{record_identifier:d}.{data_size:d} with error: "
+                        f"{exception!s}"
+                    )
+                    continue
+
+                instance.namespace = namespaces_by_hash.get(namespace_hash, None)
+
+                yield instance
 
     def GetNamespaces(self):
         """Retrieves namespaces.
@@ -4226,20 +4415,10 @@ class CIMRepository(data_format.BinaryDataFormat):
             yield from self._repository_file.ReadNamespaces()
 
         else:
-            if not self._namespace_instances:
-                self._ReadNamespacesFromObjectRecords()
+            if self._namespace_instances is None:
+                self._ReadNamespaces()
 
             yield from self._namespace_instances
-
-    def GetIndexKeys(self):
-        """Retrieves the index keys.
-
-        Yields:
-          str: an index key path.
-        """
-        if self._index_binary_tree_file:
-            index_page = self._GetIndexRootPage()
-            yield from self._GetKeysFromIndexPage(index_page)
 
     # TODO: remove after debugging.
     def GetObjectRecordByKey(self, key):
@@ -4265,6 +4444,9 @@ class CIMRepository(data_format.BinaryDataFormat):
 
         Args:
           path (str): path to the CIM repository or an individual file.
+
+        Raises:
+          ParseError: if the CIM repository cannot be opened.
         """
         basename = os.path.basename(path).lower()
 
@@ -4295,12 +4477,19 @@ class CIMRepository(data_format.BinaryDataFormat):
                 active_mapping_file = self._GetActiveMappingFile(path)
                 index_mapping_file = active_mapping_file
 
+            if not index_mapping_file:
+                raise errors.ParseError(
+                    f"Unable to open index mapping file in: {path:s}"
+                )
+
             self._index_mapping_table = index_mapping_file.GetIndexMappingTable()
 
             if index_mapping_file.format_version == 1:
                 self.format_version = "2.1"
             else:
                 self.format_version = "2.2"
+
+            self._system_namespace_hash = self._GetHashFromString("__SystemClass")
 
             if basename == "index.btr" or not active_mapping_file:
                 index_mapping_file.Close()
@@ -4321,5 +4510,3 @@ class CIMRepository(data_format.BinaryDataFormat):
             objects_mapping_file.Close()
 
             self._objects_data_file = self._OpenObjectsDataFile(path)
-
-            self._ReadClassDefinitionsFromObjectRecords()

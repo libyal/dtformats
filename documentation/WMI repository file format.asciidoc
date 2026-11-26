@@ -210,6 +210,38 @@ The following type prefixes are known:
 | R | Reference
 |===
 
+==== Index key paths
+
+The following index key paths have been observed in format version 2.1:
+
+[cols="1,5",options="header"]
+|===
+| Index key path | Description
+| \NS_%NAMESPACE%\CD_%CLASS%.#.#.# | Class definition of class %CLASS% in namespace %NAMESPACE%
+| \NS_%NAMESPACE%\CR_%SUPERCLASS%\C_%CLASS% | Class %CLASS% in namespace %NAMESPACE% that is derived from class %SUPERCLASS% +
+For a class without a super class %SUPERCLASS% contains the name hash of an empty string
+| \NS_%NAMESPACE%\CI_%CLASS%\IL_%INSTANCE%.#.#.# | Instance %INSTANCE% of class %CLASS% in namespace %NAMESPACE%
+| \NS_%NAMESPACE%\KI_%CLASS%\I_%INSTANCE%.#.#.# | Instance %INSTANCE% of class %CLASS% in namespace %NAMESPACE%
+|===
+
+Where %NAMESPACE%, %SUPERCLASS%, %CLASS% and %INSTANCE% represent
+<<name_hash,name hashes>> and ".#.#.#" the object record values.
+
+[yellow-background]*TODO: describe the index key paths that contain "R_" and "IR_"
+segments.*
+
+Every instance has both a "CI_" with "IL_" and a "KI_" with "I_" index key,
+that refer to the same object record.
+
+In format version 2.1 class definitions are stored per namespace. A class with
+the same name, for example "CommandLineEventConsumer", can be defined in
+multiple namespaces, such as "ROOT\\subscription" and its localization
+namespaces "ROOT\\subscription\\ms_409" and "ROOT\\subscription\\ms_413",
+where each namespace has its own class definition object record. System
+classes, such as "__EventFilter", "__EventConsumer" and
+"__FilterToConsumerBinding", are only defined in the "__SystemClass" namespace
+and are not defined in the namespaces that contain their instances.
+
 ==== [[name_hash]]Name hash
 
 The name hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2)
@@ -1012,7 +1044,8 @@ Contains the number of UTF-16 characters (16-bit values)
 | 4 | ... | | Super class name string +
 Contains an UTF-16 little-endian string without end-of-string character.
 | ... | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
+Contains a FILETIME +
+See section: <<instance_object_record_date_and_time_values,instance object record date and time values>>
 | ... | 4 | | Class definition block size +
 Includes the 4 bytes of the size
 | ... | ... | | Class definition block data +
@@ -1059,10 +1092,12 @@ The instance object record - version 2.1 is variable of size and consists of:
 | 0 | 64 | | MD5 hash of the class name +
 Contains an UTF-16 little-endian string without end-of-string character +
 See section: <<cim_index_key,index key path>>
-| 64 | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
-| 72 | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
+| 64 | 8 | | [yellow-background]*Unknown (first date and time)* +
+Contains a FILETIME +
+See section: <<instance_object_record_date_and_time_values,instance object record date and time values>>
+| 72 | 8 | | [yellow-background]*Unknown (second date and time)* +
+Contains a FILETIME +
+See section: <<instance_object_record_date_and_time_values,instance object record date and time values>>
 | 80 | 4 | | Instance block size +
 Includes the 4 bytes of the size
 | 84 | ... | | Instance block data +
@@ -1090,6 +1125,17 @@ Includes the 4 bytes of the size
 | 148 | ... | | Instance block data +
 See section: <<instance_block,instance block>>
 |===
+
+====== [[instance_object_record_date_and_time_values]]Instance object record date and time values
+
+In the format version 2.1 test data the second date and time value of every
+instance object record is the same as the date and time value of the class
+definition object record of the class of the instance, in the namespace that
+defines the class. The first date and time value is equal to or later than
+the second date and time value.
+
+[yellow-background]*TODO: determine if this also applies to format version 2.2
+and what the date and time values represent.*
 
 == The repository file (cim.rep)
 
