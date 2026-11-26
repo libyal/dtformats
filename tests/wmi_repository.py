@@ -46,6 +46,28 @@ class IndexBinaryTreeFileTest(test_lib.BaseTestCase):
         test_file.Close()
 
 
+class MappingTableTest(test_lib.BaseTestCase):
+    """Mapping table tests."""
+
+    def testGetIndexRootPageNumber(self):
+        """Tests the GetIndexRootPageNumber function."""
+        test_file_path = self._GetTestFilePath(["cim", "INDEX.MAP"])
+        self._SkipIfPathNotExists(test_file_path)
+
+        test_file = wmi_repository.MappingFile()
+        test_file.Open(test_file_path)
+
+        try:
+            mapping_table = test_file.GetIndexMappingTable()
+
+            # A format version 2.1 mapping table entry has no root page number.
+            self.assertIsNone(mapping_table.GetIndexRootPageNumber())
+
+            self.assertEqual(mapping_table.ResolveMappedPageNumber(0), 50)
+        finally:
+            test_file.Close()
+
+
 class MappingFileTest(test_lib.BaseTestCase):
     """Mappings (*.map) file tests."""
 

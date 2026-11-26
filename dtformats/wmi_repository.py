@@ -152,7 +152,8 @@ class IndexBinaryTreePage:
       page_value_offsets (list[int]): page value offsets.
       page_values (list[bytes]): page values.
       root_page_number (int): root page number.
-      sub_pages (list[int]): sub page numbers.
+      sub_pages (list[int]): mapped page numbers of the sub pages, where
+          0xffffffff values are excluded.
     """
 
     def __init__(self):
@@ -191,6 +192,21 @@ class MappingTable:
         """
         mapping_table_entry = self._mapping_table.entries[mapped_page_number]
         return mapping_table_entry.page_number
+
+    def GetIndexRootPageNumber(self):
+        """Retrieves the mapped page number of the index root page.
+
+        In format version 2.2 the mapped page number of the index root page is
+        stored in the first entry of the index mapping table.
+
+        Returns:
+          int: mapped page number of the index root page or None if not
+              available.
+        """
+        if not self._mapping_table.entries:
+            return None
+
+        return getattr(self._mapping_table.entries[0], "unknown3", None)
 
 
 class ObjectsDataPage:
@@ -458,8 +474,10 @@ class IndexBinaryTreeFile(data_format.BinaryDataFile):
         if page_header.page_type == 0xACCC:
             index_binary_tree_page.number_of_keys = page_body.number_of_keys
 
+            # Note that in format version 2.2 mapped page number 0 is a valid
+            # sub page, where in format version 2.1 it indicates unused.
             for page_number in page_body.sub_pages:
-                if page_number not in (0, 0xFFFFFFFF):
+                if page_number != 0xFFFFFFFF:
                     index_binary_tree_page.sub_pages.append(page_number)
 
             index_binary_tree_page.page_value_offsets = page_body.value_offsets
@@ -3482,6 +3500,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         self._index_keys = None
         self._index_mapping_table = None
         self._index_root_page = None
+        self._index_visited_pages = set()
         self._namespace_instances = None
         self._namespaces_by_hash = None
         self._objects_data_file = None
@@ -3808,6 +3827,7 @@ class CIMRepository(data_format.BinaryDataFormat):
         """
         if self._index_keys is None:
             index_page = self._GetIndexRootPage()
+            self._index_visited_pages = set()
             self._index_keys = list(self._GetKeysFromIndexPage(index_page))
 
         return self._index_keys
@@ -3823,7 +3843,9 @@ class CIMRepository(data_format.BinaryDataFormat):
                 first_mapped_page = self._GetIndexFirstMappedPage()
                 root_page_number = first_mapped_page.root_page_number
             else:
-                root_page_number = 1
+                root_page_number = self._index_mapping_table.GetIndexRootPageNumber()
+                if root_page_number is None:
+                    root_page_number = 1
 
             page_number = self._index_mapping_table.ResolveMappedPageNumber(
                 root_page_number
@@ -3848,7 +3870,26 @@ class CIMRepository(data_format.BinaryDataFormat):
         if index_page:
             yield from index_page.keys
 
-            for mapped_page_number in index_page.sub_pages:
+            # In format version 2.1 mapped page number 0 is the administrative
+            # page and a sub page number of 0 indicates unused.
+            sub_pages = index_page.sub_pages
+            if self.format_version == "2.1":
+                sub_pages = [
+                    mapped_page_number
+                    for mapped_page_number in sub_pages
+                    if mapped_page_number != 0
+                ]
+
+            for mapped_page_number in sub_pages:
+                if mapped_page_number in self._index_visited_pages:
+                    logging.warning(
+                        f"Index binary-tree page: {mapped_page_number:d} already "
+                        f"read."
+                    )
+                    continue
+
+                self._index_visited_pages.add(mapped_page_number)
+
                 sub_index_page = self._GetIndexPageByMappedPageNumber(
                     mapped_page_number
                 )
