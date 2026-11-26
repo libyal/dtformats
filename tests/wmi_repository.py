@@ -416,5 +416,139 @@ class CIMRepositoryTest(test_lib.BaseTestCase):
             test_repository.Close()
 
 
+@unittest.skipIf(sys.platform.startswith("win"), "Windows not supported")
+class CIMRepositoryFormatVersion22Test(test_lib.BaseTestCase):
+    """CIM repository format version 2.2 tests."""
+
+    # pylint: disable=protected-access
+
+    _NAMESPACE_SUBSCRIPTION = "ROOT\\subscription"
+
+    def _OpenTestRepository(self):
+        """Opens the test CIM repository.
+
+        Returns:
+          CIMRepository: CIM repository.
+        """
+        test_directory_path = self._GetTestFilePath(["cim_win11"])
+        self._SkipIfPathNotExists(test_directory_path)
+
+        test_repository = wmi_repository.CIMRepository()
+        test_repository.Open(test_directory_path)
+
+        return test_repository
+
+    def testGetClassDefinition(self):
+        """Tests the _GetClassDefinition function."""
+        test_repository = self._OpenTestRepository()
+
+        try:
+            namespace_hash = test_repository._GetHashFromString(
+                self._NAMESPACE_SUBSCRIPTION
+            )
+            class_name_hash = test_repository._GetHashFromString(
+                "CommandLineEventConsumer"
+            )
+            defining_namespace_hash, class_definition = (
+                test_repository._GetClassDefinition(namespace_hash, class_name_hash)
+            )
+            self.assertEqual(defining_namespace_hash, namespace_hash)
+            self.assertIsNotNone(class_definition)
+            self.assertEqual(class_definition.name, "CommandLineEventConsumer")
+            self.assertEqual(class_definition.super_class_name, "__EventConsumer")
+            self.assertEqual(class_definition.date_time, 133564301450078099)
+
+            number_of_class_definitions = len(test_repository._GetClassDefinitionKeys())
+            self.assertEqual(number_of_class_definitions, 6683)
+
+        finally:
+            test_repository.Close()
+
+    def testGetInstances(self):
+        """Tests the GetInstances function."""
+        test_repository = self._OpenTestRepository()
+
+        try:
+            instances = list(test_repository.GetInstances(class_name="__EventFilter"))
+            self.assertEqual(len(instances), 2)
+
+            instances_by_name = {
+                instance.properties.get("Name"): instance for instance in instances
+            }
+            instance = instances_by_name.get("LabFilter4952")
+            self.assertIsNotNone(instance)
+            self.assertEqual(instance.namespace, self._NAMESPACE_SUBSCRIPTION)
+            self.assertEqual(instance.date_time1, 134401706641427646)
+            self.assertEqual(instance.date_time2, 133564301450074138)
+            self.assertEqual(
+                instance.properties.get("Query"),
+                (
+                    "SELECT * FROM __InstanceModificationEvent WITHIN 60 WHERE "
+                    "TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'"
+                ),
+            )
+
+            instances = list(
+                test_repository.GetInstances(class_name="CommandLineEventConsumer")
+            )
+            self.assertEqual(len(instances), 1)
+            self.assertEqual(instances[0].properties.get("Name"), "LabCmdConsumer")
+            self.assertEqual(
+                instances[0].properties.get("CommandLineTemplate"),
+                "cmd.exe /c echo lab > C:\\Users\\Public\\wmi-lab.txt",
+            )
+
+            instances = list(
+                test_repository.GetInstances(class_name="ActiveScriptEventConsumer")
+            )
+            self.assertEqual(len(instances), 1)
+            self.assertEqual(instances[0].properties.get("Name"), "LabScriptConsumer")
+            self.assertEqual(instances[0].properties.get("ScriptingEngine"), "VBScript")
+
+            instances = list(
+                test_repository.GetInstances(class_name="__FilterToConsumerBinding")
+            )
+            self.assertEqual(len(instances), 3)
+
+            consumers = sorted(
+                instance.properties.get("Consumer") for instance in instances
+            )
+            self.assertEqual(
+                consumers,
+                [
+                    'ActiveScriptEventConsumer.Name="LabScriptConsumer"',
+                    'CommandLineEventConsumer.Name="LabCmdConsumer"',
+                    'NTEventLogEventConsumer.Name="SCM Event Log Consumer"',
+                ],
+            )
+
+        finally:
+            test_repository.Close()
+
+    def testGetNamespaces(self):
+        """Tests the GetNamespaces function."""
+        test_repository = self._OpenTestRepository()
+
+        try:
+            namespaces = [
+                instance.namespace for instance in test_repository.GetNamespaces()
+            ]
+            self.assertEqual(len(namespaces), 91)
+            self.assertIn(self._NAMESPACE_SUBSCRIPTION, namespaces)
+
+        finally:
+            test_repository.Close()
+
+    def testOpenAndClose(self):
+        """Tests the Open and Close functions."""
+        test_repository = self._OpenTestRepository()
+
+        try:
+            self.assertEqual(test_repository.format_version, "2.2")
+            self.assertEqual(len(list(test_repository.GetIndexKeys())), 20518)
+        finally:
+            test_repository.Close()
+
+
 if __name__ == "__main__":
     unittest.main()
