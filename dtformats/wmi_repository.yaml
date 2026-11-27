@@ -201,6 +201,18 @@ members:
   element_data_type: byte
   elements_terminator: "\x00"
 ---
+name: cim_integer_array_8bit
+type: structure
+attributes:
+  byte_order: little-endian
+members:
+- name: number_of_integers
+  data_type: uint32
+- name: integers
+  type: stream
+  element_data_type: byte
+  elements_data_size: cim_integer_array_8bit.number_of_integers
+---
 name: cim_string_array
 type: structure
 attributes:

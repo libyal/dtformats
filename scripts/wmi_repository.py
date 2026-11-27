@@ -6,8 +6,46 @@ import logging
 import os
 import sys
 
+from dfdatetime import filetime as dfdatetime_filetime
+
 from dtformats import output_writers
 from dtformats import wmi_repository
+
+
+def FormatFiletime(timestamp):
+    """Formats a FILETIME timestamp.
+
+    Args:
+      timestamp (int): FILETIME timestamp or None if not available.
+
+    Returns:
+      str: formatted FILETIME timestamp.
+    """
+    if timestamp is None:
+        return ""
+
+    date_time = dfdatetime_filetime.Filetime(timestamp=timestamp)
+    date_time_string = date_time.CopyToDateTimeString()
+    if not date_time_string:
+        return f"0x{timestamp:08x}"
+
+    return f"{date_time_string:s} UTC"
+
+
+def PrintClassDefinition(class_definition):
+    """Writes a class definition to stdout.
+
+    Args:
+      class_definition (ClassDefinition): class definition.
+    """
+    namespace = class_definition.namespace or ""
+    super_class_name = class_definition.super_class_name or ""
+    date_time_string = FormatFiletime(class_definition.date_time)
+
+    print(
+        f"{namespace:s}\t{class_definition.name:s}\t{super_class_name:s}\t"
+        f"{date_time_string:s}"
+    )
 
 
 def PrintInstance(instance):
@@ -93,14 +131,30 @@ def Main():
         help="enable debug output.",
     )
 
-    # TODO: make this more descriptive.
+    argument_parser.add_argument(
+        "--class",
+        dest="class_name",
+        action="store",
+        default=None,
+        metavar="NAME",
+        help=(
+            "name of the class of which to print the instances, sub classes are "
+            "not included."
+        ),
+    )
+
     argument_parser.add_argument(
         "--output_mode",
         "--output-mode",
         dest="output_mode",
         action="store",
+        choices=["classes", "debug", "index", "instances", "namespaces"],
         default="instances",
-        help="output mode.",
+        help=(
+            "output mode, where classes prints the class definitions, index "
+            "the index keys, instances the instances and namespaces the "
+            "namespaces."
+        ),
     )
 
     argument_parser.add_argument(
@@ -139,18 +193,29 @@ def Main():
     if source_basename == "index.btr":
         options.output_mode = "index"
 
+    elif source_basename.endswith(".map"):
+        # The content of a mapping file is only printed in debug mode.
+        options.output_mode = "mapping"
+
     cim_repository = wmi_repository.CIMRepository(
         debug=options.debug, output_writer=output_writer
     )
 
-    cim_repository.Open(options.source)
+    # The CIM repository requires an absolute path.
+    source_path = os.path.abspath(options.source)
+
+    cim_repository.Open(source_path)
 
     if options.output_mode == "index":
         for key_path in cim_repository.GetIndexKeys():
             print(key_path)
 
+    elif options.output_mode == "classes":
+        for class_definition in cim_repository.GetClassDefinitions():
+            PrintClassDefinition(class_definition)
+
     elif options.output_mode == "instances":
-        for instance in cim_repository.GetInstances():
+        for instance in cim_repository.GetInstances(class_name=options.class_name):
             PrintInstance(instance)
 
     elif options.output_mode == "namespaces":

@@ -210,6 +210,38 @@ The following type prefixes are known:
 | R | Reference
 |===
 
+==== Index key paths
+
+The following index key paths have been observed in format version 2.1:
+
+[cols="1,5",options="header"]
+|===
+| Index key path | Description
+| \NS_%NAMESPACE%\CD_%CLASS%.#.#.# | Class definition of class %CLASS% in namespace %NAMESPACE%
+| \NS_%NAMESPACE%\CR_%SUPERCLASS%\C_%CLASS% | Class %CLASS% in namespace %NAMESPACE% that is derived from class %SUPERCLASS% +
+For a class without a super class %SUPERCLASS% contains the name hash of an empty string
+| \NS_%NAMESPACE%\CI_%CLASS%\IL_%INSTANCE%.#.#.# | Instance %INSTANCE% of class %CLASS% in namespace %NAMESPACE%
+| \NS_%NAMESPACE%\KI_%CLASS%\I_%INSTANCE%.#.#.# | Instance %INSTANCE% of class %CLASS% in namespace %NAMESPACE%
+|===
+
+Where %NAMESPACE%, %SUPERCLASS%, %CLASS% and %INSTANCE% represent
+<<name_hash,name hashes>> and ".#.#.#" the object record values.
+
+[yellow-background]*TODO: describe the index key paths that contain "R_" and "IR_"
+segments.*
+
+Every instance has both a "CI_" with "IL_" and a "KI_" with "I_" index key,
+that refer to the same object record.
+
+In format version 2.1 class definitions are stored per namespace. A class with
+the same name, for example "CommandLineEventConsumer", can be defined in
+multiple namespaces, such as "ROOT\\subscription" and its localization
+namespaces "ROOT\\subscription\\ms_409" and "ROOT\\subscription\\ms_413",
+where each namespace has its own class definition object record. System
+classes, such as "__EventFilter", "__EventConsumer" and
+"__FilterToConsumerBinding", are only defined in the "__SystemClass" namespace
+and are not defined in the namespaces that contain their instances.
+
 ==== [[name_hash]]Name hash
 
 The name hash is either and MD5 hash (version 2.1) or SHA-256 hash (version 2.2)
@@ -685,9 +717,12 @@ In format version 2.1 the mapped index page 0 references an administrative page
 (page type: 0xaddd). The index binary-tree page header of this page contains
 the mapped root page number.
 
-In format version 2.2 the mapped root page number is assumed to be always 1.
-
-[yellow-background]*TODO: determine if this assumption holds.*
+In format version 2.2 the mapped root page number in the index binary-tree
+page header is 0 and the mapped index page 0 is a regular active page. The
+mapped root page number is stored in the first entry of the index mapping
+table, see section: <<mapping_table_entry_v2,Mapping table entry - version 2.2>>.
+In a Windows 11 26H2 repository the mapped root page number was 60, where
+mapped page number 1 is not the root page.
 
 === [[index_binary_tree_page_types]]Index binary-tree page types
 
@@ -751,6 +786,10 @@ The mapped sub page number is 4 bytes of size and consists of:
 | 0 | 4 | | Mapped sub page number +
 The page number is mapped to the in-file page number via the index mappings file
 |===
+
+In format version 2.1 a mapped sub page number of 0 indicates that the sub page
+is not set. In format version 2.2 a mapped sub page number of 0xffffffff
+indicates that the sub page is not set and 0 is a valid mapped sub page number.
 
 ==== [[index_binary_tree_page_key_offset_array]]Index binary-tree page key offsets array
 
@@ -893,7 +932,7 @@ The mapping table entry - version 2.1 is 24 bytes of size and consists of:
 Contains 0 if not set or 0xffffffff if unavailable
 |===
 
-=== Mapping table entry - version 2.2
+=== [[mapping_table_entry_v2]]Mapping table entry - version 2.2
 
 The mapping table entry - version 2.2 is 24 bytes of size and consists of:
 
@@ -905,7 +944,9 @@ Contains 0 if not set or 0xffffffff if unavailable
 | 4 | 4 | | [yellow-background]*Unknown (checksum)* +
 [yellow-background]*Contains a CRC-32?*
 | 8 | 4 | | [yellow-background]*Unknown (free space?)*
-| 12 | 4 | | [yellow-background]*Unknown (used space?)*
+| 12 | 4 | | [yellow-background]*Unknown (used space?)* +
+In the first entry of the index mapping table this value contains the mapped
+page number of the index binary-tree root page
 | 16 | 4 | | [yellow-background]*Unknown (related to identifiers in the header)*
 | 20 | 4 | | [yellow-background]*Unknown (related to identifiers in the header)*
 |===
@@ -937,6 +978,10 @@ The active mapping file (Mapping.ver) is used by format version 2.1.
 
 The active mapping file is used in Windows XP and Windows 2003 to indicate
 the which `Mapping#.map` file is active (should be used).
+
+A Windows 11 26H2 repository did not contain a `Mapping.ver` file. Here
+the `Mapping#.map` file with the largest sequence number is the active mapping
+file.
 
 [cols="1,1,1,5",options="header"]
 |===
@@ -1012,7 +1057,8 @@ Contains the number of UTF-16 characters (16-bit values)
 | 4 | ... | | Super class name string +
 Contains an UTF-16 little-endian string without end-of-string character.
 | ... | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
+Contains a FILETIME +
+See section: <<instance_object_record_date_and_time_values,instance object record date and time values>>
 | ... | 4 | | Class definition block size +
 Includes the 4 bytes of the size
 | ... | ... | | Class definition block data +
@@ -1059,10 +1105,12 @@ The instance object record - version 2.1 is variable of size and consists of:
 | 0 | 64 | | MD5 hash of the class name +
 Contains an UTF-16 little-endian string without end-of-string character +
 See section: <<cim_index_key,index key path>>
-| 64 | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
-| 72 | 8 | | [yellow-background]*Unknown (date and time)* +
-Contains a FILETIME
+| 64 | 8 | | [yellow-background]*Unknown (first date and time)* +
+Contains a FILETIME +
+See section: <<instance_object_record_date_and_time_values,instance object record date and time values>>
+| 72 | 8 | | [yellow-background]*Unknown (second date and time)* +
+Contains a FILETIME +
+See section: <<instance_object_record_date_and_time_values,instance object record date and time values>>
 | 80 | 4 | | Instance block size +
 Includes the 4 bytes of the size
 | 84 | ... | | Instance block data +
@@ -1090,6 +1138,43 @@ Includes the 4 bytes of the size
 | 148 | ... | | Instance block data +
 See section: <<instance_block,instance block>>
 |===
+
+====== [[instance_object_record_date_and_time_values]]Instance object record date and time values
+
+In both a format version 2.1 and a format version 2.2 (Windows 11 26H2)
+repository the second date and time value of every instance object record is
+the same as the date and time value of the class definition object record of
+the class of the instance, in the namespace that defines the class. The first
+date and time value is equal to or later than the second date and time value.
+
+The date and time values do not appear to contain the wall-clock time an
+object was written. Instead they appear to contain a base date and time
+followed by a sequence, which is incremented by 1 (100 nanoseconds) for every
+object record that is written. For example in the format version 2.2
+repository the instances created on a test system have the values:
+
+[cols="1,5",options="header"]
+|===
+| First date and time value | Instance
+| 134401706641427646 (2026-11-26 12:44:24.1427646) | "__EventFilter"
+| 134401706641427647 (2026-11-26 12:44:24.1427647) | "CommandLineEventConsumer"
+| 134401706641427648 (2026-11-26 12:44:24.1427648) | "ActiveScriptEventConsumer"
+| 134401706641427649 (2026-11-26 12:44:24.1427649) | "__FilterToConsumerBinding"
+| 134401706641427650 (2026-11-26 12:44:24.1427650) | "__FilterToConsumerBinding"
+|===
+
+The values follow the order in which the instances were created, but are
+several minutes earlier than the time the instances were created. The 1585
+"WDMClassesOfDriver" instances that were (re)written in the same session have
+first date and time values in the same range, between 134401706641424590 and
+134401706641427639. The format version 2.1 test data shows the same pattern.
+
+Hence the first date and time value can be used to order object writes and
+appears to contain a date and time that precedes the time the object was
+written, presumably the time the WMI repository was loaded.
+
+[yellow-background]*TODO: confirm when the base date and time is determined and
+if the first date and time value is updated when an instance is modified.*
 
 == The repository file (cim.rep)
 
